@@ -2,10 +2,6 @@
 
 写给任何在本仓库中编写或编辑插件的人。保持简洁——只记录对产出质量最重要的设计原则，而非风格指南。
 
-## 首次 PR 之前
-
-签署 CLA。首次提交 Pull Request 时，CLA Assistant bot 会自动评论附上 [CLA](CLA.md) 链接并要求确认。回复 `I have read the CLA Document and I hereby sign the CLA` 即可通过检查。仅需操作一次。
-
 ## 设计原则：SKILL.md 编码正确行为，CLAUDE.md 安全机制是兜底网
 
 本仓库每个插件提供两层指令：
