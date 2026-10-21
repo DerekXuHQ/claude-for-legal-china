@@ -1,88 +1,56 @@
 ---
 name: customize
 description: >
-  Guided customization of your law-student study profile — change one thing
-  without re-running the whole cold-start interview. Adjust current classes,
-  learning style, outline preferences, bar prep subjects, seed materials,
-  or study session cadence. Use when the user says "change my [thing]",
-  "add a class", "update my profile", "new semester", or "customize".
-argument-hint: "[section name, or describe what you want to change]"
+  引导式自定义你的法学学习画像——无需重新运行完整的新手导入访谈即可修改单项设置。
+  调整当前课程、学习风格、大纲偏好、法考备考科目、种子材料或学习节奏。
+  当用户说"修改我的[某项]""添加课程""更新我的画像""新学期""自定义"时使用。
+argument-hint: "[配置章节名称, 或描述你想修改的内容]"
 ---
 
 # /customize
 
-## When this runs
+## 何时运行
 
-The user typed `/law-student:customize`. They want to change something in
-their study profile — a class, a learning style preference, a bar prep
-subject — without re-running the whole cold-start interview and without
-hand-editing YAML.
+用户输入了 `/law-student:customize`。他们想修改学习画像中的某项内容——课程、学习风格偏好、法考备考科目——无需重新运行整个新手导入访谈，也无需手动编辑 YAML。
 
-## What to do
+## 做什么
 
-1. **Read the config.** Read
-   `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md`.
-   If the plugin config does not exist or still contains `[PLACEHOLDER]`
-   values, say:
+1. **读取配置。** 读取
+   `~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md`。
+   如果插件配置不存在或仍包含 `[PLACEHOLDER]` 值，说：
 
-   > You haven't run setup yet. Run `/law-student:cold-start-interview`
-   > first — customize is for adjusting a profile you already have.
+   > 你还没运行设置。先运行 `/law-student:cold-start-interview`
+   > ——自定义是用于调整你已有的画像。
 
-2. **Show the customizable map.** List what's in the profile, grouped, with a
-   one-line summary of the current value:
+2. **显示可自定义的配置地图。** 列出画像中的内容，分组，附当前值的一句话摘要：
 
-   - **Student profile** — name, school, year (1L/2L/3L/LLM), jurisdiction
-     for bar, enrolled clinics or journals
-   - **Current classes** — class name, professor, syllabus path, exam format
-     (closed/open book, essay/MBE/mixed), cold-call style
-   - **Learning style** — Socratic vs. summary, how much pushback you want,
-     whether the plugin rewrites your work or only critiques structurally
-   - **Outline preferences** — outline format (IRAC/CREAC/case-briefing
-     style), level of rule detail, whether to include policy discussion,
-     saved outline templates
-   - **Bar prep** — which exam (UBE/state), subjects in rotation, weak-
-     subject flagging, MBE vs. essay cadence
-   - **Seed materials** — casebook paths, prior outlines, graded essays, old
-     exams, MBE sets, syllabi, papers
-   - **Study workflow** — session length, flashcard Leitner bucket schedule,
-     exam forecast cadence, cold-call prep timing
-   - **Integrations** — document storage / flashcard app (if any) status,
-     fallbacks
+   - **学生画像** — 姓名、学校、年级（大一大二大三大四/法律硕士/法学硕士/法学博士）、法考报考地
+   - **当前课程** — 课程名称、授课教师、教学大纲路径、考试形式（闭卷/开卷、论述题/选择题/混合）、课堂互动风格
+   - **学习风格** — 追问训练型 vs 讲解引导型、你希望多大强度追问、插件是否代写还是仅作结构批评
+   - **大纲偏好** — 大纲格式（IRAC/CRAC/案例摘要风格）、规则详细程度、是否包含政策讨论、已保存的大纲模板
+   - **法考备考** — 考试阶段（客观题/主观题）、备考科目轮换、薄弱科目标记、客观题vs主观题练题节奏
+   - **种子材料** — 教材路径、既往大纲、有反馈的批改论文、历年考题、法考真题集、教学大纲、论文
+   - **学习工作流** — 练习时长、记忆卡片莱特纳盒调度、考点预测节奏、课堂提问准备时机
+   - **集成** — 文档存储/记忆卡片应用（如有）状态、降级方案
 
-3. **Ask what they want to change.**
+3. **询问想改什么。**
 
-   > What would you like to adjust? Pick a section, or describe the change in
-   > your own words.
+   > 你想调整什么？选一个配置章节，或用你自己的话描述修改内容。
 
-4. **Make the change.** Show the current value, ask for the new value, explain
-   what changes downstream, confirm, write it to the config.
+4. **执行修改。** 显示当前值，询问新值，解释对下游的影响，确认，写入配置。
 
-   Examples:
-   - *Adding a new class:* "`/outline-builder` will scaffold a new outline for this
-     class. `/flashcards` will add a new subject bucket. `/cold-call-prep`
-     will ask for a seat and a topic when you invoke it for this class."
-   - *Learning style Socratic → summary-first:* "`/socratic-drill` won't ask you to
-     answer first — it'll present the rule and example, then quiz you on
-     application."
-   - *Adding a bar subject:* "`/bar-prep-questions` will include this subject in
-     rotation and weight it higher if you mark it weak."
+   示例：
+   - *添加新课程：* "`/outline` 将为这门课搭建新的知识大纲。`/flashcards` 将添加新的科目记忆卡片桶。`/cold-call-prep` 在为这门课调用时会问你座位和主题。"
+   - *学习风格从讲解引导型改为追问训练型：* "`/drill` 不再先给你讲解——它会直接提问，让你先回答，然后再追问。"
+   - *添加法考备考科目：* "`/bar-prep` 将在轮换中纳入该科目，如果标记为薄弱则加大权重。"
 
-5. **Close.**
+5. **收尾。**
 
-   > Done. Your next output will reflect the change. Anything else? You can
-   > run `/law-student:customize` anytime.
+   > 完成。你的下一次输出将反映这次修改。还要改别的吗？随时可以运行 `/law-student:customize`。
 
-## Guardrails
+## 护栏
 
-- **Never delete a section.** If the user wants to "drop" a class, offer to
-  mark it `[Archived — retain seed materials]` and explain what flashcard
-  and outline behavior changes.
-- **Flag internal inconsistency.** If the change would make the profile
-  inconsistent (e.g., "summary-first" learning style + "maximum pushback"
-  Socratic setting), flag the tension.
-- **Flag guardrail degradation.** The "no rewriting your writing" rule on
-  `/legal-writing` and `/irac-practice` is load-bearing — the value of the skill is
-  structural feedback, not ghost-writing. If the user asks to turn that off,
-  confirm they understand that the plugin will not write their work for
-  them.
-- **One change at a time.** Don't re-ask the whole interview.
+- **绝不删除一个配置章节。** 如果用户想"删除"一门课程，提议将其标记为 `[Archived — retain seed materials]` 并解释记忆卡片和大纲行为的变化。
+- **标记内部不一致。** 如果修改会使画像内部不一致（例如"讲解引导型"学习风格 + "最大追问力度"的苏格拉底设置），指出矛盾。
+- **标记护栏降级。** `/write` 和 `/irac` 上的"不代写"规则是承重的——技能的价值在于结构性反馈，而非代笔。如果用户要求关闭该规则，确认他们理解插件不会替他们写作业。
+- **一次只改一项。** 不要重新问整个访谈。

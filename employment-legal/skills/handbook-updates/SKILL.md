@@ -1,107 +1,108 @@
 ---
 name: handbook-updates
 description: >
-  Diff a proposed handbook change against the current version, flag ripple
-  effects and state supplement impacts. Use when user says "update the
-  handbook", "add this to the handbook", "handbook change", or has a policy
-  ready for insertion.
+  将拟议的规章制度变更与现行版本进行diff对比，标记连锁影响
+  和省级补充条款影响。当用户说"更新规章制度"、"将此添加到规章制度"、
+  "规章制度变更"或有一项制度准备纳入时使用。
 ---
 
-# Handbook Updates
+# Handbook Updates（规章制度更新）
 
-## Matter context
+## 案件上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/employment-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**案件上下文。** 检查实务级 CLAUDE.md 中的 `## Matter workspaces`。如果 `Enabled` 为 `✗`（法务用户默认值），跳过本段——技能使用实务级上下文，案件机制不可见。如果已启用且无活跃案件，询问："这是哪个案件的？运行 `/employment-legal:matter-workspace switch <slug>` 或说 `practice-level`。" 加载活跃案件的 `matter.md` 获取案件特定上下文和覆盖项。将输出写入案件文件夹。除非 `Cross-matter context` 为 `on`，否则不得读取其他案件的文件。
 
 ---
 
-## Purpose
+## 目的
 
-Handbook changes have ripple effects. Change the PTO policy and you've affected the final pay calculation, the leave policy cross-reference, and three state supplements. This skill finds the ripples before they become inconsistencies.
+规章制度变更具有连锁影响。修改考勤制度，你就影响了加班费计算引述、假期制度的交叉引用和三份省级补充条款。本技能在连锁反应变成不一致之前找到它们。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` → handbook location, state supplements list, update cadence.
+`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → 规章制度位置、省级补充条款列表、更新频率。
 
-## Workflow
+## 工作流
 
-### Step 1: Get the change
+### 步骤1：获取变更
 
-- What section is changing?
-- What's the new language?
-- Why? (Legal requirement, policy decision, cleanup)
+- 哪个章节在变更？
+- 新表述是什么？
+- 为什么？（法律要求、制度决策、清理）
 
-### Step 2: Diff against current
+### 步骤2：与现行版本 diff
 
-Read the current handbook section. Show the diff:
+读取现行规章制度相关章节。显示 diff：
 
 ```diff
-- [old language]
-+ [new language]
+- [旧表述]
++ [新表述]
 ```
 
-### Step 3: Find cross-references
+### 步骤3：查找交叉引用
 
-Search the handbook for references to the changed section:
+在规章制度中搜索引用被变更章节的内容：
 
-- Other policies that cite this one ("see the PTO policy for accrual rates")
-- Defined terms that this section uses or defines
-- State supplements that modify this section
+- 引用本制度的其他制度（"关于年休假天数，见休假管理制度"）
+- 本章节使用或定义的术语
+- 修改本章节的省级补充条款
 
-Each cross-reference: does it still make sense after the change? Flag any that break.
+每个交叉引用：变更后是否仍然合理？标记任何断裂的引用。
 
-### Step 4: State supplement impact
+### 步骤4：省级补充条款影响
 
-For each state supplement in `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md`:
+对于 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` 中的每个省/直辖市补充条款：
 
-- Does this supplement modify the section being changed?
-- Does the change make the supplement obsolete, wrong, or incomplete?
-- Does the change create a need for a *new* supplement in a state that didn't need one before?
+- 该补充条款是否修改正在变更的章节？
+- 变更是否使补充条款过时、错误或不完整？
+- 变更是否对之前不需要补充的省/直辖市产生了新的补充需求？
 
-### Step 5: Promise check
+**《劳动合同法》第4条合规提醒。** 涉及劳动者切身利益的规章制度变更，须经职工代表大会或者全体职工讨论，提出方案和意见，与工会或者职工代表平等协商确定，并公示或告知劳动者。`[法条原文]`
 
-Is the change reducing something the old version promised?
+### 步骤5：承诺检查
 
-If yes: that's a risk. Some states treat handbook policies as contractual. Reducing a benefit may need more than just updating the document — advance notice, consideration, or in some cases it can't be done retroactively.
+变更是否减少了旧版本承诺的内容？
 
-Flag this. Don't block it — but flag it.
+如果是：存在风险。规章制度中的承诺可能在劳动争议中被司法机关引用。减少福利可能需要的不只是更新文件——事先通知、协商程序，且在部分地区不能溯及既往。
 
-## Output
+标记。不阻止——但标记。
+
+## 输出
 
 ```markdown
-## Handbook Update: [Section name]
+## 规章制度更新：[章节名称]
 
-### Change
+### 变更
 
 [diff]
 
-### Cross-reference impact
+### 交叉引用影响
 
-| Section | References changed section | Still accurate? | Fix needed |
+| 章节 | 引用被变更章节 | 仍然准确？ | 需要修复 |
 |---|---|---|---|
-| [name] | [how] | ✅/⚠️ | [what] |
+| [名称] | [如何引用] | ✅/⚠️ | [内容] |
 
-### State supplement impact
+### 省级补充条款影响
 
-| State | Current supplement | After change | Action |
+| 省/直辖市 | 现行补充 | 变更后 | 行动 |
 |---|---|---|---|
-| [state] | [what it says] | [still valid / obsolete / needs update] | [none / update / new supplement needed] |
+| [省/直辖市] | [内容] | [仍然有效 / 过时 / 需要更新] | [无 / 更新 / 需要新补充] |
 
-### Promise check
+### 承诺检查
 
-[If reducing a benefit: flag + jurisdictional risk note]
+[如果减少福利：标记 + 管辖地风险说明]
 
-### Ready to publish
+### 准备发布
 
-- [ ] Cross-references updated
-- [ ] State supplements updated
-- [ ] [If benefit reduction: notice/consideration addressed]
-- [ ] Version number and date updated
-- [ ] Acknowledgment process (if required)
+- [ ] 交叉引用已更新
+- [ ] 省级补充条款已更新
+- [ ] [如减少福利：通知/协商已处理]
+- [ ] 版本号和日期已更新
+- [ ] 民主程序和公示流程已完成（《劳动合同法》第4条 `[法条原文]`）
 ```
 
-## What this skill does not do
+## 本技能不做什么
 
-- Approve handbook changes. HR/legal leadership does.
-- Communicate changes to employees.
-- Track acknowledgments.
+- 批准规章制度变更。由 HR/法务负责人决策。
+- 向员工传达变更。
+- 追踪签收确认。

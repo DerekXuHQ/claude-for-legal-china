@@ -1,28 +1,26 @@
 ---
 name: cold-start-interview
 description: >
-  Run the cold-start interview — learns your privacy practice and writes CLAUDE.md
-  from your policy, DPA template, and a reference PIA. Use on first run, when
-  CLAUDE.md is missing or has placeholders, or when the user says "set up the
-  privacy plugin", "onboard me", "configure privacy", or wants to re-run the
-  interview or re-check integrations.
-argument-hint: "[--redo to re-run] [--check-integrations to re-probe integrations only]"
+  运行冷启动访谈——学习你的隐私实践并从你的处理规则、DPA模板和一份参考PIA写入
+  CLAUDE.md。在首次运行、CLAUDE.md缺失或有占位符、或用户说"设置隐私插件"
+  "引导我""配置隐私""，或想重新运行访谈或重新检查集成时使用。
+argument-hint: "[--redo 重新运行] [--check-integrations 仅重新探测集成]"
 ---
 
 # /cold-start-interview
 
-1. Check `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` — if populated and no `--redo`, confirm before overwriting.
-2. Run the interview workflow below.
-3. Seed docs: privacy policy (URL or file), DPA template, one reference PIA. Read all three.
-4. Extract: policy commitments, DPA positions (note deltas vs. stated), PIA structure.
-5. Migration: if a populated CLAUDE.md (no `[PLACEHOLDER]` markers) exists at `~/.claude/plugins/cache/claude-for-legal/privacy-legal/*/CLAUDE.md` but not at the config path, copy it to the config path and show the user what was migrated.
-6. Write `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` (create parent directories as needed). Show summary. Offer first task.
+1. 检查 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` — 如已填充且无 `--redo`，覆盖前先确认。
+2. 运行以下访谈工作流。
+3. 种子文档：个人信息处理规则（URL或文件）、DPA模板、一份参考PIA。全部读取。
+4. 抽取：处理规则承诺、DPA立场（标注与声明的差异）、PIA结构。
+5. 迁移：如果已填充的 CLAUDE.md（无 `[占位符]` 标记）存在于旧缓存路径但不在配置路径，复制到配置路径并向用户展示迁移了什么。
+6. 写入 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md`（按需创建父目录）。展示摘要。提供首次任务。
 
 ## `--check-integrations`
 
-Re-runs the integration availability check (document storage, Slack, scheduled-tasks) and updates `## Available integrations` in `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md`. Does not re-interview. Use when you connect or disconnect an MCP and want the plugin to notice without rerunning the full setup.
+重新运行集成可用性检查（文档存储、即时通讯、定时任务）并更新 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` 中的 `## 可用集成`。不重新访谈。当你连接或断开一个 MCP 并希望插件在不重新运行完整设置的情况下感知时使用。
 
-When probing: only report ✓ if an MCP tool call actually succeeded. Configured-but-untested connectors should be marked ⚪ with a one-line how-to for confirming. Never report ✓ based on `.mcp.json` declarations alone — that misleads users into thinking something is wired up when it isn't.
+探测时：仅在实际 MCP 工具调用成功时报告 ✓。已配置但未测试的连接器应标记为 ⚪ 并附一行确认方法。绝不基于单独的 `.mcp.json` 声明报告 ✓——这会误导用户以为某物已接通而实际没有。
 
 ```
 /privacy-legal:cold-start-interview
@@ -34,465 +32,450 @@ When probing: only report ✓ if an MCP tool call actually succeeded. Configured
 
 ---
 
-# Cold-Start Interview: Privacy & Data Protection
+# 冷启动访谈：隐私与数据保护
 
-## Purpose
+## 目的
 
-Learn how *this* privacy team works — what regulations actually apply to them, what they will and won't agree to in a DPA, what a good PIA looks like here versus anywhere else. Write it into `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` so every other skill reads from the same understanding.
+了解*这个*隐私团队如何工作——什么法规实际适用于他们，他们在 DPA 中愿意/不愿意接受什么，一份好的 PIA 在这里和别处有什么不同。写入 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md`，使每个其他技能从同一理解中读取。
 
-Privacy practices vary wildly by company. A B2B SaaS processor has almost nothing in common with a consumer app controller. The interview figures out which one this is before anything else.
+隐私实践因公司而异。一家 B2B SaaS 受托处理者与一家面向消费者的应用处理者几乎没有共同之处。访谈在任何其他事情之前搞清楚这是哪一种。
 
-## Cold-start check
+## 冷启动检查
 
-Read `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md`:
-- **Does not exist** → start the interview.
-- **Contains `<!-- SETUP PAUSED AT: -->`** → greet the user and offer to resume from that section.
-- **Contains `[PLACEHOLDER]` markers but no pause comment** → the template was never completed; offer to start fresh or resume from wherever the placeholders begin.
-- **Populated (no placeholders, no pause comment)** → already configured; skip unless `--redo`.
+读取 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md`：
+- **不存在** → 开始访谈。
+- **包含 `<!-- 设置暂停于：-->`** → 问候用户并提供从该节恢复。
+- **包含 `[占位符]` 标记但无暂停注释** → 模板从未完成；提供从头开始或从占位符起始处恢复。
+- **已填充（无占位符，无暂停注释）** → 已配置；跳过除非 `--redo`。
 
-The template structure lives at `${CLAUDE_PLUGIN_ROOT}/CLAUDE.md` — use it as the section scaffold. Write the completed practice profile to the config path, creating parent directories as needed.
+模板结构位于 `${CLAUDE_PLUGIN_ROOT}/CLAUDE.md`——用作章节支架。将完成的实践档案写入配置路径，按需创建父目录。
 
-If a CLAUDE.md exists at the old cache path `~/.claude/plugins/cache/claude-for-legal/privacy-legal/*/CLAUDE.md` but not at the config path, copy it forward.
+如果旧的缓存路径 `~/.claude/plugins/cache/claude-for-legal-zh/privacy-legal/*/CLAUDE.md` 中存在 CLAUDE.md 但不在配置路径，复制过来。
 
-## Check for the shared company profile
+## 检查共享的公司档案
 
-Look for `~/.claude/plugins/config/claude-for-legal/company-profile.md`.
+查找 `~/.claude/plugins/config/claude-for-legal-zh/company-profile.md`。
 
-- **If it exists:** Read it. Show a one-line confirmation: "You're [name], [practice setting], at [company], [industry], operating in [jurisdictions]. Right? (Or say 'update' to change the shared profile.)" If confirmed, skip the company questions — go straight to the plugin-specific ones.
-- **If it doesn't exist:** You'll be the first plugin this user set up. After the orientation and fork, ask the company questions and write them to the shared profile (per the template at `references/company-profile-template.md` in the plugin root), then continue with the plugin-specific questions. Tell the user: "I've saved your company profile — the other legal plugins will read it and skip these questions."
+- **如果存在：** 读取。显示一行确认："你是[姓名]，[执业环境]，在[公司]，[行业]，运营于[法域]。对吗？（或说'更新'以更改共享档案。）"如果确认，跳过公司问题——直接进入插件特定问题。
+- **如果不存在：** 你将是该用户设置的第一个插件。在定位和分叉之后，提问公司问题并将其写入共享档案（按插件根目录下 `references/company-profile-template.md` 的模板），然后继续插件特定问题。告诉用户："我已保存你的公司档案——其他法律插件将读取它并跳过这些问题。"
 
-The company questions that belong in the shared profile (and should NOT be re-asked if it exists): practice setting, company name, industry, what-you-sell, size, jurisdictions, regulators, risk appetite, escalation names. The plugin-specific questions (playbook positions, review framework, house style, supervision model, etc.) stay per-plugin.
+属于共享档案的公司问题（如果共享档案存在则不应再次提问）：执业环境、公司名称、行业、销售什么、规模、法域、监管机构、风险偏好、升级联系人名称。插件特定问题（操作手册立场、审查框架、内部规范、监督模式等）按插件单独保存。
 
-## Install scope check
+## 安装范围检查
 
-Before the orientation, if you notice the working directory is inside a project (not the user's home directory), flag it. Say once:
+在定位之前，如果你注意到工作目录在项目内部（而非用户主目录），标注。说一次：
 
-> **Heads up — it looks like this plugin may be project-scoped, which means I can only read files in [current directory]. If you'll want me to read documents from elsewhere (Downloads, Documents, Dropbox), install user-scoped instead — see QUICKSTART.md. You can continue with project scope, but you'll need to move files into this folder.**
+> **注意——看起来本插件可能是项目范围的，这意味着我只能读取[当前目录]中的文件。如果你希望我能从其他地方（下载、文档、网盘）读取文件，安装为用户范围——见 QUICKSTART.md。你可以继续使用项目范围，但需要将文件移动到此文件夹中。**
 
-Ask the user to confirm before proceeding: continue with project scope, or pause to reinstall user-scoped. If the working directory *is* the user's home directory, skip this check silently.
+请用户在继续前确认：以项目范围继续，或暂停以用户范围重装。如果工作目录*是*用户主目录，静默跳过此检查。
 
-## Before the interview starts
+## 访谈开始前
 
-Before asking anything else, show the fork-first preamble — 3-4 short lines, no longer:
+在提问任何其他事之前，显示分叉前导语——3-4短行，不过长：
 
-> **`privacy-legal` is for people who run the privacy program: PIAs, DPA reviews, DSAR responses, regulatory gap analysis.** Not your area? `/legal-builder-hub:related-skills-surfacer`.
+> **`privacy-legal` 是为运行个人信息保护计划的人准备的：个人信息保护影响评估、数据处理协议审查、个人信息主体权利请求回复、法规差距分析。** 不是你的领域？ `/legal-builder-hub:related-skills-surfacer`。
 >
-> **2 minutes** gets you your role, which side of a DPA you sit on (processor/controller/both), and primary jurisdictions, with sensible defaults everywhere else. **15 minutes** adds your DPA playbook positions (processor and controller side), your PIA template structure from a reference PIA, your full regulatory footprint, and your processing-activity seeds.
+> **2分钟** 给你你的角色、你在 DPA 中坐在哪一边（处理者/受托处理者/两者）和主要法域，其他用合理默认值。**15分钟** 加入你的 DPA 操作手册立场（处理者侧和受托处理者侧）、从一份参考 PIA 中获取的 PIA 模板结构、你的完整监管覆盖范围以及你的处理活动种子。
 >
-> Quick or full? (Upgrade any time with `/cold-start-interview --full`.)
+> 快速还是完整？（随时通过 `/cold-start-interview --full` 升级。）
 
-Wait for the user's pick before showing anything else.
+等待用户的选择再展示任何其他内容。
 
-<!-- COLLATERAL LINKS: when onboarding collateral exists, prepend a line above the preamble:
-     "Want a walkthrough first? [Watch the 3-minute intro](URL) or [read the getting-started guide](URL), then come back and run /cold-start-interview." -->
+## 用户选择快速或完整后
 
-## After the user picks quick or full
+用户选择后，在第一个访谈问题前引导他们：
 
-Once the user has chosen, orient them before the first interview question:
-
-> "This plugin maintains your practice profile (DPA playbook, PIA house style, regulatory footprint), a processing-activity register, and per-activity PIAs and DPA reviews. This setup interview learns how you actually work — your practice, your DPA positions, your PIA house style — and writes it into a plain-text file the plugin reads from every time. Everything you answer can be changed later. Once it's done, the plugin's commands will work the way you work, not the way a generic template does."
+> "本插件维护你的实践档案（DPA操作手册、PIA内部规范、监管覆盖范围）、处理活动登记册以及每项活动的 PIA 和 DPA 审查。本次设置访谈了解你实际如何工作——你的实践、你的DPA立场、你的PIA内部规范——并将其写入一份纯文本文件，插件每次从中读取。你回答的所有内容都可以以后更改。一旦完成，插件的命令将按你的工作方式工作，而非按通用模板的方式。"
 >
-> Then: "Setup builds a fresh professional profile from your answers. It does not read your personal Claude history, other conversations, or your home-directory CLAUDE.md. If I notice relevant information in our conversation context — e.g., you mentioned your company earlier — I'll ask before using it. Nothing personal gets folded into your practice configuration unless you type it or approve it."
+> 然后："设置从你的回答中构建全新的专业档案。它不会读取你的个人 Claude 历史、其他对话或你的主目录 CLAUDE.md。如果我注意到我们对话上下文中存在相关信息——例如你之前提到了你的公司——我会在使用前询问。除非你输入或批准，否则不会将任何个人信息纳入你的实践配置。"
 >
-> Then: "Ready? A few quick questions first, then we'll go deeper."
+> 然后："准备好了？先来几个快速问题，然后我们再深入。"
 
-**Why this matters.** Every command in this plugin reads from the configuration this interview writes. A generic configuration gives you generic output — a default DPA position, a default PIA format, a default DSAR workflow, and a review that treats your B2B processor agreement the same as a consumer-controller one. Telling the plugin your actual regulatory footprint, your actual DPA positions, and your actual PIA house style is what makes the difference between "a privacy AI tool" and "a tool that works the way your program works." The more specific your answers, the more the outputs will feel like yours.
+**为什么这很重要。** 本插件中的每个命令都从本次访谈写入的配置中读取。通用配置给出通用输出——默认的 DPA 立场、默认的 PIA 格式、默认的个人信息主体权利请求工作流，以及将你的 B2B 受托处理者协议与面向消费者的处理者协议同等对待的审查。告诉插件你实际的监管覆盖范围、你实际的 DPA 立场以及你实际的 PIA 内部规范，是"一个隐私 AI 工具"和"一个按你的个人信息保护计划方式工作的工具"之间的区别。你的回答越具体，输出看起来越像你自己写的。
 
-Populate the practice profile only from the user's typed answers and the three seed documents. Do not read `~/CLAUDE.md` or pull practice facts from ambient context. If something relevant is already visible in the conversation, ask before using it.
+仅从用户输入的回答和三份种子文件填充实践档案。不要读取 `~/CLAUDE.md` 或从环境上下文中拉取实践事实。如果对话中已经可见相关信息，在使用前询问。
 
-**Quick start path:** ask only Part 0 (role, practice setting, integrations) and regulatory footprint. Write the config with `[DEFAULT]` markers on everything else. Close with: "Done. You can start using the commands now. I've used sensible defaults for DPA positions, DSAR timing, and PIA thresholds. When a skill's output feels off, that's usually a default you should tune — it'll tell you which. Run `/privacy-legal:cold-start-interview --full` anytime to do the whole interview, or `/privacy-legal:cold-start-interview --redo <section>` to re-do one part."
+**快速启动路径：** 仅提问第0部分（角色、执业环境、集成）和监管覆盖范围。在其他所有内容上用 `[默认]` 标记写入配置。以以下内容结束："完成。你现在可以开始使用命令了。我已对 DPA 立场、个人信息主体权利请求时限和 PIA 阈值使用了合理默认值。当某技能的输出感觉不对劲时，通常是某个你应该调整的默认值——它会告诉你是哪一个。随时运行 `/privacy-legal:cold-start-interview --full` 以完成完整访谈，或 `/privacy-legal:cold-start-interview --redo <section>` 重做某一部分。"
 
-**Full setup path:** the existing interview flow below.
+**完整设置路径：** 以下现有访谈流。
 
-## Interview pacing
+## 访谈节奏
 
-- **Assume the answer exists somewhere.** When a question asks for information that's probably written down somewhere — company description, playbook, escalation matrix, style guide, handbook, jurisdiction list, matter portfolio — prompt for a link or a paste before asking the user to type it from memory. "Paste a link or a doc, or give me the short version" is the default ask for anything that's more than a sentence. An interviewer who makes people re-type what they've already written has failed the first job of an interviewer.
-- **Batch size — count subparts.** "Never ask more than 2-3 questions in one turn" means 2-3 *answerable prompts*, counting subparts. One question with 5 subparts is 5 questions. The test: can the user answer without scrolling? If the questions don't fit on one screen, it's too many. Prefer structured tap-through questions where possible — they don't require scrolling or typing.
+- **假设答案存在于某处。** 当问题询问的信息可能已被写下来——公司描述、操作手册、升级矩阵、风格指南、手册、法域列表、事项组合——在请用户凭记忆输入前，先提示粘贴链接或文件。"粘贴链接或文件，或给我简短版本"是任何超过一句话的默认询问。让用户重新输入已被写下来的内容的访谈者已经失败了访谈者的首要职责。
+- **批量大小——计算子问题。** "一次不要问超过2-3个问题"意味着2-3个*可回答的提示*，计算子问题。一个带5个子问题的问题是5个问题。测试：用户能不滚动就回答吗？如果问题放不下一屏，太多了。可能时优先使用结构化点击式问题——它们不需要滚动或输入。
 
-**Pause for real answers.** Some questions have quick tap-through answers (controller vs. processor, regulatory footprint). Others need the user to type something, describe something, or upload a document (privacy policy, DPA template, reference PIA, DPA negotiating positions, systems-list for DSARs). When a question needs more than a quick tap:
+**对真实回答暂停。** 有些问题有快速的点击式答案（处理者 vs. 受托处理者、监管覆盖范围）。其他问题需要用户输入、描述或上传文件（个人信息处理规则、DPA模板、参考PIA、DPA谈判立场、个人信息主体权利请求的系统清单）。当问题需要比快速点击更多时：
 
-- **Ask the question and wait.** Say explicitly: "This one needs a typed answer — I'll wait." Do not move to the next question until the user responds.
-- **For seed-document uploads:** "Paste the contents, share a file path or URL, or say 'skip for now.' If you skip, I'll flag the gap in your practice profile so you can fill it later." Then actually wait.
-- **Before writing the practice profile:** review the interview. List any questions that were skipped or answered with placeholders (especially the three seed docs and DPA positions). Say: "Before I write your practice profile, here's what's still open: [list]. Want to fill any of these now, or leave them as placeholders?" Then wait for the answer.
-- **Never** write a practice profile with silent gaps. Every `[PLACEHOLDER]` should be a deliberate choice the user made to skip, not a question that scrolled past. If the DPA template or reference PIA was skipped, note `[POSITIONS UNTESTED]` so downstream skills know.
-- **Pause and resume.** Tell the user up front: "If you need to stop, say 'pause' (or 'stop', or 'let me come back to this') and I'll save your progress. Run `/privacy-legal:cold-start-interview` again later and I'll pick up where you left off." When the user pauses, write a partial configuration to `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` with a `<!-- SETUP PAUSED AT: [section name] — run /privacy-legal:cold-start-interview to resume -->` comment at the top and `[PENDING]` markers (distinct from `[PLACEHOLDER]`) on unanswered fields. When setup re-runs and finds a paused config, greet the user: "Welcome back. You paused at [section]. Your earlier answers are saved. Pick up where we left off, or start over?" Do not re-ask questions already answered.
+- **提问并等待。** 明确说："这个问题需要输入——我会等待。"不要在用户响应前移至下一个问题。
+- **对于种子文件上传：** "粘贴内容、分享文件路径或 URL，或说'暂时跳过。'如果跳过，我会在你的实践档案中标注该缺口以便以后填补。"然后实际等待。
+- **在写入实践档案前：** 回顾访谈。列出任何被跳过或以占位符回答的问题（特别是三份种子文件和 DPA 立场）。说："在我写入你的实践档案之前，以下仍待处理：[列表]。想现在填补这些，还是保留为占位符？"然后等待回答。
+- **绝不**写出带有静默缺口的实践档案。每个 `[占位符]` 应是用户选择跳过的有意决定，而非滚过去的问题。如果 DPA 模板或参考 PIA 被跳过，标注 `[立场未测试]` 以使下游技能知道。
+- **暂停和恢复。** 预先告诉用户："如果你需要停止，说'暂停'（或'停'，或'让我回头再来'）我会保存你的进度。稍后再次运行 `/privacy-legal:cold-start-interview` 我会从你停下的地方继续。"当用户暂停时，向 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` 写入部分配置，并在顶部附 `<!-- 设置暂停于：[章节名称] — 运行 /privacy-legal:cold-start-interview 以恢复 -->` 注释，未填写的字段用 `[待处理]` 标记（区别于 `[占位符]`）。当设置重新运行并发现暂停的配置时，问候用户："欢迎回来。你暂停于[章节]。你此前的回答已保存。从停下的地方继续，还是从头开始？"不要重新提问已回答的问题。
 
-**Verify user-stated legal facts as they come up in setup.** When the user answers an interview question with a specific rule citation, statute number, case name, deadline, threshold, jurisdiction, or registration number — and it's something you can sanity-check — do the check before writing it into the configuration. If what they said conflicts with your understanding or with something they've pasted, surface it: "You said the threshold is X; my understanding is Y — can you confirm which goes in the profile? `[premise flagged — verify]`" A wrong fact written into CLAUDE.md propagates into every future output; catching it here is one of the highest-leverage moments in the product.
+**在设置过程中即时核实用户陈述的法律事实。** 当用户用具体规则引用、法条编号、案例名称、期限、阈值、法域或注册号回答访谈问题时——且是你可以做合理性检查的——在写进配置前进行检查。如果他们说的与你的理解或他们粘贴的某物冲突，呈现出来："你说阈值是X；我的理解是Y——能否确认哪个放入档案？`[前提已标注 — 请核实]`"一个被写进 CLAUDE.md 的错误事实会传播到每个未来的输出中；在此处捕捉它是产品的最高杠杆时刻之一。
 
-## The interview
+## 访谈
 
-### Opening
+### 开场
 
-> I'm going to help with DPAs, DSARs, PIAs, and keeping an eye on when the regs move under you. Before I do any of that, I need to know what kind of privacy shop this is. Ten minutes.
+> 我会帮助你处理 DPA、个人信息主体权利请求、个人信息保护影响评估，以及盯着法规是否在你踩的下面移动。在我做任何这些之前，我需要知道这是哪种隐私组织。十分钟。
 >
-> Then I'm going to ask you to show me three things: your privacy policy, your standard DPA, and one PIA you think is good. I'll learn more from those than from anything you tell me.
+> 然后我会请你向我展示三件东西：你的个人信息处理规则、你的标准 DPA，以及一份你认为好的 PIA。我从那些中学到的将多于你告诉我的任何东西。
 
-### Part 0: Who's using this, and what's connected
+### 第0部分：谁在使用这个，连接了什么
 
-Three quick questions before we get into privacy specifics. These shape how the plugin works, not what it can do.
+在进入隐私细节前的三个快速问题。这些塑造插件如何工作，而非它做什么。
 
-#### Who's using this?
+#### 谁在使用？
 
-> Who'll be using this plugin day to day? (This feeds every skill's work-product header and output framing — lawyer gets "ATTORNEY WORK PRODUCT," non-lawyer gets research framing and attorney-review checkpoints before legally consequential steps.)
+> 谁将日常使用本插件？（这送入每个技能的工作成果抬头和输出框架——律师得到"律师工作成果"，非律师得到研究框架和在有法律后果步骤前的律师审核检查点。）
 >
-> 1. **Lawyer or legal professional** — attorney, paralegal, privacy ops working under attorney oversight.
-> 2. **Non-lawyer with attorney access** — DPO-office non-lawyer, privacy program manager, founder handling privacy with an in-house or outside attorney you can consult.
-> 3. **Non-lawyer without regular attorney access** — you're handling this yourself.
+> 1. **律师或法律专业人士** — 律师、法务助理、在律师监督下工作的隐私运营人员。
+> 2. **有律师可访问的非律师** — 个人信息保护负责人办公室的非律师、隐私项目经理、有可咨询的在职或外部律师的创始人处理隐私事务。
+> 3. **无常规律师可访问的非律师** — 你自己处理这些事务。
 
-If the answer is 2 or 3, say this once (don't repeat it on every output):
+如果答案是 2 或 3，说一次（不在每个输出上重复）：
 
-> You can use every feature here — triage, DPA review, PIAs, DSAR responses, reg-gap analysis, policy monitoring. Two things change in how I work:
+> 你可以使用此处的每个功能——分诊、DPA审查、PIA、个人信息主体权利请求回复、法规差距分析、处理规则监控。我的工作方式有两处变化：
 >
-> 1. **I'll frame outputs as research for attorney review, not as verdicts.** Instead of "cleared to sign," you'll get "here's what I found and here are the questions to ask before you sign." That's more useful than a green light you can't be sure of.
-> 2. **I'll pause before steps that have legal consequences** — sending a DSAR response, signing a DPA, submitting a DPIA to a regulator, giving breach notification. I'll ask whether you've reviewed with an attorney, and I'll put together a short brief so the conversation with them is fast.
+> 1. **我会将输出框定为供律师审核的研究，而非裁决。** 替代"批准签署"，你将得到"这是我发现的内容，以及签署前应询问的问题。"这比一个你无法确定的绿灯更有用。
+> 2. **我会在有法律后果的步骤前暂停**——发送个人信息主体权利请求回复、签署DPA、向监管部门提交影响评估、进行个人信息泄露通知。我会问你是否已请律师审查过，我会整理一份简短摘要以便与他们的对话可以快速进行。
 >
-> This isn't a disclaimer. It's the plugin knowing the difference between what it's good at — research, organization, structure — and licensed legal judgment about your specific situation, which a tool can't give you. A few hours of a lawyer's time at the right moment is usually cheaper than the mistake.
+> 这不是免责声明。这是插件知道它擅长的（研究、组织、结构）与关于你具体情况的执业法律判断（这是工具无法给出的）之间的区别。律师在正确时刻的数小时时间通常比犯错便宜。
 
-If the answer is 3, add:
+如果答案是 3，补充：
 
-> If you need to find a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction: your professional regulator's referral service is the fastest starting point (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent). Many offer free or low-cost initial consultations. For small businesses, local law school clinics and SCORE mentors can point you in the right direction. For individuals, legal aid organizations cover many practice areas.
+> 如果你需要寻找执业律师或其他经授权的法律专业人士：通过你所在地区的律师协会或司法局的律师查询系统是最快的起点。许多地方律师协会提供免费或低成本的初步咨询。对小微企业，当地法律援助机构和创业导师可以为你指向正确的方向。对个人，法律援助组织覆盖许多实践领域。
 
-#### Practice setting
+#### 执业环境
 
-> Which of these best describes where you're practicing? (This feeds the escalation matrix every skill uses — in-house asks about GC/CPO routing, solo maps "escalate" to "consult outside counsel," clinic routes to supervising attorney.)
+> 以下哪项最能描述你的执业环境？（这送入每个技能使用的升级矩阵——法务关注GC/CPO路由，独立执业将"升级"映射为"咨询外部律师"，诊所路由至督导律师。）
 >
-> - **Solo / small firm (no hierarchy)** — I'll skip approval-chain questions and ask when you'd loop in a colleague or outside counsel instead.
-> - **Midsize / large firm** — I'll ask about your approval chain, billing thresholds, and who signs off above you.
-> - **In-house** — I'll ask about your escalation matrix, who the GC/CLO is, and when something goes to the business.
-> - **Government / legal aid / clinic** — I'll ask about supervision structure and any restrictions on your practice.
-> - **My practice doesn't fit any of these** — say so. I'll adapt.
+> - **独立执业 / 小所（无层级）** — 我会跳过审批链问题，改问何时你应协作同事或外部律师。
+> - **中大型律所** — 我会问你的审批链、计费阈值，以及谁在你之上签署。
+> - **法务（企业法务）** — 我会问你的升级矩阵、谁是GC/CLO，以及何时将事项移至业务侧。
+> - **政府 / 法律援助 / 诊所** — 我会问督导结构和对你执业的任何限制。
+> - **我的执业不适合以上任何一项** — 说出来。我会调整。
 
-**Practices that don't fit the boxes.** If the user's practice doesn't match the options above (international arbitration, public international law, amicus-only, academic consulting, pro bono panel, tribal court, military justice, maritime, or anything else the standard categories assume away), offer: "It sounds like your practice doesn't fit my usual categories. Tell me about it in your own words — what you do, who for, what jurisdictions and forums, what the work looks like — and I'll build your profile from that instead of forcing you into boxes that don't fit. I'll skip or adapt the questions that don't apply." Then build the profile from the free-form description, flagging which template fields were filled, adapted, or left empty because they don't apply. A profile built from a forced fit is worse than a sparse profile built from what's actually true.
+**不适合上述框框的执业。** 如果用户的执业与以上选项不匹配（国际仲裁、国际公法、仅法庭之友、学术咨询、公益律师、海事或其他标准类别默认忽略的），提供："听起来你的执业不适合我的常规类别。用你自己的话告诉我——你做什么、为谁、什么法域和论坛、工作什么样——我将从你的自由描述而非将你塞进不合适的框框中构建你的档案。我会跳过或调整不适用的问题。"然后从自由描述构建档案，标明哪些模板字段被填充、被调整或因不适用而留空。从强行适配构建的档案比从真实情况构建的稀疏档案更差。
 
-This reshapes the escalation section and some of the DPA-authority questions:
+这重塑升级章节和部分 DPA 权限问题：
 
-- **Solo / small firm (no hierarchy):** Skip internal escalation chain. In the escalation table, the "escalate to" column becomes outside counsel or "no further escalation." For DPA negotiation, replace "escalate to GC" with "consult outside counsel" where applicable.
-- **Midsize / large firm:** Ask about the approval chain, billing thresholds, and who signs off above the user — as currently designed.
-- **In-house:** Ask the full escalation matrix — who's the GC/CLO, DPO reporting line, when to loop in Security for a breach, when something goes to the business.
-- **Government / legal aid / clinic:** Route toward the supervision model — supervising attorney, review mechanics for DPIAs and DSAR responses, sign-off chain before external communication, and any restrictions on the user's practice.
+- **独立执业 / 小所（无层级）：** 跳过内部升级链。在升级表中，"升级至"列变为外部律师或"无进一步升级"。对于 DPA 谈判，视情况将"升级至GC"替换为"咨询外部律师"。
+- **中大型律所：** 询问审批链、计费阈值以及谁在用户之上签署——按现行设计。
+- **法务（企业法务）：** 询问完整的升级矩阵——谁是GC/CLO、个人信息保护负责人报告线、何时在数据安全事件中同步安全团队、何时将事项移至业务侧。
+- **政府 / 法律援助 / 诊所：** 路由至督导模式——督导律师、个人信息保护影响评估和个人信息主体权利请求回复的审核机制、外部沟通前的签署链以及对用户执业的任何限制。
 
-Record the answer in the practice profile's `## Who we are` section (as `**Practice setting:**`).
+将回答记录在实践档案的 `## 我们是谁` 节中（作为 `**执业环境：**`）。
 
-#### What's connected?
+#### 连接了什么？
 
-> This plugin can work with: document storage (Google Drive, SharePoint), Slack, and scheduled-tasks. Let me check which connectors you have configured — features that need them will work, and features that don't have them will fall back to manual gracefully instead of failing silently.
+> 本插件可以对接：文档存储（网盘、企业云盘）、即时通讯工具和定时任务。让我检查你已配置了哪些连接器——需要它们的功能可以工作，没有它们的功能将优雅降级为手动，而非静默失败。
 
-**Check what's actually connected, not what's configured.** A connector listed in `.mcp.json` is *available*. A connector that's actually responding is *connected*. These are different, and confusing them destroys trust. For each connector this plugin uses:
+**检查实际连接了什么，而非配置了什么。** 一个在 `.mcp.json` 中列出的连接器是*可用*的。一个实际在响应的连接器是*已连接*的。这是不同的，混淆它们摧毁信任。对本插件使用的每个连接器：
 
-- If you can test the connection (call a simple MCP tool like a list or search), report ✓ only on a successful response.
-- If you can't test (no way to probe from here), report ⚪ "configured but not verified — open your MCP settings to confirm" with a one-line how-to.
-- Never report ✓ based on configuration alone.
+- 如果你能测试连接（调用简单的 MCP 工具如列出或搜索），仅在成功响应时报告 ✓。
+- 如果你不能测试（无法从此处探测），报告 ⚪"已配置但未验证——打开你的MCP设置以确认"并附单一行的操作方法。
+- 绝不基于单独的配置报告 ✓。
 
-For connectors that show as not connected, tell the user how to connect. Example phrasing: "Box isn't connected. In Claude Cowork: Settings → Connectors → Add → Box → sign in. In Claude Code: add the Box MCP to your config or via `/mcp`. This plugin works without it — you'll paste documents instead of pulling them — but connecting it makes document pulls automatic."
+对于显示为未连接的连接器，告诉用户如何连接。示例措辞："网盘未连接。在 Claude Cowork：Settings → Connectors → Add → 网盘 → 登录。在 Claude Code：将网盘 MCP 添加到你的配置或通过 `/mcp`。本插件不依赖它即可工作——你将粘贴文件而非拉取——但连接它使文件拉取自动化。"
 
-Then report findings in this form:
+然后以此形式报告发现：
 
-> - ✓ [Integration] — connected (tested)
-> - ⚪ [Integration] — configured but not verified. Open your MCP settings to confirm.
-> - ✗ [Integration] — not found. [Feature] will fall back to [manual alternative]. [How to connect.] If you set this up later, re-run `/privacy-legal:cold-start-interview --check-integrations`.
+> - ✓ [集成] — 已连接（已测试）
+> - ⚪ [集成] — 已配置但未验证。打开你的MCP设置以确认。
+> - ✗ [集成] — 未找到。[功能]将降级为[手动替代]。[如何连接。]如果你以后设置了这个，重新运行 `/privacy-legal:cold-start-interview --check-integrations`。
 >
-> You don't need all of these. Core features work with file access alone.
+> 你不需要所有这些。核心功能仅靠文件访问即可工作。
 
-#### Record to CLAUDE.md
+#### 记录至 CLAUDE.md
 
-Write `## Who's using this` and `## Available integrations` sections immediately after `## Who we are`, and update `## Outputs` so the work-product header is conditional on role (see the practice profile template below).
+在 `## 我们是谁` 之后紧接着写入 `## 谁在使用` 和 `## 可用集成` 节，并更新 `## 输出` 使工作成果抬头以角色为条件（见下面的实践档案模板）。
 
-### Part 1: What kind of privacy shop is this? (2-3 min)
+### 第1部分：这是哪种隐私组织？（2-3分钟）
 
-**The business model question (this determines everything):**
+**业务模式问题（这决定一切）：**
 
-> **What does [your company] do?** This is the single most important context — a SaaS vendor's playbook, a hardware distributor's playbook, and a services firm's playbook are completely different. You don't have to type it out: paste a link to your company website, your "about" page, your Wikipedia article, or your latest 10-K, and I'll extract what I need. Or give me the one-sentence version: what you sell, to whom, and how (direct sales / channel / marketplace / subscription).
+> **[你的公司]做什么？** 这是唯一最重要的上下文——一家 SaaS 供应商的操作手册、一家硬件经销商的操作手册和一家服务公司的手册完全不同。你不必输入：粘贴你公司网站的链接、你的"关于"页面、你的百度百科条目或你最新的年报，我会抽取我需要的。或给我一句话版本：你销售什么、给谁、如何销售（直销 / 渠道 / 电商平台 / 订阅）。
 
-- Whose data flows through the company?
-- Are you mostly a **controller** (your own users, your own purposes) or mostly a **processor** (customers' data, their purposes)? Both? (This feeds `/dpa-review` — the skill auto-detects which side of the DPA you're on and applies the right half of your playbook.)
-- B2B, B2C, or both? Enterprise or SMB customers?
+- 谁的数据流经公司？
+- 你主要是**个人信息处理者**（你自己的用户、你自己的目的）还是主要是**受托处理者**（客户的数据、他们的目的）？两者？（这送入 `/dpa-review`——技能自动检测你在 DPA 的哪一边并应用你操作手册的正确半部分。）
+- B2B、B2C 还是两者？大企业客户还是中小企业客户？
 
-**Regulatory footprint:**
-- Which regulations actually apply? GDPR? CCPA/CPRA? HIPAA? FERPA? Sector-specific? (This feeds `/reg-gap-analysis` — every new reg gets diffed against this list to see if it reaches you, and `/use-case-triage` uses it to spot which regimes apply to a new processing activity.)
-- Any regulators who know you by name yet? Open inquiries, consent decrees, anything?
-- Where does the data physically live? US only? EU? Multi-region?
+**监管覆盖范围：**
+- 哪些法规实际适用？个保法？数据安全法？网络安全法？行业监管？（这送入 `/reg-gap-analysis`——每项新法规针对此列表做差异对比以判断是否涉及你，且 `/use-case-triage` 用它来识别哪些制度适用于新的处理活动。）
+- 是否有任何监管机关知道你名字了？公开调查、行政指导、什么？
+- 数据实际存放在哪里？仅在中国境内？有多区域部署？
 
-**The team:**
-- How many privacy people? Is there a DPO? In-house or outside?
-- "When a review finds something that needs someone more senior to sign off — a DPA position above your approval threshold, a DSAR with legal exemptions in play, a novel processing activity that doesn't fit the PIA template, a regulator inquiry, or a decision that's above your authority — who does that go to? Give me a name or a role (the GC, the CPO, your boss), or say 'I decide myself.' This is how the plugin knows when to say 'you can handle this' versus 'loop in [X].'"
+**团队：**
+- 隐私团队有多少人？是否有个人信息保护负责人？内部还是外部？
+- "当审查发现需要更高级别签署的事项——超出你批准阈值的 DPA 立场、涉及法律豁免的个人信息主体权利请求、不适合 PIA 模板的新型处理活动、监管调查，或超出你权限的决定——这些交给谁？告诉我一个名字或角色（GC、CPO、你的老板），或说'我自己决定。'这是插件知道何时说'你可以处理这个'还是'协同[X]'的方式。"
 
-### Part 2: DPA negotiating positions (3-4 min)
+### 第2部分：DPA 谈判立场（3-4分钟）
 
-*(These positions feed `/dpa-review` — every inbound DPA is redlined against your standards, fallbacks, and never-accepts. Wrong positions here = wrong redlines every time.)*
+*（这些立场送入 `/dpa-review`——每份进来的 DPA 针对你的标准、退让和绝不接受进行修订标记。此处错误的立场 = 每次错误的修订标记。）*
 
-Before the structured questions: "Do you have an existing DPA template, a DPA negotiation playbook, or a fallback-positions memo I can read? Paste the contents or share a file path, and I'll extract the positions rather than making you re-type them. If not, say 'no' and I'll ask the questions one at a time."
+在结构化问题前："你有现有的DPA模板、DPA谈判操作手册或退让立场备忘录我可以阅读吗？粘贴内容或分享文件路径，我会提取立场而非让你重新输入。如果没有，说'没有'我一个个问问题。"
 
-If the user uploads: read it, extract the positions, confirm what you found, and skip the corresponding detailed questions.
+如果用户上传：读取、提取立场、确认你找到的内容，并跳过相应的详细问题。
 
-**If the user didn't upload a DPA playbook:** at the end of this section, offer: "Want me to write this up as a standalone DPA playbook you can share and maintain? Same content I just captured for your practice profile, formatted as a team-facing doc you can circulate or hand to a new privacy hire."
+**如果用户未上传 DPA 操作手册：** 在本节结束时，提供："需要我把这写为你可以分享和维护的独立 DPA 操作手册吗？和刚才我为你的实践档案捕获的相同内容，格式化为你可以传阅或交给新隐私员工的团队面文件。"
 
+这是技能赚取功力的地方——大多数隐私团队有 DPA 立场但很少写下来。
 
-This is where the skill earns its keep — most privacy teams have DPA positions but rarely write them down.
+**当你是受托处理者时（客户向你发送DPA）：**
+- 你有推给客户的标准 DPA，还是接受客户版本？
+- 审计权：提供等级保护 / ISO 27001 认证报告，对吗？还是你接受现场审计？
+- 个人信息泄露通知：你同意过的最短时限是多久？
+- 下游处理者批准：仅通知，还是客户有否决权？
+- 数据位置承诺：你能承诺某个区域，还是"数据在哪取决于云服务商部署"？
+- 合同终止后删除：多少天，你提供删除证明吗？
 
-**When you're the processor (customers send you a DPA):**
-- Do you have a standard DPA you push, or do you take customer paper?
-- Audit rights: SOC 2 report is the offer, right? Or do you accept on-site?
-- Breach notification: what's the shortest window you've agreed to?
-- Subprocessor approval: notification only, or does the customer get a veto?
-- Data location commitments: can you commit to a region, or is it "wherever AWS puts it"?
-- Deletion on termination: how many days, and do you certify?
+**当你是处理者时（你向供应商发送DPA）：**
+- 相同问题，相反极性。你*要求*供应商提供什么？
 
-**When you're the controller (you send a DPA to vendors):**
-- Same questions, opposite polarity. What do you *require* from vendors?
+**DPA 中让你直接说不的那一项：**
+- 哪一条是自动拒绝的？
 
-**The one thing in a DPA that makes you say no:**
-- What's the term that's an automatic reject?
+### 第3部分：内部规范（1-2分钟）
 
-### Part 3: House style (1-2 min)
+**PIA：** *（这送入 `/pia-generation`——技能将你的触发条件、格式、深度和审批人作为它起草每份PIA的默认模板。）*
+- 什么在你公司触发 PIA？每个新功能？还是仅某些类别（个保法第55条所列情形）？
+- 一份好的 PIA 多长——两页还是二十页？
+- 谁签署——仅你，还是有审核委员会？
 
-**PIAs:** *(This feeds `/pia-generation` — the skill uses your trigger, format, depth, and sign-off as the default template for every PIA it drafts.)*
-- What triggers a PIA at your company? Every new feature? Only certain categories?
-- How long is a good PIA — two pages or twenty?
-- Who signs off — just you, or is there a review committee?
+**个人信息主体权利请求：** *（这送入 `/dsar-response`——系统清单驱动定位步骤，处理人驱动谁拿操作手册，SLA驱动期限计算。）*
+- 量级——一个月一件还是一百件？
+- 谁处理——你，还是一个有操作手册的支持团队？
+- 个人信息主体权利请求涉及多少系统——用户数据存在多少地方？
 
-**DSARs:** *(This feeds `/dsar-response` — the systems list drives the locate step, the handler drives who gets the runbook, the SLA drives deadline calculations.)*
-- Volume — one a month or a hundred?
-- Who handles them — you, or a support team with a runbook?
-- What systems does a DSAR touch — how many places does user data live?
+### 第4部分：种子文档（3-4分钟）
 
-### Part 4: Seed documents (3-4 min)
-
-> I want to see three things. They'll tell me how you actually work.
+> 我想看到三件东西。它们将告诉我你实际如何工作。
 >
-> 1. **Your current privacy policy.** The public one. I'll read it to understand what you've committed to — every PIA and DPA has to be consistent with it.
+> 1. **你当前的个人信息处理规则。** 公开发布的那份。我会阅读它以了解你已承诺了什么——每份PIA和DPA都必须与它一致。
 >
-> 2. **Your standard DPA template.** The one you push on customers (or vendors). This is your stated playbook — I'll compare it to what you told me.
+> 2. **你的标准 DPA 模板。** 你推给客户（或供应商）的那份。这是你已声明的操作手册——我会与你告诉我的对照。
 >
-> 3. **One PIA you're happy with.** Not a perfect one — a *representative* one. I'll learn your structure, your tone, how deep you go, what you skip.
+> 3. **一份你满意的 PIA。** 不是一份完美的——一份*有代表性*的。我会学习你的结构、你的语气、你挖掘多深、你跳过什么。
 
-**How to read the seed docs:**
+**如何读取种子文档：**
 
-**Privacy policy:** Extract every commitment. Data categories collected, purposes, retention, third parties, user rights. These are promises the PIA skill needs to check against.
+**个人信息处理规则：** 提取每项承诺。收集的数据类别、目的、保留期限、第三方、用户权利。这些是 PIA 技能需要对照的承诺。
 
-**DPA template:** Map every term to the interview answers. Deltas are interesting — "you said 72-hour breach notification but your template says 'without undue delay' — which is the real position?"
+**DPA 模板：** 将每一条款映射至访谈回答。差异是有趣的——"你说72小时泄露通知但你的模板说'及时'——真实的立场是哪个？"
 
-**PIA:** Extract the structure as a template. Section headings, depth of analysis, format of risk statements. This becomes the default output format for the pia-generation skill.
+**PIA：** 将结构提取为模板。章节标题、分析深度、风险陈述格式。这成为 pia-generation 技能的默认输出格式。
 
-### Part 5: Outputs and policy document location (1 min)
+### 第5部分：输出和处理规则文件位置（1分钟）
 
-> "Two last things — I need to know where to look to keep your policy current."
+> "最后两件事——我需要知道去哪里看才能保持你的处理规则最新。"
 
-- **Where do you save completed PIAs, DPA reviews, and triage results?** A folder path
-  or shared drive location. This is where the policy-monitor skill will crawl to detect
-  when your practice has drifted ahead of your written policy. (This feeds `/policy-monitor` — without this path, the drift sweep only runs in direct-query mode.)
-- **Where is the actual privacy policy document?** The one that gets published or shared
-  with customers. I'll need to read it to suggest edits when drift is found.
-- **Is there a naming convention for output files?** (e.g., `PIA_FeatureName_YYYY-MM-DD`)
-  or is it ad hoc?
+- **你把已完成的 PIA、DPA审查和分诊结果保存在哪里？** 一个文件夹路径或共享盘位置。这是处理规则监控技能扫描的地方，以检测你的实践何时已漂移到书面处理规则之前。（这送入 `/policy-monitor`——没有此路径，漂移扫描仅在直接查询模式下运行。）
+- **实际的处理规则文件在哪里？** 被发布或分享给客户的那份。当发现漂移时我需要读取它以建议编辑。
+- **输出文件有命名规范吗？**（如 `PIA_功能名称_YYYY-MM-DD`）还是临时性的？
 
-If outputs aren't saved anywhere yet:
-> "That's fine — the policy-monitor skill will still work in direct-query mode
-> ('we want to start doing X, does our policy cover it?'). The crawl sweep just
-> won't have anything to scan until you start saving outputs."
+如果尚未在任何地方保存输出：
+> "没关系——处理规则监控技能仍将以直接查询模式工作（'我们想开始做X，我们的处理规则覆盖它吗？'）。自动扫描只是在你开始保存输出之前没有内容可扫描。"
 
-## Writing the practice profile
+## 写入实践档案
 
 ```markdown
-# Privacy & Data Protection Practice Profile
+# 隐私与数据保护实践档案
 
-*Written by the cold-start interview on [DATE]. Edit this file directly.*
-
----
-
-## Who we are
-
-[Company] is a [B2B SaaS / consumer app / platform / etc.]. We are primarily a
-[controller / processor / both] with respect to [whose data]. Data lives in
-[regions]. Privacy team is [N] people. [DPO name or "no formal DPO"]. Escalation
-goes to [GC / CPO / name].
-
-**Regulatory footprint:** [GDPR / CCPA / HIPAA / etc. — only list what applies]
-
-**Open regulatory matters:** [none / list]
+*由冷启动访谈撰写于[日期]。直接编辑此文件。*
 
 ---
 
-## Who's using this
+## 我们是谁
 
-**Role:** [Lawyer / legal professional | Non-lawyer with attorney access | Non-lawyer without attorney access]
-**Attorney contact:** [Name / team / outside firm / N/A — fill in if non-lawyer]
+[公司]是一家[B2B SaaS / 面向消费者的应用 / 平台 / 等]。我们相对[谁的数据]而言主要是[处理者 / 受托处理者 / 两者]。数据存放于[区域]。隐私团队[N]人。[个人信息保护负责人姓名或"无正式个人信息保护负责人"]。升级至[GC / CPO / 姓名]。
+
+**监管覆盖范围：** [个保法 / 数据安全法 / 网络安全法 / 等——仅列出实际适用的]
+
+**公开监管事项：** [无 / 列出]
 
 ---
 
-## Available integrations
+## 谁在使用
 
-| Integration | Status | Fallback if unavailable |
+**角色：** [律师 / 法律专业人士 | 有律师可访问的非律师 | 无常规律师可访问的非律师]
+**律师联系人：** [姓名 / 团队 / 外部律所 / 不适用——如为非律师则填写]
+
+---
+
+## 可用集成
+
+| 集成 | 状态 | 不可用时的替代 |
 |---|---|---|
-| Document storage (Drive / SharePoint) | [✓ / ✗] | Outputs saved locally; policy-monitor sweep runs in direct-query mode only |
-| Slack | [✓ / ✗] | Breach / triage notifications delivered inline instead of posted |
-| Scheduled tasks | [✓ / ✗] | Policy-monitor sweep runs on demand only |
+| 文档存储（网盘 / 企业云盘） | [✓ / ✗] | 输出保存至本地；处理规则监控扫描仅在直接查询模式下运行 |
+| 即时通讯 | [✓ / ✗] | 个人信息泄露/分诊通知以行内方式递送，非推送 |
+| 定时任务 | [✓ / ✗] | 处理规则监控扫描仅按需运行 |
 
-*Re-check: `/privacy-legal:cold-start-interview --check-integrations`*
+*重新检查：`/privacy-legal:cold-start-interview --check-integrations`*
 
 ---
 
-## DPA playbook
+## DPA 操作手册
 
-### When we are the processor (customer DPAs)
+### 当我们是受托处理者时（客户DPA）
 
-| Term | Our standard | Fallback | Never |
+| 条款 | 我们的标准 | 退让 | 绝不 |
 |---|---|---|---|
-| Audit rights | [e.g., SOC 2 Type II annual] | [e.g., virtual audit on 60 days' notice] | [on-site without notice] |
-| Breach notification | [e.g., team's standard window from discovery] | [e.g., team's acceptable fallback] | [windows tighter than the team can meet] |
-| Subprocessor changes | [e.g., advance notice, customer may object] | [notice only] | [approval required per subprocessor] |
-| Data location | [e.g., US + EU selectable] | [follows customer region] | [hard commitment to single DC] |
-| Deletion on termination | [e.g., standard days post-termination, certification on request] | [longer window] | [immediate] |
-| Liability for data | [e.g., within the MSA cap] | [separate capped carveout] | [uncapped] |
+| 审计权 | [如：年度等级保护/ISO 27001认证] | [如：提前60天通知的远程审计] | [无通知现场审计] |
+| 泄露通知 | [如：团队从发现起算的标准时限] | [如：团队可接受的退让时限] | [短于团队能实现的时限] |
+| 下游处理者变更 | [如：事先通知，客户可反对] | [仅通知] | [按单个下游处理者审批] |
+| 数据位置 | [如：中国境内] | [跟随客户区域] | [硬性承诺单一数据中心] |
+| 合同终止后删除 | [如：终止后标准天数，按请求提供删除证明] | [更长时限] | [立即] |
+| 数据责任 | [如：在主合同责任上限内] | [设定独立上限] | [无上限] |
 
-> *From the DPA template:* [any deltas between template and stated positions]
+> *来自 DPA 模板：* [模板与声明立场之间的任何差异]
 
-### When we are the controller (vendor DPAs)
+### 当我们是处理者时（供应商DPA）
 
-| Term | We require | Acceptable | Never accept |
+| 条款 | 我们要求 | 可接受 | 绝不接受 |
 |---|---|---|---|
-| [Term] | [what we require] | [what we'll accept] | [what we won't accept] |
+| [条款] | [我们要求] | [我们可接受] | [我们绝不接受] |
 
-### The one thing
+### 那一样自动拒绝的
 
-[DPA term that's an automatic no]
-
----
-
-## Privacy policy commitments
-
-*Extracted from [URL / filename] on [date]. If the policy changes, re-run setup
-or edit this section.*
-
-**Data categories we say we collect:** [list]
-**Purposes we state:** [list]
-**Retention commitments:** [what the policy says]
-**Third-party disclosures we name:** [list]
-**User rights we offer:** [access / delete / port / correct / etc.]
+[DPA 中那一条让你自动说不的]
 
 ---
 
-## PIA house style
+## 个人信息处理规则承诺
 
-**Trigger:** [what requires a PIA — new data collection, new vendor, etc.]
-**Format:** [structure extracted from the seed PIA]
-**Depth:** [typical length / detail level]
-**Sign-off:** [who approves]
+*抽取自[URL / 文件名]，于[日期]。如处理规则有变，重新运行设置或编辑本节。*
 
-**Template structure (from seed PIA):**
-[section headings and rough content of each]
-
----
-
-## DSAR process
-
-**Volume:** [rough monthly count]
-**Handler:** [privacy team / support team / automated]
-**Systems to check:** [list of every place user data lives — prod DB, analytics, support tickets, backups, etc.]
-**Identity verification method:** [how you confirm the requester is the data subject]
-**Response SLA:** [internal SLA target — research the applicable regulatory deadline(s) for each regime in the footprint and cite primary sources before committing]
+**我们声明收集的数据类别：** [列出]
+**我们声明的目的：** [列出]
+**保留承诺：** [处理规则怎么说的]
+**我们列出的第三方分享：** [列出]
+**我们提供的用户权利：** [查阅 / 删除 / 更正 / 复制 / 解释说明 / 等]
 
 ---
 
-## Escalation
+## PIA 内部规范
 
-| Issue type | Handle at | Escalate to | When |
+**触发条件：** [什么需要PIA——新数据收集、新供应商、新处理目的等]
+**格式：** [从种子PIA抽取的结构]
+**深度：** [典型长度 / 详细程度]
+**审批人：** [谁批准]
+
+**模板结构（来自种子PIA）：**
+[章节标题及各节大致内容]
+
+---
+
+## 个人信息主体权利请求流程
+
+**量级：** [大约月度件数]
+**处理人：** [隐私团队 / 客服团队 / 自动化]
+**需检查的系统：** [每个用户数据存放位置——生产数据库、分析系统、客服工单、备份等]
+**身份验证方式：** [你如何确认请求人是个人信息主体本人]
+**回复SLA：** [内部SLA目标——在承诺前检索覆盖范围内每个适用制度的法定回复期限并引用主源]
+
+---
+
+## 升级
+
+| 问题类型 | 处理层级 | 升级至 | 何时 |
 |---|---|---|---|
-| Routine DSAR | [handler] | [you] | Unusual scope, litigation hold, potential dispute |
-| Customer DPA negotiation | [you] | [GC] | Outside fallbacks above |
-| PIA for high-risk processing | [you + review committee?] | [GC / DPO] | Biometric, children, automated decisions |
-| Regulator contact | — | [GC + you immediately] | Always |
-| Suspected breach | — | [Security + you + GC immediately] | Always |
+| 常规个人信息主体权利请求 | [处理人] | [你] | 异常范围、诉讼保全、潜在争议 |
+| 客户DPA谈判 | [你] | [GC] | 超出上述退让立场 |
+| 高风险处理活动的PIA | [你 + 审核委员会？] | [GC / 个人信息保护负责人] | 敏感个人信息、未成年人、自动化决策 |
+| 监管机关联系 | — | [GC + 你立即] | 总是 |
+| 疑似个人信息泄露 | — | [安全 + 你 + GC立即] | 总是 |
 
 ---
 
-## Seed documents
+## 种子文档
 
-| Doc | Location | Date reviewed | Notes |
+| 文档 | 位置 | 审阅日期 | 备注 |
 |---|---|---|---|
-| Privacy policy | [URL] | [date] | [version] |
-| DPA template | [path/link] | [date] | |
-| Reference PIA | [path/link] | [date] | "[name of product/feature it was for]" |
+| 个人信息处理规则 | [URL] | [日期] | [版本] |
+| DPA 模板 | [路径/链接] | [日期] | |
+| 参考 PIA | [路径/链接] | [日期] | "[该PIA针对的产品/功能名称]" |
 
 ---
 
-## Outputs
+## 输出
 
-**Outputs folder:** [path where completed PIAs, DPA reviews, and triage results are saved]
-**Naming convention:** [file naming pattern, or "ad hoc"]
-**Privacy policy document:** [path or URL to the actual published privacy policy]
-**Policy last updated:** [date]
-**Last policy sweep:** [date of last policy-monitor crawl — updated automatically]
+**输出文件夹：** [已完成的PIA、DPA审查和分诊结果保存的路径]
+**命名规范：** [文件命名模式，或"临时性"]
+**个人信息处理规则文件：** [实际发布的处理规则文件的路径或URL]
+**处理规则最后更新：** [日期]
+**上次处理规则扫描：** [上次处理规则监控扫描的日期——自动更新]
 
-**Work-product header** (prepended to DPA reviews, PIAs, reg-gap analyses, policy-monitor sweeps, and triage outputs):
+**工作成果抬头**（冠于DPA审查、PIA、法规差距分析、处理规则监控扫描和分诊输出）：
 
-- If Role is Lawyer / legal professional: `PRIVILEGED & CONFIDENTIAL — ATTORNEY WORK PRODUCT — PREPARED AT THE DIRECTION OF COUNSEL`
-- If Role is Non-lawyer: `RESEARCH NOTES — NOT LEGAL ADVICE — REVIEW WITH A LICENSED ATTORNEY BEFORE ACTING`
+- 如角色为律师/法律专业人士：`保密 — 律师工作成果 — 应律师指示编制`
+- 如角色为非律师：`研究笔记 — 非法律建议 — 在行动前请与执业律师一起审阅`
 
-For externally-facing deliverables (DSAR response letters, regulator responses, client communications) the header is omitted — see the specific skill's instructions. Confirm the correct marking for your jurisdiction and matter before sending.
+对外发送文件（个人信息主体权利请求回复函、监管机关回复、客户通信）省略抬头——见具体技能说明。在发送前确认适用于你法域和事项的正确标记。
 
 ---
 
-*Re-run: `/privacy-legal:cold-start-interview --redo`*
+*重新运行：`/privacy-legal:cold-start-interview --redo`*
 ```
 
-## After writing
+## 写入之后
 
-**Show what this plugin can do.** Before closing, offer:
+**展示本插件能做什么。** 在结束前，提供：
 
-> **Want to see what I can help with?**
+> **想看看我能帮忙做什么吗？**
 
-If yes, show this tailored list (not a generic template — these are the concrete things this plugin does best):
+如果好，展示此定制列表（非通用模板——这些是此插件做得最好的具体事项）：
 
-> **Here's what I'm good at in privacy practice:**
+> **以下是隐私实践中我擅长的事：**
 >
-> - **Review a DPA against your playbook** — e.g., "Auto-detects processor vs. controller; flags deviations from your positions." Try: `/privacy-legal:dpa-review`
-> - **Triage a processing activity** — e.g., "PIA, mandatory GDPR DPIA, or proceed — with privacy-policy conflict surfaces." Try: `/privacy-legal:use-case-triage`
-> - **Generate a PIA in house format** — e.g., "Structured intake, risk analysis, regulatory classification, recommendation." Try: `/privacy-legal:pia-generation`
-> - **Walk through a DSAR** — e.g., "Verify, locate, assess exemptions, draft the response letter." Try: `/privacy-legal:dsar-response`
-> - **Diff a new regulation against your policy** — e.g., "Outputs the gap list and a remediation plan with owners and deadlines." Try: `/privacy-legal:reg-gap-analysis`
-> - **Sweep for policy drift** — e.g., "Look across saved PIAs, DPA reviews, and triage results to find where the privacy policy no longer matches practice." Try: `/privacy-legal:policy-monitor`
+> - **依据你的操作手册审查 DPA** — 如"自动检测受托处理者 vs. 处理者；标示偏离你立场的地方。"试试：`/privacy-legal:dpa-review`
+> - **对处理活动分诊** — 如"PIA、个保法第55条法定评估、或可直接推进——附带处理规则冲突排查。"试试：`/privacy-legal:use-case-triage`
+> - **按内部格式生成 PIA** — 如"结构化录入、风险分析、制度分类、建议。"试试：`/privacy-legal:pia-generation`
+> - **处理个人信息主体权利请求** — 如"验证、定位、评估豁免、起草回复函。"试试：`/privacy-legal:dsar-response`
+> - **将新法规与你的处理规则做差异对比** — 如"输出差距清单和带负责人与截止日期的整改计划。"试试：`/privacy-legal:reg-gap-analysis`
+> - **扫描处理规则漂移** — 如"遍历已保存的PIA、DPA审查和分诊结果，找到处理规则不再匹配实践的地方。"试试：`/privacy-legal:policy-monitor`
 >
-> **My suggestion for your first one:** Run `/use-case-triage` on one real processing activity — it's the fastest way to see whether your playbook is capturing the right cuts. Or tell me what's on your plate and I'll pick.
+> **我对你的第一个建议：** 对一个真实的处理活动运行 `/use-case-triage`——这是最快看到你的操作手册是否捕捉到正确判断的方法。或告诉我你手头在做什么，我来选。
 
-This solves the cold-start problem (the supervisor doesn't know what to do first) and the value-prop problem (they don't know what the plugin can do) in one offer. Make the list specific. Skip this step if the supervisor already named a concrete first task during the interview.
+这在一个提议中解决了冷启动问题（监工不知道先做什么）和价值主张问题（他们不知道插件能做什么）。让列表具体。如果监工在访谈期间已经指定了具体的首个任务，跳过这步。
 
+1. **展示摘要。** "以下是我听到的。DPA 操作手册是最需要仔细检查的部分——我把你的立场搞对了吗？"
 
-1. **Show the summary.** "Here's what I heard. The DPA playbook is the part to check hardest — did I get your positions right?"
+2. **检索连接器提示。** 说：
 
-2. **Research connector prompt.** Say:
+   > "在你的第一次 DPA 审查或 PIA 之前：连接一个检索工具。没有它，我会将每处引用标记为未验证——有了它，我对照现行数据库验证它们。在 Cowork：Settings → Connectors。在 Claude Code：当技能提示你时授权。"
 
-   > "Before your first DPA review or PIA: connect a research tool. Without one, I'll flag every citation as unverified — with one, I verify them against a current database. In Cowork: Settings → Connectors. In Claude Code: authorize when a skill prompts you."
+3. **提议首次任务：**
+   - "需要我将你的处理规则与你实际的数据收集做一下差异对比吗？这些有时会漂移。"
+   - "队列里有客户 DPA 我可以试着处理的吗？"
+   - 如果个人信息主体权利请求量大："需要我从你的系统清单构建一份个人信息主体权利请求回复模板吗？"
 
-3. **Propose first tasks:**
-   - "Want me to diff your privacy policy against your actual data collection? Sometimes those drift."
-   - "Got a customer DPA in the queue I can take a crack at?"
-   - If DSAR volume is high: "Want a DSAR response template built from your systems list?"
+4. **标示缺口：** 如果他们无法提供 DPA 模板或参考 PIA，标注："你在没有标准 DPA 的情况下运行——第一次客户要求时，你将从零开始谈判。需要起草一份吗？"
 
-4. **Flag gaps:** If they couldn't produce a DPA template or a reference PIA, note it: "You're running without a standard DPA — first time a customer asks, you'll be negotiating from scratch. Want to draft one?"
+5. **以"你可以以后更改任何东西"的提示结束：**
 
-5. **Close with the "you can change anything later" note:**
-
-   > "Your practice profile is at `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` — a plain text file you can read and edit directly. Anything you answered can be changed:
+   > "你的实践档案位于 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md`——一份你可以直接阅读和编辑的纯文本文件。你回答的任何内容都可以更改：
    >
-   > - Edit the file directly for a quick change
-   > - Run `/privacy-legal:cold-start-interview --redo` for a full re-interview
-   > - Run `/privacy-legal:cold-start-interview --check-integrations` to re-check what's connected
+   > - 直接编辑文件进行快速更改
+   > - 运行 `/privacy-legal:cold-start-interview --redo` 进行完整重新访谈
+   > - 运行 `/privacy-legal:cold-start-interview --check-integrations` 重新检查连接了什么
    >
-   > The three sections people adjust most: the **DPA playbook** (as you negotiate more and harden positions), the **regulatory footprint** (as the company enters new markets), and the **DSAR response timing and systems list** (as the data landscape changes)."
+   > 人们最常调整的三个章节：**DPA 操作手册**（随着你谈判更多并硬化立场）、**监管覆盖范围**（随着公司进入新市场）和**个人信息主体权利请求回复时限与系统清单**（随着数据版图变化）。"
 
-6. **Your practice profile learns.** End with this note:
+6. **你的实践档案会学习。** 以此提示结束：
 
-   > **Your practice profile learns.** It gets better as you use the plugins:
+   > **你的实践档案会学习。** 它随着你使用插件逐步改善：
    >
-   > - When a skill's output feels off, that's usually a position to tune. The output will tell you which one.
-   > - The `policy-monitor` skill watches for drift between your privacy policy and how you actually practice. When it finds drift, it'll propose edits to match reality.
-   > - You can always say "update my playbook to prefer X" or "change my escalation threshold to Y" and the relevant skill will write the change.
-   > - Run `/privacy-legal:cold-start-interview --redo <section>` to re-interview one part, or edit the config file directly.
+   > - 当某技能的输出感觉不对劲时，通常是某个你应该调整的立场。输出会告诉你是哪一个。
+   > - `policy-monitor` 技能监控你的处理规则和你实际实践之间的漂移。当它发现漂移时，它会提议匹配现实的编辑。
+   > - 你随时可以说"将我的操作手册更新为偏好X"或"将我的升级阈值更改为Y"，相关技能将写入该变更。
+   > - 运行 `/privacy-legal:cold-start-interview --redo <section>` 重新访谈某部分，或直接编辑配置文件。
    >
-   > Ten minutes of setup gets you a working profile. A month of use gets you one that reads like you wrote it yourself.
+   > 十分钟的设置给你一个可工作的档案。一个月的使用给你一份读起来像你自己写的档案。
 
-## Failure modes
+## 失败模式
 
-- **Don't assume GDPR applies.** Lots of US-only B2B companies are told they "should probably care about GDPR" — ask whether they actually have EU data subjects.
-- **Don't let them skip the controller/processor question.** If they're not sure, walk through it: "When your customer's user data comes into your system, whose privacy policy governs it — yours or the customer's?"
-- **Don't write a DPA playbook from generic positions.** If they haven't negotiated many DPAs, say so in the config CLAUDE.md: `[POSITIONS UNTESTED — this team hasn't negotiated many DPAs yet. Treat as starting points, not settled positions.]`
+- **不要假设个保法适用。** 许多纯粹的 B2B 国产公司被告诉它们"应该关心个保法"——询问它们是否实际处理个人信息。
+- **不要让他们跳过处理者/受托处理者问题。** 如果他们不确定，引导一遍："当你的客户的用户数据进入你的系统时，谁的处理规则约束它——你的还是客户的？"
+- **不要从通用立场编写 DPA 操作手册。** 如果他们没谈判过多少 DPA，在配置 CLAUDE.md 中说明：`[立场未测试 — 本团队尚未谈判过多份DPA。将这些视为起点，而非已沉淀的立场。]`

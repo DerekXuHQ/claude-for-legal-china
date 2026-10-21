@@ -1,235 +1,234 @@
 ---
 name: demand-received
-description: Triage an inbound demand letter — extract fields, cross-check the portfolio, assess merit, present response options with a recommendation, and hand off to matter-intake or demand-intake if escalation is warranted. Use when the user says "we got a demand letter", "triage this demand", or shares an incoming demand to evaluate.
-argument-hint: "[path-to-incoming] [--slug=custom-slug]"
+description: >
+  来函分流处理——提取关键字段、交叉检索案件组合、评估实质理由、
+  提出响应方案并附建议，必要时转交案件登记或律师函起草。
+  当用户说"收到一封律师函"、"审查这个来函"或附上来函要求评估时使用。
+argument-hint: "[来函文件路径] [--slug=自定义代号]"
 ---
 
 # /demand-received
 
-1. Read the incoming document from provided path.
-2. Load `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml` for portfolio cross-check.
-3. Load `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` → risk calibration, landscape, demand-letter practice.
-4. Follow the workflow and reference below.
-5. Extract fields; cross-check portfolio; assess merit; present options with recommendation.
-6. Write `~/.claude/plugins/config/claude-for-legal/litigation-legal/inbound/[slug]/triage.md`. Copy or link incoming to `~/.claude/plugins/config/claude-for-legal/litigation-legal/inbound/[slug]/incoming.[ext]`.
-7. Hand off per user choice:
-   - Create matter → `matter-intake` pre-populated
-   - Respond with counter-demand → `demand-intake` pre-populated
-   - Link to existing matter → update `related_matters` in log
-   - Standalone → no further action
+1. 读取提供的来函文件。
+2. 加载 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml` 用于案件组合交叉检索。
+3. 加载 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` → 风险校准、执业背景、律师函实务惯例。
+4. 按以下工作流操作。
+5. 提取关键字段；交叉检索案件组合；评估实质理由；提出方案并附建议。
+6. 写入 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/inbound/[slug]/triage.md`。将来函复制或链接至 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/inbound/[slug]/incoming.[ext]`。
+7. 按用户选择转交：
+   - 创建案件 → 预填充的 `/matter-intake`
+   - 回复律师函 → 预填充的 `/demand-intake`
+   - 关联既有案件 → 更新日志中的 `related_matters`
+   - 独立归档 → 无需进一步操作
 
 ---
 
-# Demand Received
+# 收函处理
 
-## Purpose
+## 目的
 
-Inbound demand letters are the bread and butter of an in-house litigation practice. A small fraction need escalation; most can be handled with a structured response or a holding letter. The failure mode is treating them all alike. This skill triages, cross-checks the portfolio, and produces options.
+来函是法务诉讼实务中的常规工作。极少数需要升级；大多数可以通过结构化回复或暂时搁置信函处理。本技能进行分流、交叉检索案件组合，并提供选项。
 
-## Load context
+## 加载上下文
 
-- The incoming document (user provides path or drops it in-session)
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml` — scan for related matters (same counterparty, overlapping counterparties via entity relationships, or matter type + recent date)
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` → risk calibration (for merit assessment), landscape (is the sender a frequent adversary?), demand-letter practice (house tone and response defaults)
+- 来函文件（用户提供路径或在会话中发送）
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml` —— 扫描关联案件（相同对方、通过实体关系关联的对方、或同类案件类型+近期日期）
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` → 风险校准（用于实质理由评估）、执业背景（发函方是否为经常性对手？）、律师函实务惯例（事务所语调和回复默认策略）
 
-## Workflow
+## 工作流
 
-### Step 1: Read the demand
+### 步骤1：审读来函
 
-Extract from the incoming:
+从来函中提取：
 
-- **Sender** — entity, signer, counsel (if signed by outside firm)
-- **Recipient** — which entity/person at our company
-- **Delivery** — certified, email, courier (matters for deadline calculation)
-- **Date received** vs. **date signed**
-- **Demand type** — payment, breach/cure, C&D, preservation, settlement, other
-- **Specific asks** — what they want, by when
-- **Facts alleged** — their version of what happened
-- **Legal basis** — statutes, contract provisions, theories they cite
-- **Threats** — what they say they'll do if we don't comply
-- **Settlement-communication framing** — research the settlement-communication protections applicable in the forum (FRE 408 in federal, the state equivalent otherwise). Note whether the demand is marked as a settlement communication, but remember: protection attaches from conduct and context, not merely from labeling. Capture both the label (if any) and a first-pass read of whether the substance is in fact a compromise discussion.
+- **发函方** —— 主体、签署人、代理律师（如由外部律所签署）
+- **收函方** —— 我方哪个主体/人员
+- **送达方式** —— 快递、电子邮件、当面送达（影响期限计算）
+- **签收日期** vs. **签署日期**
+- **来函类型** —— 付款催告、违约整改、停止侵权通知、证据保全要求、和解要约、其他
+- **具体要求** —— 对方要求什么、要求何时完成
+- **主张事实** —— 对方关于事实的版本
+- **法律依据** —— 援引的法律法规、合同条款、理论
+- **威胁内容** —— 如不按要求履行的后果
 
-### Step 2: Portfolio cross-check
+### 步骤2：案件组合交叉检索
 
-Search `_log.yaml` for:
+在 `_log.yaml` 中检索：
 
-- **Direct match** — matter with same counterparty (their slug matches the sender)
-- **Type match** — similar matter type with this counterparty in the past (closed matters count — they inform pattern)
-- **Subject overlap** — matters where the subject might be the same dispute (e.g., same contract, same product, same project)
+- **直接匹配** —— 相同对方的案件（对方简称匹配发函方）
+- **类型匹配** —— 与该对方此前同类案件（已结案件仍需关注——形成对方行为模式）
+- **事项重叠** —— 争议主题可能相同的案件（同一合同、同一产品、同一项目）
 
-Present findings:
+呈现检索结果：
 
-- If **direct match + active:** flag as almost certainly the same matter; recommend adding incoming to the existing matter, not opening a new one. Update `related_matters` if it's a tangent.
-- If **direct match + closed:** flag — counterparty is back. May be a new dispute (open new matter) or a resurrected one (reopen or amend). User decides.
-- If **type match:** note as precedent/context; probably distinct matter but inform the response strategy.
-- If **no match:** novel. Treat as fresh.
+- 如**直接匹配 + 进行中：** 几乎可以确认是同一案件；建议将来函归入既有案件，不开新案。如系边缘关联，更新 `related_matters`。
+- 如**直接匹配 + 已结：** 注意——对方回头了。可能是新争议（开新案）或旧事重提（重新立案或修改原案）。用户决定。
+- 如**类型匹配：** 注明为先例/背景参考；大概率是独立案件，但可为回复策略提供信息。
+- 如**无匹配：** 新事项。按新案处理。
 
-### Step 3: Merit assessment
+### 步骤3：实质理由评估
 
-Not a legal opinion — a structured read:
+并非法律意见——是结构化的初步判断：
 
-- **Facts** — do the alleged facts align with what we know? Where's the disconnect?
-- **Legal basis** — are the cited provisions/statutes actually applicable? (Flag cites for user verification — do not attempt to validate law autonomously.)
-- **Strength on their side** — if they went to court tomorrow, what's their story?
-- **Strength on our side** — what are our likely defenses?
-- **Damages demanded vs. likely** — is the ask proportionate to what a court would award if they won?
-- **Leverage and pressure** — are they credibly prepared to sue? Do they have capacity? Are they a repeat-litigant adversary per `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`?
+- **事实** —— 对方主张的事实与我方掌握的是否一致？偏差在哪里？
+- **法律基础** —— 援引的法条/合同条款是否真正适用？（标注引用供用户核实——不自行验证法律。）
+- **对方胜算** —— 如果对方明天起诉，ta的诉讼逻辑是什么？
+- **我方抗辩** —— 我们可能的抗辩事由是什么？
+- **索赔金额 vs. 合理判赔** —— 对方的请求与其胜诉后法院可能支持的金额是否成比例？
+- **筹码与压力** —— 对方是否真的准备起诉？是否有诉讼能力？是否属于 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 中记录的常发性对手？
 
-Output a triage rating: **substantial merit / debatable / weak / frivolous**. Be blunt. The user is triaging, not writing the brief.
+输出分流评级：**有实质根据 / 有争议空间 / 较弱 / 无依据**。直说——用户在做分流，不是在写代理词。
 
-### Step 4: Response options
+### 步骤4：回复方案
 
-Present 3-4 options with tradeoffs:
+提出3-4个方案并附利弊分析：
 
-**Option A — substantive response**
-- When: their demand has merit or is at least debatable; a reasoned reply protects the record
-- Tradeoff: commits us to a position in writing
-- Next step: `/demand-intake` with pre-populated fields for a counter-response letter
+**方案A —— 实质性回复**
+- 适用：来函有实质根据或至少存在争议空间；理性的回复能保护我方书面记录
+- 权衡：在书面中固定了我方立场
+- 下一步：`/demand-intake`，预填充回函起草字段
 
-**Option B — holding letter**
-- When: need time to investigate; don't want to concede anything or trigger their deadline math
-- Tradeoff: doesn't resolve anything; buys 2-4 weeks
-- Next step: short acknowledgment draft
+**方案B —— 暂搁置信函**
+- 适用：需要时间调查；不希望承认任何事项或触发对方期限计算
+- 权衡：不解决任何问题；争取2-4周时间
+- 下一步：起草简短确认函
 
-**Option C — settlement response**
-- When: early resolution is cheaper than litigation; willing to discuss without admitting
-- Tradeoff: settlement-communication posture required — research the applicable rule (FRE 408 or state equivalent) and structure the response so the substance, not just the label, qualifies as a compromise discussion. Must be careful not to waive claims.
-- Next step: `/demand-intake` with `type: settlement-response`
+**方案C —— 和解回复**
+- 适用：早期和解成本低于诉讼；愿意在不承认的前提下讨论
+- 权衡：需要和解谈判姿态——注意诉讼时效中断风险（《民法典》第195条）。`[法条原文]`
+- 下一步：`/demand-intake`，类型为 `type: settlement-response`
 
-**Option D — ignore + preserve**
-- When: demand is frivolous or the deadline doesn't create legal prejudice
-- Tradeoff: silence can be used against us in some contexts (e.g., account stated); legal hold still required
-- Next step: issue legal hold via `/legal-hold --issue` if not already; log the demand and move on
+**方案D —— 不回复 + 保留证据**
+- 适用：来函无实质根据，或对方设定的期限不产生法律上的不利后果
+- 权衡：沉默在某些情况下可能对我不利（如账目确认）；仍需考虑证据保全
+- 下一步：如尚未发出，通过 `/legal-hold --issue` 发出证据保全通知；记录来函并搁置
 
-Recommend one. Be specific about why.
+推荐一个方案，具体说明理由。
 
-### Step 5: Deadline triage
+### 步骤5：期限分流
 
-- **Their stated deadline** — note it, but it doesn't bind us
-- **Our internal deadline** — when we must decide (often: stated deadline minus 5 business days to draft + approve)
-- **Legal deadlines** — statute of limitations, contractual cure periods, procedural requirements
+- **对方宣告的期限** —— 注意，但对我方无约束力
+- **我方内部决策期限** —— 必须做出决定的日期（通常：对方期限减去5个工作日用于起草+审批）
+- **法定期限** —— 诉讼时效、合同约定的补正期、程序性要求
 
-Flag any legal deadlines that are tight. Calendar them.
+标注任何紧迫的法定期限，列入日程。
 
-**No silent supplement.** If the inbound demand cites rules, cases, or statutes that require verification, and a research query to the configured legal research tool (Westlaw, CourtListener, Trellis, Descrybe, or firm platform) returns few or no results for a given authority, report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [cite / doctrine]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against a primary source before relying, or (4) leave the `[SME VERIFY]` flag and stop here. Which would you like?" A lawyer decides whether to accept lower-confidence sources; the skill does not decide for them.
+**不沉默补充。** 如来函引用的法规、案例或法条需核实，且向配置的法律研究工具的查询返回零条或极少结果，报告已找到的内容并停止。不要不询问就从联网搜索或模型知识填补空白。说："搜索从[工具]返回了[N]条结果。[引用/法律问题]的覆盖范围似乎很薄。选项：(1)扩大搜索查询，(2)尝试其他研究工具，(3)搜索网络——结果将标注`[联网检索——需复核]`，依赖前应核实，(4)标注`[需审查]`并在此停止。您希望选哪个？"由律师决定是否接受较低可信度的来源。
 
-**Source attribution.** Tag every citation carried into the triage — including the sender's cited authorities, our response-option rationales, and any research pulled for merit assessment — with where it came from: `[Westlaw]`, `[CourtListener]`, `[Trellis]`, `[Descrybe]`, or the MCP tool name for citations retrieved from a legal research connector; `[web search — verify]` for web-search citations; `[model knowledge — verify]` for citations recalled from training data; `[user provided]` for citations supplied in the demand itself. Citations tagged `verify` carry higher fabrication risk and should be checked first. Never strip or collapse the tags.
+**来源标注。** 为分流意见中的每个引用——包括发函方援引的法律依据、我方回复方案的理由、以及实质理由评估中调取的研究——标注来源：`[yuandian检索]`用于通过检索连接器获取的引用；`[联网检索——需复核]`用于联网搜索引用；`[模型知识——需验证]`用于模型知识回忆的引用；`[用户提供]`用于来函中援引的法规。标注`需验证`的引用具有较高的编造风险，应首先核验。不得删除或压缩标签。
 
-### Step 6: Write triage
+### 步骤6：撰写分流意见
 
-Output: `~/.claude/plugins/config/claude-for-legal/litigation-legal/inbound/[slug]/triage.md`.
+输出：`~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/inbound/[slug]/triage.md`。
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果标头——根据插件配置 ## 输出——因角色不同；见 `## 使用者`]
 
-> **Privilege inheritance.** This triage is derived from the inbound demand and from the portfolio log, and it records our first-pass merit read and response posture. Those internal analyses are attorney-client and/or work-product material. Distributing this triage beyond the privilege circle — including forwarding it to the business lead without marking, sharing with the counterparty, or attaching to an insurance tender without scrubbing — can waive protection over both this document and the reasoning inside it. Store with privileged matter material, mark consistently with house privilege conventions, and make distribution decisions deliberately.
+# 来函分流——[对方名称]
 
-# Demand Received — Triage
+> **用于分流判断，并非法律意见。** 本文件是登记审查和方案分析——不是法律实质意见。以下分流评级是支持律师决定如何路由来函的结构化判断，不是对实质问题的推荐意见，不替代特定案件的法律分析。每条援引的法规、规则或案例均标注供核实；每个实质判断属于律师，不属于本技能。
 
-> **READ FOR TRIAGE, NOT OPINION.** This document is an intake scan and an options analysis — not a legal merit opinion. The `Triage rating` below is a structured read to support the counsel's decision on how to route the demand. It is not a recommendation on the merits and does not substitute for case-specific legal analysis. Every cited statute, rule, or case is flagged for SME verification; every merit call is the counsel's, not this skill's.
-
-**Slug:** [slug]
-**Received:** [YYYY-MM-DD]
-**Received by:** [entity / person]
-**Incoming file:** [path]
+**代号：** [slug]
+**收函日期：** [YYYY-MM-DD]
+**收函主体：** [实体/人员]
+**来函文件：** [路径]
 
 ---
 
-## The demand
+## 来函概要
 
-**Sender:** [entity, signer, counsel]
-**Demand type:** [type]
-**Specific asks:** [list]
-**Their stated deadline:** [date]
-**Settlement-communication framing:** [labeled / substantively / neither / ambiguous] — *protection turns on conduct and context, not the label; `[SME VERIFY]` against the forum's applicable rule*
+**发函方：** [主体、签署人、代理律师]
+**来函类型：** [类型]
+**具体要求：** [列表]
+**对方设定的期限：** [日期]
 
-## Facts alleged
+## 主张事实
 
-[their version, in one paragraph]
+[对方版本，一段]
 
-## Legal basis cited
+## 援引的法律依据
 
-[citations — each inline-flagged with `[SME VERIFY: applicability / currency / jurisdiction]` — do not rely on any citation here without independent check]
+[引用——每条内联标注 `[需审查：法律适用性/时效性/管辖地]` —— 未经独立核对，不得依赖此处的任何引用]
 
-## Threats / next steps they state
+## 威胁/声明的后续措施
 
-[list]
-
----
-
-## Portfolio cross-check
-
-**Direct match:** [slug if exists, or "none"]
-**Type match / precedent:** [list or "none"]
-**Subject overlap:** [list or "none"]
-**Recommendation:** [new matter / add to existing / link via related_matters / standalone inbound]
+[列表]
 
 ---
 
-## Merit assessment
+## 案件组合交叉检索
 
-**Facts:** [alignment with our version; disconnects]
-**Legal basis:** [applicability, with flags]
-**Their case if litigated:** [one paragraph]
-**Our defenses:** [one paragraph]
-**Damages proportionality:** [assessment]
-**Credibility of threat:** [will they sue? capacity? repeat litigant?]
-
-**Triage rating:** [substantial / debatable / weak / frivolous] — *structured read for routing, not a merit opinion; `[SME VERIFY: counsel to confirm before relying on this]`*
+**直接匹配：** [如有，注明代号；否则"无"]
+**类型匹配/先例：** [列表或"无"]
+**事项重叠：** [列表或"无"]
+**建议：** [新案 / 归入既有案件 / 通过 related_matters 关联 / 独立归档]
 
 ---
 
-## Response options
+## 实质理由评估
 
-### A. Substantive response
-[Rationale, tradeoffs, next step]
+**事实：** [与我方版本的一致性；分歧点]
+**法律基础：** [适用性，附标注]
+**对方诉讼前景：** [一段]
+**我方抗辩：** [一段]
+**索赔合理性：** [评估]
+**威胁可信度：** [对方是否会起诉？是否有诉讼能力？是否为常发性对手？]
 
-### B. Holding letter
-[Rationale, tradeoffs, next step]
-
-### C. Settlement response
-[Rationale, tradeoffs, next step]
-
-### D. Ignore + preserve
-[Rationale, tradeoffs, next step]
-
-**Recommendation:** [A/B/C/D] — [two sentences why] — `[SME VERIFY: counsel to confirm before executing]`
+**分流评级：** [有实质根据 / 有争议空间 / 较弱 / 无依据] —— *用于路由的结构化判断，并非实质意见；`[需审查：律师确认后信赖]`*
 
 ---
 
-## Deadlines
+## 回复方案
 
-- **Their stated deadline:** [date]
-- **Our internal decision deadline:** [date]
-- **Legal deadlines:** [SoL, cure periods, procedural — with dates]
+### A. 实质性回复
+[理由、权衡、下一步]
+
+### B. 暂搁置信函
+[理由、权衡、下一步]
+
+### C. 和解回复
+[理由、权衡、下一步]
+
+### D. 不回复 + 保留证据
+[理由、权衡、下一步]
+
+**推荐：** [A/B/C/D] —— [两句话说明理由] —— `[需审查：律师确认后执行]`
 
 ---
 
-## Immediate actions
+## 期限
 
-- [ ] Legal hold issued — [yes/no] — if no, run `/legal-hold [slug] --issue`
-- [ ] Matter created in log — [yes/no/TBD]
-- [ ] Counsel assigned — [who]
-- [ ] Insurance tendered — [yes/no/N-A]
-- [ ] Internal escalation (GC/CFO/business lead) — [who/when]
+- **对方设定的期限：** [日期]
+- **我方内部决策期限：** [日期]
+- **法定期限：** [诉讼时效、补正期、程序性要求——附日期]
+
+---
+
+## 即时行动
+
+- [ ] 证据保全通知是否已发出——[是/否]——如否，运行 `/legal-hold [slug] --issue`
+- [ ] 案件是否已在日志中创建——[是/否/待定]
+- [ ] 承办律师是否已指定——[谁]
+- [ ] 是否已通知保险——[是/否/不适用]
+- [ ] 内部上报（法务负责人/CFO/业务负责人）——[谁/何时]
 ```
 
-### Step 7: Hand off
+### 步骤7：转交
 
-Based on recommendation and user confirmation:
+基于推荐意见和用户确认：
 
-- Matter creation → hand off to `/matter-intake` with: counterparty, type, `source: demand-letter` (inbound), initial theory framed defensively, pre-populated.
-- Counter-response as outbound demand → hand off to `/demand-intake` with: counterparty, context from triage, desired outcome as the response.
-- Link to existing matter → update that matter's `related_matters` in `_log.yaml`; append event to its `history.md`.
-- Standalone → leave in `~/.claude/plugins/config/claude-for-legal/litigation-legal/inbound/`; no portfolio change.
+- 创建案件 → 转交 `/matter-intake`：预填充对方、类型、`source: demand-letter`（收函），初始理论以防御姿态构建。
+- 回复律师函 → 转交 `/demand-intake`：预填充对方、分流上下文、期望回复结果。
+- 关联既有案件 → 更新该案件在 `_log.yaml` 中的 `related_matters`；追加事件至其 `history.md`。
+- 独立归档 → 保留在 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/inbound/`；不更新案件组合。
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出` 中的下一步决策树收尾。根据本技能刚产生的内容自定义选项——五个默认分支（起草X、上报、获取更多事实、观察等待、其他选择）是起点而非锁定项。决策树本身就是输出；由律师选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- **Validate cited law.** Flags cites for the user to run through a citator (verify it is good law) or check with outside counsel. Inventing legal analysis on inbound demands is malpractice exposure.
-- **Send a response.** Drafts are drafted in `demand-draft`; this skill stops at the triage decision.
-- **Decide merit definitively.** The rating is a read for triage; a formal merit opinion lives with outside counsel or more thorough analysis.
-- **Make the matter-creation call.** Surfaces the recommendation; user decides.
+- **验证被引用的法律。** 标注引用供用户核对（确认是否为有效法律）或与外聘律师核实。对来函自行发明法律分析是执业风险敞口。
+- **发送回复。** 回复函在 `demand-draft` 中起草；本技能停留在分流决定。
+- **对实质问题做出最终判断。** 分流评级是用于路由的判断；正式的实质法律意见应由外聘律师或更深入的分析完成。
+- **替用户决定是否创建案件。** 呈现推荐意见；用户决定。

@@ -1,187 +1,186 @@
 ---
 name: matter-workspace
 description: >
-  Manage matter workspaces — new, list, switch, close, or detach (practice-
-  level). Creates, lists, switches, closes, and detaches the active matter so
-  context from one client engagement never leaks into another. Use when a
-  multi-client practitioner says "new matter", "switch matter", "list my
-  matters", "close this matter", or needs to manage which matter is active.
+  管理案件工作空间——新建、列表、切换、关闭或解除（实务级）。
+  创建、列举、切换、关闭和解除活跃案件，使一个客户委托的上下文
+  绝不泄露到另一个。当多客户执业者说"新案件"、"切换案件"、
+  "列出我的案件"、"关闭此案件"或需要管理哪个案件活跃时使用。
 argument-hint: "<new | list | switch | close | none> [slug]"
 ---
 
 # /matter-workspace
 
-Practitioners work across multiple clients and matters. A matter workspace keeps one client or engagement's context separate from every other. This skill manages those workspaces.
+执业者跨多个客户和案件工作。案件工作空间使一个客户或委托的上下文与其他每个分开。本技能管理这些工作空间。
 
-## Subcommands
+## 子命令
 
-- `/employment-legal:matter-workspace new <slug>` — create a new matter workspace, run a short intake, write `matter.md`
-- `/employment-legal:matter-workspace list` — list matters with status and active flag
-- `/employment-legal:matter-workspace switch <slug>` — set the active matter
-- `/employment-legal:matter-workspace close <slug>` — archive a matter (move to `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/_archived/`, never delete)
-- `/employment-legal:matter-workspace none` — detach from any active matter, work at practice-level only
+- `/employment-legal:matter-workspace new <slug>` —— 创建新案件工作空间，运行简短立案登记，写入 `matter.md`
+- `/employment-legal:matter-workspace list` —— 列举案件及其状态和活跃标记
+- `/employment-legal:matter-workspace switch <slug>` —— 设置活跃案件
+- `/employment-legal:matter-workspace close <slug>` —— 归档案件（移至 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/matters/_archived/`，永不删除）
+- `/employment-legal:matter-workspace none` —— 解除任何活跃案件，仅在实务级工作
 
-## Instructions
+## 指令
 
-1. Read `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` — confirm the `## Matter workspaces` section is populated. If `Enabled` is `✗`, tell the user: "Matter workspaces are off — you're configured as an in-house practice with one client, so the plugin works from practice-level context automatically. If you actually work across multiple clients, re-run `/employment-legal:cold-start-interview --redo` and select a private-practice setting. Otherwise, you don't need `/matter-workspace` at all." Don't error — the disabled state is the expected one for in-house users.
-2. Use the subcommand logic below.
-3. Dispatch on the first token of `$ARGUMENTS`:
-   - `new` → run the intake interview, write `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/<slug>/matter.md`, seed `history.md` and `notes.md`.
-   - `list` → enumerate `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/*/matter.md`, print a table, mark the active matter.
-   - `switch` → update the `Active matter:` line in the practice-level CLAUDE.md.
-   - `close` → move `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/<slug>/` to `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/_archived/<slug>/`, log the close date in `history.md`.
-   - `none` → set `Active matter:` to `none — practice-level context only`.
-4. Show the user what changed and confirm before writing.
+1. 读取 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md`——确认 `## Matter workspaces` 部分已填充。如果 `Enabled` 为 `✗`，告诉用户："案件工作空间已关闭——你配置为法务单一客户模式，插件自动从实务级上下文运行。如果你实际跨多个客户工作，重新运行 `/employment-legal:cold-start-interview --redo` 并选择私人执业设置。否则你根本不需要 `/matter-workspace`。"不要报错——禁用状态是法务用户的预期状态。
+2. 使用以下子命令逻辑。
+3. 根据首个匹配的指令分发：
+   - `new` → 运行立案访谈，写入 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/matters/<slug>/matter.md`，生成 `history.md` 和 `notes.md`。
+   - `list` → 枚举 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/matters/*/matter.md`，打印表格，标记活跃案件。
+   - `switch` → 更新实务级 CLAUDE.md 中的 `Active matter:` 行。
+   - `close` → 将 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/matters/<slug>/` 移至 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/matters/_archived/<slug>/`，在 `history.md` 中记录关闭日期。
+   - `none` → 将 `Active matter:` 设置为 `none — 仅实务级上下文`。
+4. 向用户显示变更内容并在写入前确认。
 
-## Notes
+## 备注
 
-- The skill never reads across matters unless `Cross-matter context` is `on` in the practice-level CLAUDE.md.
-- Archiving is not deletion — closed matters remain readable for retention/conflicts purposes.
-- Slugs are lowercase with hyphens. If a slug is reused across archived and active, the archived one is preserved under `_archived/<slug>/`.
+- 本技能绝不跨案件读取，除非实务级 CLAUDE.md 中 `Cross-matter context` 为 `on`。
+- 归档不是删除——已关闭案件保持可读，用于保存记录/利益冲突检索目的。
+- slug 使用小写加连字符。如果 slug 在归档和活跃中重复使用，归档的保留在 `_archived/<slug>/` 下。
 
 ---
 
-## Reference
+## 参考
 
-Multi-client practitioners (private practice — solo, small firm, large firm) work across many matters. Context from one must not leak into another. This skill is the thin file-management layer that makes that true.
+多客户执业者（私人执业——独立执业、小型律所、大型律所）跨多个案件工作。一个案件的上下文不得泄露到另一个。本技能是确保这一点的薄文件管理层。
 
-**Default state is off.** In-house users never see this — they run at practice-level only. Matter workspaces turn on at cold-start for private-practice users, or by editing `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗`, this skill does not run; instead it explains the disabled state and suggests `/employment-legal:cold-start-interview --redo` for users who actually need matter isolation.
+**默认状态为关闭。** 法务用户从不看到此——他们仅在实务级运行。案件工作空间在 cold-start 时为私人执业用户开启，或通过编辑实务级 CLAUDE.md 中的 `## Matter workspaces` 开启。如果 `Enabled` 为 `✗`，本技能不运行；相反它解释禁用状态，并为实际需要案件隔离的用户建议 `/employment-legal:cold-start-interview --redo`。
 
-## Storage layout
+## 存储布局
 
-All matter data lives under:
+所有案件数据位于：
 
 ```
-~/.claude/plugins/config/claude-for-legal/employment-legal/
-├── CLAUDE.md                       # practice-level practice profile
+~/.claude/plugins/config/claude-for-legal-zh/employment-legal/
+├── CLAUDE.md                       # 实务级实践画像
 └── matters/
     ├── <slug>/
-    │   ├── matter.md               # client, counterparty, matter type, key facts, overrides
-    │   ├── history.md              # dated log of events, decisions, drafts, reviews
-    │   ├── notes.md                # free-form working notes
-    │   └── outputs/                # skill outputs for this matter (optional subfolder)
+    │   ├── matter.md               # 客户、对方当事人、案件类型、关键事实、覆盖项
+    │   ├── history.md              # 事件、决定、草案、审查的日期日志
+    │   ├── notes.md                # 自由形式工作笔记
+    │   └── outputs/                # 本案的技能输出（可选子文件夹）
     └── _archived/
-        └── <slug>/                 # closed matters — readable but not active
+        └── <slug>/                 # 已关闭案件——可读但不活跃
 ```
 
-Slugs are lowercase with hyphens. Examples: `acme-msa-2026`, `zenith-renewal`, `vendor-xyz-nda`.
+slug 使用小写加连字符。示例：`acme-劳动合同争议-2026`、`zenith-竞业限制审查`、`供应商-xyz-保密协议`。
 
-## Active matter is in the practice CLAUDE.md
+## 活跃案件在实务级 CLAUDE.md 中
 
-The `Active matter:` line under `## Matter workspaces` in the practice-level CLAUDE.md is the single source of truth. Switching a matter edits that line. No separate state file.
+实务级 CLAUDE.md 中 `## Matter workspaces` 下的 `Active matter:` 行是唯一真相来源。切换案件编辑该行。没有单独的状态文件。
 
-## Subcommand logic
+## 子命令逻辑
 
 ### `new <slug>`
 
-1. Confirm slug is not already present in `matters/<slug>/` or `matters/_archived/<slug>/`. If reused, ask the user to pick a different slug.
-2. Run the intake interview:
-   - **Client** (the party we represent, or the internal business unit if in-house)
-   - **Counterparty** (the other side — may be multiple)
-   - **Matter type** (read the plugin's practice profile for typical categories; for employment-legal: hire | termination | investigation | leave | accommodation | classification | country expansion | policy project | other)
-   - **Confidentiality level** (standard | heightened | clean-team — heightened prompts extra care in cross-matter settings)
-   - **Key facts** (2–5 sentences: what this matter is about, who the stakeholders are, what's at stake)
-   - **Matter-specific overrides to the practice playbook** (e.g., "client requires 24-month LoL cap not 12", "counterparty is a strategic partner — relationship-preserving tone")
-   - **Related matters** (slugs of any connected matters)
-3. Write `matters/<slug>/matter.md` using the template below.
-4. Seed `matters/<slug>/history.md` with a single "Opened" entry.
-5. Create an empty `matters/<slug>/notes.md`.
-6. Do **not** auto-switch to the new matter. Ask: "Want to switch to `<slug>` now? (`/employment-legal:matter-workspace switch <slug>`)"
+1. 确认 slug 不存在于 `matters/<slug>/` 或 `matters/_archived/<slug>/`。如果重复使用，要求用户选择不同的 slug。
+2. 运行立案访谈：
+   - **委托人**（我们代表的当事方，或法务对应的内部业务单位）
+   - **对方当事人**（另一方——可能有多个）
+   - **案件类型**（读取插件的实践画像获取典型类别；对于 employment-legal：录用 | 解除 | 调查 | 假期 | 劳动关系认定 | 跨地域用工 | 制度项目 | 其他）
+   - **保密级别**（标准 | 加强 | 洁净团队——加强提示跨案件设置中的额外注意）
+   - **关键事实**（2-5句话：本案是关于什么的，利益相关者是谁，利害关系在哪）
+   - **对实务实践的个案特定覆盖项**（例如"客户要求竞业限制期限上限24个月而非12个月"、"对方当事人是战略合作伙伴——关系维护语气"）
+   - **关联案件**（任何关联案件的 slug）
+3. 使用以下模板写入 `matters/<slug>/matter.md`。
+4. 生成 `matters/<slug>/history.md` 并写入单条"已立案"条目。
+5. 创建空的 `matters/<slug>/notes.md`。
+6. **不要**自动切换到新案件。询问："要现在切换到 `<slug>` 吗？（`/employment-legal:matter-workspace switch <slug>`）"
 
 ### `list`
 
-Enumerate `matters/*/matter.md`. Read each file's front-matter or first few lines to extract status. Print a table:
+枚举 `matters/*/matter.md`。读取每个文件的开头几行以提取状态。打印表格：
 
-| Slug | Client | Matter type | Status | Opened | Active |
+| Slug | 委托人 | 案件类型 | 状态 | 立案日期 | 活跃 |
 |---|---|---|---|---|---|
 
-Mark the currently-active matter with `*`. Include `_archived/*` under a separate "Archived" heading if any exist.
+标记当前活跃案件为 `*`。如存在，在单独的"已归档"标题下包含 `_archived/*`。
 
 ### `switch <slug>`
 
-1. Confirm `matters/<slug>/matter.md` exists. If not, offer `/employment-legal:matter-workspace new <slug>`.
-2. Edit the `Active matter:` line in the practice-level CLAUDE.md to `Active matter: <slug>`.
-3. Show the user the matter.md summary so they can confirm they're on the right matter.
+1. 确认 `matters/<slug>/matter.md` 存在。如不存在，提供 `/employment-legal:matter-workspace new <slug>`。
+2. 编辑实务级 CLAUDE.md 中的 `Active matter:` 行为 `Active matter: <slug>`。
+3. 向用户显示 matter.md 摘要以便确认他们在正确的案件上。
 
 ### `close <slug>`
 
-1. Confirm `matters/<slug>/` exists.
-2. Append a "Closed" entry to `matters/<slug>/history.md` with today's date.
-3. Move `matters/<slug>/` → `matters/_archived/<slug>/`.
-4. If the closed matter was the active matter, set `Active matter:` to `none — practice-level context only`.
+1. 确认 `matters/<slug>/` 存在。
+2. 向 `matters/<slug>/history.md` 追加一条"已关闭"条目，包含当天日期。
+3. 将 `matters/<slug>/` → `matters/_archived/<slug>/` 移动。
+4. 如果关闭的案件是活跃案件，将 `Active matter:` 设置为 `none — 仅实务级上下文`。
 
 ### `none`
 
-Set `Active matter:` in the practice-level CLAUDE.md to `none — practice-level context only`. Confirm with the user.
+将实务级 CLAUDE.md 中的 `Active matter:` 设置为 `none — 仅实务级上下文`。与用户确认。
 
-## `matter.md` template
+## `matter.md` 模板
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this` in the practice-level CLAUDE.md]
+[工作成果标题——根据插件配置 ## Outputs——因角色不同；见实务级 CLAUDE.md 中的 `## Who's using this`]
 
-# Matter: [Client] — [short description]
+# 案件：[委托人] — [简短描述]
 
-**Slug:** [slug]
-**Opened:** [YYYY-MM-DD]
-**Status:** active
-**Confidentiality:** [standard / heightened / clean-team]
+**Slug：** [slug]
+**立案日期：** [YYYY-MM-DD]
+**状态：** active
+**保密级别：** [标准 / 加强 / 洁净团队]
 
 ---
 
-## Parties
+## 当事方
 
-**Client:** [name]
-**Counterparty:** [name(s)]
+**委托人：** [名称]
+**对方当事人：** [名称]
 
-## Matter type
+## 案件类型
 
-[vendor MSA | customer agreement | NDA | SaaS subscription | amendment | renewal | other — with one-line rationale]
+[录用 | 解除 | 调查 | 假期 | 劳动关系认定 | 跨地域用工 | 制度项目 | 其他——附一行理由]
 
-## Key facts
+## 关键事实
 
-[2–5 sentences. What this matter is about. Who the stakeholders are. What's at stake. What makes it different from the default playbook.]
+[2-5句话。本案是关于什么的。利益相关者是谁。利害关系在哪。什么使其与默认实务实践不同。]
 
-## Matter-specific overrides
+## 个案特定覆盖项
 
-*Any deviation from the practice-level playbook that applies to this matter and only this matter.*
+*对实务级实践的偏离，仅适用于本案。*
 
-- [e.g., "LoL cap: client requires 24 months, not house standard 12."]
-- [e.g., "Tone: relationship-preserving — counterparty is a strategic partner."]
-- [e.g., "Governing law: must be English law, not Delaware."]
+- [例如："竞业限制期限上限：客户要求24个月，非常规标准12个月。"]
+- [例如："语气：关系维护——对方当事人是战略合作伙伴。"]
+- [例如："管辖：须为中国法，排除域外适用。"]
 
-## Related matters
+## 关联案件
 
-- [slug — one line why related]
+- [slug——一行说明为何关联]
 
-## Notes on confidentiality
+## 保密说明
 
-[If heightened or clean-team, describe why. Who may see matter files. Whether cross-matter context is permissible even if globally on.]
+[如为加强或洁净团队，说明原因。谁可以查看案件文件。即使全局开启，跨案件上下文是否允许。]
 ```
 
-## `history.md` seed
+## `history.md` 种子
 
 ```markdown
-# History: [Client] — [short description]
+# 历史记录：[委托人] — [简短描述]
 
-Append-only event log. Most recent at top.
+仅追加的事件日志。最新条目在顶部。
 
 ---
 
-## [YYYY-MM-DD] — Matter opened
+## [YYYY-MM-DD] —— 案件立案
 
-Intake completed. Slug: `[slug]`. Status: active.
-[Any initial context worth preserving beyond matter.md — e.g., "Opened in response to inbound MSA draft from [counterparty]."]
+立案完成。Slug：`[slug]`。状态：active。
+[任何超出 matter.md 值得保留的初始上下文——例如"因收到[对方当事人]的劳动合同解除通知而立案。"。]
 ```
 
-## Cross-matter context
+## 跨案件上下文
 
-The practice-level CLAUDE.md has a `Cross-matter context:` flag. When it's `off` (the default), a skill working in matter A **never reads** files in `matters/B/` for any other `B`. Period. This is the confidentiality guarantee the setting exists to provide.
+实务级 CLAUDE.md 中有 `Cross-matter context:` 标记。当为 `off`（默认值）时，工作在案件A中的技能**绝不读取**任何其他 `B` 的 `matters/B/` 中的文件。句号。这是该设置存在的保密保证。
 
-When it's `on`, a skill may read files across matter folders only when the user explicitly asks it to (e.g., "compare our position on liability caps across the last five vendor matters"). Even when `on`, the default is to load only the active matter unless the user asks for a cross-matter view.
+当为 `on` 时，技能仅在用户明确要求时（例如"比较我们过去五个供应商案件中的责任上限立场"）才可以跨案件文件夹读取文件。即使为 `on`，默认也仅加载活跃案件，除非用户要求跨案件视图。
 
-## What this skill does not do
+## 本技能不做什么
 
-- **Run a conflicts check.** Conflicts are the practitioner's/firm's job; the intake captures what the user declares.
-- **Enforce retention.** Closing archives a matter; it does not delete. Retention policy is out of scope.
-- **Auto-route outputs.** The substantive skill decides where to write; this skill tells it *which folder* is active, not what to put in it.
-- **Decide whether cross-matter is appropriate.** It reads the flag and obeys.
+- **运行利益冲突检索。** 利益冲突是执业者/律所的工作；立案仅捕获用户声明的内容。
+- **强制执行保存政策。** 关闭归档案件；不删除。保存政策不在范围内。
+- **自动路由输出。** 实体技能决定写入哪里；本技能告诉它*哪个文件夹*是活跃的，而不是放什么内容。
+- **决定跨案件是否合适。** 它读取标记并遵守。

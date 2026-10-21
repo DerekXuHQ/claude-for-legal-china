@@ -1,116 +1,115 @@
 ---
 name: client-comms-log
 description: >
-  Log a client communication — call, email, text, letter, in-person, voicemail.
-  Append-only per-case record with dated entries, direction, medium, summary,
-  action items. Works alongside /client-letter and /status client. Use when
-  logging a call or client email, reviewing a communication log, or asking
-  "what did we tell [client] last time".
-argument-hint: "[case-id] [--add (default) | --read | --summary | --patterns]"
+  记录当事人沟通——电话、邮件、短信、信函、面谈、语音留言。
+  按案件仅追加记录，含日期条目、方向、媒介、摘要、行动事项。
+  与 /client-letter 和 /status client 协同使用。
+  当需要记录通话或当事人邮件、查阅沟通日志或询问"我们上次告诉[当事人]什么"时使用。
+argument-hint: "[案件编号] [--add（默认）| --read | --summary | --patterns]"
 ---
 
 # /client-comms-log
 
-1. Use the workflow below.
-2. Require case-id (prompt if not provided).
-3. Route by flag:
-   - `--add` (default): capture direction, medium, student, summary, action items, follow-up due. Confirm with user. Append (prepend most-recent-first) to `~/.claude/plugins/config/claude-for-legal/legal-clinic/client-comms/[case-id]/log.md`.
-   - `--read`: show the most recent N entries.
-   - `--summary`: one-paragraph condensed read.
-   - `--patterns`: scan for unanswered comms, missed follow-ups, language gaps, tone shifts, contact gaps. Supervision-oriented.
-4. Integration: offer `/legal-clinic:deadlines --add` if the log establishes a deadline; route to `/legal-clinic:semester-handoff` via `--summary` when relevant.
+1. 使用以下工作流。
+2. 要求案件编号（未提供则提示）。
+3. 按标志路由：
+   - `--add`（默认）：记录方向、媒介、学生、摘要、行动事项、后续截止日期。与用户确认。追加（最新在最前）到 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/client-comms/[案件编号]/log.md`。
+   - `--read`：显示最近 N 条记录。
+   - `--summary`：一段话简要阅读。
+   - `--patterns`：扫描未回复的沟通、遗漏的后续跟进、语言缺口、语气变化、联系缺口。面向指导的。
+4. 联动：如果记录创建了截止日期，提议 `/legal-clinic:deadlines --add`；通过 `--summary` 路由到 `/legal-clinic:semester-handoff`。
 
 ---
 
-# Client Communications Log
+# 当事人沟通日志
 
-## Purpose
+## 目的
 
-Four reasons to keep this log:
+保留此日志的四个理由：
 
-1. **Malpractice defense.** If a client claims "no one ever told me [X]," a dated entry showing otherwise is the answer. Clinical professors carry professional liability on student work; contemporaneous records protect them.
-2. **Continuity at handoff.** The next semester's student takes over and reads the log; they don't re-ask the client questions already answered.
-3. **Supervision visibility.** Five unreturned voicemails over six weeks is a pattern. The log makes patterns visible that individual students might not flag on their own.
-4. **File retention.** Law school clinics have obligations to maintain complete client files. Communication history is part of that.
+1. **执业风险防范。** 如果当事人声称"从没有人告诉过我[X]"，一条显示相反的日期记录就是回答。诊所指导老师对学生的执业工作承担执业责任；同期记录保护他们。
+2. **交接连续性。** 下学期的学生接手案件并读取日志；他们不会重新向当事人问已被回答过的问题。
+3. **指导可见性。** 六周内五通未回复的语音留言是一种模式。日志让模式可见，单个学生可能不会自行标记。
+4. **卷宗保留。** 法学院诊所有义务维护完整的当事人档案。沟通历史是其中的一部分。
 
-Light. Append-only. The student's job is to write a two-sentence entry after every contact; the skill formats it and appends.
+轻量。仅追加。学生的工作是每次联系后写两句摘要；技能格式化并追加。
 
-## Load context
+## 加载上下文
 
-- `~/.claude/plugins/config/claude-for-legal/legal-clinic/client-comms/[case-id]/log.md` (if exists) — append target
-- `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → not heavily read; this skill is case-scoped
+- `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/client-comms/[案件编号]/log.md`（如存在）——追加目标
+- `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 不重度读取；本技能是案件范围的
 
-## Modes
+## 模式
 
-Flag: `--add | --read | --summary | --patterns` (default: add)
+标志：`--add | --read | --summary | --patterns`（默认：add）
 
-### `--add` (default) — log a new entry
+### `--add`（默认）——记录新条目
 
-**Inputs:**
-- Case ID (required — which case)
-- Date + time (default: now)
-- Direction: `in` (client → clinic) | `out` (clinic → client)
-- Medium: `call | email | text | letter | in-person | video | voicemail-left | voicemail-received`
-- Who (student): name
-- Who (client side): client name, or "third-party: [description]" if from opposing counsel, family member, etc.
-- Duration / length (e.g., "10 min call", "3-paragraph email", "45 min in-person meeting")
-- Summary: 2-4 sentences. What happened, what was substantive.
-- Action items:
-  - What the student owes the client (with deadline)
-  - What the client owes the student (with expected timing)
-- Follow-up due: date if applicable
-- Notes: anything that matters but doesn't fit above — language used, emotional tone, family dynamic observed
+**输入：**
+- 案件编号（必需——哪个案件）
+- 日期 + 时间（默认：现在）
+- 方向：`in`（当事人 → 诊所）| `out`（诊所 → 当事人）
+- 媒介：`电话 | 邮件 | 短信 | 信函 | 面谈 | 视频 | 留言-已留 | 留言-已收`
+- 谁（学生）：姓名
+- 谁（当事人方）：当事人姓名，或"第三方：[说明]"如果来自对立方律师、家属等
+- 时长/长度（如"10分钟通话""3段邮件""45分钟面谈"）
+- 摘要：2-4 句话。发生了什么，实质性内容是什么。
+- 行动事项：
+  - 学生欠当事人的（附截止日期）
+  - 当事人欠学生的（附属预期时间）
+- 后续截止日期：如适用
+- 备注：任何重要但不属于上述分类的内容——使用的语言、情绪语调、观察到的家庭动态
 
-**Before writing:** show the user the formatted entry and ask for confirmation. Clinic records should be reviewed before they're written, not after.
+**写入前：** 向用户展示格式化的条目并征求确认。诊所记录应在写入前审查，而非写入后。
 
-**Append** to `~/.claude/plugins/config/claude-for-legal/legal-clinic/client-comms/[case-id]/log.md`. If the log doesn't exist, create it with a header:
+**追加**到 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/client-comms/[案件编号]/log.md`。如果日志不存在，创建它并附页眉：
 
 ```markdown
-# Communications Log — [case name]
+# 沟通日志 — [案件名称]
 
-**Case ID:** [case-id]
-**Client:** [name]
-**Opened:** [YYYY-MM-DD]
+**案件编号：** [案件编号]
+**当事人：** [姓名]
+**建立日期：** [YYYY-MM-DD]
 
-Append-only. Most recent at top.
+仅追加。最新在最前。
 
 ---
 ```
 
-Then prepend new entries at the top (most recent first).
+然后将新条目置于顶部（最新在最前）。
 
-### `--read` — show recent entries
+### `--read`——显示近期条目
 
-Print the most recent N entries (default 5). Useful when picking up a case mid-semester or before a client call.
+打印最近 N 条（默认 5 条）。在学期中接手案件或当事人来电前有用。
 
-### `--summary` — condensed read
+### `--summary`——简要阅读
 
-Produce a one-paragraph summary of the log — most recent contact, total entries, common medium, any open action items from the student side, any unanswered communications. Feeds `/semester-handoff` and `/status`.
+生成一段话的日志摘要——最近联系、总条数、常用媒介、学生方任何待处理行动事项、任何未回复的沟通。输入给 `/semester-handoff` 和 `/status`。
 
-### `--patterns` — flag concerns across the log
+### `--patterns`——标记全日志的关注事项
 
-Scan for:
+扫描：
 
-- **Unanswered communications from client.** Client called or emailed N times without a response entry.
-- **Missed follow-up.** Action item with follow-up due date, and no later entry resolving it.
-- **Language / accommodation issues.** Client language noted as non-English; check whether outgoing communications have been in that language.
-- **Escalation patterns.** Client tone shifting (frustrated / distressed) across entries.
-- **Gaps.** Long stretches with no contact on an active case.
+- **当事人方未回复的沟通。** 当事人来电或邮件 N 次但无回复条目录入。
+- **遗漏的后续跟进。** 附后续截止日期的行动事项，但之后无条目解决。
+- **语言/合理调整问题。** 当事人语言标注为非中文；检查发出的沟通是否使用了该语言。
+- **升级模式。** 当事人语气变化（沮丧/焦虑）贯穿条目。
+- **缺口。** 在活跃案件中长时间无联系。
 
-This is a supervision tool. Clinical professors running `--patterns` across their cases see which students might need support.
+这是指导工具。诊所指导老师跨案件运行 `--patterns` 可以看到哪些学生可能需要支持。
 
-## Integration
+## 联动
 
-- **`/client-letter`:** after generating and sending a letter, offer to log it as an outgoing comm.
-- **`/status client`:** when producing a client-facing status summary, offer to log it (often these summaries go to clients).
-- **`/client-intake`:** first entry in every new case's log is the intake contact.
-- **`/semester-handoff`:** handoff memos read `--summary` for each case to populate the communications-history section.
-- **`/deadlines`:** if a communication established a deadline ("client said they need to respond by Friday"), offer to `/deadlines --add`.
+- **`/client-letter`：** 生成并发送信函后，提议记录为一条发出的沟通。
+- **`/status client`：** 生成面向当事人的状态摘要时，提议记录（这些摘要通常发给当事人）。
+- **`/client-intake`：** 每个新案件日志的第一条是接待联系。
+- **`/semester-handoff`：** 交接备忘录读取每个案件的 `--summary` 以填充沟通历史部分。
+- **`/deadlines`：** 如果某次沟通建立了截止日期（"当事人说他们需要在周五前回复"），提议 `/deadlines --add`。
 
-## What this skill does not do
+## 本技能不做什么
 
-- **Store substantive legal analysis.** That lives in intake, memo, and status files. The log is communication record — facts of contact, not legal strategy.
-- **Auto-log from outside systems.** If the clinic uses a case management system (Clio), an integration could pull call logs and emails automatically. That's a future add; not v1.
-- **Edit past entries.** Append-only. If an entry is wrong, write a new entry referencing and correcting it. The integrity of the log depends on not rewriting history.
-- **Enforce log discipline.** If a student doesn't log a call, the skill can't know. Log hygiene is a clinic-culture problem; the skill just makes logging easy.
-- **Handle privileged or attorney-only notes.** If the student needs to record strategic thinking, that goes in the case's internal analysis file, not the comms log.
+- **存储实质性法律分析。** 那存在于接待、备忘录和状态文件中。日志是沟通记录——联系事实，不是法律策略。
+- **从外部系统自动记录。** 如果诊所使用案件管理系统，集成可以自动拉取通话记录和邮件。那是未来开发项；非 v1。
+- **编辑过往条目。** 仅追加。如果条目有误，撰写新条目引用并更正。日志的完整性取决于不重写历史。
+- **强制日志纪律。** 如果学生不记录通话，技能无法知晓。日志习惯是诊所文化问题；技能只是让记录变得容易。
+- **处理保密或律师专用备注。** 如果学生需要记录策略思考，应放在案件的内部分析文件中，而非沟通日志。

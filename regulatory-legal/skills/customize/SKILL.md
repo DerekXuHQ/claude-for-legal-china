@@ -1,103 +1,49 @@
 ---
 name: customize
 description: >
-  Guided customization of your regulatory practice profile — change one thing
-  without re-running the whole cold-start interview. Adjust watched
-  regulators, policy library index, materiality threshold, gap response
-  process, feed configuration, or matter workspace paths. Use when the user
-  says "change my [thing]", "add a regulator", "update my watchlist", "edit
-  my threshold", or "customize".
-argument-hint: "[section name, or describe what you want to change]"
+  指导式定制监管实践配置——在不重新运行完整冷启动访谈的情况下对单项进行调整。
+  调整监管机构监测清单、政策库索引、重要度阈值、差距响应流程、
+  动态源配置或事务工作区路径。适用于用户说"改我的[某配置]"、"增加一个监管机构"、
+  "更新我的监测清单"、"编辑阈值"或"定制"时。
+argument-hint: "[配置节名称，或描述你要变更的内容]"
 ---
 
 # /customize
 
-## When this runs
+## 何时运行
 
-The user typed `/regulatory-legal:customize`. They want to change something
-in their regulatory profile — a watched regulator, a materiality threshold,
-a feed source — without re-running the whole cold-start interview and
-without hand-editing YAML.
+用户输入了 `/regulatory-legal:customize`。他们希望更改监管配置中的某些内容——一个监测的监管机构、一个重要度阈值或一个动态源——而不重新运行完整的冷启动访谈，也不手动编辑配置文件。
 
-## What to do
+## 做什么
 
-1. **Read the config.** Read
-   `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`
-   (and `~/.claude/plugins/config/claude-for-legal/company-profile.md` one
-   level up). If the plugin config does not exist or still contains
-   `[PLACEHOLDER]` values, say:
+1. **读取配置。** 读取 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md`。如果插件配置不存在或仍包含 `[PLACEHOLDER]` 值，说明："你还没有运行设置。先运行 `/regulatory-legal:cold-start-interview`——定制功能用于调整已有的配置。"
 
-   > You haven't run setup yet. Run `/regulatory-legal:cold-start-interview`
-   > first — customize is for adjusting a profile you already have.
+2. **展示可定制的清单。** 列出配置中的内容，分组，附当前值的一行摘要：
 
-2. **Show the customizable map.** List what's in the profile, grouped, with a
-   one-line summary of the current value:
+   - **公司/你是谁**——名称、行业、管辖区域、阶段、执业设置
+   - **监测的监管机构**——在范围内的部委/机构/行业监管机构
+   - **政策库**——库索引的内部政策、每个政策的路径、每个政策的负责人
+   - **重要度阈值**——当法规变化达到"值得注意"vs"报告"vs"仅摘要"时；该阈值如何过滤输出
+   - **差距响应流程**——谁进行分流、每个严重度的SLA、下游负责人（政策、产品、培训）
+   - **动态源配置**——监管机构动态源、法律数据库连接器、检查频率
+   - **人员**——监管律师、政策负责人、意见起草人、升级链
+   - **工作流**——事务工作区、开放差距跟踪器、意见征集截止日期跟踪器
 
-   - **Company / who you are** — name, industry, jurisdictions, stage, practice
-     setting *(shared across all 12 plugins — changes flow through
-     `company-profile.md`)*
-   - **Regulators we watch** — agencies / bodies / SROs / state regulators
-     in scope, and which are "leading" (most likely to drive policy
-     impact) vs. "monitor"
-   - **Policy library** — the internal policies the library indexes, path
-     to each, owner per policy
-   - **Materiality threshold** — when a regulatory change rises to
-     "notable" vs. "report" vs. "digest only"; how this threshold filters
-     `/reg-feed-watcher` output
-   - **Gap response process** — who triages, SLA per severity, downstream
-     owners (policy, product, training)
-   - **Feed configuration** — regulator feeds, paid feed
-     connectors, cadence of the `/reg-feed-watcher` sweep, digest channel
-   - **People** — regulatory counsel, policy owners, comment drafter,
-     escalation chain
-   - **Workflow** — matter workspaces, open gaps tracker, comment deadline
-     tracker, digest publication cadence
-   - **Integrations** — regulatory feeds / Slack / document
-     storage status, fallbacks
+3. **询问他们想改变什么。**
 
-3. **Ask what they want to change.**
+4. **做出改变。** 展示当前值，询问新值，解释下游变化，确认，写入配置。
 
-   > What would you like to adjust? Pick a section, or describe the change in
-   > your own words.
+   例如：
+   - *将监管机构添加到监测清单：* "`/reg-feed-watcher` 将在下次运行时扫描此监管机构。`/policy-diff` 将接受来自此监管机构的法规动态输入。"
+   - *收紧重要度阈值：* "摘要将更简短——低于新阈值的事项将不再出现在摘要中。"
+   - *将新政策添加到库中：* "`/policy-diff` 在将新法规与库匹配时将包含此政策。"
 
-4. **Make the change.** Show the current value, ask for the new value, explain
-   what changes downstream, confirm, write it to the config.
+5. **对共享配置的变更**（公司名称、行业、管辖区域、执业设置、阶段）：写入 `~/.claude/plugins/config/claude-for-legal-zh/company-profile.md` 并注明此变更影响所有插件。
 
-   Examples:
-   - *Adding a regulator to the watchlist:* "`/reg-feed-watcher` will sweep this
-     regulator on its next run. `/policy-diff` will accept inputs from this
-     regulator's rulemaking feed."
-   - *Tightening materiality threshold:* "`/reg-feed-watcher` digest will be
-     shorter — items below the new threshold will drop from the weekly
-     digest but stay searchable."
-   - *New policy added to the library:* "`/policy-diff` will include this policy
-     when matching new rules against the library. The comment tracker
-     will tag comments affecting this policy."
+6. **关闭。** "完成。你的下一次输出将反映该变更。还有别的吗？你可以随时运行 `/regulatory-legal:customize`。"
 
-5. **For shared-profile changes** (company name, industry, jurisdictions,
-   practice setting, stage): write to
-   `~/.claude/plugins/config/claude-for-legal/company-profile.md` and note:
+## 护栏
 
-   > This change affects all 12 plugins — any plugin that reads your
-   > jurisdiction footprint now sees [new value].
-
-6. **Close.**
-
-   > Done. Your next output will reflect the change. Anything else? You can
-   > run `/regulatory-legal:customize` anytime.
-
-## Guardrails
-
-- **Never delete a section.** If the user wants to "drop" a regulator,
-  offer to mark it `[Monitor only]` and explain that monitoring keeps the
-  feed in the archive but pulls it out of the active digest.
-- **Flag internal inconsistency.** If the change would make the profile
-  inconsistent (e.g., regulator in scope + no jurisdiction in the footprint
-  that the regulator covers; or "weekly digest" + materiality threshold
-  that yields fewer than one item a quarter), flag the tension.
-- **Flag guardrail degradation.** `[verify]` tags on cited regulations,
-  source attribution on feed pulls, and the `[review]` flag on gap triage
-  are load-bearing — do not remove. Materiality threshold can be adjusted,
-  but lowering it below the point where the digest becomes noise is the
-  point — warn if that's the direction.
-- **One change at a time.** Don't re-ask the whole interview.
+- **绝不要删节。** 如果用户想"删除"一个监管机构，提议标记为 `[仅监测]` 并说明监测保留动态源在归档中但将其从活跃摘要中移除。
+- **标记内部不一致。** 如果变更会使配置不一致（例如范围内有监管机构但管辖区域覆盖范围不匹配），标记此矛盾。
+- **一次一项变更。** 不要重新询问整个访谈。

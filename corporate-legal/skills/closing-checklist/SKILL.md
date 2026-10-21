@@ -1,207 +1,205 @@
 ---
 name: closing-checklist
 description: >
-  What's blocking close — maintain the closing checklist with status, critical
-  path, and days to close. Self-updating: ingests new items from diligence
-  findings and schedule builds, tracks status, surfaces what's blocking. Use
-  when user says "closing checklist", "what's left to close", "checklist
-  status", "add to the checklist", or on a scheduled status pull.
-argument-hint: "[optional: item ID + status update]"
+  什么在阻碍交割——维护交割检查表，包含状态、关键路径和距交割天数。自我更新：
+  从尽调发现和清单构建中接收新项目，追踪状态，呈现阻碍项。当用户说"交割检查表"
+  "还差什么""检查表状态""加入检查表"或按计划状态拉取时使用。
+argument-hint: "[可选：项目ID + 状态更新]"
 ---
 
 # /closing-checklist
 
-1. Read `~/.claude/plugins/config/claude-for-legal/corporate-legal/deals/[code]/closing-checklist.yaml` and use the modes below.
-2. If status update provided: Mode 3 (update item).
-3. Otherwise Mode 4: blocking items, critical path, days to close.
+1. 读取 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[代码]/closing-checklist.yaml` 并使用以下模式。
+2. 如有状态更新：模式3（更新项目）。
+3. 否则模式4：阻碍项、关键路径、距交割天数。
 
 ---
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/corporate-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/corporate-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `/corporate-legal:matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
-## Purpose
+## 目的
 
-Deals close when the checklist is done. Everything on it, done. Nothing missing. This skill maintains the list, ingests new items as they surface from diligence, and tells the team what's blocking.
+当检查表完成时，交易交割。表上每一项，完成。无所遗漏。本技能维护清单，从尽调中发现的新项目并纳入，告诉团队什么在阻碍。
 
-## The checklist
+## 检查表
 
-Lives at `~/.claude/plugins/config/claude-for-legal/corporate-legal/deals/[code]/closing-checklist.yaml`. Structure:
+存放于 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[代码]/closing-checklist.yaml`。结构：
 
 ```yaml
 deal_code: "Project Falcon"
-target_close: [DATE]
-signing_date: [DATE]
-last_updated: [DATE]
+target_close: [日期]
+signing_date: [日期]
+last_updated: [日期]
 
 conditions_precedent:
   - id: CP-001
-    item: "HSR waiting period expiration"
-    category: "Regulatory"
-    responsible: "Buyer counsel"
+    item: "经营者集中审查等待期届满"
+    category: "监管审批"
+    responsible: "买方律师"
     due: 2026-04-15
-    status: "Filed 2026-03-01, waiting period runs"
+    status: "已于2026-03-01申报，等待期进行中"
     blocking: true
-    source: "Purchase Agreement §7.1(a)"
+    source: "股权收购协议 §7.1(a)"
 
   - id: CP-002
-    item: "Acme Corp consent to assignment"
-    category: "Third-party consents"
-    responsible: "Target — Jane Doe"
+    item: "Acme Corp 同意合同转让"
+    category: "第三方同意"
+    responsible: "目标公司 — 张三"
     due: 2026-04-20
-    status: "Request sent 2026-03-10, no response"
+    status: "请求已于2026-03-10发出，无回应"
     blocking: true
-    source: "Schedule 3.12(a)(4); Acme MSA §14.2"
+    source: "清单 3.12(a)(4)；Acme 主协议 §14.2"
 
 closing_deliverables:
   - id: CD-001
-    item: "Certificate of good standing — Target (DE)"
-    category: "Corporate"
-    responsible: "Target counsel"
+    item: "目标公司存续证明"
+    category: "公司"
+    responsible: "目标公司律师"
     due: 2026-04-28
-    status: "Not started"
+    status: "未开始"
     blocking: true
-    source: "Purchase Agreement §2.3(b)(iv)"
+    source: "股权收购协议 §2.3(b)(iv)"
 
-  # ... etc
+  # ... 等等
 ```
 
-## Modes
+## 模式
 
-### Mode 1: Initialize from the purchase agreement
+### 模式1：从股权收购协议初始化
 
-Read the signed (or near-final) purchase agreement. Extract:
+阅读已签署（或接近定稿）的股权收购协议。提取：
 
-- Every condition precedent (location varies by agreement — read the actual section headings)
-- Every closing deliverable (closing deliverables schedule or corresponding section)
-- Every covenant with a pre-closing deadline
+- 每项交割先决条件（位置因协议而异——阅读实际的条款标题）
+- 每项交割交付物（交割交付物清单或相应条款）
+- 每项含交割前截止日的承诺
 
-Each becomes a checklist item with a source cite to the agreement section.
+每项均成为检查表项目，附协议条款的来源引用。
 
-**Research obligations before populating regulatory/approval items.** Antitrust, foreign-investment, and sector-specific approvals (for example, HSR-style filings, CFIUS, industry regulators) have jurisdiction-specific mechanics, thresholds, and timing windows that change. Extract the name of each regulatory condition from the PA, then research the currently operative mechanics (who files, when, what triggers a second request, what the waiting period is). Cite primary sources and verify currency. Do not populate a timing assumption from memory.
+**填充监管/审批项前的研究义务。** 反垄断、外商投资和行业特定审批（例如经营者集中申报、外商投资安全审查、行业监管部门审批）具有因法域而异的操作机制、阈值和时间窗口，且会变化。从收购协议中提取每项监管条件的名称，然后研究当前有效的操作机制（谁来申报、何时、什么触发二次审查、等待期多长）。引用一级来源并核实时效性。不要凭记忆填充时间假设 `[yuandian检索]`。
 
-**Material-adverse-effect / material-adverse-change closing conditions.** Pull the defined term from the PA — MAC/MAE framing is negotiated, not a standard. Research the governing-law interpretation of the specific language used (Delaware, New York, and other jurisdictions treat carve-outs and quantitative tests differently) before flagging an event as a potential MAC trigger.
+**重大不利影响/重大不利变化交割条件。** 从收购协议中提取定义术语——重大不利影响/重大不利变化的措辞是谈判形成的结果，不是标准模板。在将某一事件标记为可能的重大不利影响/重大不利变化触发条件前，研究管辖法律下对所用具体语言的理解（不同法域对待例外条款和量化检验的方式不同）。
 
-**Consent-requirement extraction from material contracts** depends on governing-law default rules and the specific anti-assignment language in each contract. Research the applicable rule per contract rather than assuming a default.
+**从重大合同中提取同意要求** 取决于管辖法律的默认规则和各合同中具体的禁止转让表述。逐份合同研究适用规则而非假设一个默认规则 `[yuandian检索]`。
 
-### Mode 2: Ingest from diligence (the "self-updating" part)
+### 模式2：从尽调接收（"自我更新"部分）
 
-Mode 2 is triggered when an upstream skill produces a finding with a pre-closing action. The upstream skills and output types this mode ingests:
+模式2在上游技能产出带有交割前行动的发现时触发。本模式接收的上游技能和输出类型：
 
-- **`diligence-issue-extraction` findings** — any finding flagged for a closing action (consent, shareholder vote, board resolution, regulatory filing, release, escrow mechanic, pay-off letter). Not just "consents" — see the extraction skill's Handoffs section for the full list.
-- **`material-contract-schedule` CoC / assignment items** — change-of-control provisions, anti-assignment clauses, MFN triggers surfaced during schedule build.
-- **`deal-team-summary` output** — the exec-tier brief aggregates extraction findings and sometimes surfaces a closing-action item that a mechanical read of the individual extraction memos would miss (e.g., a §280G cleansing vote rolled up across multiple employment agreements, or a composite consent package). Mode 2 reads the latest deal-team-summary in the deal folder and reconciles its closing-action items against the checklist. Anything flagged by deal-team-summary as requiring pre-closing action that is not already on the checklist is appended.
+- **`diligence-issue-extraction` 发现**——任何标记为交割行动的发现（同意、股东表决、董事会决议、监管申报、解除函、托管机制、清偿函）。不只是"同意"——见提取技能的交接部分了解完整清单。
+- **`material-contract-schedule` 控制权变更/合同转让项目**——清单构建过程中出现的控制权变更条款、禁止转让条款、最惠国待遇触发。
+- **`deal-team-summary` 输出**——高管层简报汇总提取发现，有时会呈现某项单项提取备忘录的机械阅读会遗漏的交割行动项（例如横跨多份劳动合同的决议表决、或合成同意包）。模式2读取交易文件夹中最新的 deal-team-summary 并将其中的交割行动项与检查表核对。任何由 deal-team-summary 标记为需要交割前行动且尚未列入检查表的项目均予追加。
 
-The handoff schema covers the full range of pre-closing actions, not just consents:
+交接模式涵盖全部交割前行动，不只是同意：
 
 ```yaml
 handoff:
-  # Required fields
-  item: "[Counterparty or action, one line]"
-  category: "[Third-party consents | Shareholder / board action | Regulatory filing | Release / termination | Escrow / holdback | Closing deliverable]"
-  source: "[Contract name / statutory section / VDR path + Bates]"
-  blocking: true  # unless the agreement has a materiality qualifier
-  severity: "[🔴 / 🟠 / 🟡 / 🟢 — carried from upstream, see severity-floor rule in CLAUDE.md]"
+  # 必填字段
+  item: "[对方当事人或行动，一行]"
+  category: "[第三方同意 | 股东/董事会行动 | 监管申报 | 解除/终止 | 托管/扣留 | 交割交付物]"
+  source: "[合同名称 / 法条章节 / 数据室路径 + 页码]"
+  blocking: true  # 除非协议含重大性限定
+  severity: "[🔴 / 🟠 / 🟡 / 🟢 — 承自上游，见 CLAUDE.md 中的严重程度下限规则]"
 
-  # Consent / third-party action fields
-  counterparty: "[e.g., Dunmore Holdings LLC]"
-  guarantor: "[e.g., Buyer parent guaranty required, or N/A]"
-  conditions: "[any substantive condition the counterparty attached — e.g., 'replacement guaranty from buyer parent required before consent effective']"
-  notice_deadline: "[e.g., 30 days prior to closing, or specific date]"
+  # 同意/第三方行动字段
+  counterparty: "[例如：某某有限公司]"
+  guarantor: "[例如：需要买方母公司提供担保，或不适用]"
+  conditions: "[对方当事人附加的任何实质性条件——例如'需买方母公司提供替代担保后同意始生效']"
+  notice_deadline: "[例如：交割前30天，或具体日期]"
 
-  # Corporate action fields
-  approval_body: "[Shareholders | Board | Committee | Regulator]"
-  approval_threshold: "[e.g., 75% disinterested stockholder vote for §280G cleansing]"
-  statutory_or_charter_source: "[e.g., IRC §280G(b)(5)(B); Charter Art. IV §2]"
+  # 公司行动字段
+  approval_body: "[股东会 | 董事会 | 专门委员会 | 监管机构]"
+  approval_threshold: "[例如：需经出席会议的股东所持表决权的三分之二以上通过]"
+  statutory_or_charter_source: "[例如：《公司法》第120条；公司章程第IV条第2节]"
 
-  # Timing
-  estimated_time_to_complete: "[e.g., 30 days]"
-  must_occur_before: "[e.g., closing | signing | end of hiatus period]"
+  # 时间
+  estimated_time_to_complete: "[例如：30天]"
+  must_occur_before: "[例如：交割 | 签署 | 中断期结束]"
 ```
 
-Preserve every field the upstream skill populated. A "Dunmore consent required, with replacement guaranty condition and 30-day notice" should surface on the checklist with all three elements (consent, guarantor, notice), not collapse to "Dunmore consent to change of control." When the upstream skill provides a severity, carry it — see the cross-skill severity floor rule in `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md`.
+保留上游技能填充的每个字段。"某某同意需要，附带替代担保条件和30天通知"应在检查表上显示全部三个要素（同意、担保人、通知），而非压缩为"某某控制权变更同意"。当上游技能提供了严重程度时，承继——见 CLAUDE.md 中的跨技能严重程度下限规则。
 
-Append to the checklist. De-dupe on (counterparty + action type), not on the freeform item name — a Dunmore consent and a Dunmore release are different items even though both name Dunmore. When de-duping, merge fields rather than overwrite: if one handoff populated `guarantor` and a later handoff populated `notice_deadline`, the checklist row carries both.
+追加至检查表。按（对方当事人 + 行动类型）去重，而非按自由文本项目名——某某一项同意和某某一项解除是不同的项目，尽管都提及某某。去重时合并且不覆盖：如果一次交接填充了 `guarantor`，另一次交接填充了 `notice_deadline`，检查表行应包含两者。
 
-### Mode 3: Status update
+### 模式3：状态更新
 
-User (or dataroom-watcher agent) provides a status update. Find the item, update status and last-updated.
+用户（或数据室监控代理）提供状态更新。找到项目，更新状态和最近更新日期。
 
 ```
 /corporate-legal:closing-checklist
-CP-002: Acme responded, consent form attached, needs countersignature
+CP-002: Acme 已回应，同意表格已附，需要副签
 ```
 
-### Mode 4: What's blocking
+### 模式4：什么在阻碍
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果页眉 — 按插件配置 ## 输出规范 — 因角色而异；参见 `## 使用者`]
 
-> This status report is derived from the purchase agreement, diligence findings, and internal deal records. It inherits their privilege and confidentiality status — distribution beyond the privilege circle (counterparty, broader business teams) can waive privilege. Confirm the distribution list before sending.
+> 本状态报告来源于股权收购协议、尽调发现和内部交易记录。它继承其特权和保密状态——向特权保护圈之外分发（对方当事人、更广泛的业务团队）可能放弃特权。发送前确认分发名单。
 
-## Closing Checklist Status — [Deal code] — [date]
+## 交割检查表状态 — [交易代码] — [日期]
 
-**Target close:** [date] ([N] days out)
-**Items:** [N] total — [N] done, [N] in progress, [N] not started
+**目标交割日：**[日期]（距今 [N] 天）
+**项目：**[N] 总计 — [N] 已完成，[N] 进行中，[N] 未开始
 
-### 🔴 Blocking and at risk
+### 🔴 阻碍且有风险
 
-| ID | Item | Due | Status | Days to due |
+| ID | 项目 | 截止日 | 状态 | 距截止天数 |
 |---|---|---|---|---|
-| [CP-XXX] | [item] | [date] | [status] | **[N]** |
+| [CP-XXX] | [项目] | [日期] | [状态] | **[N]** |
 
-### 🟡 Blocking, on track
+### 🟡 阻碍，在轨
 
-[same table]
+[同上表格]
 
-### ✅ Complete
+### ✅ 已完成
 
-[N] items — [collapsed list]
+[N] 项 — [折叠列表]
 
-### Not blocking (post-closing, informational)
+### 非阻碍（交割后，信息性）
 
-[N] items
+[N] 项
 
 ---
 
-**Critical path:** [The item(s) that, if they slip, push the close date]
+**关键路径：** [如该项目延误，将推后交割日期的项目]
 ```
 
-## Critical path analysis
+## 关键路径分析
 
-Not all blocking items are equal. A consent that takes 30 days to get is critical path. A good-standing certificate that takes 2 days is not, even though both are blocking.
+不是所有阻碍项都一样。一项需要30天取得的同意是关键路径。一份需要2天的存续证明不是，尽管两者都在阻碍。
 
-For each blocking item, estimate time-to-complete. The ones where `(due date - today) < estimated time` are at risk. Those go at the top of every status report.
+对每项阻碍项，估计完成时间。其中 `(截止日 - 今天) < 估计时间` 的有风险。这些排在每份状态报告的顶部。
 
-If the checklist has more than ~10 items, or any time the user asks: offer the dashboard (see CLAUDE.md `## Outputs → Dashboard offer for data-heavy outputs`). Shape the offer for this output — counts by status (done / in progress / not started / at risk), a critical-path view grouped by workstream, and a sortable grid with item, owner, due date, and days-to-due.
+如果检查表有超过约10个项，或用户任何时候提问：提供仪表盘（见 CLAUDE.md `## 输出规范 → 数据密集产出的仪表盘选项`）。为本次产出定制：按状态计数（已完成/进行中/未开始/有风险）、按工作流分组的关键路径视图，以及带项目、负责人、截止日和距截止天数的可排序网格。
 
-## Integration: dataroom-watcher agent
+## 集成：数据室监控代理
 
-The agent checks the checklist daily, pulls any status updates from email/Slack if connected, and posts the "what's blocking" report to the deal team channel. Mode 4 is the agent's output.
+代理每日检查检查表，如已连接则从邮件/飞书拉取任何状态更新，并将"什么在阻碍"报告推送到交易团队频道。模式4是代理的输出。
 
-## Consequential-action gate (certify closing)
+## 后果性行动准入（证明交割）
 
-**Before producing a "ready to close / all CPs satisfied" certification or closing memo:** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md`. If the Role is **Non-lawyer**:
+**在产出"已可交割/全部交割先决条件已满足"认证或交割备忘录前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 中的 `## 使用者`。如果角色为**非法务人员**：
 
-> Certifying that closing conditions have been satisfied (or producing a closing memo asserting this) has legal consequences — it's the signal that drives funds flow and post-closing obligations. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> 证明交割先决条件已满足（或出具如此主张的交割备忘录）具有法律后果——这是推动资金流转和交割后义务的信号。你是否已与律师审查？如已审查，继续。如未审查，以下是带给律师的简要说明：
 >
-> - The full CP list with status (what's done, what's in progress, what's not started)
-> - Anything where evidence of completion is weak or missing
-> - Any waivers or side letters needed for items that won't close in time
-> - Open questions (counterparty consents still pending, any MAC/bring-down risk)
-> - What to ask the attorney (is this ready to call closed; are any conditions being walked past that shouldn't be; what needs to go on a schedule of exceptions)
+> - 完整的交割先决条件清单及状态（哪些已完成、哪些进行中、哪些未开始）
+> - 已完成证据薄弱或缺失的任何事项
+> - 对无法按时交割的项目所需的任何豁免或补充函
+> - 待决问题（对方同意仍在待定、任何重大不利影响/重大不利变化/陈述更新风险）
+> - 需向律师提出的问题（这是否已可召集交割；是否有正在被跳过的交割条件不应被跳过；什么需要列入例外清单）
 >
-> If you need to find an attorney, solicitor, barrister, or other authorised legal professional: contact your professional regulator (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent) for a referral service.
+> 如需寻找律师：联系中华全国律师协会或所在地地方律师协会获取推荐服务。
 
-Do not produce a final "ready to close" certification past this gate without an explicit yes. Status tracking and "what's blocking" reports do not require the gate.
+在获得明确同意前，不越过此准入产出最终的"已可交割"认证。状态追踪和"什么在阻碍"报告不需要此准入。
 
 ---
 
-## What this skill does not do
+## 本技能不做什么
 
-- It doesn't obtain consents, file forms, or draft documents. It tracks that they need to happen.
-- It doesn't decide what's blocking — the purchase agreement decides that. This skill reads the agreement.
-- It doesn't close the deal. It tells you when you can.
+- 不取得同意、不提交表格、不起草文件。它追踪这些需要发生。
+- 不决定什么在阻碍——股权收购协议决定。本技能读取协议。
+- 不交割交易。它告诉你何时可以。

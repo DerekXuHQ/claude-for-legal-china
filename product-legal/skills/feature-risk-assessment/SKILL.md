@@ -1,158 +1,146 @@
 ---
 name: feature-risk-assessment
 description: >
-  Deeper risk assessment for a single feature or product area when the launch
-  review found something that needs more than a line item. Structured analysis:
-  what could go wrong, how likely, how bad, what mitigates it. Use when user
-  says "deep dive on this risk", "risk assessment for [feature]", "what could
-  go wrong with", or when launch-review flags a novel issue.
+  对单个功能或产品领域进行更深入的风险评估，当上线审查发现某个议题需要
+  超出单行条目的深度分析时使用。结构化分析：可能出什么问题、可能性多大、
+  后果多严重、如何缓解。当用户说"深入分析这个风险""[功能]风险评估"
+  "可能出什么问题"或上线审查标记了全新议题时使用。
 ---
 
-# Feature Risk Assessment
+# 功能风险评估
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/product-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/product-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作空间`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `/product-legal:matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
-## Purpose
+## 目的
 
-The launch review is broad. This is deep. When a single issue needs more than a table row — a novel AI feature, a children's product, something a regulator is actively looking at — this skill produces a standalone assessment.
+上线审查是广度。这是深度。当单个议题需要超出表格行的分析——一个新型AI功能、一个儿童产品、一个监管机构正在积极关注的事项——本技能产出一份独立的评估。
 
-Not every launch needs one. Most don't. This is for the 10% where "PIA done, shipped" isn't the right level of scrutiny.
+不是每次上线都需要。大多数不需要。这是给那10%的，其中"做完个人信息保护影响评估，上线"的审查深度不够。
 
-## When to run this
+## 何时运行
 
-- Launch review found a pattern that's **not in the calibration table** (novel)
-- Launch review found something in the **"usually blocks"** category
-- GC or leadership asked "what's the risk here" and wants more than a one-liner
-- The feature is in an area with **active regulatory attention** (AI, children, biometric, health)
-- Someone outside legal is worried and a structured answer would help
+- 上线审查发现一个**不在校准表**中的模式（全新）
+- 上线审查发现**"通常阻断"**类别中的某项
+- 法务负责人或领导层问"这里有什么风险"且需要的不是一句话
+- 功能处于**监管积极关注**的领域（AI、儿童、生物特征、健康、金融）
+- 法律团队外部有人担心，结构化的回答会有所帮助
 
-If none of the above, the launch review is enough. Don't generate paperwork for its own sake.
+如果以上都不满足，上线审查就足够了。不要为自身目的生成文书工作。
 
-## Structure
+## 结构
 
-### 1. What we're assessing
+### 1. 我们评估什么
 
-One paragraph. What the feature does, what's new about it, why it got escalated to a full assessment.
+一段话。功能做什么、新在哪里、为什么被升级到完整评估。
 
-### 2. The risks
+### 2. 风险
 
-For each distinct risk (aim for 2-5, not 15):
+对每个独立风险（目标是2-5个，不是15个）：
 
 ```markdown
-### Risk [N]: [Short name]
+### 风险[N]：[简短名称]
 
-**Scenario:** [What would have to happen for this to go wrong. Be specific —
-not "data breach" but "the recommendation algo surfaces a user's sensitive
-category interest to someone who shouldn't see it because X."]
+**场景：**[需要发生什么才会导致出问题。要具体——不是"数据泄露"
+而是"推荐算法因X将用户的敏感类别兴趣展示给了不该看到的人。"]
 
-**Who gets hurt:** [Users? The company? A third party? Specific.]
+**谁受伤害：**[用户？公司？第三方？要具体。]
 
-**How likely:** [Low / Medium / High — with a reason. "Low — would require
-both X and Y to fail simultaneously." Not just a vibes rating.]
+**可能性多大：**[低/中/高——附理由。"低——需要X和Y同时失效。"
+不只是感觉评分。]
 
-**How bad if it happens:** [Low / Medium / High — with a reason. "High —
-regulatory fine + class action exposure + press" vs. "Low — one angry
-tweet, no actual harm."]
+**如果发生有多严重：**[低/中/高——附理由。"高——
+行政处罚+集团诉讼暴露+媒体报道"vs."低——一条愤怒的微博，无实际损害。"]
 
-**Existing mitigations:** [What already reduces the likelihood or impact]
+**现有缓解措施：**[已经降低可能性或影响的措施]
 
-**Gap:** [What's missing, if anything]
+**缺口：**[还缺什么，如果有]
 
-**Residual risk:** [After existing mitigations — is this acceptable or does
-it need more?]
+**剩余风险：**[在现有缓解措施之后——这是可接受还是需要更多？]
 ```
 
-### 3. Regulatory landscape (if relevant)
+### 3. 监管环境（如相关）
 
-Only include if a regulator is actively interested in this space. If so:
+仅当有监管机构对此领域有积极关注时才包含。如有：
 
-- Which regulator, what they've said/done recently
-- How this feature would look to them
-- Whether we'd rather they hear about it from us or from a headline
+- 哪个监管机构，他们最近说了什么/做了什么
+- 此功能在他们看来如何
+- 我们是希望他们从我们这里听到还是从一篇头条新闻中听到
 
-### 4. Precedent (if any)
+在中国法语境下，关注市场监管总局、国家互联网信息办公室、工业和信息化部、公安部门及其他行业监管机构最近的执法动态和指引。
 
-Has another company done something similar? What happened?
+### 4. 先例（如有）
 
-- If nothing bad happened → useful, not dispositive
-- If something bad happened → what was different about their situation, does it apply here
+其他公司做过类似的事吗？发生了什么？
 
-Don't overweight precedent. Regulators change priorities; one company getting away with something doesn't mean the next one will.
+- 如果没出什么问题 → 有用，但不具有决定性
+- 如果出了问题 → 他们的情况有什么不同，这里是否适用
 
-### 5. Options
+不要高估先例。监管机构会变换优先级；一家公司侥幸过关不意味着下一家也会。
 
-Present 2-3 realistic paths:
+### 5. 选项
+
+呈现2-3条现实路径：
 
 ```markdown
-| Option | Description | Risk reduction | Cost |
+| 选项 | 描述 | 风险降低 | 成本 |
 |---|---|---|---|
-| A: Ship as designed | [current plan] | None | None |
-| B: Ship with [mitigation] | [change] | [how much] | [eng effort, timeline, UX] |
-| C: Don't ship [component] | [scope cut] | [how much] | [product impact] |
+| A：按设计上线 | [当前计划] | 无 | 无 |
+| B：上线并增加[缓解措施] | [改动] | [多少] | [开发工作量、时间、用户体验] |
+| C：不上线[组件] | [砍范围] | [多少] | [产品影响] |
 ```
 
-### 6. Recommendation
+### 6. 建议
 
-Pick one. Explain why. Acknowledge what you're trading off.
+选一个。解释理由。承认您正在做何种权衡。
 
 ```markdown
-**Recommended: Option [X]**
+**建议：选项[X]**
 
-[Why. What risk remains. Why that's acceptable. Who accepts it.]
+[理由。剩余什么风险。为什么可接受。谁接受。]
 
-**If the answer is "not my call":** [Who decides, what they need to know]
+**如果答案是"非我能定"：**[谁决定，他们需要知道什么]
 ```
 
-## Calibration check
+## 校准检查
 
-Before finalizing, check against `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → Risk calibration:
+定稿前，对照 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → 风险校准检查：
 
-- Is this risk assessment calibrated to *this company*, or is it generic?
-- A risk that's "High" at a company under a consent decree might be "Medium" at one that isn't
-- The assessment should reflect the actual regulatory posture, litigation history, and risk appetite captured in the practice profile
+- 这份风险评估是针对*这家公司*校准的，还是泛泛的？
+- 对处于承诺整改协议下的公司可能是"高"风险，对不在该情况下的公司可能是"中"
+- 评估应反映实务画像中记载的实际监管环境、诉讼历史和风险偏好
 
-## Handoffs
+## 交接
 
-- **To AI governance:** If the deep-dive was triggered by an AI feature — which
-  it often is — run `/ai-governance-legal:aia-generation [feature]` in parallel or
-  immediately after. The feature risk assessment frames the decision; the AIA
-  documents the AI system specifically in the format AI governance needs. They're
-  not duplicates: the FRA is a product-legal decision doc; the AIA is the
-  governance record.
-- **To privacy:** If the feature involves new data collection or processing,
-  run `/privacy-legal:pia-generation [feature]`. The FRA's risk section
-  will likely overlap with the PIA's — flag that overlap so work isn't duplicated,
-  but both docs need to exist.
-- **To AI governance vendor review:** If the feature uses a new AI vendor,
-  run `/ai-governance-legal:vendor-ai-review [vendor agreement]` if not already done
-  during the launch review.
+- **转AI治理：** 如果深度评估由AI功能触发——这很常见——同时或紧接着运行 `/ai-governance-legal:aia-generation [功能]`。功能风险评估搭建决策框架；算法安全评估以AI治理所需的格式具体记录AI系统。两者不重复：FRA是产品法务决策文件；算法安全评估是治理记录。
+- **转个人信息保护：** 如果功能涉及新的数据采集或处理，运行 `/privacy-legal:pia-generation [功能]`。FRA的风险节可能与个人信息保护影响评估重叠——标记该重叠以避免重复工作，但两份文件都需要存在。
+- **转AI治理供应商审查：** 如果功能使用新的AI供应商，运行 `/ai-governance-legal:vendor-ai-review [供应商协议]`，如在上线审查时尚未完成。
 
-## Output format
+## 输出格式
 
-Standalone doc, 2-4 pages. Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` `## Outputs` (it differs by user role — see `## Who's using this`).
+独立文件，2-4页。冠以 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` `## 输出规范` 中的工作成果页眉（因用户角色而异——参见 `## 使用者`）。
 
-Not a slide deck, not a memo to file — a decision document someone reads and then decides.
+不是PPT演示稿，不是备忘录——是一份供阅读后决策的决策文件。
 
-Save where `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → Launch review process says review docs go. If the doc is going to be shared with anyone outside the privileged loop (e.g., posted to a broadly-shared ticket), drop the work-product header only for that externally-facing copy and keep the privileged original in the matter file.
+保存到 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → 上线审查流程规定的审查文件存放位置。如果文件将被分享给保密范围外的任何人（例如发布到广泛共享的工单上），仅为该对外版本去除工作成果页眉，在事项文件中保留保密原始版本。
 
-## Citation check
+## 引用检查
 
-If the assessment cites cases, statutes, regulations, or enforcement actions — in the Regulatory landscape or Precedent sections especially — those citations were generated by an AI model and have not been verified against a primary source. Before the decision document goes to a decisionmaker, verify each citation against a legal research tool (Westlaw, CourtListener, or your firm's research platform) for accuracy, good law status, and current enforcement posture. A risk assessment built on a fabricated enforcement action is worse than no assessment.
+如果评估引用了案例、法律、法规或执法行动——尤其是在监管环境或先例节中——这些引用由AI模型生成且未经原始来源验证。在决策文件交给决策者之前，对照法律研究工具（北大法宝、威科先行、法信或您的律所研究平台）核实每个引用的准确性、有效性和当前的执法态势。建立在虚构执法行动上的风险评估比没有评估更糟糕。
 
-> **No silent supplement.** If a research query to the configured legal research tool returns few or no results for the regime or precedent the assessment needs, report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [regime / precedent]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against the issuing authority before relying, or (4) flag as unverified and stop. Which would you like?" A lawyer decides whether to accept lower-confidence sources.
+> **禁止静默补充。** 如果对已配置的法律研究工具的检索查询返回的结果很少或无结果，报告检索到的情况并停止。不要未经询问从联网搜索或模型知识中填补。说："[工具]搜索返回[N]条结果。关于[制度/先例]的覆盖似乎有限。选项：(1) 扩大检索查询，(2) 尝试不同的研究工具，(3) 搜索网络——结果将标记 `[联网检索 — 需复核]`，依赖前应比照发布机关核实，或 (4) 标记为未核实并停止。您选哪个？"由律师决定是否接受较低置信度的来源。
 >
-> **Source attribution.** Tag every citation in the Regulatory landscape and Precedent sections with where it came from: `[Westlaw]`, `[CourtListener]`, `[regulator site]`, or the MCP tool name for citations retrieved from a legal research connector; `[web search — verify]` for web-search citations; `[model knowledge — verify]` for citations recalled from training data; `[user provided]` for citations from the feature team. Citations tagged `verify` carry higher fabrication risk and should be checked first. Never strip or collapse the tags — the decisionmaker needs to see which citations to verify first.
+> **来源归属。** 将监管环境和先例节中的每个引用标记其来源：`[北大法宝]`、`[威科先行]`、`[监管机构网站]`，或对于从法律研究对接获取的引用使用MCP工具名称；`[联网检索 — 需复核]` 用于联网搜索引用；`[模型知识 — 需验证]` 用于训练数据中回忆的引用；`[用户提供]` 用于功能团队提供的引用。标记 `需验证` 的引用具有较高的编造风险，应首先检查。绝不剥离或折叠标签——决策者需要看到哪些引用需要首先核实。
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出规范` 中的下一步决策树收尾。将选项定制为本技能刚刚产出的内容——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁死。决策树是输出；律师做选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- It doesn't assess every feature. Most features get a launch review and that's it.
-- It doesn't make the decision. It frames the decision. Someone with authority picks an option.
-- It doesn't do quantitative risk modeling. If the company has a formal risk framework with numbers, use that — this is qualitative.
+- 它不评估每个功能。大多数功能只需上线审查。
+- 它不做决策。它搭建决策框架。有权的人选选项。
+- 它不做定量风险建模。如果公司有带数字的正式风险框架，使用该框架——这是定性评估。

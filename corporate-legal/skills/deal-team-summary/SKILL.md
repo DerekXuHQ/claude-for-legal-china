@@ -1,126 +1,124 @@
 ---
 name: deal-team-summary
 description: >
-  Aggregate diligence findings into a deal team briefing at the right altitude
-  for the audience — exec summary for leadership, working summary for the team.
-  Use when user says "brief the deal team", "what's the state of diligence",
-  "summarize findings for [audience]", "deal update", or on the briefing cadence.
+  将尽调发现汇总为适合受众层级的交易团队简报——面向领导层的执行摘要、面向团队的
+  工作摘要。当用户说"给交易团队简报""尽调现状如何""汇总发现给[受众]"
+  "交易更新"或按简报频率触发时使用。
 ---
 
-# Deal Team Summary
+# 交易团队摘要
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/corporate-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/corporate-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `/corporate-legal:matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
-## Purpose
+## 目的
 
-The deal lead doesn't read 200 findings. They read: what's material, what changed since last brief, what needs a decision. This skill compresses the diligence output to the right level for the reader.
+交易负责人不读200条发现。他们读的是：什么是重大的、自上次简报以来有什么变化、需要什么决策。本技能将尽调输出压缩到适合阅读者的层级。
 
-## Load context
+## 加载上下文
 
-- `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` → Deal team briefing (cadence, format, what the business reads)
-- `~/.claude/plugins/config/claude-for-legal/corporate-legal/deals/[code]/deal-context.md` → deal lead, timeline
-- Current findings from diligence-issue-extraction output
+- `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` → 交易团队简报（频率、格式、业务方阅读的内容）
+- `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[代码]/deal-context.md` → 交易负责人、时间线
+- `diligence-issue-extraction` 的当前发现
 
-## Audience tiers
+## 受众层级
 
-Per `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` — what the business reads vs. what's for the file. Default tiers:
+按 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` ——业务方阅读的内容 vs. 归档的内容。默认层级：
 
-| Audience | Gets | Doesn't get |
+| 受众 | 获得 | 不获得 |
 |---|---|---|
-| **Board / exec sponsor** | Top 3-5 material issues, price/structure impact, decision items | Category detail, green findings, process |
-| **Deal lead** | All reds, all yellows, progress, decision items, next steps | Green finding detail |
-| **Working team** | Everything — full findings, status by category, gaps | Nothing withheld |
+| **董事会/发起高管** | 前3-5项重大问题、价格/结构影响、决策事项 | 分类详情、绿色发现、流程 |
+| **交易负责人** | 全部红色、全部黄色、进展、决策事项、下一步 | 绿色发现详情 |
+| **工作组** | 全部内容——完整发现、按类别分状态、缺口 | 无保留 |
 
-Ask which tier if not obvious.
+如不明确，询问哪个层级。
 
-## The summary
+## 摘要
 
-### Exec tier
+### 高管层
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果页眉 — 按插件配置 ## 输出规范 — 因角色而异；参见 `## 使用者`]
 
-> This brief aggregates privileged diligence findings and inherits the sources' privilege and confidentiality status. Distribution beyond the privilege circle (including to broader business teams) can waive privilege — confirm the distribution list matches the privilege circle before sending.
+> 本简报汇总了受特权保护的尽调发现，并继承来源文件的特权和保密状态。向特权保护圈之外分发（包括更广泛的业务团队）可能放弃特权——发送前请确认分发名单与特权保护圈一致。
 
-# [Deal code] — Diligence Brief — [date]
+# [交易代码] — 尽调简报 — [日期]
 
-**Status:** [On track / Issues identified / Material findings]
-**Coverage:** [X]% of VDR reviewed
+**状态：**[进展正常 / 已发现问题 / 有重大问题]
+**覆盖范围：**已审查数据室 [X]%
 
-## Material findings
+## 重大问题
 
-[3-5 max. One paragraph each. What it is, why it matters to the deal, what
-we're doing about it.]
+[最多3-5项。每项一段。是什么、为什么对交易重要、我们做了什么。]
 
-## Decisions needed
+## 需要决策的事项
 
-- [ ] [Specific decision — price adjustment, indemnity ask, walk-away trigger]
-  — [who decides] — [by when]
+- [ ] [具体决策 — 价格调整、赔偿要求、退出触发条件]
+  — [谁决定] — [截止时间]
 
-## Since last brief
+## 自上次简报以来的变化
 
-[What changed. New findings, findings resolved, coverage progress.]
+[发生了什么变化。新发现、已解决的发现、覆盖进展。]
 ```
 
-### Deal lead tier
+### 交易负责人层
 
-Same as above plus:
+以上内容再加：
 
 ```markdown
-## All open issues by category
+## 按类别列出的全部未解决问题
 
-### 🔴 Red
-[Finding title + one-line — link to full finding for detail]
+### 🔴 红色
+[发现标题 + 一行描述 — 链接到完整发现以获取详情]
 
-### 🟡 Yellow
-[same]
+### 🟡 黄色
+[同上]
 
-## Progress
+## 进展
 
-| Category | Docs reviewed | Coverage | Reds | Yellows | Status |
+| 类别 | 已审文件 | 覆盖 | 红色 | 黄色 | 状态 |
 |---|---|---|---|---|---|
-| [name] | [N/M] | [%] | [N] | [N] | [Complete / In progress / Blocked] |
+| [名称] | [N/M] | [%] | [N] | [N] | [完成 / 进行中 / 受阻] |
 
-## Gaps and follow-ups
+## 缺口和后续
 
-- [Supplemental request items outstanding]
-- [Questions to management]
+- [尚未回应的补充请求事项]
+- [需向管理层核实的问题]
 
-## Next 72 hours
+## 未来72小时
 
-[What's getting reviewed, what briefings are scheduled]
+[审查什么、安排了什么简报]
 ```
 
-### Working team tier
+### 工作组层
 
-Full finding detail. Same structure as above but every finding gets its full house-format block, not a one-liner.
+完整发现详情。与上述结构相同，但每项发现都获得完整的内部格式块，而非一行。
 
-## Deltas
+## 增量变化
 
-If this is a recurring brief (per `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` cadence), lead with what changed:
+如果这是定期简报（按 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 设定的频率），首先展示变化：
 
-- New findings since last brief
-- Findings upgraded/downgraded in severity
-- Findings resolved (consent obtained, issue clarified away)
-- Coverage movement
+- 自上次简报以来的新发现
+- 严重程度升级/降级的发现
+- 已解决的发现（已获同意、经澄清已消除）
+- 覆盖进展
 
-Deal leads care more about movement than state. "Still 12 yellows" is less useful than "2 new yellows, 3 resolved."
+交易负责人更关心变动而非状态。"仍有12项黄色"不如"新增2项黄色，已解决3项"有用。
 
-## Handoffs
+## 交接
 
-- **From diligence-issue-extraction:** This skill reads the accumulated findings.
-- **To closing-checklist:** Any "decision needed" items that resolve into closing conditions go on the checklist.
+- **来自 diligence-issue-extraction：** 本技能读取累积的发现。
+- **至 closing-checklist：** 任何"需要决策"的事项如转化为交割条件，应加入检查表。
 
-## Close with the next-steps decision tree
+## 以下一步行动决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出规范` 中的下一步行动决策树收尾。根据本技能刚产出的内容定制选项——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁定。决策树本身就是产出；律师选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- It doesn't make the materiality call — it reports the calls that were made at extraction time.
-- It doesn't decide what the deal team does about a finding — it surfaces the decision.
-- It doesn't distribute the brief — drafts it, human sends.
+- 不做重要性判断——它报告提取时已作出的判断。
+- 不决定交易团队对某项发现做什么——它呈现决策事项。
+- 不分发简报——草拟完毕，由人工发送。

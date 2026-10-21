@@ -25,12 +25,6 @@ API="${ANTHROPIC_API_BASE:-https://api.anthropic.com}"
 
 [[ -f "$DIR/agent.yaml" ]] || { echo "no manifest at $DIR/agent.yaml" >&2; exit 1; }
 
-# REPO_SLUG derives from the git remote so this script stays copy-identical
-# across vertical repos; override via env if running outside a checkout.
-REPO_SLUG="${REPO_SLUG:-$(basename -s .git "$(git config --get remote.origin.url)")}"
-: "${REPO_SLUG:?cannot derive REPO_SLUG from git remote; set REPO_SLUG env var}"
-COOKBOOK_TAG="${REPO_SLUG}/${ROLE}"
-
 # Validate SKILL_TITLE_PREFIX against the same allowlist the YAML env-var
 # substitution uses. This string flows into `curl -F display_title=...`;
 # without validation, a hostile prefix could inject extra multipart fields
@@ -70,9 +64,10 @@ json.dump(yaml.safe_load(t), sys.stdout)
 ' "$1"
 }
 
+# GNU mktemp (GitHub Actions/Linux) requires Xs in the template; BSD accepts them too.
 SKILL_CACHE_FILE="$(mktemp -t skillcache.XXXXXX)"
 trap 'rm -f "$SKILL_CACHE_FILE"' EXIT
-upload_skill() {
+upload_skill() (
   local path="$1" key cached
   key="$(basename "$path")"
   cached=$(grep -m1 "^${key}=" "$SKILL_CACHE_FILE" 2>/dev/null | cut -d= -f2-)
@@ -82,17 +77,21 @@ upload_skill() {
     echo "${key}=${cached}" >>"$SKILL_CACHE_FILE"
     printf '%s' "$cached"; return
   fi
-  local resp id zip
-  zip="$(mktemp -t skill.XXXXXX).zip"
-  (cd "$(dirname "$path")" && zip -qr "$zip" "$(basename "$path")")
+  local resp id zip zip_dir
+  if ! zip_dir="$(mktemp -d -t skill.XXXXXX)" || [[ -z "$zip_dir" || ! -d "$zip_dir" ]]; then
+    echo "could not create temporary skill directory" >&2
+    return 1
+  fi
+  zip="$zip_dir/skill.zip"
+  trap 'rm -f "$zip"; rmdir "$zip_dir"' EXIT
+  (cd "$(dirname "$path")" && zip -qr "$zip" "$(basename "$path")") || return 1
   # /v1/skills uses its own beta header and multipart, not the managed-agents JSON path
   resp=$(curl -sS "$API/v1/skills" \
     -H "x-api-key: $ANTHROPIC_API_KEY" \
     -H "anthropic-version: 2023-06-01" \
     -H "anthropic-beta: skills-2025-10-02" \
     -F "display_title=${SKILL_TITLE_PREFIX:-}$(basename "$path")" \
-    -F "files[]=@$zip")
-  rm -f "$zip"
+    -F "files[]=@$zip") || return 1
   id=$(jq -r '.id // empty' <<<"$resp")
   if [[ -z "$id" ]]; then
     echo "POST /v1/skills failed for $path:" >&2
@@ -102,7 +101,7 @@ upload_skill() {
   cached=$(printf '{"type":"custom","skill_id":"%s","version":"latest"}' "$id")
   echo "${key}=${cached}" >>"$SKILL_CACHE_FILE"
   printf '%s' "$cached"
-}
+)
 
 resolve_manifest() {
   local file="$1" base
@@ -149,7 +148,7 @@ inline_system() {
 }
 
 create_agent() {
-  local file="$1" base json sub_ids skills_json
+  local file="$1" base json sub_ids skills_json uploaded_skill
   base="$(cd "$(dirname "$file")" && pwd)"
   json=$(resolve_manifest "$file")
   json=$(inline_system "$json" "$base")
@@ -158,7 +157,8 @@ create_agent() {
   while IFS= read -r p; do
     [[ -z "$p" ]] && continue
     [[ -d "$p" ]] || { echo "skill path not found: $p" >&2; exit 1; }
-    skills_json=$(jq ". + [$(upload_skill "$p")]" <<<"$skills_json")
+    uploaded_skill=$(upload_skill "$p") || return 1
+    skills_json=$(jq --argjson skill "$uploaded_skill" '. + [$skill]' <<<"$skills_json")
   done < <(jq -r '.skills[]? | select(.__upload) | .__upload' <<<"$json")
   json=$(jq --argjson s "$skills_json" '.skills=$s' <<<"$json")
 
@@ -166,12 +166,11 @@ create_agent() {
   while IFS= read -r m; do
     [[ -z "$m" ]] && continue
     local out sid sver
-    out=$(create_agent "$base/$m")
+    out=$(create_agent "$base/$m") || return 1
     sid=${out%% *}; sver=${out##* }
     sub_ids=$(jq --arg i "$sid" --argjson v "$sver" '. + [{type:"agent", id:$i, version:$v}]' <<<"$sub_ids")
   done < <(jq -r '.callable_agents[]?.manifest // empty' <<<"$json")
   json=$(jq --argjson c "$sub_ids" '.callable_agents=$c | del(.output_schema)' <<<"$json")
-  json=$(jq --arg ck "$COOKBOOK_TAG" '.metadata = ((.metadata // {}) + {anthropic_cookbook: $ck})' <<<"$json")
   [[ -n "${DEPLOY_DEBUG:-}" ]] && jq -c '{name, callable_agents}' <<<"$json" >&2
 
   if [[ $DRY_RUN -eq 1 ]]; then
@@ -192,16 +191,15 @@ create_agent() {
 
 if [[ $DRY_RUN -eq 1 ]]; then
   DRY_OUT="$(mktemp)"
-  create_agent "$DIR/agent.yaml" >/dev/null
+  create_agent "$DIR/agent.yaml" >/dev/null || exit 1
   echo "# --dry-run: resolved POST /v1/agents bodies (subagents first, orchestrator last)"
   jq -s '.' "$DRY_OUT"
   rm -f "$DRY_OUT"
   exit 0
 fi
 
-OUT=$(create_agent "$DIR/agent.yaml")
+OUT=$(create_agent "$DIR/agent.yaml") || exit 1
 AGENT_ID=${OUT%% *}
 echo "deployed: $ROLE"
 echo "agent id: $AGENT_ID"
-echo "cookbook: $COOKBOOK_TAG"
 echo "console:  https://console.anthropic.com/agents/$AGENT_ID"

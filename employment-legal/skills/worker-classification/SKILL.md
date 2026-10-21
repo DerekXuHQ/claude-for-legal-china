@@ -1,399 +1,324 @@
 ---
 name: worker-classification
 description: >
-  Classify a proposed worker engagement — employee, IC, temp, or vendor — by
-  running the applicable jurisdiction tests and flagging misclassification gaps
-  between the intended arrangement and what the facts actually support.
-  Prospective use only. Use when someone says "we want to bring on a
-  contractor", "is this a vendor or a temp", "how should we classify this
-  person", or describes a proposed working arrangement.
-argument-hint: "[describe the proposed arrangement, or just start and I'll ask]"
+  对拟议用工安排进行劳动关系认定——根据劳社部发〔2005〕12号三要素逐项分析，
+  区分劳动关系、劳务关系、承揽关系，并标识用工模式与事实之间的认定偏差。
+  仅适用于尚未开始的前瞻性分析。当用户提出"我们想用一个人做承包商"、
+  "这是劳务关系还是劳动关系"、"如何认定这个人的用工关系"或描述拟议用工安排时使用。
+argument-hint: "[描述拟议的用工安排，或直接开始，我将提问]"
 ---
 
 # /worker-classification
 
-Runs the applicable classification tests for the jurisdiction and flags where
-the proposed arrangement doesn't match the structure you're trying to use.
-Prospective only — for existing relationships, consult counsel.
+运行适用的劳动关系认定标准，标识拟议安排与预定结构不符之处。
+仅限前瞻性分析——对已存在的用工关系，请咨询律师。
 
-## Instructions
+## 指令
 
-1. Load `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` → jurisdictional footprint, escalation table.
-2. Run the full workflow below.
-3. If the attorney provides details upfront, extract what's available and ask
-   only about the gaps. Do not re-ask information already provided.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → 管辖范围、升级表。
+2. 运行以下完整工作流。
+3. 如果律师提前提供详细信息，提取已有的内容，仅就缺口提问。不重复询问已提供的信息。
 
-## Examples
+## 示例
 
 ```
 /employment-legal:worker-classification
-We want to bring on a data scientist for 6 months, working out of our
-SF office, using our tools, embedded in our analytics team.
+我们想请一位数据分析师，6个月，在北京办公室工作，使用我们的工具，
+嵌入在我们的分析团队里。
 ```
 
 ```
 /employment-legal:worker-classification
-Is our recruiter contractor arrangement okay? She works exclusively for
-us, sets her own hours, uses her own laptop, project fee per placement.
+我们的招聘顾问劳务协议是否可行？她只为我们工作，自己安排时间，
+用自己的笔记本电脑，按每成功推荐一人收取项目费。
 ```
 
 ```
 /employment-legal:worker-classification
-(skill will ask for details)
+（技能将询问详情）
 ```
 
 ---
 
-## Matter context
+## 案件上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/employment-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
-
----
-
-## Purpose
-
-The most expensive classification decision is the one nobody made consciously.
-Someone describes what they want ("a contractor"), the engagement starts, and
-two years later the facts look like employment. This skill walks the applicable
-tests on the proposed arrangement before it starts — and tells you when what
-you're describing doesn't match the structure you're trying to use.
-
-This skill teaches the reasoning pattern. It does not state the law. Every
-test formulation, statutory citation, threshold, and carve-out must come from
-current research for the applicable jurisdiction.
-
-## Prospective-only hard gate — run BEFORE intake
-
-**This skill analyzes a PROPOSED engagement before the work starts.** Before any substantive intake (Step 1), ask:
-
-> Has this work already started? Is the worker currently engaged, or have they been performing work under this arrangement for any period of time (days, weeks, months, or years)?
-
-If the answer is yes — the engagement already exists, in any form, for any duration — **STOP**. Do not proceed to Step 1 intake. Classifying an existing arrangement is not a planning exercise; it's a liability assessment with remediation implications: back pay (OT, meal/rest premiums), unpaid employer-side payroll tax, benefits eligibility that was denied, unemployment and workers' comp back-exposure, state penalties (in CA, PAGA), IRS § 530 relief analysis, and — in strict-test jurisdictions with ongoing work — the prospective exposure of letting it run another day. That analysis is privileged, led by counsel, and coupled with a remediation plan.
-
-Output exactly this block and wait for a response:
-
-> **Out of scope — existing arrangement.**
->
-> This skill is designed to analyze a worker engagement *before it starts*, so the classification choice informs how to structure the contract and operations. You've described an arrangement that already exists. Analyzing an existing engagement retroactively is a different exercise: reclassification risk assessment coupled with remediation planning — back-pay exposure, payroll-tax back-exposure, penalty exposure, benefits exposure, IRS § 530 relief analysis, and prospective restructuring. That work should be privileged, led by an attorney, and likely coupled with outside-counsel review given the dollar and enforcement exposure.
->
-> Recommended next step: escalate per your config's escalation table (for retroactive classification, this typically routes to GC + outside employment counsel). I've flagged this for escalation routing.
->
-> **If you want to proceed with the prospective-style analysis anyway for planning purposes, say "proceed anyway" — but understand:**
->
-> - The output is NOT a remediation plan and should not be treated as one.
-> - The output does NOT scope back-pay, penalty, or payroll-tax exposure for the period already worked.
-> - The output does NOT substitute for the reclassification-risk assessment that this fact pattern actually calls for.
-> - The output will carry a prominent banner reflecting this scope mismatch, and the consequential-action gate will require an attorney yes before the analysis is treated as reliable.
->
-> Only say "proceed anyway" if you're using this skill for forward-looking planning (e.g., "if we were structuring this fresh today, how should we think about it?") and you have a separate plan for the remediation question.
-
-**Only proceed past this gate with an explicit `"proceed anyway"` (or equivalent user instruction). A hesitant "I guess" does not count — re-prompt. If the user proceeds anyway, prepend this banner to every output of this skill for this session:**
-
-```
-⚠️ SCOPE MISMATCH — OUT-OF-SCOPE USE
-This skill analyzes prospective worker engagements. The arrangement here
-already exists. This output is the prospective-style analysis the user
-requested for planning purposes only — it is NOT a remediation plan, does
-NOT scope existing back-pay / penalty / payroll-tax exposure, and does
-NOT substitute for the reclassification-risk assessment this fact pattern
-requires. The remediation question has been flagged for escalation to
-counsel per your config's escalation table.
-```
-
-If the answer to "has this work already started?" is no (the engagement is genuinely prospective, not yet begun), proceed to load context.
+**案件上下文。** 检查实务级 CLAUDE.md 中的 `## Matter workspaces`。如果 `Enabled` 为 `✗`（法务用户默认值），跳过本段——技能使用实务级上下文，案件机制不可见。如果已启用且无活跃案件，询问："这是哪个案件的？运行 `/employment-legal:matter-workspace switch <slug>` 或说 `practice-level`。" 加载活跃案件的 `matter.md` 获取案件特定上下文和覆盖项。将输出写入案件文件夹。除非 `Cross-matter context` 为 `on`，否则不得读取其他案件的文件。
 
 ---
 
-## Load context
+## 目的
 
-Read `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` → jurisdictional footprint, any classification history or
-prior settlements noted, escalation table, and any house classification
-policy the team has recorded.
+最昂贵的认定决策是那个没有人有意识地做出的决策。有人描述了他们的想法（"一个劳务人员"），用工开始了，两年后事实看起来像劳动关系。本技能在安排开始前，对拟议安排运行适用认定标准——并在你所描述的与预定结构不符时告诉你。
 
-## Output header
+本技能传授推理模式，不陈述法律。每个认定标准的表述、法律引用、门槛和例外都必须来自当前有权管辖地的研究。
 
-Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` → `## Outputs` (it differs by user role — see `## Who's using this`).
+## 前瞻性分析专用硬门槛——在信息收集之前运行
 
-## Workflow
+**本技能分析尚未开始的拟议用工安排。** 在任何实质性信息收集（步骤1）之前，询问：
 
-### Step 1 — Information gathering
+> 这个工作已经开始了吗？该人员目前是否已在从事该工作，或是否已经在此安排下工作了任何时间段（无论天数、周数、月数或年数）？
 
-Ask all of the following in a single block. Do not drip questions one at a
-time. Briefly explain why you're asking — attorneys answer better when they
-understand what the question is testing.
+如果答案是肯定的——用工关系已经存在，无论形式如何，无论持续时间长短——**停止**。不要进入步骤1的信息收集。分析既有关系不是规划性工作；它是带有补救意义的责任评估：补发工资（加班费、未休年休假工资）、未缴社会保险费、未支付的福利待遇、潜在行政罚款，以及正在进行的用工可能产生的后续风险。该分析应在律师主导下进行，与补救方案结合。
 
-> To run the right classification tests I need to understand the proposed
-> arrangement in detail. Please answer as many of these as you can — the more
-> complete the picture, the more accurate the analysis:
+输出以下内容并等待回复：
+
+> **超出范围——既有用工关系。**
 >
-> **The work**
-> - What will this person actually do day-to-day?
-> - Is this work part of your company's core business, or peripheral to it?
->   (e.g., a software engineer at a software company = core; an IT
->   contractor at a law firm = more peripheral)
-> - Is this a defined project with a clear end, or ongoing indefinite work?
-> - How specialized is the skill? Does this person have expertise your team
->   doesn't?
+> 本技能旨在分析*尚未开始*的用工安排，让认定选择指导合同和操作的结构化方式。您描述的是已经存在的安排。回顾性分析既有关系是另一种工作：用工关系重新认定风险评估、补发工资风险、社保补缴风险、罚款风险、福利风险，以及前瞻性结构调整。该工作应由律师主导，建议同时咨询外部劳动法律师。
 >
-> **Control**
-> - Who sets their hours and schedule — them or you?
-> - Where will they work — your office, their location, or either?
-> - Will you direct how they do the work (methods, process, sequence), or
->   just what the end result should be?
-> - Will they supervise any of your employees?
+> 建议下一步：按您的配置中的升级表升级（对回顾性认定，通常路由至法务总监 + 外部劳动法律师）。我已在系统中标记此升级。
 >
-> **Economics**
-> - How will they be paid — hourly, daily, or fixed project fee?
-> - Will you provide equipment, tools, or software, or do they use their own?
-> - Do they work for other companies, or will this be exclusive?
-> - Will they bear any financial risk — can they profit beyond the fee, or
->   lose money on the engagement?
-> - Do they have their own business entity (LLC, S-corp, sole proprietor)?
+> **如果您仍想继续使用前瞻性分析用于规划目的，请说"继续"——但请理解：**
 >
-> **The arrangement**
-> - How do you want to structure this — direct contractor, staffing agency
->   temp, or vendor/SOW (company-to-company)?
-> - If staffing agency: who pays the worker — the agency or you? Who controls
->   day-to-day work?
-> - Will there be a written contract? Do you have a template in mind?
-> - Roughly how long is the engagement — weeks, months, over a year?
-> - Will they work alongside your employees doing similar work?
+> - 输出不是补救方案，不应如此对待。
+> - 输出不计算已发生期间的补发工资、罚款或社保风险。
+> - 输出不替代该事实情形实际需要的重新认定风险评估。
+> - 输出将带有显著的横幅标识，反映此范围不匹配，且后续行动门槛将在分析被视为可靠之前要求律师确认。
 >
-> **Purpose(s) of the classification**
-> - What legal purposes does the classification need to serve — federal
->   payroll tax, FLSA wage/hour, state wage/hour, unemployment insurance,
->   workers' compensation, benefits eligibility? Different purposes are often
->   governed by different tests, and the answers can diverge.
->
-> **Jurisdiction**
-> - Where will this person physically perform the work?
+> 仅当您使用本技能用于前瞻性规划（例如"如果我们今天重新构建此事，应如何考虑？"）且您对补救问题另有安排时，才说"继续"。
 
-Wait for responses before proceeding. If the attorney can't answer certain
-questions, note the gaps — they affect the analysis.
-
-### Step 2 — Identify the applicable tests
-
-> **Research the applicable tests before proceeding.** For the jurisdiction(s)
-> and purpose(s) identified in intake, research the currently operative
-> classification test(s). Jurisdictions commonly use one or more of: an ABC
-> test, an economic-realities test, a common-law right-to-control test, a
-> hybrid, or a purpose-specific statutory test. The test that governs for
-> federal payroll tax may not be the same test that governs for state
-> wage/hour, unemployment, or workers' compensation — run each purpose on its
-> own track. Cite the controlling statute, regulation, or case. Note the
-> effective date of each rule and whether it has been recently amended.
-> Identify any carve-outs or exceptions that may apply (e.g., B2B,
-> professional services, construction, referral-agency, business-to-business
-> contracting relationship). Verify currency. If you are uncertain about the
-> current state of the law in any jurisdiction, flag it for attorney
-> verification — do not state a test you haven't confirmed.
-
-If `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` records the company's house classification policy, apply it
-first and flag any tension with the researched test.
-
-> **No silent supplement.** If a research query to the configured legal research tool returns few or no results for a jurisdiction-and-purpose combination, report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [jurisdiction / purpose / test]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against a primary source before relying, or (4) flag as unverified and stop. Which would you like?" A lawyer decides whether to accept lower-confidence sources.
->
-> **Source attribution.** Tag every citation — each classification test, statute, regulation, or case — with where it came from: `[Westlaw]`, `[CourtListener]`, or the MCP tool name for citations retrieved from a legal research connector; `[web search — verify]` for web-search citations; `[model knowledge — verify]` for citations recalled from training data; `[user provided]` for citations the attorney supplied. Citations tagged `verify` carry higher fabrication risk and should be checked first. Never strip or collapse the tags.
-
-### Step 3 — Apply the researched tests to the facts
-
-For each test identified in Step 2, apply it to the intake facts. Score each
-factor or prong explicitly — do not summarize. The attorney needs to see which
-factors are clean and which are problems.
-
-Use a structure like the one below, but populate the *factors* from the
-researched test, not from this file:
+**仅当收到明确的"继续"（或等效用户指令）后才通过此门槛。犹豫的"我想是吧"不算——重新提示。如果用户继续，在本次会话的本技能所有输出前加上此横幅：**
 
 ```
-Test: [name of test, per research]
-Purpose: [what this test governs — federal tax / state wage-hour / UI / etc.]
-Source: [pinpoint cite to statute/regulation/case]
-Currency: [verified as of date]
+⚠️ 范围不匹配——超出范围的使用
+本技能分析前瞻性用工安排。此处的安排已经存在。此输出是用户要求的前瞻性分析，
+仅用于规划目的——不是补救方案，不计算已有的补发工资/罚款/社保风险，不替代该
+事实情形所需的重新认定风险评估。补救问题已标记为按配置升级表中的路径升级给律师。
+```
 
-| Factor / prong | Intake facts | Signal / pass-fail |
+如果"工作已经开始了吗？"的答案是否定的（用工关系确实是前瞻性的，尚未开始），则进入加载上下文。
+
+---
+
+## 加载上下文
+
+读取 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → 管辖范围、任何既有的认定历史或先前争议记录、升级表，以及团队记录的任何内部用工政策。
+
+## 输出标题
+
+从 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → `## Outputs` 预置工作成果标题（根据用户角色不同——见 `## Who's using this`）。
+
+## 工作流
+
+### 步骤1——信息收集
+
+一次性询问以下所有内容。不要逐个提问。简要说明为什么问这个问题——律师在理解问题所要检验的内容时回答更好。
+
+> 要运行正确的劳动关系认定标准，我需要详细了解拟议安排。请尽可能多地回答以下问题——情况越完整，分析越准确：
+>
+> **工作内容**
+> - 该人员实际每天做什么工作？
+> - 该工作是公司核心业务的组成部分，还是辅助性工作？
+>   （例如：软件公司的软件工程师 = 核心；律师事务所的IT服务人员 = 辅助性）
+> - 这是一个有明确结束时间的限定项目，还是持续性无固定期限的工作？
+> - 技能的专门程度如何？该人员是否具备贵方团队不具备的专业能力？
+>
+> **管理控制**
+> - 谁确定其工作时间和安排——他们自己还是贵方？
+> - 他们将在哪里工作——贵方办公场所、自行安排地点，还是均可？
+> - 贵方是否指挥他们如何完成工作（方法、流程、顺序），还是仅要求最终成果？
+> - 他们是否将管理贵方的任何员工？
+>
+> **经济从属性**
+> - 报酬如何计算——按小时、按天，还是按固定项目费？
+> - 贵方是否提供设备、工具或软件，还是他们使用自己的？
+> - 他们是否为其他公司工作，还是仅为此安排？
+> - 他们是否承担任何经营风险——他们能否获得超出约定费用的收益，或在该安排中能否亏损？
+> - 他们是否已有自己的经营实体（有限责任公司、个体工商户等）？
+>
+> **安排方式**
+> - 贵方希望如何构建此安排——直接劳务协议、劳务派遣，还是业务外包（公司对公司）？
+> - 如为劳务派遣：谁向劳动者支付报酬——派遣公司还是贵方？谁负责日常管理？
+> - 是否有书面合同？贵方是否有模板？
+> - 该安排大致持续时间——数周、数月、一年以上？
+> - 他们是否与贵方员工一起从事类似工作？
+>
+> **管辖地**
+> - 该人员将在哪里实际提供劳动？
+
+等待回复后再继续。如果律师无法回答某些问题，记录缺口——这些将影响分析。
+
+### 步骤2——确定适用认定标准
+
+> **在继续之前研究适用的认定标准。** 根据信息收集中确定的管辖地和需要解决的问题，研究现行有效的劳动关系认定标准。中国法下劳动关系认定的核心依据为：
+>
+> **劳社部发〔2005〕12号《关于确立劳动关系有关事项的通知》** `[法条原文]`：
+> 用人单位招用劳动者未订立书面劳动合同，但同时具备下列情形的，劳动关系成立：
+> （一）用人单位和劳动者符合法律、法规规定的主体资格；
+> （二）用人单位依法制定的各项劳动规章制度适用于劳动者，劳动者受用人单位的劳动管理，从事用人单位安排的有报酬的劳动；
+> （三）劳动者提供的劳动是用人单位业务的组成部分。
+>
+> **互联网平台用工**：参考《关于维护新就业形态劳动者劳动保障权益的指导意见》（人社部发〔2021〕56号）`[法条原文]`，区分"劳动关系——不完全符合劳动关系情形——个人依托平台自主经营"三类。
+>
+> **区分劳动关系与劳务关系**：劳务关系适用《民法典》合同编，不受《劳动合同法》调整。`[法条原文]`
+> **区分劳动关系与承揽关系**：承揽关系适用《民法典》第770条以下（承揽合同），定作人不承担劳动法下用人单位义务。`[法条原文]`
+
+如果 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` 记录了公司内部认定政策，先适用该政策，并标识与研究标准之间的任何冲突。
+
+> **不自作补充。** 如果对配置的法律研究工具的查询返回零结果或极少结果，报告已找到的内容并停止。不要不询问就从网络搜索或模型知识填补空白。说："搜索从[工具]返回了[N]条结果。[管辖地/问题/标准]的覆盖范围似乎很薄。选项：(1)扩大搜索查询，(2)尝试其他研究工具，(3)搜索网络——结果将标注`[联网检索——需复核]`，依赖前应核实，(4)标注为未经核实并停止。您希望选哪个？"由律师决定是否接受较低可信度的来源。
+>
+> **来源标注。** 为每个引用——每个认定标准、法规条文、规范性文件或案例——标注来源：`[yuandian检索]`用于通过MCP检索的引用；`[联网检索——需复核]`用于网络搜索引用；`[模型知识——需验证]`用于模型知识回忆的引用；`[用户提供]`用于律师提供的引用。标注`需验证`的引用具有较高的编造风险，应首先核验。不得删除或压缩标注。
+
+### 步骤3——将认定标准适用于事实
+
+对于步骤2中确定的每个标准，将其适用于信息收集事实。逐项评分——不要概括。律师需要看到哪些因素没问题、哪些是问题。
+
+使用以下结构，但*因素*应从研究认定的标准中填充，而非从本文件：
+
+```
+认定标准：[标准名称，根据研究]
+适用问题：[该标准判断什么——劳动关系/劳务关系/承揽关系]
+来源：[法规/文件的具位置]
+时效：[核实日期]
+
+| 要素/要件 | 收集的事实 | 倾向/通过-不通过 |
 |---|---|---|
-| [Factor 1 from researched test] | [from intake] | [direction or pass/fail] |
-| [Factor 2] | [from intake] | [direction or pass/fail] |
-| ...                            |                |                   |
+| [研究标准中的要素1] | [来自信息收集] | [倾向或通过/不通过] |
+| [要素2] | [来自信息收集] | [倾向或通过/不通过] |
+| ...                        |                |                   |
 
-Structure of the test:
-[How the test weighs factors — e.g., a multi-factor balancing test, or a
-conjunctive test where each prong must be satisfied, or a hybrid. State this
-from research, not from memory.]
+标准结构：
+[该标准如何权衡各要素——例如，三要素必须同时满足才能成立劳动关系，
+或某一要素权重较大。根据研究陈述，而非根据记忆。]
 
-Result under this test:
-[Employee-leaning / IC-leaning / Fails prong X / Uncertain — contested prong]
+该标准下的结论：
+[支持劳动关系认定 / 不支持劳动关系认定 / 要素X不满足 / 不确定——存在争议的要素]
 ```
 
-Repeat for each applicable test.
+对每个适用标准重复。
 
-**Notes on contested prongs.** Some prongs of some tests are heavily contested
-in case law and fact-sensitive. Identify contested prongs explicitly — do not
-paper over them. The fact that a test is stated does not mean its application
-to these facts is settled; flag prongs that require attorney judgment or that
-have generated recent litigation in the jurisdiction.
+**关于存在争议的要素的说明。** 某些认定要素在司法实践中争议较大且高度依赖事实。明确指认存在争议的要素——不要掩盖它们。标准的存在不意味着其在此事实上的适用是确定的；标识需要律师判断的要素，或在该管辖地近期引发诉讼的要素。
 
-### Step 4 — Classify and flag gaps
+### 步骤4——认定并标识差距
 
-**The classification call**
+**认定结论**
 
-Based on the test results, state the most accurate classification for this
-proposed arrangement:
+根据标准分析结果，陈述拟议安排最准确的用工关系性质：
 
-- **Employee (W-2):** Facts support employment under one or more applicable
-  tests for the relevant purpose(s).
-- **Independent Contractor (1099):** Facts support IC status under all
-  applicable tests for the relevant purpose(s).
-- **Temp via staffing agency:** Worker will be on the agency's payroll;
-  company is a client — co-employment risk exists if company exercises
-  day-to-day control. Research the applicable joint-employer standard if
-  relevant.
-- **Vendor/SOW:** Company-to-company engagement; worker is employed by the
-  vendor entity — cleanest structure if facts support it.
-- **Unclear / close call:** Facts cut both ways under one or more tests —
-  state which test is the problem and why.
+- **劳动关系（签劳动合同）**：事实支持在一个或多个适用标准下构成劳动关系。
+- **劳务关系（签劳务协议）**：事实支持在所有适用标准下构成劳务关系。
+- **派遣用工**：劳动者在派遣公司名下；实际用工单位是客户——若实际用工单位实施日常管理，存在混同用工/事实劳动关系风险。
+- **业务外包（公司对公司）**：公司对公司的安排；劳动者由外包公司雇佣——如事实支持则为最清晰的结构。
+- **不确定 / 临界情况**：事实在一个或多个标准下正反皆有——说明哪个标准是问题以及为什么。
 
-If tests give different answers for different purposes (e.g., defensible as
-IC for federal tax but fails a state wage/hour test), say so explicitly and
-name the controlling purpose and jurisdiction.
+如果标准在不同问题上给出不同答案（例如社保角度可辩解为劳务关系但劳动报酬角度认定为劳动关系），明确说明并指明控制性问题和管辖地。
 
-**The gap analysis**
+**差距分析**
 
-This is the most important output. Compare the intended structure against what
-the facts actually support:
+这是最重要的输出。将预定结构与事实实际支持的内容进行比较：
 
 ```
-Intended structure: [what they said they want]
-What the facts suggest: [what the researched tests say this actually is]
+预定结构：[他们说的想要什么]
+事实指向：[研究标准显示的实际上是什么]
 
-Gaps — where the arrangement doesn't match the intended structure:
-🔴 [Factor]: [What they described] conflicts with [intended classification]
-   because [specific researched test language + cite]. This is a significant
-   misclassification risk if the engagement proceeds as described.
-🟡 [Factor]: [What they described] is a weaker point under [test]. Not
-   disqualifying alone, but combined with other factors increases risk.
-✅ [Factor]: Supports [intended classification]. No issue.
+差距——安排不匹配预定结构之处：
+🔴 [要素]：[描述的内容]与[预定分类]冲突，
+   因为[具体研究标准语言 + 引用]。若安排按描述进行，这是重大认定风险。
+🟡 [要素]：[描述的内容]在[标准]下是较弱点。单独不构成否定，
+   但与其他因素结合增加风险。
+✅ [要素]：支持[预定分类]。无问题。
 ```
 
-**Escalation trigger**
+**升级触发**
 
-Escalate per `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` if any of the following, or any team-specific
-triggers recorded in that config:
-- The jurisdiction uses a strict test and the proposed work is core to the
-  company's business — do not proceed without counsel review.
-- Prior misclassification settlement or audit noted in the config — heightened
-  scrutiny applies.
-- Worker will supervise employees or have significant budget authority.
-- Engagement expected to exceed 12 months with no clear project endpoint.
-- Any contested prong where the outcome changes the classification.
+如果出现以下任一情况（或配置中记录的任何团队特定触发条件），按CLAUE.md升级：
+- 拟议工作为公司核心业务且标准严格——未经律师审查不得继续。
+- 配置中注有先前认定争议或行政处罚记录——提高审查标准。
+- 劳动者将管理员工或具有重大预算权限。
+- 安排预计超过12个月且无明确项目终止点。
+- 任何存在争议的要素，其结果会改变认定结论。
 
-### Step 5 — Output
+### 步骤5——输出
 
-> **Research-connector pre-flight.** Before emitting the analysis, check whether a legal research connector is reachable for this session — Westlaw, CourtListener, or any firm-configured research MCP. Collect this into the reviewer note per CLAUDE.md `## Outputs`: if no connector returns results in Step 2 (or none is configured at run time), record it in the **Sources:** line of the reviewer note — e.g., `not connected — cites from training knowledge; the highest-fabrication pinpoints in classification analyses are ABC-test codifications, state carve-out subsections (e.g., CA Lab. Code §§ 2775/2776/2783), element counts in B2B exemptions, and purpose-specific test selection — spot-check those first`. Per-citation `[model knowledge — verify]` tags remain inline. Do not emit a standalone banner above the output.
-
-> **Jurisdiction assumption.** This analysis applies the tests operative in the jurisdiction(s) identified in intake. Classification rules vary materially by state and country, and the test that governs for one purpose (e.g., federal payroll tax) often differs from the test that governs another (e.g., state wage/hour). If the work will be performed in a jurisdiction not analyzed here, or if a new purpose is added later, this analysis may not apply as written.
+> **研究连接器预检。** 在输出分析前，检查本次会话是否可连接法律研究工具——yuandian MCP 或任何其他配置的研究工具。将结果收集到审查备注中；如果步骤2中无连接器返回结果，记录在**来源：**行中。逐条来源标签保持内联。不在输出上方单独显示横幅。
+>
+> **管辖地假设。** 本分析适用信息收集中确定的管辖地。劳动关系认定规则在各省可能存在实践差异，且认定逻辑因问题类型（社会保险、劳动报酬、工伤保险）可能不同。如果工作将在尚未分析的地域进行，或后续增加了新的认定问题，本分析可能不适用。
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果标题——根据插件配置 ## Outputs——因角色不同；见 `## Who's using this`]
 
-## Worker Classification Analysis
-**Proposed arrangement:** [what they described]
-**Jurisdiction:** [state/country]
-**Purpose(s):** [federal tax / state wage-hour / UI / WC / benefits]
-**Tests applied:** [list, each with pinpoint cite and currency date]
-
----
-
-### Bottom line
-
-[Can you proceed / Need to fix X first / Stop — one-sentence why]
+## 劳动关系认定分析
+**拟议安排：** [他们描述的内容]
+**管辖地：** [省份/直辖市]
+**需要解决的问题：** [社保/工资/工伤/解除]
+**适用标准：** [列出，每项附引用和核实时效]
 
 ---
 
-### Classification
+### 底线结论
 
-**Closest classification:** [Employee / IC / Temp via agency / Vendor-SOW / Unclear]
-
-[One paragraph summary of why — test results in plain language, tied to the
-cited sources.]
+[可以继续 / 需先调整X / 停止——一句话说明理由]
 
 ---
 
-### Test results
+### 认定结论
 
-#### [Test name — per research]
-Purpose: [...] | Source: [...] | Currency: [...]
-[Scored table from Step 3]
-**Result:** [Employee-leaning / IC-leaning / Fails prong X / Mixed]
+**最匹配的分类：** [劳动关系 / 劳务关系 / 派遣 / 外包 / 不确定]
 
-#### [Additional researched tests — repeat the block]
+[一段用通俗语言总结——分析结果与所引来源的关联。]
 
 ---
 
-### Gap analysis
+### 标准分析结果
 
-[Flags as structured in Step 4 — 🔴 significant risks, 🟡 weaker points,
-✅ clean factors]
+#### [标准名称——根据研究]
+适用问题：[社保缴纳 / 劳动报酬 / 工伤保险] | 来源：[法条原文引用] | 时效：[核实日期]
+[步骤3的评分表]
+**结论：** [支持劳动关系 / 不支持劳动关系 / 要素X不满足 / 混合]
 
----
-
-### Escalation
-
-[None needed | Escalate to [name] before proceeding — [reason]]
+#### [其他研究标准——重复上述内容]
 
 ---
 
-### Next steps
+### 差距分析
 
-[If IC viable: "Proceed — ensure the written agreement reflects the terms that
-support IC status under the researched test."]
-[If gaps exist: "Address the following before using IC structure: [list]"]
-[If agency/vendor is cleaner: "Consider restructuring as [agency/SOW] — here's
-why it's cleaner for this fact pattern."]
-[If escalation needed: "Do not proceed until counsel reviews the [specific
-issue]."]
-[If employee confirmed: "Classification confirmed as W-2 employee — run
-`/employment-legal:hiring-review` to review the offer letter, restrictive
-covenants, and jurisdiction-specific requirements."]
-[If IC confirmed: "Classification confirmed as independent contractor — no
-offer letter review needed. Ensure the written agreement reflects IC-supporting
-terms before the engagement starts."]
-[If agency/vendor: "Engagement should be structured through [agency/vendor
-entity] — coordinate with them on worker agreement. No `/hiring-review` needed."]
+[按步骤4结构标识——🔴 重大风险，🟡 较弱点，✅ 无问题因素]
+
+---
+
+### 升级
+
+[无需 | 在继续前升级至[名称]——[理由]]
+
+---
+
+### 下一步
+
+[如劳动关系成立：认定确认为劳动关系——运行 `/employment-legal:hiring-review` 审查录用通知书、竞业限制条款和管辖地特定要求。]
+[如劳务关系成立：认定为劳务关系——在用工开始前确保书面协议反映支持劳务关系的要素。]
+[如存在差距：在使用劳务关系结构前解决以下问题：[列出]]
+[如派遣/外包为更优选择：考虑以[派遣/外包]重构——在此事实模式下为何更优。]
+[如需升级：在律师就[具体问题]进行审查前不继续。]
 ```
 
-## Consequential-action gate (classify a worker)
+## 后续行动门槛（认定用工关系）
 
-**Before producing a "Proceed as IC / employee / agency / vendor" final recommendation:** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md`. If the Role is **Non-lawyer**:
+**在做出"可以按劳务关系/劳动关系/派遣/外包进行"的最终建议前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` 中的 `## Who's using this`。如果角色是**非律师**：
 
-> Classifying a worker has legal consequences — misclassification exposes the company to back wages, taxes, benefits, penalties, and private-action risk, and in several states is strict-liability. Have you reviewed this classification call with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> 认定用工关系具有法律后果——错误认定可能使企业面临补缴社会保险费、支付加班费和未休年休假工资、承担工伤保险责任以及行政处罚的风险。您是否已与律师审查过此认定？如已审查，继续。如未审查，以下是带去给律师的简要材料：
 >
-> - The arrangement (work, control, economics, structure) as described
-> - Jurisdiction and which tests were applied
-> - Test-by-test results with cites and currency
-> - Gap analysis (🔴 / 🟡 / ✅) with the weak prongs called out
-> - Open questions and what's unresolved
-> - What could go wrong (the misclassification theory this arrangement most likely fails on; prior-audit/settlement overlay if any)
-> - What to ask the attorney (is IC viable here; would restructuring through an agency or vendor remove the risk; what contract terms do we need to support the classification)
+> - 用工安排（工作、管理、经济从属性、结构）按描述
+> - 适用了哪些认定标准
+> - 逐标准分析结果、条文引用和时效
+> - 差距分析（🔴 / 🟡 / ✅），突出问题要素
+> - 未解决的问题和未确定事项
+> - 可能的风险（此安排最可能失败的认定理论；如有先前行政处罚/争议叠加）
+> - 需要问律师的问题（此处是否可按劳务关系处理；通过派遣或外包重构是否能消除风险；需要哪些合同条款支持认定）
 >
-> If you need to find an attorney, solicitor, barrister, or other authorised legal professional: contact your professional regulator (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent) for a referral service.
+> 如果您需要寻找律师：请联系当地律师协会或拨打 12348 法律援助热线获取推荐。
 
-Do not produce a final "IC viable" / "use this classification" output past this gate without an explicit yes. A marked-DRAFT analysis for attorney review is fine.
+未收到明确确认之前，不输出最终"可行"/"使用此分类"的结论。标记为草稿供律师审查的输出是允许的。
 
 ---
 
-## What this skill does NOT do
+## 本技能不做什么
 
-- Analyze an existing relationship retroactively — this is prospective only.
-- Draft the contractor agreement or SOW.
-- Advise on remediation if misclassification has already occurred.
-- State the law for any jurisdiction on its own — every test, factor, and
-  carve-out must come from verified current research.
-- Substitute for outside counsel on close calls — strict-test jurisdictions,
-  contested prongs, and prior-audit situations should always get a human
-  review before the engagement starts.
+- 分析既有关系——仅限前瞻性分析。
+- 起草劳务协议或外包服务合同。
+- 就已发生的错误认定提供补救建议。
+- 自行陈述任何管辖地的法律——每个标准、要素和例外均须来自已核实的现行研究。
+- 替代临界案件的外部律师意见——标准严格、要素争议大或先前有行政处罚的情况，均应在用工开始前获得人工审查。
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
-
+以 CLAUDE.md `## Outputs` 中的下一步决策树收尾。根据本技能刚产生的内容自定义选项——五个默认分支（起草X、升级、获取更多事实、观望等待、其他选择）是起点而非锁定项。决策树本身就是输出；由律师选择。

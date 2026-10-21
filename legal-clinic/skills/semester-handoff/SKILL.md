@@ -1,191 +1,189 @@
 ---
 name: semester-handoff
 description: >
-  End-of-semester case handoff memos — the mirror of /ramp. Produces per-case
-  transition memos and a cohort summary so the departing cohort hands work to
-  the incoming cohort cleanly. Reads deadlines, client-comms, and case history.
-  Use when the professor or departing students need to wrap up the semester,
-  build transition memos, or offboard a graduating/withdrawing student.
-argument-hint: "[--semester=YYYY-term (default: current)] [--case=[case_id] (for a single case)]"
+  学期末案件交接备忘录——/ramp 的镜像。生成按案件的移交备忘录和群体摘要，
+  使离届群体将工作干净地移交给新群体。读取截止日期、当事人沟通和案件历史。
+  当指导老师或离届学生需要结束学期、构建移交备忘录或协助毕业/退出学生离任时使用。
+argument-hint: "[--semester=YYYY-学期（默认：当前）] [--case=[案件编号]（针对单个案件）]"
 ---
 
 # /semester-handoff
 
-1. Load `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → clinic profile, semester dates, supervision style.
-2. Load `~/.claude/plugins/config/claude-for-legal/legal-clinic/deadlines.yaml` and `~/.claude/plugins/config/claude-for-legal/legal-clinic/client-comms/[case-id]/log.md` per case.
-3. Use the workflow below.
-4. Take active-case list as input (ask if clinic doesn't have a central list). Map outgoing → incoming owners.
-5. Generate per-case handoff memo → `~/.claude/plugins/config/claude-for-legal/legal-clinic/handoffs/[semester]/[case_id].md`.
-6. Generate cohort summary → `~/.claude/plugins/config/claude-for-legal/legal-clinic/handoffs/[semester]/_summary.md`.
-7. Route per supervision model — formal queue / configurable flags / lighter-touch.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 诊所画像、学期日期、指导风格。
+2. 加载 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/deadlines.yaml` 和按案件的 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/client-comms/[案件编号]/log.md`。
+3. 使用以下工作流。
+4. 将活跃案件列表作为输入（如诊所无中心列表则询问）。映射离届 → 新接手人。
+5. 生成按案件交接备忘录 → `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/handoffs/[学期]/[案件编号].md`。
+6. 生成群体摘要 → `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/handoffs/[学期]/_summary.md`。
+7. 按指导模式路由——正式队列 / 可配置标记 / 较轻触。
 
 ---
 
-# Semester Handoff
+# 学期交接
 
-## Purpose
+## 目的
 
-Every semester, clinics lose their entire workforce and rebuild. `/ramp` solves half the problem — it onboards the new cohort. This skill solves the other half: it offboards the departing cohort by producing handoff memos that capture what the next student needs to know about every active case.
+每学期诊所失去其全部劳动力并重建。`/ramp` 解决了一半问题——它导入新群体。本技能解决另一半：它通过生成交接备忘录协助离届群体，记录新学生需要了解的每个活跃案件的信息。
 
-Without this, case knowledge walks out the door with the student. The new student starts from the case file and intake summary, which is never enough. Two weeks are wasted re-learning the case before the new student can do anything useful. The client experiences the re-learning as a regression — calls go unanswered while the new student catches up, questions already answered get asked again.
+没有这个，案件知识随学生离开而流失。新学生从案件文件和接待摘要开始，这永远不够。两周被浪费在重新学习案件上，新学生才能做有用的事。当事人将重新学习体验为退步——在新学生追赶上之前电话无人应答，已回答的问题被重新问。
 
-## Audience
+## 受众
 
-Professor or departing students. The professor runs it to orchestrate the full cohort offboarding; individual students can run it on their own cases if they're transitioning mid-semester (graduation, withdrawal).
+指导老师或离届学生。指导老师运行它来协调整群体协助；单个学生可在其学期中转出（毕业、退出）时针对自己的案件运行。
 
-## Load context
+## 加载上下文
 
-- `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → clinic profile, semester, practice areas, supervision style
-- `~/.claude/plugins/config/claude-for-legal/legal-clinic/deadlines.yaml` → all active deadlines, grouped by case
-- `~/.claude/plugins/config/claude-for-legal/legal-clinic/client-comms/[case-id]/log.md` (per case) → communications history
-- Case files / intake summaries the clinic maintains
-- Student roster — who owns what going into the handoff
+- `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 诊所画像、学期、实践领域、指导风格
+- `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/deadlines.yaml` → 所有活跃截止日期，按案件分组
+- `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/client-comms/[案件编号]/log.md`（按案件） → 沟通历史
+- 诊所维护的案件文件 / 接待摘要
+- 学生名册——谁在交接中负责什么
 
-## Workflow
+## 工作流
 
-### Step 1: Identify cases and owners
+### 第1步：识别案件和负责人
 
-- Pull all active cases (from intake records + `~/.claude/plugins/config/claude-for-legal/legal-clinic/deadlines.yaml` case_ids + client-comms folders)
-- For each case: who's the current owner student? Are they staying or leaving?
-- Map: outgoing owner → incoming owner (if known; otherwise mark "TBD — professor to assign")
+- 拉取所有活跃案件（来自接待记录 + `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/deadlines.yaml` 案件编号 + client-comms 文件夹）
+- 每个案件：当前负责学生是谁？他们是留任还是离开？
+- 映射：离届负责人 → 新接手人（如已知；否则标记"待定——指导老师分配"）
 
-If the clinic doesn't maintain a central active-case list, the skill needs one input: a list of active cases. Ask for it. Don't guess.
+如果诊所不维护中央活跃案件列表，技能需要一个输入：活跃案件列表。询问。不要猜测。
 
-### Step 2: Per-case handoff memo
+### 第2步：按案件交接备忘录
 
-For each case:
+每个案件：
 
 ```markdown
-# Case Handoff — [case name] — [semester ending]
+# 案件交接 — [案件名称] — [结束学期]
 
-**Case ID:** [case_id]
-**Practice area:** [area]
-**Outgoing student:** [name]
-**Incoming student:** [name or "TBD"]
-**Supervising attorney:** [professor]
-**Client:** [name or client ID]
+**案件编号：** [案件编号]
+**实践领域：** [领域]
+**离届学生：** [姓名]
+**新接手学生：** [姓名或"待定"]
+**指导律师：** [指导老师]
+**当事人：** [姓名或当事人编号]
 
 ---
 
-## Where we are
+## 当前状态
 
-[One paragraph: current posture. What's been done, what's pending, where the case is heading. If the case is at a natural pause point or between filings, say so.]
+[一段话：当前态势。已完成什么、待处理什么、案件走向。如案件处于自然暂停点或提交之间，说明。]
 
-## Pending deadlines
+## 待处理截止日期
 
-*Pulled from `~/.claude/plugins/config/claude-for-legal/legal-clinic/deadlines.yaml`. Incoming student's first job is to confirm these are accurate and owned.*
+*从 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/deadlines.yaml` 拉取。新接手学生的第一项工作是确认这些准确并已认领。*
 
-| Due | Type | Description | Notes |
+| 截止日 | 类型 | 说明 | 备注 |
 |---|---|---|---|
-| [date] | [type] | [one-line] | [if tight: "URGENT — due within [N] days of semester start"] |
+| [日期] | [类型] | [一行] | [如紧迫："紧急——学期开始[N]天内到期"] |
 
-## What's been done
+## 已完成事项
 
-- [Key actions this semester: intake, filings, hearings, major correspondence]
-- [Documents produced — with pointers to where they live]
+- [本学期关键行动：接待、提交、庭审、主要信函]
+- [已产出的文件——附存放位置指引]
 
-## What's open
+## 待处理事项
 
-- [Decisions pending: e.g., "client hasn't decided whether to accept settlement offer"]
-- [Research gaps: e.g., "need to confirm whether [jurisdiction] allows [remedy]"]
-- [Open communications: e.g., "awaiting response from opposing counsel's office"]
+- [待决策事项：如"当事人尚未决定是否接受和解方案"]
+- [检索缺口：如"需要确认[省份]是否允许[救济措施]"]
+- [待回复沟通：如"等待对立方律师办公室回复"]
 
-## Client relationship
+## 当事人关系
 
-- [How often has the student been in touch? Phone, email, in-person?]
-- [Any relationship context the next student should know: language preference, trust-building notes, circumstances that affect scheduling]
-- [Upcoming planned contact or appointments]
+- [学生与当事人联系的频率？电话、邮件、面谈？]
+- [下一位学生应了解的任何关系背景：语言偏好、信任建立说明、影响时间安排的情况]
+- [即将到来的计划联系或预约]
 
-## Documents drafted / filed
+## 已起草/已提交文件
 
-*Pointers, not content.*
+*指引，非内容。*
 
-- [Date] [Document type] — [path or file reference] — [status: filed / drafted / in review queue]
+- [日期] [文件类型] — [路径或文件引用] — [状态：已提交 / 已起草 / 在审查队列中]
 
-## Communications history summary
+## 沟通历史摘要
 
-*From `~/.claude/plugins/config/claude-for-legal/legal-clinic/client-comms/[case-id]/log.md`. Three-line summary here; incoming student reads the full log.*
+*来自 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/client-comms/[案件编号]/log.md`。此处三段式摘要；新接手学生阅读完整日志。*
 
-[Short summary of recent contact patterns — e.g., "3 phone calls since intake, all in Spanish, client prefers evenings. Last contact: 2026-04-15, confirmed address for hearing notice."]
+[近期联系模式的简要摘要——如"自接待以来3次通话，当事人偏好晚上联系。最后联系：2026-04-15，确认了庭审通知地址。"]
 
-## Professor's flags for incoming student
+## 指导老师给新接手学生的标记
 
-*Added by professor review before the handoff memo goes to the incoming student. Could include: "this case has a sensitive family dynamic — read the intake carefully before calling client"; "client has requested all mail go to PO box not home address"; "there's a scope question here we haven't resolved — check with me in week 1."*
+*由指导老师在交接备忘录发给新接手学生前审查时添加。可包括："本案涉及敏感家庭动态——联系当事人前仔细阅读接待记录"；"当事人要求所有邮件发至邮政信箱而非家庭住址"；"我们尚未解决本案的范围问题——在第一周与我确认。"*
 
-[flags, or "none"]
+[标记，或"无"]
 
-## First-week priorities for incoming student
+## 新接手学生第一周优先事项
 
-1. [Specific — e.g., "Call [client] within 48 hours of taking the case. Introduce yourself. Confirm you've received the case file."]
-2. [Deadline-driven — e.g., "Answer to eviction complaint is due [date]. Review outgoing student's draft, revise, file."]
-3. [Knowledge-gap — e.g., "Read outgoing student's memo on the habitability defense before the 4/28 status conference."]
+1. [具体——如"接手案件后48小时内致电[当事人]。自我介绍。确认你已收到案件文件。"]
+2. [截止日期驱动——如"驱逐答辩状截止于[日期]。审查离届学生的草稿，修改，提交。"]
+3. [知识缺口——如"在4/28状态会议前阅读离届学生关于可居住性抗辩的备忘录。"]
 
 ---
 
-**Handoff prepared by:** [outgoing student]
-**Date:** [YYYY-MM-DD]
-**Reviewed by:** [supervising attorney, if applicable per supervision model]
+**交接由：** [离届学生] 准备
+**日期：** [YYYY-MM-DD]
+**审查人：** [指导律师，如按指导模式适用]
 ```
 
-### Step 3: Cohort summary
+### 第3步：群体摘要
 
-After all per-case memos, produce `~/.claude/plugins/config/claude-for-legal/legal-clinic/handoffs/[semester]/_summary.md`:
+所有按案件备忘录完成后，产出 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/handoffs/[学期]/_summary.md`：
 
 ```markdown
-# Cohort Handoff Summary — [semester ending]
+# 群体交接摘要 — [结束学期]
 
-**Departing students:** [N]
-**Incoming students:** [N]
-**Active cases transitioning:** [N]
-**Cases closing at semester end (no transition):** [N]
+**离届学生：** [N]人
+**新接手学生：** [N]人
+**移交的活跃案件：** [N]件
+**学期结束结案（不移交）：** [N]件
 
 ---
 
-## Transitions
+## 移交
 
-| Case | Outgoing | Incoming | Practice area | Urgency |
+| 案件 | 离届 | 新接手 | 实践领域 | 紧急程度 |
 |---|---|---|---|---|
-| [case_id] | [name] | [name or TBD] | [area] | [standard / deadline within 2 weeks / urgent] |
+| [案件编号] | [姓名] | [姓名或待定] | [领域] | [标准 / 2周内截止 / 紧急] |
 
-## Unassigned
+## 未分配
 
-[cases whose incoming student is "TBD" — professor assigns before next semester]
+[新接手学生为"待定"的案件——指导老师在下学期前分配]
 
-## Deadlines within 30 days of semester start
+## 学期开始后30天内的截止日期
 
-[pulled from deadlines.yaml — these are the cases the new cohort hits running]
+[从 deadlines.yaml 拉取——这些是新群体要马上处理的案件]
 
-## Notes for professor
+## 给指导老师的备注
 
-- [Any case that raised concern about student performance, flagged for closer supervision]
-- [Any case where the outgoing student is willing to stay on consult — e.g., graduating 3L who wants to mentor the 2L taking over]
-- [Patterns across handoffs — e.g., "three of six cases have active deadlines in first 14 days; consider front-loading ramp exercises on those practice areas"]
+- [任何引起对学生表现关注、标记需密切指导的案件]
+- [任何离届学生愿意担任顾问的案件——如毕业的研三学生想指导接手的大二学生]
+- [跨交接的模式——如"六个案件中有三个在头14天内有活跃截止日期；考虑在那些实践领域前置 ramp 练习"]
 ```
 
-### Step 4: Professor review (if supervision model calls for it)
+### 第4步：指导老师审查（如指导模式要求）
 
-Closing a case or transitioning it to a new student is a consequential action. The gate is the supervision workflow in `## Supervision style` in `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md`, reinforced by the Part 0 role check confirming a licensed supervising attorney owns the setup. Case-closing memos always get professor sign-off before the case is marked closed in the handoff document, regardless of supervision-style choice.
+结案或将案件移交给新学生是一项具有法律后果的行为。门控是 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 中 `## 指导风格` 描述的指导工作流程，由确认持证指导律师拥有设置的 Part 0 身份检查强化。无论选择何种指导风格，结案备忘录在案件中标记为已关闭前始终获得指导老师签字。
 
-Per `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` supervision style:
+按 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 指导风格：
 
-- **Formal review queue:** every handoff memo goes into the review queue before release to the incoming student. Professor approves, edits, or returns.
-- **Configurable flags:** memos carry "CHECK WITH [PROFESSOR] BEFORE RELYING" — professor reviews informally, student responsible for checking in.
-- **Lighter-touch:** memos carry standard AI-assisted label; professor reviews through existing structure. Case-closing memos still route to the professor before closure.
+- **正式审查队列：** 每份交接备忘录在发给新接手学生前进入审查队列。指导老师批准、编辑或退回。
+- **可配置标记：** 备忘录携带"依赖前请与[指导老师]确认"——指导老师非正式审查，学生负责报到。
+- **较轻触：** 备忘录携带标准 AI 辅助标签；指导老师通过现有结构审查。结案备忘录仍路由给指导老师。
 
-### Step 5: Hand off
+### 第5步：移交
 
-Once reviewed, handoff memos live at `~/.claude/plugins/config/claude-for-legal/legal-clinic/handoffs/[semester]/[case_id].md`. The incoming student reads them during their `/ramp` run at the start of next semester — `/ramp` should surface the memos for cases the new student is assigned.
+审查后，交接备忘录保存在 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/handoffs/[学期]/[案件编号].md`。新接手学生在下学期初的 `/ramp` 运行中读取它们——`/ramp` 应为新学生分配的案件浮现备忘录。
 
-## Integration
+## 联动
 
-- **`/ramp`:** at the start of next semester, reads `~/.claude/plugins/config/claude-for-legal/legal-clinic/handoffs/[most-recent-semester]/` and surfaces per-case memos for the cases each new student is taking on.
-- **`/deadlines`:** feeds the pending-deadlines section of each memo.
-- **`/client-comms-log`:** feeds the communications history summary.
-- **`/supervisor-review-queue` (if formal review enabled):** handoff memos route here for professor approval.
+- **`/ramp`：** 下学期初，读取 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/handoffs/[最近学期]/` 并为每个新学生接手的案件浮现按案件备忘录。
+- **`/deadlines`：** 输入每份备忘录的待处理截止日期部分。
+- **`/client-comms-log`：** 输入沟通历史摘要。
+- **`/supervisor-review-queue`（如正式审查启用）：** 交接备忘录路由到此处等待指导老师批准。
 
-## What this skill does not do
+## 本技能不做什么
 
-- **Close cases.** Handoff is for cases transitioning to the next cohort. Cases closing at semester end should get a final internal status memo (`/legal-clinic:status internal`) for the file and be marked closed in the handoff document; the status skill supports `client | internal | court` audiences.
-- **Assign incoming students.** Professor assigns. Skill records what the assignment is; doesn't pick.
-- **Generate handoffs from scratch without clinic data.** Needs the active case list as input. If the clinic doesn't maintain one, the skill surfaces that gap as a blocker rather than inventing.
-- **Replace a conversation.** The written memo is the record. The outgoing student should also have a conversation with the incoming student where feasible — the memo captures facts; a conversation captures judgment and relationship context the memo can't.
+- **结案。** 交接适用于移交给下个群体的案件。学期结束时结案的案件应为卷宗获取最终内部状态备忘录（`/legal-clinic:status internal`）并标记为已关闭；status 技能支持 `client | internal | court` 受众。
+- **分配新接手学生。** 指导老师分配。技能记录分配是什么；不选。
+- **在没有诊所数据的情况下从零生成交接。** 需要活跃案件列表作为输入。如果诊所不维护，技能将该缺口浮现为阻塞项而非编造。
+- **替代对话。** 书面备忘录是记录。离届学生在可行时还应与新接手学生有一次对话——备忘录捕捉事实；对话捕捉判断力和关系背景，备忘录无法捕捉。

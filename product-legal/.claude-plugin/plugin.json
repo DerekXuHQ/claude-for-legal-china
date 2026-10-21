@@ -1,8 +1,8 @@
 {
   "name": "product-legal",
   "version": "1.0.2",
-  "description": "Reviews product launches against your risk calibration, answers 'is this a problem?' questions in minutes, checks marketing copy for claims that need substantiation, and flags upcoming launches that need legal eyes before anyone asks.",
+  "description": "依据您的风险校准审查产品上线，在数分钟内解答「这有问题吗？」类问题，审查营销文案中需证实的宣传主张，并在任何人开口之前标记即将需要法务介入的上线项目。",
   "author": {
-    "name": "Anthropic"
+    "name": "陈石 律师"
   }
 }

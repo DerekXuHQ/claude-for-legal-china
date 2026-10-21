@@ -1,459 +1,403 @@
 ---
 name: entity-compliance
 description: >
-  Entity compliance tracker — initialize, report upcoming deadlines, update
-  status, run health audit, export to CSV. Maintains a compliance-tracker.yaml
-  built from the entity table, calculates filing deadlines by entity and
-  jurisdiction, and surfaces what's due in the next 30/60/90 days. Use when
-  user says "entity compliance", "filing deadlines", "annual reports due",
-  "entity tracker", "what filings are due", "entity health", or "good standing".
+  主体合规追踪器——初始化、报告即将到来的截止日、更新状态、运行健康审计、
+  导出为 CSV。维护从主体清单构建的 compliance-tracker.yaml，按主体和
+  注册地计算申报截止日，呈现未来30/60/90天内的待办事项。当用户说"主体合规"
+  "申报截止日""年报到期""主体追踪器""什么申报到期""主体健康"或"存续状态"时使用。
 argument-hint: "[--init | --report [--days N] | --update [--from-report] | --sweep | --audit | --export [--format csv|table]]"
 ---
 
 # /entity-compliance
 
-1. Load `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` → `## Entity Management` (entity table, jurisdictions, registered agent).
-2. Route to the correct mode below based on flag:
-   - No flag or `--init`: Mode 1 — initialize tracker from entity table
-   - `--report`: Mode 2 — surface upcoming deadlines and overdue items
-   - `--update`: Mode 3a (manual) or 3b (--from-report upload) — update status
-   - `--sweep`: Mode 3c — walk through unknown/overdue items one by one
-   - `--audit`: Mode 4 — full health audit
-   - `--export`: Mode 5 — produce CSV or table export
-3. Read/write `~/.claude/plugins/config/claude-for-legal/corporate-legal/entities/compliance-tracker.yaml`.
-4. After any update: show summary of changes and next action.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` → `## 主体管理`（主体清单、注册地、工商登记代办机构）。
+2. 按以下标志路由到正确的模式：
+   - 无标志或 `--init`：模式1——从主体清单初始化追踪器
+   - `--report`：模式2——呈现即将到来的截止日和逾期项
+   - `--update`：模式3a（手动）或 3b（--from-report 上传）——更新状态
+   - `--sweep`：模式3c——逐项排查未知/逾期项
+   - `--audit`：模式4——全面健康审计
+   - `--export`：模式5——产出 CSV 或表格导出
+3. 读取/写入 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/entities/compliance-tracker.yaml`。
+4. 任何更新后：展示变更摘要和下一步行动。
 
 ---
 
-## Purpose
+## 目的
 
-Annual reports, franchise taxes, Statements of Information, biennial filings —
-every entity in every state has its own schedule and its own consequences for
-missing the deadline. This skill maintains a single YAML tracker that knows
-what's due, when, and for which entity. It's lightweight by design: the tracker
-is a file you own, Claude updates it on command, and you export it when you need
-to share it.
+工商年报、企业所得税年度申报、信息公示、两年度申报——每个主体在每个注册地有自己的时间安排和错过截止日的各自后果。本技能维护一个单一的 YAML 追踪器，知道什么到期、何时到期、针对哪个主体。有意设计为轻量级：追踪器是你拥有的文件，Claude 按指令更新，需要分享时你导出。
 
-## Important: deadline reference caveat
+## 重要：截止日参考说明
 
-> The filing deadlines in this skill's reference table reflect publicly available
-> requirements as of the skill's build date. State filing requirements and due
-> dates can change. **Always confirm deadlines with your registered agent or
-> directly with the relevant Secretary of State before relying on them for
-> compliance purposes.** If you use CT Corp, National Registered Agents, or
-> another registered agent service, their compliance calendar is authoritative
-> for your specific entities — use this tracker to organize and surface their
-> data, not to replace it.
+> 本技能参考表中的申报截止日反映了该技能构建日期时公开可得的要求。注册地申报要求和截止日可能会变化。**在依赖它们进行合规前，始终与你的工商登记代办机构或直接向相关市场监督管理局确认截止日。** 如果你使用工商登记代办机构（如各地的企业登记代理服务机构），它们的合规日历对你的特定主体具有权威性——使用本追踪器组织和呈现它们的数据，而非替代它们。
 
-## Jurisdiction assumption
+## 注册地假设
 
-> This tracker computes deadlines against the state or country of formation / qualification recorded per entity. Filing rules, due-date mechanics, and fee structures vary materially by jurisdiction. If an entity's actual footprint differs from what's in `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` (undisclosed foreign qualification, dissolved entities, jurisdictional re-domestication, international filings managed by a local agent), the output may not apply as written — confirm with the registered agent or local counsel for that jurisdiction.
+> 本追踪器按每个主体记录的设立地或经营地计算截止日。申报规则、截止日机制和费用结构在不同注册地之间存在实质性差异。如果主体的实际业务范围与 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 中记录的不同（未披露的外地经营备案、已注销主体、注册地迁移、由本地代理机构管理的跨省级申报），输出可能不完全适用——与工商登记代办机构或该辖区的当地律师确认。
 
-## Entity-type disambiguation (especially Delaware)
+## 主体类型区分
 
-> The filing calendar depends on **entity type**, not just jurisdiction. Treating a "Delaware entity" as a single bucket is a common and consequential error — DE corporations, DE LLCs, and DE LPs have different filings, different deadlines, and different consequences for a miss. Confirm the entity type from the entity table before computing or reporting a deadline, and never copy a deadline from one entity-type to another in the same state.
+> 申报日历取决于**主体类型**，而不仅仅是注册地。将所有"某地主体"视为同一类别是常见且后果严重的错误——有限公司、股份公司、合伙企业、个人独资企业有不同的申报要求、不同的截止日和错过申报的不同后果。在计算或报告截止日前从主体清单中确认主体类型，绝不将一个主体类型的截止日复制到同一注册地的另一个主体类型。
 >
-> **Delaware — the split that matters:**
+> **中国法下关键区别：**
 >
-> - **DE Corporation (Inc., Corp.):** Annual report AND franchise tax, both due **March 1**. Franchise tax is calculated by the authorized-shares method or the assumed-par-value capital method (whichever is lower); the annual report captures director / officer information. Statutory basis: 8 Del. C. §§ 501–502 [verify current].
-> - **DE LLC:** No annual report required. Annual tax is a **flat $300**, due **June 1**. Statutory basis: 6 Del. C. § 18-1107(d) [verify current fee and date].
-> - **DE LP:** No annual report required. Annual tax is a **flat $300**, due **June 1** (parallel to the LLC rule). Statutory basis: 6 Del. C. § 17-1109 [verify current].
+> - **有限责任公司/股份有限公司：** 须于每年1月1日至6月30日通过国家企业信用信息公示系统报送并公示年度报告。法律依据：国务院《企业信息公示暂行条例》第7、8条 `[法条原文]`。
+> - **外商投资企业：** 除年报外，还需根据《外商投资法》及其实施细则完成外商投资信息报告。法律依据：《外商投资法》第34条 `[法条原文]`。
+> - **合伙企业：** 须于每年1月1日至6月30日报送年度报告，但合伙企业年度报告的内容与公司不同。
+> - **代表处/分公司：** 各自有独立的年报义务。
+> - **已进入注销程序或长期停业的主体：** 仍需报送年报（但清算组成员、清算组负责人名单等需在清算组成立后60日内公示）。
 >
-> A DE LLC is NOT required to file a March 1 annual report — writing that deadline for an LLC carries real risk (spurious "overdue" flags that mask actual June 1 exposure, or worse, the inverse: a user who treats the March 1 corporation rule as universal and misses the June 1 LLC deadline). If the entity table records a Delaware entity without a type, flag it as `type_unknown` and ask the user to confirm before computing either deadline.
->
-> The same entity-type discipline applies in every other jurisdiction with divergent filing regimes by entity type (e.g., CA corp Statement of Information vs. CA LLC SOI cadence; TX franchise tax applies to corporations, LLCs, and LPs but with different no-tax-due thresholds). When the reference table for a jurisdiction is populated, make sure it is indexed by entity type, not just by state.
+> 如果主体清单中记录了一个主体但没有类型，将其标记为 `type_unknown`，在计算任何截止日前请用户确认。
 
 ---
 
-## Tracker file
+## 追踪器文件
 
-Lives at `~/.claude/plugins/config/claude-for-legal/corporate-legal/entities/compliance-tracker.yaml`. Structure:
+存放于 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/entities/compliance-tracker.yaml`。结构：
 
 ```yaml
-# Entity Compliance Tracker
-# Generated: [date]
-# Last updated: [date]
-# Disclaimer: deadlines are reference only — confirm with registered agent or Secretary of State
+# 主体合规追踪器
+# 生成日期：[日期]
+# 最近更新：[日期]
+# 声明：截止日为参考信息——请与工商登记代办机构或市场监督管理局确认
 
 metadata:
-  company: "[Company Name]"
-  generated: "[date]"
-  last_updated: "[date]"
-  last_audit: "[date or null]"
+  company: "[公司名称]"
+  generated: "[日期]"
+  last_updated: "[日期]"
+  last_audit: "[日期 或 空]"
 
-custom_jurisdictions:   # manually added — US states or countries not in built-in reference table
-  []                    # populated when a new jurisdiction is encountered
+custom_jurisdictions:   # 手动添加——不在内置参考表中的省份或国家
+  []                    # 遇到新的注册地时填充
 
 entities:
-  - name: "[Entity Name]"
-    type: "[Corporation / LLC / LP / other]"
-    state_of_formation: "[state]"
-    formation_date: "[date or null]"
-    status: "[active / dormant / dissolving]"
-    registered_agent: "[CT Corp / National / in-house / other]"
+  - name: "[主体名称]"
+    type: "[有限责任公司 / 股份有限公司 / 合伙企业 / 其他]"
+    registration_place: "[省份/城市]"
+    formation_date: "[日期 或 空]"
+    status: "[开业 / 休眠 / 注销中]"
+    registered_agent: "[工商登记代办机构名称 / 内部自行管理 / 其他]"
     notes: ""
 
     jurisdictions:
-      - state: "[state]"
-        qualification: "[domestic / foreign]"
-        qualified_date: "[date or null]"
-        agent_managed: false   # set true for international entities where a local agent handles compliance
-        local_agent: "[name or null]"
+      - place: "[省份/城市]"
+        qualification: "[注册地 / 经营地]"
+        qualified_date: "[日期 或 空]"
+        agent_managed: false   # 对由本地代理机构处理合规的主体设为 true
+        local_agent: "[名称 或 空]"
         filings:
-          - type: "[Annual Report / Franchise Tax / Statement of Information / Biennial Statement / other]"
+          - type: "[年度报告 / 企业所得税申报 / 外商投资信息报告 / 其他]"
             due_date: "[YYYY-MM-DD]"
-            due_basis: "[fixed date / anniversary month / other]"
-            last_filed: "[date or null]"
-            last_fee: "[amount or null]"
+            due_basis: "[固定日期 / 周年月 / 其他]"
+            last_filed: "[日期 或 空]"
+            last_fee: "[金额 或 空]"
             status: "[current / due_soon / overdue / unknown]"
-            confirmed_good_standing: "[date or null]"
+            confirmed_good_standing: "[日期 或 空]"
             notes: ""
 ```
 
-Status values:
-- `current` — filed for current period, nothing due within 90 days
-- `due_soon` — due within 90 days
-- `overdue` — past due date with no filed date recorded
-- `unknown` — no information; needs manual confirmation
+状态值：
+- `current` — 当期已申报，90天内无待办
+- `due_soon` — 90天内到期
+- `overdue` — 已过截止日，无已申报日期记录
+- `unknown` — 无信息；需手动确认
 
 ---
 
-## Mode 1: Initialise
+## 模式1：初始化
 
-Run when no tracker exists, or with `--rebuild` to regenerate from scratch.
+当不存在追踪器时运行，或使用 `--rebuild` 从零重新生成。
 
-### Step 1: Load entity table
+### 第1步：加载主体清单
 
-Read `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` → `## Entity Management` → Entity table. If the entity table
-is populated (from org chart upload at cold-start), use it directly. If not,
-ask the user to either run the cold-start module or provide the entity list.
+读取 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` → `## 主体管理` → 主体清单。如果主体清单已填充（来自冷启动时的组织架构图上传），直接使用。如果未填充，请用户运行冷启动模块或提供主体清单。
 
-### Step 2: For each entity × jurisdiction, confirm the filing requirements
+### 第2步：对每个主体 × 注册地，确认申报要求
 
-For each entity, confirm the current filing schedule with the registered agent or the relevant Secretary of State. State filing schedules change (some states move from fixed dates to anniversary-based schedules and back, fee structures are revised, filing categories are reclassified). Do not rely on a cached schedule. The tracker below records the dates you confirm; update them when your registered agent sends reminders.
+对每个主体，与工商登记代办机构或相关市场监督管理局确认当前的申报时间安排。注册地申报要求会变化。不要依赖缓存的时间表。以下追踪器记录你确认的日期；当你的登记代办机构发送提醒时更新它们。
 
-For each jurisdiction where the entity is registered (domestic or foreign):
+对主体注册（注册地或经营地）的每个注册地：
 
-1. Ask the user whether they have a current compliance report from the registered agent — that's the most authoritative source.
-2. If not, ask the user what they know (filing type, due-date basis, last filed date, typical fee). Record what they provide.
-3. For anything the user does not know, flag the entity × jurisdiction entry as `unknown` — do not populate dates from a cached reference. The user's next step is to confirm with the registered agent or Secretary of State.
+1. 询问用户是否从登记代办机构获得了当前合规报告——那是最权威的来源。
+2. 如果否，询问用户知道什么（申报类型、截止日基础、最近申报日期、大致费用）。记录他们提供的内容。
+3. 对用户不知道的任何内容，将该主体 × 注册地条目标记为 `unknown`——不要从缓存参考中填充日期。用户的下一步是与登记代办机构或市场监督管理局确认。
 
-**Capture details in the tracker rather than a reference table:**
+**在追踪器中捕获详情而非参考表：**
 
-> I don't have filing requirements for [Jurisdiction] in the reference table.
-> Let me capture them so we can track this going forward.
+> 我在参考表中没有 [注册地] 的申报要求。让我捕获它们以便后续可以追踪。
 >
-> For [Entity] in [Jurisdiction]:
-> 1. What type of filing is required? (Annual report, franchise tax, confirmation
->    statement, annual return, or something else?)
-> 2. When is it due? (Fixed date like May 1, anniversary month, or other?)
-> 3. What's the typical fee? (Approximate is fine — or "unknown".)
-> 4. Who is your registered agent or local filing agent there?
+> 关于 [主体] 在 [注册地]：
+> 1. 需要什么类型的申报？（年度报告、税务申报、外商投资信息报告或其他？）
+> 2. 何时到期？（固定日期如5月1日、周年月还是其他？）
+> 3. 大致费用是多少？（近似值即可——或"未知"。）
+> 4. 谁是你的工商登记代办机构或当地申报代理？
 
-Store the answer in a `custom_jurisdictions` block in the tracker:
+将答案存储在追踪器的自定义注册地块中：
 
 ```yaml
 custom_jurisdictions:
-  - jurisdiction: "[State / Country]"
-    jurisdiction_type: "[US state / Canada province / EU member state / other]"
+  - jurisdiction: "[省份/城市]"
+    jurisdiction_type: "[中国省份 / 中国城市 / 其他]"
     filings:
-      - type: "[filing type]"
-        due_basis: "[fixed: MM-DD / anniversary month / other description]"
-        typical_fee: "[amount or unknown]"
-        notes: "[any other relevant information — e.g., local agent required, filing in local language]"
+      - type: "[申报类型]"
+        due_basis: "[fixed: MM-DD / anniversary month / 其他描述]"
+        typical_fee: "[金额 或 unknown]"
+        notes: "[任何其他相关信息——例如需当地代理、需在当地语言申报]"
     added_by: "manual"
-    added_date: "[date]"
+    added_date: "[日期]"
 ```
 
-This custom definition is then applied to all entities in that jurisdiction.
-Future `--init` runs and entity additions will use it automatically.
+此自定义定义随后适用于该注册地的所有主体。未来的 `--init` 运行和主体添加将自动使用。
 
-**International jurisdictions specifically:**
+**跨省经营主体特别注意事项：**
 
-International filings vary enormously by jurisdiction. Always go through the
-custom definition flow above — confirm the filing type, cadence, and fee with
-the local filing agent or registered office agent before populating the tracker.
+跨省经营主体的合规要求因省份而异。总是通过上述自定义定义流程——在填充追踪器前与当地申报代理或工商登记代办机构确认申报类型、频率和费用。
 
-For international entities, also ask:
-- Is there a local filing agent or registered office agent handling compliance?
-  If yes, note the agent name — the tracker can flag when to follow up with them
-  rather than calculating due dates independently.
-- Is the entity required to file any group-level reports in this jurisdiction
-  (e.g., country-by-country reporting, beneficial ownership registers,
-  economic substance filings)?
+对跨省经营主体，还需询问：
+- 是否有当地申报代理或工商登记代办机构处理合规？
+  如果是，记录代理名称——追踪器可以标记何时与他们跟进，而非独立计算截止日。
+- 该主体是否需要在当地申报任何集团级报告（如反避税报告、关联交易报告）？
 
-Flag international entities with a local agent as `agent_managed: true` in the
-tracker. The report mode will list them separately with a note to confirm status
-with the local agent rather than showing a calculated due date.
+将具有当地代理的跨省经营主体在追踪器中标记为 `agent_managed: true`。报告模式将单独列出它们，并提示向当地代理确认状态而非显示计算出的截止日。
 
-For anniversary-based filings: calculate from the formation_date in the tracker.
-If formation_date is null: set status to `unknown` and flag for confirmation.
+对基于周年月的申报：从追踪器中的 formation_date 计算。如果 formation_date 为空：将状态设为 `unknown` 并标记待确认。
 
-### Step 3: Write the tracker
+### 第3步：写入追踪器
 
-Generate `~/.claude/plugins/config/claude-for-legal/corporate-legal/entities/compliance-tracker.yaml` with all entities and their
-calculated filing requirements. Set initial status:
-- `current` if last_filed is within the current filing period
-- `due_soon` if due within 90 days and no last_filed for current period
-- `overdue` if due date has passed and no last_filed for current period
-- `unknown` if formation_date is missing or state is not in reference table
+生成 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/entities/compliance-tracker.yaml`，包含全部主体及其计算出的申报要求。设置初始状态：
+- `current` 如果 last_filed 在当前申报期内
+- `due_soon` 如果90天内到期且当期无 last_filed
+- `overdue` 如果截止日已过且当期无 last_filed
+- `unknown` 如果 formation_date 缺失或省份不在参考表中
 
-Show a summary after generating:
+生成后展示摘要：
 
 ```
-Entity compliance tracker initialized.
+主体合规追踪器已初始化。
 
-Entities: [N]
-Total jurisdictions: [N]
-Filings tracked: [N]
+主体： [N]
+注册地总计： [N]
+追踪申报项： [N]
 
-Status summary:
-  ✅ Current:   [N]
-  ⏰ Due soon:  [N] (next 90 days)
-  🔴 Overdue:   [N]
-  ❓ Unknown:   [N] (confirm with registered agent)
+状态摘要：
+  ✅ 正常：    [N]
+  ⏰ 即将到期： [N]（未来90天）
+  🔴 逾期：    [N]
+  ❓ 未知：    [N]（与工商登记代办机构确认）
 
-Run /corporate-legal:entity-compliance --report to see what's due.
+运行 /corporate-legal:entity-compliance --report 查看待办事项。
 ```
 
 ---
 
-## Mode 2: Report
+## 模式2：报告
 
-Surfaces upcoming deadlines and flags overdue items. Default: next 90 days.
+呈现即将到来的截止日并标记逾期项。默认：未来90天。
 
 ```
 /corporate-legal:entity-compliance --report [--days 30|60|90|180]
 ```
 
-Output format:
+输出格式：
 
 ```
-ENTITY COMPLIANCE REPORT — [date]
-[Company Name]
+主体合规报告 — [日期]
+[公司名称]
 
-🔴 OVERDUE ([N]):
-  [Entity] / [State] / [Filing type] — was due [date]
+🔴 逾期 ([N])：
+  [主体] / [省份] / [申报类型] — 应于 [日期] 到期
 
-⏰ DUE WITHIN [N] DAYS ([N]):
-  [Entity] / [State] / [Filing type] — due [date]  [registered agent]
-  [Entity] / [State] / [Filing type] — due [date]
+⏰ [N] 天内到期 ([N])：
+  [主体] / [省份] / [申报类型] — 应于 [日期] 到期  [工商登记代办机构]
+  [主体] / [省份] / [申报类型] — 应于 [日期] 到期
 
-✅ RECENTLY FILED ([N] in last 90 days):
-  [Entity] / [State] / [Filing type] — filed [date]
+✅ 最近已申报 ([N] 项，过去90天)：
+  [主体] / [省份] / [申报类型] — 已于 [日期] 申报
 
-❓ UNKNOWN STATUS ([N]):
-  [Entity] / [State] / [Filing type] — no information; confirm with registered agent
+❓ 未知状态 ([N])：
+  [主体] / [省份] / [申报类型] — 无信息；与工商登记代办机构确认
 
-🌐 AGENT-MANAGED ([N]):
-  [Entity] / [Country] / [Filing type] — managed by [local agent]; confirm status directly
-  [Entity] / [Country] — no local agent recorded; add one with --update
+🌐 代理管理 ([N])：
+  [主体] / [省份] / [申报类型] — 由 [当地代理] 管理；直接确认状态
+  [主体] / [省份] — 无当地代理记录；使用 --update 添加
 
-GOOD STANDING:
-  Last confirmed: [date]
-  Entities with confirmed good standing: [N] of [total]
-  Entities not confirmed in last 12 months: [list]
+存续状态：
+  最近确认日期：[日期]
+  已确认存续状态的主体：[N] of [总计]
+  最近12个月未确认的主体：[列表]
 ```
 
-If the tracker covers more than ~10 entities, or any time the user asks: offer the dashboard (see CLAUDE.md `## Outputs → Dashboard offer for data-heavy outputs`). Shape the offer for this output — counts by filing status (overdue / due soon / filed / unknown), counts by good-standing state, and a sortable entity table with jurisdiction, filing type, and next due date.
+如果追踪器覆盖超过约10个主体，或用户任何时候提问：提供仪表盘（见 CLAUDE.md `## 输出规范 → 数据密集产出的仪表盘选项`）。为本次产出定制：按申报状态计数（逾期/即将到期/已申报/未知）、按存续状态计数，以及带注册地、申报类型和下一个截止日的可排序主体表。
 
 ---
 
-## Mode 3: Update
+## 模式3：更新
 
-Updates one or more entities in the tracker. Three sub-modes:
+更新追踪器中的一个或多个主体。三种子模式：
 
-### Consequential-action gate (file SOI / annual report)
+### 后果性行动准入（填报年报/工商备案）
 
-**Before directing or confirming a filing:** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md`. If the Role is **Non-lawyer**:
+**在指示或确认一项申报前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 中的 `## 使用者`。如果角色为**非法务人员**：
 
-> Filing a Statement of Information, annual report, or franchise tax return with a Secretary of State has legal consequences — it's a formal representation from the entity, it carries fees, and missed or incorrect filings can cause loss of good standing or franchise-tax defaults. Have you reviewed this with an attorney (or a qualified registered agent) before filing? If yes, proceed to record the filing. If no, here's a brief to bring to them:
+> 向市场监督管理局提交年度报告、企业所得税申报或信息公示具有法律后果——这是主体的正式陈述，伴随费用，遗漏或不正确申报可能导致失去存续状态或处罚。在申报前你是否已与律师（或有资质的工商登记代办机构）审查？如已审查，继续记录申报。如未审查，以下是带给他们的简要说明：
 >
-> - Entity, jurisdiction, filing type, and due date
-> - What the tracker says about the last filing (date, fee, officer/director information last reported)
-> - Open questions (is the officer/director information still accurate; has the registered agent changed; has the principal office changed)
-> - What could go wrong (out-of-date officer information, missed deadline triggering franchise tax or dissolution, fee calculation error)
-> - What to ask the attorney (is a filing actually needed this year; are there any charter amendments or officer changes that need to be reflected; who should sign)
+> - 主体、注册地、申报类型和截止日
+> - 追踪器显示的最近申报信息（日期、费用、最近报告的高管/董事信息）
+> - 未决问题（高管/董事信息是否仍准确；工商登记代办机构是否已变更；主要办事机构地址是否已变更）
+> - 可能出错的问题（过时的高管信息、错过截止日触发处罚或注销、费用计算错误）
+> - 需向律师提出的问题（今年是否确实需要申报；是否有任何章程修订或高管变更需要反映；应由谁签署）
 >
-> If you need to find an attorney, solicitor, barrister, or other authorised legal professional: contact your professional regulator (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent) for a referral service.
+> 如需寻找律师：联系中华全国律师协会或所在地地方律师协会获取推荐服务。
 
-Do not record a new `last_filed` date past this gate without an explicit yes. Tracker reads, deadline reports, and "what's due soon" output do not require the gate.
+在获得明确同意前，不越过此准记录新的 `last_filed` 日期。追踪器读取、截止日报告和"什么即将到期"的输出不需要此准入。
 
-### 3a: Manual update
+### 3a：手动更新
 
 ```
 /corporate-legal:entity-compliance --update
 ```
 
-Attorney tells Claude what was filed:
-> "We filed the Delaware annual report for [Entity] on March 1. Fee was $450."
+律师告诉 Claude 什么已申报：
+> "我们于3月1日为 [主体] 申报了年度报告。费用450元。"
 
-Claude updates:
-- `last_filed` → March 1 date
-- `last_fee` → $450
+Claude 更新：
+- `last_filed` → 3月1日
+- `last_fee` → 450
 - `status` → `current`
-- `last_updated` in metadata
+- 元数据中的 `last_updated`
 
-### 3b: Registered agent report upload
+### 3b：工商登记代办机构报告上传
 
 ```
 /corporate-legal:entity-compliance --update --from-report
 ```
 
-User uploads a CT Corp, National Registered Agents, or similar compliance
-report (PDF, CSV, or Excel). Claude reads it and updates matching entities:
+用户上传工商登记代办机构或类似合规报告（PDF、CSV 或 Excel）。Claude 读取并更新匹配的主体：
 
-From the report, extract for each entity:
-- Filing type and due date
-- Last filed date (if present)
-- Good standing status and date confirmed
-- Any flags or warnings from the agent
+从报告中提取每个主体的：
+- 申报类型和截止日
+- 最近申报日期（如有）
+- 存续状态和确认日期
+- 代理标注的任何标记或警告
 
-Match report entities to tracker entities by name (flag near-matches for
-confirmation — "Acme Holdings LLC" vs. "Acme Holdings, LLC" are probably
-the same entity).
+按名称将报告中的主体匹配到追踪器中的主体（标记接近匹配供确认——"某某控股有限公司"和"某某控股有限公司"分别注册的不同主体可能是同一个）。
 
-After processing:
+处理完成后：
 ```
-Updated [N] entities from report.
+已从报告中更新 [N] 个主体。
 
-Matched: [N]
-Unmatched (in report, not in tracker): [list — may need to add to entity table]
-Not in report (in tracker, no update): [list — status unchanged]
+已匹配：[N]
+未匹配（在报告中但不在追踪器中）：[列表——可能需要添加到主体清单]
+不在报告中（在追踪器中但无更新）：[列表——状态不变]
 ```
 
-### 3c: Bulk status sweep
+### 3c：批量状态排查
 
 ```
 /corporate-legal:entity-compliance --sweep
 ```
 
-Walks through each entity with `unknown` or `overdue` status and asks for
-current information one at a time:
+逐项排查每个状态为 `unknown` 或 `overdue` 的主体，每次一个，询问当前信息：
 
-> [Entity] / [State] / [Filing type] — currently showing as [status].
-> Has this been filed? If yes, when and what was the fee?
+> [主体] / [省份] / [申报类型] — 当前显示为 [状态]。
+> 这项是否已申报？如果已申报，何时以及费用是多少？
 
-Updates tracker after each confirmation. Produces a completion summary.
+每次确认后更新追踪器。产出完成摘要。
 
 ---
 
-## Mode 4: Health audit
+## 模式4：健康审计
 
 ```
 /corporate-legal:entity-compliance --audit
 ```
 
-Broader review beyond just filing status. Surfaces:
+超出申报状态的更广泛审查。呈现：
 
-**Filing compliance:**
-- Overdue items (from report mode)
-- Unknown status items
+**申报合规：**
+- 逾期项（来自报告模式）
+- 未知状态项
 
-**Entity health:**
-- Entities marked as `dormant` — flag for review: should these be dissolved?
-  Carrying dormant entities costs money (annual fees, registered agent fees)
-  and creates ongoing compliance obligations.
-- Entities with formation_date older than 5 years and status `dormant` — flag
-  as dissolution candidates.
-- Entities missing formation_date — flag as data gap.
+**主体健康：**
+- 标记为 `休眠` 的主体——审查标记：这些是否应注销？
+  维持休眠主体耗费成本（年费、工商登记代办机构费用）并产生持续的合规义务。
+- 成立超过5年且状态为 `休眠` 的主体——标记为注销候选。
+- 缺失 formation_date 的主体——标记为数据缺口。
 
-**Good standing gaps:**
-- Entities with no `confirmed_good_standing` date — unknown whether in good
-  standing; risk if a transaction requires a certificate on short notice.
-- Entities with `confirmed_good_standing` older than 12 months — stale; worth
-  refreshing, especially if M&A or financing is anticipated.
+**存续状态缺口：**
+- 无 `confirmed_good_standing` 日期的主体——未知是否存续；如交易需要在短时内取得存续证明，存在风险。
+- `confirmed_good_standing` 超过12个月的主体——过期；值得刷新，尤其如预期有并购或融资。
 
-**Foreign qualification gaps:**
-- Based on `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` entity table: are there states in the company's
-  operational footprint (offices, employees) where entities are not foreign
-  qualified? This requires the attorney to confirm operational presence —
-  Claude can flag the question but cannot determine presence independently.
+**经营备案缺口：**
+- 基于 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 的主体清单：公司的业务足迹中是否有省份（办事处、员工）主体未办理经营备案？这需要律师确认业务存在——Claude 可以提出问题但不能独立判断业务存在。
 
-**Intercompany agreement gaps:**
-- From `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md`: if intercompany agreements are marked as partial or no,
-  flag which entity relationships likely need agreements (parent-subsidiary
-  services, IP licenses, loans).
+**关联方交易协议订立情况：**
+- 从 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md`：如果关联方交易协议订立情况标记为部分或否，标记哪些主体关系可能需要协议（母子公司服务、知识产权许可、贷款）。
 
-Output format:
+输出格式：
 
 ```
-ENTITY HEALTH AUDIT — [date]
+主体健康审计 — [日期]
 
-FILING COMPLIANCE
-  Overdue: [N]
-  Unknown status: [N]
-  Action: run --sweep to confirm unknown items
+申报合规
+  逾期：[N]
+  未知状态：[N]
+  行动：运行 --sweep 确认未知项
 
-DORMANT ENTITIES ([N])
-  [List of dormant entities with age and annual carrying cost if known]
-  Dissolution candidates (>5 years dormant): [list]
+休眠主体（[N]）
+  [休眠主体列表，含存续年数和年度维持成本（如已知）]
+  注销候选（>5年休眠）：[列表]
 
-GOOD STANDING
-  No record: [N] entities
-  Stale (>12 months): [N] entities
-  Consider refreshing before: [any upcoming transactions or contract renewals if known]
+存续状态
+  无记录：[N] 个主体
+  过期（>12个月）：[N] 个主体
+  考虑在以下事项前刷新：[任何已知的即将发生的交易或合同续约]
 
-POTENTIAL GAPS
-  Foreign qualification: [flag question — confirm operational presence in:]
-    [list of states from `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` footprint not in tracker as qualified]
-  Intercompany agreements: [status from `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md`]
+潜在缺口
+  经营备案：[标记问题——确认以下地区的业务存在：]
+    [足迹在追踪器中未显示为已备案的省份列表，来自 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md`]
+  关联方交易协议订立：[来自 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 的状态]
 
-RECOMMENDED ACTIONS
-  1. [Highest priority action]
-  2. [etc.]
+建议行动
+  1. [最高优先级行动]
+  2. [等等]
 ```
 
 ---
 
-## Mode 5: Export
+## 模式5：导出
 
 ```
 /corporate-legal:entity-compliance --export [--format csv|table]
 ```
 
-Produces a flat export suitable for sharing with finance, legal ops, or
-outside registered agent. Default: CSV.
+产出适合与财务、法务运营或外部工商登记代办机构分享的平面导出。默认：CSV。
 
-CSV columns:
-`Entity Name, Entity Type, State of Formation, Formation Date, Status,
-Registered Agent, Jurisdiction, Qualification Type, Filing Type, Due Date,
-Last Filed, Last Fee, Good Standing Confirmed, Notes`
+CSV 列：
+`主体名称, 主体类型, 注册地, 成立日期, 状态, 工商登记代办机构, 管辖区, 资质类型, 申报类型, 截止日, 最近申报, 最近费用, 存续状态确认, 备注`
 
-One row per filing per jurisdiction. Multiple rows per entity (one per
-jurisdiction × filing type combination).
+每项申报、每个注册地一行。每主体多行（每个注册地 × 申报类型组合一行）。
 
-If `--format table`: produce a markdown table suitable for pasting into
-a report or Slack message, showing only the next 90 days of filings.
+如果 `--format table`：产出适合粘贴到报告或飞书消息中的 markdown 表格，仅显示未来90天的申报。
 
 ---
 
-## What this skill does not do
+## 本技能不做什么
 
-- It does not file anything. Output is a tracker and a to-do list; filing
-  is done by the attorney, outside counsel, or registered agent.
-- It does not pull good standing certificates. It tracks when certificates
-  were last confirmed; obtaining them is manual or via registered agent.
-- It does not determine whether foreign qualification is required in a given
-  state. That analysis depends on facts about business activity that the
-  attorney must confirm.
-- It does not replace a registered agent service for companies with complex
-  multi-entity structures. CT Corp, National Registered Agents, and similar
-  services have dedicated compliance teams and direct state relationships.
-  This skill is best suited for smaller organizations without agent support,
-  or as a lightweight layer on top of agent data for organizations that do
-  have support.
-- The filing deadline reference table is not legal advice and may not reflect
-  current requirements. Confirm all deadlines before relying on them.
+- 不提交任何申报。产出是追踪器和待办清单；申报由律师、外部律师或工商登记代办机构完成。
+- 不调取存续证明。它追踪证明最近确认的时间；取得证明是手动或通过工商登记代办机构。
+- 不判断在特定省份是否需要经营备案。该分析取决于关于业务活动的法律事实，须由律师确认。
+- 不替代具有复杂多主体结构的公司的工商登记代办服务机构。这些服务有专门的合规团队和直接的主管部门关系。本技能最适合没有代办支持的小型组织，或作为对有支持的组织代办数据的轻量层。
+- 申报截止日参考表不是法律意见，可能不反映最新要求。在依赖前确认所有截止日。
 
 
-## Formula injection defense
+## 公式注入防御
 
-Before writing any cell in Excel, Sheets, or CSV output, neutralize formula injection. Counterparty-sourced text (contract quotes, party names, registered agent data, CLM exports) is attacker-controlled. A cell starting with `=`, `+`, `-`, `@`, `	`, `
-`, or `
-` will be interpreted as a formula or break the row structure.
+在 Excel、表格或 CSV 输出中写入任何单元格前，防御公式注入。来自对方当事人的文本（合同引文、当事人名称、工商登记代办机构数据、合同管理系统导出）是攻击者可控制的。以 `=`、`+`、`-`、`@`、`	`、`
+` 或 `
+` 开头的单元格将被解释为公式或破坏行结构。
 
-- **Prefix with a single quote:** `'=SUM(A1:A10)` → `=SUM(A1:A10)` (displayed as text, not executed)
-- **Applies to every cell that contains text sourced from a document, a tool result, or a user paste.** Column headers you control and computed values you produce are safe.
-- **CSV: also escape embedded commas, double quotes, newlines** (RFC 4180 quoting).
-- This is not optional. A spreadsheet your user opens in Excel that triggers a macro or exfiltrates data via DDE is a supply-chain attack on your user.
+- **前置单引号：** `'=SUM(A1:A10)` → `=SUM(A1:A10)`（显示为文本，不执行）
+- **适用于每个包含来源于文件、工具结果或用户粘贴的文本的单元格。** 你控制的列标题和你产出的计算值是安全的。
+- **CSV：同时转义嵌入的逗号、双引号、换行符**（RFC 4180 引用）。
+- 这不是可选的。一个你的用户在 Excel 中打开后触发宏或通过 DDE 外泄数据的电子表格，是对你用户的供应链攻击。

@@ -4,7 +4,7 @@
 
 Scans the contract repository for upcoming renewal and cancel-by deadlines, cross-references against the team's playbook, flags contracts with upcoming deadlines, playbook deviations, and escalation triggers, and writes an alert report. Same source as the [`renewal-watcher`](../../commercial-legal/agents/renewal-watcher.md) Claude Code agent and the [`renewal-tracker`](../../commercial-legal/skills/renewal-tracker) skill — this directory is the Managed Agent cookbook for `POST /v1/agents`.
 
-This is a **cookbook, not a product.** It assumes Ironclad as the CLM of record because that is what the paired plugin assumes; teams on Agiloft, Ironclad alternatives, iManage, or a Google Drive of signed PDFs should swap the MCP endpoint accordingly.
+This is a **cookbook, not a product.** It is CLM-agnostic — defaults to a contract repository MCP (e签宝/法大大/飞书文档 for PRC practitioners); teams on other CLMs or a shared drive of signed PDFs should swap the MCP endpoint accordingly.
 
 ## ⚠️ Before you deploy
 
@@ -16,11 +16,10 @@ This is a **cookbook, not a product.** It assumes Ironclad as the CLM of record 
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-export IRONCLAD_MCP_URL=...
-export GDRIVE_MCP_URL=...
+export CLM_MCP_URL=...                # e签宝/法大大/飞书文档 CLM endpoint
+export FEISHU_MCP_URL=...
 # Optional — enable in the manifest if your signed agreements live here
-export IMANAGE_MCP_URL=...
-export DOCUSIGN_MCP_URL=...
+export GDRIVE_MCP_URL=...
 ../../scripts/deploy-managed-agent.sh renewal-watcher
 ```
 
@@ -34,7 +33,7 @@ Contract text, counterparty messages, and CLM comments are **untrusted input.** 
 
 | Tier | Touches untrusted docs? | Tools | Connectors |
 |---|---|---|---|
-| **`repo-reader`** | **Yes** | `Read`, `Grep` only | ironclad, gdrive (read-only); imanage off by default |
+| **`repo-reader`** | **Yes** | `Read`, `Grep` only | CLM (e签宝/法大大/飞书文档, read-only) |
 | `deadline-calculator` / Orchestrator | No | `Read`, `Grep`, `Glob`, `Agent` | None |
 | **`alert-writer`** (Write-holder) | No | `Read`, `Write`, `Edit` | None |
 
@@ -50,7 +49,7 @@ Contract text, counterparty messages, and CLM comments are **untrusted input.** 
 
 Before you trust the output on your workflow:
 
-- **Point at your CLM.** `IRONCLAD_MCP_URL` is the default. If signed agreements live in iManage, flip `imanage` to `default_config: { enabled: true }` in `agent.yaml` and `subagents/repo-reader.yaml` and set `IMANAGE_MCP_URL`. If they live in a Google Drive folder, rely on `gdrive` and the repo-reader's fallback search path. If they live in a CLM without a public MCP (Agiloft, Conga), wire a custom connector and update the MCP server block.
+- **Point at your CLM.** Set `CLM_MCP_URL` to your contract management system (e签宝、法大大、飞书文档 or equivalent). If signed agreements live in a shared drive folder, rely on `gdrive` and the repo-reader's fallback search path. If they live in a CLM without a public MCP, wire a custom connector and update the MCP server block.
 - **Set the Slack channel.** The alert-writer emits a `handoff_request` that names a Slack channel. The orchestrator reads that channel from your playbook configuration's **House style → Renewal alerts** field. Set it before the first scheduled run or the handoff will dead-letter.
 - **Tune the lookahead windows.** The deadline-calculator's default tiers are overdue / 30 / 60 / 90 / 180 days. If your renewal cycle is shorter (SaaS order forms under one year) or longer (multi-year enterprise MSAs with 12-month notice windows), adjust the tier thresholds in the deadline-calculator prompt and the corresponding sections in `alert-writer.yaml`.
 - **Adjust the escalation matrix.** The deadline-calculator reads your playbook's escalation matrix to decide whether to set `escalation_needed: true` and who to route to. Confirm the matrix reflects your current approval authority (who signs off on letting an auto-renewal lapse, who signs off on a renegotiation above a dollar threshold) before enabling scheduled runs. The [`escalation-flagger`](../../commercial-legal/skills/escalation-flagger) skill is loaded in `alert-writer` for formatting.

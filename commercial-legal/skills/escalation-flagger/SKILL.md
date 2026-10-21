@@ -1,159 +1,139 @@
 ---
 name: escalation-flagger
 description: >
-  Route a contract issue to the right approver per the escalation matrix in
-  `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`, and draft the ask. Use when the user
-  says "who needs to approve this", "escalate this", "does this need GC sign-off",
-  "route this for approval", or when another skill finds an issue that exceeds the
-  reviewer's authority.
-argument-hint: "[describe the issue, or reference a review memo]"
+  根据审查指引中的上报矩阵将合同问题路由至合适的审批人，并起草上报说明。
+  当用户说"谁需要批准这个""上报这个""这个需要法务负责人签字吗"
+  "路由这个去审批"或当其他技能发现超出审查者权限的问题时使用。
+argument-hint: "[描述问题，或引用审查备忘录]"
 ---
 
 # /escalation-flagger
 
-Names the approver for a contract issue per the `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md` escalation matrix and drafts the message so you're not writing "hey got a sec" at 5pm.
+根据审查指引中的上报矩阵指明合同问题的审批人并起草消息。
 
-## Instructions
+## 指令
 
-1. **Load `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`** → Escalation section. If missing, say so — the practice profile needs editing.
+1. **加载审查指引** → 上报部分。如缺失，说明——业务领域配置需要编辑。
 
-2. **Characterize the issue:** dollar threshold / term deviation / automatic trigger / business decision.
+2. **定性问题：** 金额阈值 / 条款偏离 / 自动触发 / 商业决策。
 
-3. **Match to matrix, name the approver.** Be specific — a person or role, not "legal leadership."
+3. **匹配矩阵，指明审批人。** 具体——是人或角色，不是"法务领导层"。
 
-4. **Draft the ask** per the template below: what the contract says, what playbook says, options with recommendation, decision-by date.
+4. **按模板起草上报说明：** 合同内容、审查指引立场、附带建议的选项、决策截止日期。
 
-5. **Do not send.** Draft it, show it, let the lawyer send.
+5. **不要发送。** 起草、展示、让律师发送。
 
-## Examples
-
-```
-/commercial-legal:escalation-flagger
-The Acme MSA has uncapped liability — who approves and what do I say?
-```
+## 示例
 
 ```
 /commercial-legal:escalation-flagger
-Reference: acme-review-memo.md
-Issue: §8.2 indemnity carveouts
+Acme主协议有无上限的责任——谁批准，我说什么？
+```
+
+```
+/commercial-legal:escalation-flagger
+参考：acme-review-memo.md
+问题：§8.2 赔偿例外排除
 ```
 
 ---
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/commercial-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/commercial-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查业务领域级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`，跳过本段。如果已启用且没有活动事项，询问。
 
 ---
 
-## Purpose
+## 目的
 
-Every contracts team has an escalation matrix, written or not. This skill reads the written one (in `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`), matches a contract issue against it, names the approver, and drafts the ask so the lawyer isn't writing "hey do you have a sec" messages at 5pm.
+每个合同团队都有上报矩阵，无论是否写成书面。本技能读取书面矩阵，将合同问题与之匹配，指明审批人并起草上报说明。
 
-## Load the matrix
+## 加载矩阵
 
-**Which side?** Before matching to the matrix, determine which side the company is on for the contract whose issue is being escalated. Usually obvious: if the counterparty is a vendor/supplier providing goods or services, you're purchasing-side. If the counterparty is a customer buying your product/service, you're sales-side. If it's not obvious, ask. Read the matching playbook section (`### Sales-side playbook` or `### Purchasing-side playbook`) to evaluate whether the term is inside fallbacks or triggers an automatic escalation — a term that's fine on one side can be a hard-no on the other. Note which side in the drafted ask so the approver knows which playbook was applied.
+**哪一方？** 在匹配矩阵之前，确定公司在此合同中处于哪一方。读取匹配的审查指引部分来评估条款是否在让步范围内或触发自动上报。
 
-Read `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md` → `## Escalation`. If it's missing or vague, say so — the cold-start interview should have captured this, and if it didn't, the practice profile needs editing.
+读取审查指引 → `## 上报`。如果缺失或模糊，说明——冷启动访谈应当已捕获此项。
 
-Expected structure:
+预期结构：
 
-| Can approve | Threshold | Escalates to | Via |
+| 可审批 | 阈值 | 上报至 | 方式 |
 |---|---|---|---|
-| Paralegal | Standard terms, <$50K | Counsel | Slack |
-| Counsel | Non-standard but within fallbacks, <$500K | GC | Slack or email |
-| GC | Everything else | CFO/Board | Meeting |
+| 法务助理 | 标准条款，<50万元 | 主办律师 | 飞书 |
+| 主办律师 | 非标准但在让步范围内，<500万元 | 法务负责人 | 飞书或邮件 |
+| 法务负责人 | 其他一切 | CFO/董事会 | 会议 |
 
-Plus **automatic escalation triggers** — things that escalate regardless of dollar value. Typically: unlimited liability, IP assignment, anything on the "never accept" lists.
+加上**自动上报触发条件**——无论金额大小均需上报的事项。通常：无限责任、知识产权转让、"永不接受"列表上的任何事项。
 
-## Workflow
+## 工作流
 
-### Step 1: Characterize the issue
+### 步骤1：定性问题
 
-What's being escalated?
+上报什么？金额阈值、条款偏离、自动触发还是商业决策。如果条款在让步范围内，不需要上报。
 
-- **Dollar threshold:** Contract value exceeds someone's approval authority
-- **Term deviation:** A term is outside the playbook fallbacks — someone more senior needs to decide whether to accept
-- **Automatic trigger:** One of the always-escalate items is present
-- **Business decision:** Not a legal call — needs the business owner, not legal leadership
-
-Don't escalate things that are actually fine. If the term is within the fallbacks in `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`, it doesn't need to go up.
-
-### Step 2: Match to the matrix
+### 步骤2：匹配矩阵
 
 ```
-Is the issue an automatic trigger?
-  → YES: escalate to [person named for that trigger]
-  → NO: continue
+问题是自动触发条件吗？
+  → 是：上报至 [该触发条件指定的人]
+  → 否：继续
 
-Is the contract value above the reviewer's threshold?
-  → YES: escalate to whoever has authority at that dollar level
-  → NO: continue
+合同价值是否超过审查者的阈值？
+  → 是：上报至在该金额级别有审批权的人
+  → 否：继续
 
-Is the term deviation outside all documented fallbacks?
-  → YES: escalate to whoever can approve non-standard terms
-  → NO: reviewer can approve — no escalation needed
+条款偏离是否超出所有已记录的让步范围？
+  → 是：上报至可以批准非标准条款的人
+  → 否：审查者可以批准——不需要上报
 ```
 
-### Step 3: Name the approver
+### 步骤3：指明审批人
 
-Be specific. Not "escalate to legal leadership" — name the person or role from `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`. If the matrix doesn't name anyone for this situation, say so: "The escalation matrix doesn't cover [situation]. Suggest asking [GC name] who owns this."
+具体。不是"上报至法务领导层"——指出审查指引中的人名或角色。
 
-### Step 4: Draft the ask
+### 步骤4：起草上报说明
 
-The approver should be able to decide from the message alone — no "let me pull up the contract."
+审批人应能从消息本身做决定——不需要"让我调出合同看看"。
 
 ```markdown
-**Escalating to:** [name]
-**Via:** [Slack #channel / email / meeting — per `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`]
-**Urgency:** [deadline if there is one]
+**上报至：** [姓名]
+**方式：** [飞书频道 / 邮件 / 会议 — 按审查指引]
+**紧急程度：** [截止日期（如有）]
 
 ---
 
-Hey [name] —
+[姓名]你好——
 
-Need your call on the [Counterparty] [agreement type]. [One sentence on deal context.]
+需要你关于 [对方当事人] [协议类型] 的决定。[一句交易背景。]
 
-**The issue:** [Plain English, one paragraph. What they want, why it's outside
-our standard, what the risk actually is.]
+**问题：** [一段中文。他们想要什么，为何超出我方标准，实际风险是什么。]
 
-**What the contract says:**
-> "[exact quote]"
+**合同原文：**
+> "[精确引用]"
 
-**What our playbook says:** [quote from `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`]
+**审查指引说：** [引用审查指引]
 
-**Options:**
-1. **Accept** — [one line on why this might be okay]
-2. **Push back with:** "[proposed counter-language]" — [one line on likely counterparty reaction]
-3. **Walk** — [one line on whether that's realistic given the business context]
+**选项：**
+1. **接受** — [一行说明为何这可能可以]
+2. **驳回并附：** "[建议的对应语言]" — [一行说明对方可能的反应]
+3. **终止** — [一行说明在商业背景下是否现实]
 
-**My recommendation:** [which option and why, briefly]
+**我的建议：** [哪个选项及简要理由]
 
-**Need a decision by:** [date, if there is a deadline]
+**需要决策日期：** [日期（如存在截止日期）]
 
-[Link to full review memo]
+[完整审查备忘录链接]
 ```
 
-### Step 5: Record the escalation
+### 步骤5：记录上报
 
-If this team uses a ticket system or [CLM] approval workflows, log it. If not, note in the review memo that the escalation was sent, to whom, and when. The next person who reads the memo should see the status.
+如果团队使用工单系统或合同管理系统审批工作流，记录。如果没有，在审查备忘录中注明上报已发送、发送对象和发送时间。
 
-## Calibration: when in doubt, escalate with a note
+## 校准：有疑问时上报并附注
 
-The cost of an unnecessary escalation is ~30 seconds of the approver's time — they read, say "fine, proceed," and the record shows they saw it. The cost of a missed escalation is signing an unapproved term, which is a one-way door. The costs are not symmetric. **When in doubt, escalate.**
+不必要的上报成本约等于审批人30秒——阅读、说"好的，继续"。遗漏上报的成本是签署未经批准的条款，这是单向门。成本不对称。**有疑问时，上报。**
 
-The calibration for what warrants escalation lives in `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`, not in this skill. Check the playbook's stated position, its fallbacks, and its "automatic escalation regardless of dollar value" list:
+## 本技能不做的事
 
-- **Clearly inside the fallback range:** no escalation needed.
-- **Clearly outside the range, or on the automatic-escalation list:** escalate.
-- **Uncertain — the term is ambiguous, novel, or arguably inside the range but the argument is a stretch:** escalate anyway, and note the uncertainty explicitly. The draft flags the specific question the approver needs to decide and why the skill couldn't confidently place it inside the fallback. The approver narrows; the skill does not.
-
-Do not suppress an escalation because over-escalation might train approvers to skim. That's an approver-experience problem the attorney solves by adjusting thresholds in the playbook, not a problem the skill solves by making its own subjective call on a term it's uncertain about.
-
-If a term comes up that the playbook doesn't address, don't guess the threshold — ask the reviewing attorney whether this class of issue should escalate, and offer to record the answer in `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md` so future reviews are consistent.
-
-## What this skill does not do
-
-- It does not approve anything. It routes.
-- It does not decide between the options. The draft includes a recommendation but the approver decides.
-- It does not send the escalation message — it drafts it. The lawyer sends it after reading.
+- 不批准任何事项。只路由。
+- 不在选项间做决定。草案包含建议但审批人决定。
+- 不发送上报消息——只起草。律师审阅后发送。

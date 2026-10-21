@@ -1,101 +1,49 @@
 ---
 name: customize
 description: >
-  Guided customization of your commercial contracts practice profile — change
-  one thing without re-running the whole cold-start interview. Adjust risk
-  posture, escalation contacts, playbook positions, NDA triage preferences,
-  house style, review preferences, or matter workspace paths. Use when the
-  user says "change my [thing]", "update my profile", "edit my playbook",
-  "tune my config", or "customize".
-argument-hint: "[section name, or describe what you want to change]"
+  商事合同业务领域配置的引导式定制——修改一项配置而无需重新运行完整的冷启动访谈。
+  调整风险姿态、上报联系人、审查指引立场、保密协议分类偏好、行文风格、
+  审查偏好或事项工作区路径。当用户说"改一下我的[某配置]""更新我的配置"
+  "编辑我的审查指引""调整我的设置"或"定制"时使用。
+argument-hint: "[配置部分名称，或描述你想修改的内容]"
 ---
 
 # /customize
 
-## When this runs
+## 何时运行
 
-The user typed `/commercial-legal:customize`. They want to change something
-in their practice profile — a risk posture, an escalation contact, a playbook
-position, a jurisdiction, an output format — without re-running the whole
-cold-start interview and without hand-editing YAML.
+用户键入 `/commercial-legal:customize`。他们想修改业务领域配置中的某项——风险姿态、上报联系人、审查指引立场、管辖、输出格式——而无需重新运行完整冷启动访谈。
 
-## What to do
+## 做什么
 
-1. **Read the config.** Read
-   `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`
-   (and `~/.claude/plugins/config/claude-for-legal/company-profile.md` one
-   level up). If the plugin config does not exist or still contains
-   `[PLACEHOLDER]` values, say:
+1. **读取配置。** 读取 `~/.claude/plugins/config/claude-for-legal-zh/commercial-legal/CLAUDE.md`。如果不存在或仍有占位符，说：你还没有运行设置。先运行 `/commercial-legal:cold-start-interview`——定制功能用于调整已有的配置。
 
-   > You haven't run setup yet. Run `/commercial-legal:cold-start-interview`
-   > first — customize is for adjusting a profile you already have.
+2. **展示可定制项目清单。** 按组列出配置中的内容：
+   - **公司/你是谁** — 名称、行业、法域范围、执业场景
+   - **风险姿态** — 保守/中等/激进
+   - **人员** — 上报链条、审批人
+   - **审查指引立场** — 实质合同立场及其让步方案
+   - **保密协议分类偏好**
+   - **审查偏好** — 修订风格、说明深度
+   - **行文风格**
+   - **工作流** — 事项工作区路径、续约提醒节奏
+   - **集成** — 电子签章/合同管理系统/飞书/文档存储状态
 
-2. **Show the customizable map.** List what's in the profile, grouped, with a
-   one-line summary of the current value:
+3. **询问想修改什么。**
 
-   - **Company / who you are** — name, industry, jurisdictions, stage, practice
-     setting, sales-side vs. purchasing-side orientation *(shared across all
-     12 plugins — changes flow through `company-profile.md`)*
-   - **Risk posture** — conservative / middle / aggressive, what each means
-     for fallback positions and escalation triggers
-   - **People** — escalation chain, approvers by dollar threshold and by
-     clause type
-   - **Playbook positions** — the substantive contract positions: liability
-     caps, indemnity scope, IP ownership, data protection, termination,
-     auto-renewal, price escalation, and the fallbacks for each
-   - **NDA triage preferences** — what green / yellow / red looks like for
-     inbound NDAs
-   - **Review preferences** — redline style, explanation depth, whether to
-     produce a stakeholder summary by default
-   - **House style** — document format, signature block, renewal-alert
-     channel, deviation-log format
-   - **Workflow** — matter workspace paths, intake path, renewal watcher
-     cadence
-   - **Integrations** — Ironclad / DocuSign / Slack / document storage
-     status, fallbacks
+4. **进行修改。** 展示当前值、询问新值、说明下游变更影响、确认、写入配置。
 
-3. **Ask what they want to change.**
+   示例：
+   - *责任上限让步从12个月→6个月：* "`/review`现在会将超过6个月的任何条款标注为偏离。"
+   - *新的上报审批人：* "任何超出你自身权限的修订现在将路由至此审批人。"
 
-   > What would you like to adjust? Pick a section, or describe the change in
-   > your own words.
+5. **共享配置变更** 写入 `company-profile.md` 并注明该变更影响所有插件。
 
-4. **Make the change.** Show the current value, ask for the new value, explain
-   what changes downstream, confirm, write it to the config.
+6. **收尾。** "完成。你的下一个输出将反映该变更。随时可运行 `/commercial-legal:customize`。"
 
-   Examples:
-   - *Liability cap fallback 12 months → 6 months:* "`/review` will now flag
-     anything above 6 months as a deviation; existing deal-debrief entries
-     stay as logged."
-   - *New escalation approver:* "Any redline exceeding your own authority
-     will now route to this approver — `/escalation-flagger` will include them by
-     default for the matching risk band."
-   - *Risk posture middle → aggressive:* "I'll accept more vendor-friendly
-     positions without flagging them and shift the `[review]` bar higher."
+## 防护措施
 
-5. **For shared-profile changes** (company name, industry, jurisdictions,
-   practice setting, stage): write to
-   `~/.claude/plugins/config/claude-for-legal/company-profile.md` and note:
-
-   > This change affects all 12 plugins — any plugin that reads your
-   > jurisdiction footprint now sees [new value].
-
-6. **Close.**
-
-   > Done. Your next output will reflect the change. Anything else? You can
-   > run `/commercial-legal:customize` anytime.
-
-## Guardrails
-
-- **Never delete a section.** If the user wants to "remove" something, set it
-  to `[Not configured]` and explain what that means for the plugin's behavior.
-- **Flag internal inconsistency.** If the change would make the profile
-  inconsistent (e.g., risk posture aggressive + "every redline needs GC
-  approval"; or "sales-side" + a purchasing-side playbook position), flag the
-  tension and ask which one they want.
-- **Flag guardrail degradation.** If the user asks to turn off a guardrail
-  (drop the `[review]` flag, skip the privilege header, remove `[verify]`
-  tags), explain what the guardrail protects against and confirm they
-  understand the trade-off. The `[review]` flag, source attribution tags, and
-  `[verify]` tags on cited statutes are load-bearing and should not be
-  removed.
-- **One change at a time.** Don't re-ask the whole interview.
+- **绝不删除任何配置部分。** 如果用户想"移除"某项，设为 `[未配置]`。
+- **标注内部不一致。** 如果变更会使配置不一致，标注紧张关系。
+- **标注防护措施降级。** 如果用户要求关闭某项防护措施，说明其保护的内容并确认理解风险。
+- **一次一项变更。** 不要重新问整个访谈。

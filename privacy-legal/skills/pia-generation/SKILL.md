@@ -1,282 +1,280 @@
 ---
 name: pia-generation
 description: >
-  Generate a Privacy Impact Assessment in house format for a new feature, product,
-  or processing activity, using the structure learned from your seed PIA. Use when
-  the user says "write a PIA", "privacy impact assessment for", "do we need a PIA
-  for this", "privacy review this feature", or describes a new data processing
-  activity.
-argument-hint: "[feature name or description]"
+  生成符合内部格式的个人信息保护影响评估（PIA），适用于新功能、产品或处理活动，
+  使用从种子PIA学习到的结构。当用户说"写一份PIA""个人信息保护影响评估""我们需要
+  为这个做PIA吗""对这个功能做隐私审查"，或描述一项新的个人信息处理活动时使用。
+argument-hint: "[功能名称或描述]"
 ---
 
 # /pia-generation
 
-1. Load `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` → PIA house style (trigger, structure, depth, sign-off).
-2. Run the workflow below.
-3. Check: is a PIA actually needed? (House trigger + research the mandatory-assessment triggers for each applicable regime — cite primary sources, verify currency.)
-4. Intake: ask the product-team questions. Can pull from PRD if provided.
-5. Write PIA in house format. Include privacy policy consistency check.
-6. Output with conditions list and named owners. Route for sign-off.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` → PIA 内部规范（触发标准、结构、深度、审批）。
+2. 执行以下工作流。
+3. 检查：是否确实需要 PIA？（内部触发标准 + 检索各适用制度的法定评估触发条件——引用主源，核实时效。）
+4. 录入：向产品团队提问。可抽取已提供的 PRD 信息。
+5. 按内部格式撰写 PIA。包含个人信息处理规则一致性检查。
+6. 输出附条件清单和指定负责人。路由审批。
 
 ```
-/privacy-legal:pia-generation "Location sharing feature"
+/privacy-legal:pia-generation "位置共享功能"
 ```
 
 ```
 /privacy-legal:pia-generation
-PRD: [Drive link]
+PRD: [网盘链接]
 ```
 
 ---
 
-# PIA Generation
+# 个人信息保护影响评估生成
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/privacy-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/privacy-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实践级 CLAUDE.md 中的 `## 事项工作区`。如果 `已启用` 为 `✗`（法务用户的默认值），跳过本段——技能使用实践级上下文，事项机制不可见。如果已启用且无活动事项，询问："这是哪个事项？运行 `/privacy-legal:matter-workspace switch <slug>` 或说 `实践级`。"加载活动事项的 `matter.md` 获取事项特定上下文和覆盖项。将输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/matters/<matter-slug>/`。除非 `跨事项上下文` 为 `开启`，否则绝不读取其他事项的文件。
 
 ---
 
-## Destination check
+## 目的地检查
 
-Before producing output, check where it's going. If the user has named a destination (a channel, a distribution list, a counterparty, "everyone"), ask whether it's inside the privilege circle. Public channels, company-wide lists, counterparty/opposing counsel, vendors, and clients (for work product) waive the protection. When the destination looks outside the circle, flag it and offer (a) the privileged version for legal only, (b) a sanitized version for the broader channel, or (c) both — don't silently apply a privileged header and then help paste it somewhere the header won't protect it. See the canonical `## Shared guardrails → Destination check` in this plugin's CLAUDE.md.
+在生成输出前，检查输出目的地。如果用户指定了目的地（渠道、分发列表、对方当事人、"所有人"），询问是否在保密圈内。公共渠道、全公司列表、对方当事人/对方律师、供应商和客户（就工作成果而言）会放弃保护。当目的地疑似在圈外时，标示并提供 (a) 仅供法务的保密版本，(b) 供更广泛渠道的净化版本，或 (c) 两者——不要默默加上保密抬头然后帮助粘贴到该抬头无法保护的地方。参见本插件 CLAUDE.md 中的 `## 共享护栏 → 目的地检查`。
 
-## Purpose
+## 目的
 
-A PIA is a conversation with the product team, captured. It asks: what data, why, how long, who sees it, what could go wrong. This skill structures that conversation and writes the output in this team's format — the one learned from the seed PIA during cold-start.
+PIA 是与产品团队的对话，被记录下来。它问：什么数据，为什么，多久，谁看，什么可能出错。本技能结构化这场对话，并以本团队的格式写出输出——与冷启动访谈从种子 PIA 学习到的格式一致。
 
-## Jurisdiction assumption
+## 法域假设
 
-This assessment assumes the jurisdictional scope specified in your configuration. Privacy rules, assessment triggers, and lawful bases vary materially by jurisdiction (GDPR vs. state consumer privacy laws vs. sectoral). If the processing activity, controller, or affected data subjects fall under a different jurisdiction, this analysis may not apply as written.
+本评估假定你的配置中指定的法域范围。隐私规则、评估触发条件和合法性基础因法域而异（个保法 vs. GDPR vs. 其他法域）。如果处理活动、处理者或受影响个人信息主体属于不同法域，本分析可能不直接适用。
 
-## Load prior context on this feature / activity
+## 加载关于本功能/活动的先前上下文
 
-Before writing a new PIA, check the outputs folder for prior work on the same feature, processing activity, or counterparty. Read `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` → `## Outputs` for the path. Scan for:
+在撰写新 PIA 之前，检查输出文件夹中是否有关于同一功能、处理活动或对方当事人的先前工作。读取 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` → `## 输出` 获取路径。扫描：
 
-- **Prior `use-case-triage` results** covering this activity — the triage's risk rating, mandatory conditions, and called-out concerns are the entry point for the PIA.
-- **Prior `pia-generation` outputs** for the same or an overlapping activity — a superseding PIA should reconcile (what changed, what carried over). A PIA that silently produces different conclusions than a prior PIA on the same activity is a contradiction a reviewing attorney cannot see.
-- **Prior `dpa-review` outputs** for vendors in scope — the DPA review's findings inform the PIA's analysis of subprocessor / cross-border / retention risk.
+- **先前的 `use-case-triage` 结果**涵盖本活动——分诊的风险评级、强制条件和标注的关注点是 PIA 的入口。
+- **先前的 `pia-generation` 输出**涵盖相同或重叠的活动——新 PIA 应做好衔接（什么变了，什么延续）。一个对着同一活动静默产生不同结论的 PIA 是审核律师无法发现的矛盾。
+- **先前的 `dpa-review` 输出**涵盖范围内的供应商——DPA 审查中的发现为 PIA 对下游处理者/跨境/保留风险的分析提供信息。
 
-If a prior output is found, cite it in the PIA:
+如果找到先前的输出，在 PIA 中引用：
 
-> "Prior triage ([date]) rated this [risk level] and required [conditions]. This PIA builds on that finding — [which conditions are satisfied, which remain, which are re-scoped]."
+> "先前的分诊（[日期]）将本活动评为[风险等级]，并要求[条件]。本 PIA 以此发现为基础——[哪些条件已满足，哪些仍待满足，哪些被重新界定]。"
 
-If a prior PIA exists:
-> "This PIA supersedes the [date] PIA because [reason — scope change, new data category, vendor change, regulatory change]. Conclusions carried over: [X]. Conclusions revised: [Y, because Z]."
+如果先前存在 PIA：
+> "本 PIA 取代[日期]的 PIA，因为[原因——范围变化、新数据类别、供应商变更、法规变化]。延续的结论：[X]。修订的结论：[Y，因为Z]。"
 
-**Carry severity from upstream as a floor** per the cross-skill severity floor rule in `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` → `## Shared guardrails`. A use-case-triage that rated the activity high-risk cannot become a PIA that concludes low-risk without stating why and what changed.
+**从上游继承严重程度作为底线**，遵循 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` → `## 共享护栏` 中的跨技能严重程度底线规则。被分诊评为高风险的活动，不能在 PIA 中静默变为低风险，除非说明理由和变化了什么。
 
-If no prior output is found, say so explicitly — "No prior triage or PIA on this activity in outputs folder; this is a cold start" — so the reviewing attorney knows the check ran and didn't find anything to reconcile.
+如果未找到先前的输出，明确说明——"输出文件夹中无关于本活动的先前分诊或 PIA；此为冷启动"——以便审核律师知道检查已经执行过且未发现需要衔接的内容。
 
-## Load house style
+## 加载内部规范
 
-Read `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` → `## PIA house style`. That has:
-- What triggers a PIA here (may not match regulatory DPIA triggers — some teams PIA everything, some only high-risk)
-- The structure template extracted from the seed PIA
-- Typical depth
-- Who signs off
+读取 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` → `## PIA 内部规范`。其中包含：
+- 本团队什么触发 PIA（可能与法定评估触发条件不同——有些团队对所有处理活动做 PIA，有些仅对高风险活动）
+- 从种子 PIA 提取的结构模板
+- 典型深度
+- 审批人
 
-If the seed PIA structure is in the config CLAUDE.md, **use it**. The point is that this PIA looks like the other PIAs this team produces, not like a generic one.
+如果配置 CLAUDE.md 中有种子 PIA 结构，**使用它**。核心在于本 PIA 看起来像该团队产出的其他 PIA，而非像通用模板。
 
-## Step 0: Is a PIA needed?
+## 第0步：是否需要 PIA？
 
-Check the trigger criteria in `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md`. That is the team's house answer.
+检查 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` 中的触发标准。这是团队的内部回答。
 
-In addition, **research the currently operative mandatory-assessment triggers** for each regime in the regulatory footprint (GDPR/UK GDPR DPIA triggers, CCPA/CPRA risk-assessment triggers, other US state data-protection assessment triggers, sectoral regimes). Cite the controlling statute, regulation, or regulator guidance with pinpoint references. Verify currency — assessment thresholds and definitions shift through new state laws, rulemaking, and enforcement guidance. Flag uncertainty rather than guess.
+此外，**检索监管覆盖范围中每个适用制度的当前有效法定评估触发条件**（个保法第55条四类情形、数据出境安全评估、算法安全评估等）。引用现行有效的法律、行政法规、部门规章或指引，附精准引用。验证时效——评估门槛和定义因新法出台和执法指引而变化。不确定时标示，而非猜测。
 
-> **No silent supplement.** If a research query to the configured legal research tool returns few or no results for a regime's DPIA / risk-assessment triggers or lawful-basis rules, report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [regime / question]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against a primary source before relying, or (4) flag as unverified and stop. Which would you like?" A lawyer decides whether to accept lower-confidence sources.
+> **禁止静默补充。** 如果对配置的法律检索工具的检索查询返回关于某制度的评估触发条件或合法性基础规则的结果很少或为零，报告找到的内容并停止。不要未经询问即从网络搜索或模型知识填补空白。说："搜索从[工具]返回[N]条结果。[制度/问题]的覆盖似乎薄弱。选项：(1) 扩大搜索查询，(2) 尝试不同的检索工具，(3) 搜索网页——结果将标记为 `[联网检索 — 需复核]`，依赖前应与主源核对，(4) 标记为未验证并停止。你想选哪个？"由律师决定是否接受可信度较低的来源。
 >
-> **Source attribution.** Tag every citation in the PIA with where it came from: `[Westlaw]`, `[regulator site]`, or the MCP tool name for citations retrieved from a legal research connector; `[web search — verify]` for web-search citations; `[model knowledge — verify]` for citations recalled from training data; `[user provided]` for citations the user supplied. Citations tagged `verify` carry higher fabrication risk and should be checked first. Never strip or collapse the tags.
+> **来源溯源标签。** 为 PIA 中每处引用标记来源标签：`[法条原文]` 表示直接引用法规条文，`[yuandian检索]` 表示通过 yuandian MCP 获取，`[联网检索 — 需复核]` 表示网页搜索获取，`[模型知识 — 需验证]` 表示来自训练数据，`[用户提供]` 表示由用户提供。标记为"需验证"的引用造假风险最高，应优先核对。绝不剥离或折叠标签。
 
-Beyond statutory mandates, treat these as **strong indicators** that a PIA is worth doing even if not strictly mandatory (research whether any of them independently triggers a mandatory assessment under the applicable regime):
+超出法律规定，将以下作为**强指标**——即便不严格法定强制也值得做 PIA（研究在适用制度下是否独立触发法定评估）：
 
-- New technology or novel use of existing tech
-- Children's data
-- Combining datasets that weren't collected together
-- Data that could enable discrimination
-- Processing that users wouldn't expect
+- 新技术应用或对现有技术的创新性使用
+- 未成年人数据
+- 合并原本分开收集的数据集
+- 可能导致歧视的数据
+- 个人信息主体不会预期的处理活动
 
-If no statutory trigger applies and the house trigger also isn't met → "Doesn't look like this needs a PIA. Here's a one-paragraph note for the file explaining why, in case anyone asks."
+如果无法定触发条件且内部触发也未满足 → "看起来不需要做 PIA。这是说明理由的一小段备忘录，以防有人问起。"
 
-## The intake
+## 录入
 
-Before writing anything, get answers to these from the product team. Conversational is fine — this isn't a form to send them.
+在撰写任何内容前，从产品团队获取以下问题的答案。对话式即可——这不是发送给他们的表格。
 
-### What and why
+### 什么和为什么
 
-- What's the feature/product/change?
-- What problem does it solve for users?
-- What personal data does it touch? Be specific — "user data" is not an answer. Which fields?
-- Is any of it new collection, or is it all data you already have?
-- What's the processing — storage, analysis, sharing, automated decisions?
+- 功能/产品/变更是什么？
+- 它为用户解决什么问题？
+- 涉及哪些个人信息？具体——"用户数据"不是答案。哪些字段？
+- 是否有新的采集内容，还是全部为已有数据？
+- 处理是什么——存储、分析、共享、自动化决策？
 
-### Legal basis / regime-specific checks
+### 合法性基础 / 制度特定检查
 
-For each applicable regime, **research the currently operative framework** for the question below and cite primary sources:
+对每个适用制度，**检索该问题下的当前有效框架**并引用主源：
 
-- Under regimes that require an identified lawful basis for processing (e.g., GDPR, UK GDPR), identify the basis for each purpose (contract / legitimate interest / consent / legal obligation / vital interests / public task / other). Research the specific requirements and any balancing-test or consent-standard expectations; cite controlling authority.
-- Under regimes that regulate disclosures (e.g., CCPA/CPRA and other US state privacy laws), check whether any flow looks like a "sale," "share," or other regulated disclosure under the currently operative statutory definitions. Third-party advertising is a recurring trap — research whether it falls within the regulated category for the applicable regime.
-- Under sectoral regimes (HIPAA, GLBA, COPPA, FERPA, etc.), research any regime-specific basis or disclosure rules.
+- **个保法第13条合法性基础** `[法条原文]`：识别每个处理目的的合法性基础（告知同意 / 订立或履行合同所必需 / 履行法定义务所必需 / 应对突发公共卫生事件或保护自然人生命健康和财产安全所必需 / 为公共利益实施新闻报道、舆论监督等行为在合理范围内处理 / 在合理范围内处理已公开的个人信息 / 法律、行政法规规定的其他情形）。研究告知同意应满足"自愿、明确、知情"（个保法第14条 `[法条原文]`）的具体要求。
+- **敏感个人信息**：如涉及，检查是否满足个保法第28-30条要求（单独同意 + 特定目的 + 充分必要性 + 告知影响）`[法条原文]`。
+- **数据出境**：如涉及，检查是否需通过安全评估（《数据出境安全评估办法》）、签署标准合同（《个人信息出境标准合同办法》）或认证（个保法第38条 `[法条原文]`）。
+- **行业监管**：金融（个人金融信息保护技术规范）、医疗（人口健康信息管理办法）、儿童（儿童个人信息网络保护规定）等领域是否有特殊要求。
 
-Verify currency; statutory definitions and bases are amended often. Flag uncertainty for attorney verification.
+验证时效；法定定义和依据经常通过行政法规和部门规章修订。不确定时标示，供律师核实。
 
-### Who and where
+### 谁和哪里
 
-- Who inside the company can see this data? Engineers? Support? Analysts?
-- Any third parties? Vendors, partners, analytics?
-- Where is it stored? Which region? New infrastructure or existing?
-- How long is it kept? Is there a deletion schedule or does it live forever?
+- 公司内部谁可以访问这些数据？工程师？客服？分析师？
+- 是否有第三方？供应商、合作伙伴、数据分析方？
+- 数据存储在哪里？哪个区域？新基础设施还是已有基础设施？
+- 保留多久？是否有删除时间表，还是永久保留？
 
-### What could go wrong
+### 什么可能出错
 
-- If this data leaked, what's the harm to the person?
-- Could this data be used to discriminate, even accidentally?
-- Would users be surprised this is happening? (The "creepy test" — not a legal standard but a useful one.)
-- Is there an opt-out? Should there be?
+- 如果这些数据泄露，对个人的伤害是什么？
+- 这些数据能否被用于歧视，即便是意外的？
+- 用户会惊讶这是正在发生的吗？（"诡异测试"——非法定标准，但有用。）
+- 是否有退出选项？是否应该有？
 
-## Writing the PIA
+## 撰写 PIA
 
-**Use the seed PIA structure from the config CLAUDE.md.** If none was captured, use this default. Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` `## Outputs` (it differs by user role — see `## Who's using this`).
+**使用配置 CLAUDE.md 中的种子 PIA 结构。** 如果未捕获，使用以下默认结构。冠以 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` `## 输出` 中的工作成果抬头（因用户角色不同而异——见 `## 谁在使用`）。
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
+[工作成果抬头 — 按插件配置 ## 输出]
 
-# Privacy Impact Assessment: [Feature/Product Name]
+# 个人信息保护影响评估：[功能/产品名称]
 
-**Prepared by:** [name] | **Date:** [date] | **Status:** DRAFT / APPROVED
-**Product owner:** [name] | **Privacy reviewer:** [name]
-
----
-
-## Executive summary
-
-[Two sentences: what this is, whether it's okay. E.g., "Feature X collects
-location data to provide Y. Processing is consistent with existing privacy
-policy commitments and uses consent as lawful basis. Two mitigations
-recommended below; no blockers identified."]
-
-**Overall risk:** [Reviewer to set: 🟢 Low / 🟡 Medium / 🟠 High / 🔴 Very high]
+**编制人：** [姓名] | **日期：** [日期] | **状态：** 草案 / 已批准
+**产品负责人：** [姓名] | **隐私审核人：** [姓名]
 
 ---
 
-## 1. Description of processing
+## 摘要
 
-**What:** [the feature, in plain English]
-**Data categories:** [specific fields — not "user data"]
-**Data subjects:** [customers / end users / employees / etc.]
-**Purpose:** [why — tie to user benefit]
-**New collection?** [yes — these fields are new / no — reusing existing data]
+[两句话：这是什么，是否合规。例如："功能X收集位置数据以提供Y服务。处理活动与现行个人信息处理规则承诺一致，以告知同意为合法性基础。以下建议两项缓解措施；未识别到阻碍事项。"]
+
+**整体风险：** [审核人设定：🟢 低 / 🟡 中 / 🟠 高 / 🔴 极高]
 
 ---
 
-## 2. Lawful basis
+## 1. 处理活动描述
 
-| Purpose | Basis | Notes |
+**是什么：** [功能，通俗描述]
+**数据类别：** [具体字段——不是"用户数据"]
+**个人信息主体：** [客户 / 最终用户 / 员工 / 等]
+**目的：** [为什么——与用户利益关联]
+**新收集？** [是——以下字段为新增 / 否——复用已有数据]
+
+---
+
+## 2. 合法性基础（个保法第13条）
+
+| 目的 | 合法性基础 | 备注 |
 |---|---|---|
-| [purpose 1] | [Contract / LI / Consent / etc.] | [if LI: balancing test summary; if consent: how obtained] |
+| [目的1] | [告知同意 / 合同必需 / 法定义务 / 等] | [如为同意：如何获取；如涉及敏感个人信息：是否已获单独同意（个保法第29条）] |
 
 ---
 
-## 3. Data flow
+## 3. 数据流转
 
-**Collection:** [how/where data enters]
-**Storage:** [system, region, encryption]
-**Access:** [who, via what controls]
-**Sharing:** [third parties, purpose, governed by which DPA]
-**Retention:** [how long, deletion mechanism]
+**收集：** [数据如何/从哪里进入]
+**存储：** [系统、区域、加密]
+**访问：** [谁，通过何种控制措施]
+**共享：** [第三方，目的，受哪份数据处理协议约束]
+**保留：** [保留多久，删除机制——个保法第19条：最短必要期限 `[法条原文]`]
 
 ---
 
-## 4. Privacy policy consistency
+## 4. 个人信息处理规则一致性
 
-| Policy commitment | Consistent? | Notes |
+| 处理规则承诺 | 一致？ | 备注 |
 |---|---|---|
-| [commitment from config CLAUDE.md privacy policy section] | 🟢 / 🟡 | |
+| [来自配置 CLAUDE.md 处理规则部分的承诺] | 🟢 / 🟡 | |
 
-[If any 🟡: policy update needed before launch, or processing needs to change]
+[如有任何 🟡：上线前需更新处理规则，或需变更处理活动]
 
 ---
 
-## 5. Risks and mitigations
+## 5. 风险与缓解措施
 
-| # | Risk | Likelihood | Impact | Mitigation | Status | Owner |
+| # | 风险 | 可能性 | 影响 | 缓解措施 | 状态 | 负责人 |
 |---|---|---|---|---|---|---|
-| 1 | [specific risk, tied to the design — not "data breach" generically] | L/M/H | L/M/H | [specific control] | Done / Planned / Gap | [name] |
+| 1 | [与设计关联的具体风险——并非泛泛的"数据泄露"] | 低/中/高 | 低/中/高 | [具体控制措施] | 已完成 / 计划中 / 缺口 | [姓名] |
 
-**Residual risk after mitigations:** [assessment]
+**缓解后剩余风险：** [评估]
 
 ---
 
-## 6. Data subject rights
+## 6. 个人信息主体权利（个保法第44-50条）
 
-| Right | Can be exercised? | How |
+| 权利 | 可行使？ | 如何行使 |
 |---|---|---|
-| Access | | |
-| Deletion | | |
-| Correction | | |
-| Portability | | |
-| Objection | | |
+| 知情权（第44条） | | |
+| 查阅权（第45条） | | |
+| 复制权（第45条） | | |
+| 更正权（第46条） | | |
+| 删除权（第47条） | | |
+| 可携带权（第45条） | | |
+| 解释说明权（第48条） | | |
 
 ---
 
-## 7. Recommendation
+## 7. 建议
 
-[APPROVED / APPROVED WITH CONDITIONS / CHANGES REQUIRED / NOT APPROVED]
+[批准 / 附条件批准 / 需变更 / 不批准]
 
-**Conditions (if any):**
-- [ ] [specific thing that has to happen before launch]
+**条件（如有）：**
+- [ ] [上线前必须完成的具体事项]
 
-**Sign-off:** [name, date]
+**审批：** [姓名，日期]
 ```
 
-## Risk quality standards
+## 风险质量标准
 
-Risks in a PIA should be **specific and tied to the design**, not generic. Bad risks pad the document and train readers to skim.
+PIA 中的风险应**具体且与设计关联**，而非泛泛。差的风险陈述会填充文件并训练读者跳读。
 
-| Bad risk | Why bad | Better |
+| 差的风险 | 为什么差 | 更好 |
 |---|---|---|
-| "Data breach" | Applies to everything; says nothing | "Location history accessible by support staff via the admin panel without audit logging — a malicious insider could track a user undetected" |
-| "Non-compliance with GDPR" | Circular — the PIA is supposed to *assess* compliance | Name the specific article and the gap |
-| "Users might not like it" | Vague | "Users who opted out of marketing may still receive this because the opt-out flag isn't checked in this flow" |
+| "数据泄露" | 适用于所有情况；什么都没说 | "支持人员可通过后台面板访问位置历史记录，且无审计日志——恶意内部人员可追踪用户而不被发现" |
+| "不遵守个保法" | 循环论证——PIA 正是为了*评估*合规性 | 指出具体条文和缺口 |
+| "用户可能不喜欢" | 模糊 | "已选择退出的用户仍可能接收此推送，因为该流程中未检查退出标记" |
 
-Aim for 2-5 real risks, not 15 padded ones.
+目标 2-5 个真实风险，而非 15 个填充风险。
 
-## Privacy policy diff
+## 个人信息处理规则差异对比
 
-Every PIA should cross-check against the privacy policy commitments in `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md`. The common drift:
+每份 PIA 都应交叉检查 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` 中的个人信息处理规则承诺。常见漂移：
 
-- Policy says "we collect X, Y, Z" — new feature collects W. Policy needs updating, or stop collecting W.
-- Policy says "we don't sell data" — new feature shares with an ad partner. That might be a CCPA sale.
-- Policy says retention is "as long as your account is active" — new feature keeps data post-deletion.
+- 处理规则说"我们收集 X、Y、Z"——新功能收集 W。需更新处理规则，或停止收集 W。
+- 处理规则说"我们不会向第三方提供数据"——新功能与广告合作伙伴共享。可能构成个保法第23条下的对外提供。
+- 处理规则说保留期限为"账户存续期间"——新功能在账户删除后仍保留数据。
 
-Flag every mismatch. One of them has to change before launch.
+标示每个不匹配。上线前二者之一必须改变。
 
-## Handoff
+## 交接
 
-- **To product team:** Conditions list with owners and deadlines. Not "improve security" — "add audit logging to the admin panel's location lookup, owner: [eng lead], before launch."
-- **To reg-gap-analysis skill:** If the PIA uncovered a policy inconsistency, that skill tracks the policy update.
-- **To the sign-off process:** Per `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md` → who approves PIAs.
+- **至产品团队：** 带负责人和截止日期的条件清单。不是"改进安全"——而是"为后台面板的位置查询添加审计日志，负责人：[工程负责人]，截止：上线前。"
+- **至 reg-gap-analysis 技能：** 如果 PIA 发现了处理规则不一致，该技能追踪处理规则更新。
+- **至审批流程：** 按 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` → 谁批准 PIA。
 
-## Gate: submitting a DPIA to a regulator
+## 关口：向监管机构提交评估
 
-Producing an internal PIA is research and documentation. *Submitting a DPIA to a supervisory authority* — or voluntarily disclosing one to a regulator in response to an inquiry — is the consequential act.
+制作内部 PIA 是研究和记录。*将 PIA 提交给监管部门*——或应行政调查请求自愿披露——是具有法律后果的行为。
 
-**Before proceeding to submit a DPIA (or any equivalent impact assessment) to a regulator, supervisory authority, or enforcement body:** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/privacy-legal/CLAUDE.md`. If the Role is Non-lawyer:
+**在将任何影响评估提交给网信办或其他履行个人信息保护职责的部门之前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/privacy-legal/CLAUDE.md` 中的 `## 谁在使用`。如果角色为非律师：
 
-> Submitting to a regulator has legal consequences — the document becomes part of the supervisory record and any material omission or error becomes enforcement exposure. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> 向监管部门提交文件具有法律后果——文件成为行政监管记录的一部分，任何实质遗漏或错误均构成执法风险敞口。你是否已请律师审查过？如已审查，继续。如未审查，以下是你带给律师的简要材料：
 >
-> [Generate a 1-page summary: regime and regulator, why a submission is being made (mandatory trigger or voluntary), the risks identified, residual risk after mitigations, any flagged uncertainty, and the three things to ask the attorney before filing.]
+> [生成1页摘要：适用制度和监管部门，为何提交（法定触发或自愿），已识别的风险，缓解后剩余风险，任何标注的不确定性，以及提交前应询问律师的三件事。]
 >
-> If you need to find a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction: your professional regulator's referral service is the fastest starting point (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent).
+> 如果你需要寻找执业律师或其他经授权的法律专业人士：通过你所在地区的律师协会或司法局的律师查询系统是最快的起点。许多地方律师协会提供免费或低成本的初步咨询。
 
-Do not proceed past this gate without an explicit yes.
+未经明确同意，不得越过此关口。
 
-## Close with the next-steps decision tree
+## 以下一步决策树结束
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以符合 CLAUDE.md `## 输出` 的下一步决策树结束。根据本技能刚刚产出的内容定制选项——五个默认分支（起草X、升级、获取更多事实、观察和等待、其他）是起点，而非锁定。决策树即输出；律师选择。
 
-## What this skill does not do
+## 本技能不做的事
 
-- It doesn't approve the processing. A human signs the PIA.
-- It doesn't write a DPIA for a supervisory authority — that's a more formal document with specific regulatory requirements. This is the internal assessment.
-- It doesn't design the mitigation. It describes what needs mitigating; engineering designs the fix.
+- 不批准处理活动。由人签署 PIA。
+- 不撰写向监管部门提交的 DPIA——那是具有特定监管要求的更正式文件。这是内部评估。
+- 不设计缓解措施。它描述什么需要缓解；由工程团队设计修复方案。

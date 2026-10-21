@@ -1,166 +1,158 @@
 ---
 name: client-letter
 description: >
-  Routine client correspondence from templates — appointment confirmations,
-  document requests, brief "we filed it" updates. Plain language, required
-  elements, supervision routing. NOT substantive advice. Use when a student
-  needs to send routine correspondence, an appointment confirmation, a
-  document request letter, or a brief status note to a client.
-argument-hint: "[appointment | doc-request | update]"
+  基于模板的常规当事人信函——预约确认、文件索取、"已提交"简报。
+  使用通俗语言，包含必要元素，附指导路由。不含实质性建议。
+  当学生需要发送常规信函、预约确认、文件索取信或向当事人发送简短状态说明时使用。
+argument-hint: "[预约 | 文件索取 | 状态更新]"
 ---
 
 # /client-letter
 
-1. Load `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → plain-language standards, supervision style, clinic contact info.
-2. Use the templates and workflow below.
-3. Match type to template. Plain-language check.
-4. Output with AI-assisted label, supervision routing.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 通俗语言标准、指导风格、诊所联系信息。
+2. 使用以下模板和工作流。
+3. 匹配类型到模板。通俗语言检查。
+4. 输出附 AI 辅助标签、指导路由。
 
-Scope: routine only. Substantive advice → `/status client` or a conversation with the professor.
-
-```
-/legal-clinic:client-letter appointment
-```
+范围：仅常规信函。实质性建议 → `/status client` 或与指导老师的对话。
 
 ```
-/legal-clinic:client-letter doc-request
+/legal-clinic:client-letter 预约
+```
+
+```
+/legal-clinic:client-letter 文件索取
 ```
 
 ---
 
-# Client Letter: Routine Correspondence
+# 当事人信函：常规信函
 
-## Purpose
+## 目的
 
-Clinics send a lot of routine correspondence: "your appointment is Tuesday at 2pm," "please bring your lease," "we filed your answer." This skill handles those from templates so students aren't typing the same letter every week.
+诊所需发送大量常规信函："您的预约是周二下午2点""请携带您的租赁合同""我们已为您提交了答辩状"。本技能从模板处理这些，让学生不必每周重复输入相同内容。
 
-**Scope: routine only.** Substantive advice, bad news, case strategy — those are `/status client` or a conversation, not a template letter.
+**范围：仅常规信函。** 实质性建议、坏消息、案件策略——这些是 `/status client` 或一次对话，而非模板信函。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → plain-language standards, supervision style, clinic contact info.
+`~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 通俗语言标准、指导风格、诊所联系信息。
 
-## Pedagogy check
+## 教学检查
 
-Read the supervisor guide for this practice area at `~/.claude/plugins/config/claude-for-legal/legal-clinic/guides/<practice-area>.md`. Check the `pedagogy_posture` setting:
+读取该实践领域的指导老师指南，路径为 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/guides/<实践领域>.md`。检查 `pedagogy_posture` 设置：
 
-- **`guide` (default):** Produce the structure and the checklist (required elements, plain-language targets, sign-off per student practice rule). Ask the student to draft each section. Give feedback on their draft (register, reading level, required elements, what they missed). Offer to fill a section only when the student has tried once.
-- **`assist`:** Produce the letter. Flag items for student review. The student edits and learns by reviewing.
-- **`teach`:** Don't produce the letter. Ask the student to draft it. Give feedback. Ask leading questions when they're stuck. Only show a model paragraph after two attempts, and only the section they're stuck on. Track what they got right and wrong so the supervisor can see progress.
+- **`guide`（默认）：** 产出结构和核查清单（必要元素、通俗语言目标、依学生实践规则签字）。要求学生自行起草每节。对其草稿给予反馈（语域、阅读水平、必要元素、遗漏之处）。仅当学生已尝试一次后，才为某节提供填充。
+- **`assist`：** 产出信函。标注事项供学生审查。学生通过审查编辑来学习。
+- **`teach`：** 不产出信函。要求学生自行起草。给予反馈。当学生困惑时提出引导性问题。仅在两次尝试后才展示示范段落，且仅针对其困惑的那一节。追踪学生的正确与错误之处，以便指导老师看到进步。
 
-If no guide exists, use `guide`. If the guide exists but doesn't set a posture, use `guide`.
+如无指南，使用 `guide`。如有指南但未设定姿态，使用 `guide`。
 
-Whatever the posture, the output always includes: "**Pedagogy mode: [assist/guide/teach]** — set by your supervisor's guide. This means I [description of what the student did vs what the skill did]."
+无论何种姿态，输出始终包含："**教学模式：[assist/guide/teach]**——由指导老师的指南设定。这意味着我[学生做了什么 vs 技能做了什么]。"
 
-## Sign-off and student-attorney disclosure
+## 签字与学生律师披露
 
-Check your jurisdiction's student practice rule for required disclosure language in letters signed by a law student. Some jurisdictions require specific forms; most require that the student identify themselves as a law student / certified legal intern and identify the supervising attorney. The templates below use a generic form — conform the sign-off to your rule before sending.
+查阅你所在法域的学生实践规则，确认由法学学生签署的信函中要求的披露语言。部分法域要求特定表述；多数要求学生明确自己是法学学生/认证法律实习生并指明指导律师。以下模板使用通用表述——发送前按你的规则调整签字。
 
-## Letter types
+## 信函类型
 
-> **Review label goes OUTSIDE the letter.** The `[AI-ASSISTED DRAFT — requires review per plugin config supervision step]` tag is a note to the student, not part of the letter body. Place it above the rendered template (or in a header the student deletes before sending), never inside the fenced letter content. If it ends up in the client-facing copy, the skill has failed.
+> **审查标签位于信函外部。** `[AI辅助草稿 —— 需按插件配置指导步骤审查]` 标签是给学生的提示，非信函正文。将其置于渲染模板上方（或学生发送前删除的页眉中），绝不放在信函内容内。如果它出现在当事人可见的版本中，则技能已失败。
 
-### Appointment confirmation
+### 预约确认
 
-*Review label for the student (not for the client — strip before sending):*
-`[AI-ASSISTED DRAFT — requires review per plugin config supervision step]`
-
-```markdown
-Dear [Client],
-
-This confirms your appointment with [Clinic name]:
-
-**Date:** [date]
-**Time:** [time]
-**Where:** [address / room / or "by phone at [number]"]
-**With:** [student name]
-
-**Please bring:** [documents needed — from case notes or leave as prompt
-for student to fill]
-
-If you need to reschedule, call us at [clinic phone] at least 24 hours before.
-
-[Student name]
-Law Student, Certified Legal Intern
-Under the supervision of [Supervising Attorney]
-[Clinic name] | [phone] | [hours]
-```
-
-### Document request
-
-*Review label for the student (not for the client — strip before sending):*
-`[AI-ASSISTED DRAFT — requires review per plugin config supervision step]`
+*供学生的审查标签（非给当事人——发送前剥离）：*
+`[AI辅助草稿 —— 需按插件配置指导步骤审查]`
 
 ```markdown
-Dear [Client],
+[当事人姓名]：
 
-To move your case forward, we need the following documents from you:
+本函确认您与[诊所名称]的预约：
 
-- [Document 1 — e.g., "Your lease agreement"]
-- [Document 2 — e.g., "The notice you received from your landlord"]
-- [Document 3]
+**日期：** [日期]
+**时间：** [时间]
+**地点：** [地址 / 房间号 / 或"电话：[号码]"]
+**接待人：** [学生姓名]
 
-**How to get them to us:** [drop off at clinic / email to [address] / bring
-to next appointment]
+**请携带：** [所需文件——来自案件笔记或留作提示供学生填写]
 
-**Please send by:** [date — if there's a deadline, say why: "We need these
-by [date] so we can file your answer before the court deadline."]
+如需改期，请至少在24小时前致电[诊所电话]。
 
-If you don't have some of these or aren't sure what we mean, call us at
-[clinic phone] and we can help.
-
-[Student name]
-Law Student, Certified Legal Intern
-Under the supervision of [Supervising Attorney]
-[Clinic name] | [phone] | [hours]
+[学生姓名]
+法学学生，认证法律实习生
+在[指导律师姓名]指导下
+[诊所名称] | [电话] | [工作时间]
 ```
 
-### Brief status update
+### 文件索取
 
-For routine "we filed it" / "we're waiting" updates. (Fuller status updates → `/status client`.)
-
-*Review label for the student (not for the client — strip before sending):*
-`[AI-ASSISTED DRAFT — requires review per plugin config supervision step]`
+*供学生的审查标签（非给当事人——发送前剥离）：*
+`[AI辅助草稿 —— 需按插件配置指导步骤审查]`
 
 ```markdown
-Dear [Client],
+[当事人姓名]：
 
-Quick update: [one-line what happened — "We filed your answer with the court
-on [date]" / "We sent the demand letter to your landlord on [date]"].
+为推进您的案件，我们需要您提供以下文件：
 
-**What's next:** [one line — "We're waiting for their response" / "The court
-will schedule a hearing and let us know the date"].
+- [文件1 — 例如"您的租赁合同"]
+- [文件2 — 例如"您收到的来自出租人的通知"]
+- [文件3]
 
-You don't need to do anything right now. We'll let you know when we do.
+**提交方式：** [送至诊所 / 发送邮件至[地址] / 下次预约时携带]
 
-[Student name]
-Law Student, Certified Legal Intern
-Under the supervision of [Supervising Attorney]
-[Clinic name] | [phone] | [hours]
+**请于** [日期] **前提交** — [如有截止日期，说明原因："我们需要您在[日期]前提交这些文件，以便我们在法院答辩期限前为您提交答辩状。"]
+
+如果您没有其中某些文件或不明白我们的要求，请致电[诊所电话]，我们可以提供帮助。
+
+[学生姓名]
+法学学生，认证法律实习生
+在[指导律师姓名]指导下
+[诊所名称] | [电话] | [工作时间]
 ```
 
-## Before sending
+### 简要状态更新
 
-Sending a letter to a client is a consequential action. This plugin's gate is the supervision workflow described in `## Supervision style` in `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md`, reinforced by the Part 0 role check that confirms a licensed supervising attorney owns the clinic setup. That gate still holds: every letter clears review before it leaves the clinic.
+用于常规"已提交""正在等待"更新。（更全面的状态更新 → `/status client`。）
 
-Before sending any of the letters above, confirm:
+*供学生的审查标签（非给当事人——发送前剥离）：*
+`[AI辅助草稿 —— 需按插件配置指导步骤审查]`
 
-1. The draft has been reviewed per the supervision protocol in `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` (queue / flag / lighter-touch).
-2. All internal review labels (`[AI-ASSISTED DRAFT]`, any `[VERIFY]` or `[FACT NEEDED]` tags) have been removed from the client-facing copy.
-3. The sign-off conforms to your jurisdiction's student practice rule for law-student-signed correspondence.
+```markdown
+[当事人姓名]：
 
-**This is a student draft for supervising-attorney review, not a final letter.** Sending it has legal consequences for the client and may constitute legal advice or communication on the client's behalf. A licensed supervising attorney reviews, edits, and signs off before the letter leaves the clinic. Do not send without supervisor approval.
+简要更新：[一行说明发生了什么 — "我们已于[日期]向法院提交了您的答辩状" / "我们已于[日期]向出租人发出了律师函"]。
 
-## Plain-language check
+**下一步：** [一行说明 — "我们正在等待对方回复" / "法院将安排庭审并告知日期"]。
 
-Per `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` standards. Short sentences. No jargon. Reading level target enforced. If a template above includes a legal term the client might not know, explain it the first time: "We filed your 'answer' — that's the document that tells the court your side of the story."
+您目前不需要做任何事。需要时我们会通知您。
 
-## Supervision routing
+[学生姓名]
+法学学生，认证法律实习生
+在[指导律师姓名]指导下
+[诊所名称] | [电话] | [工作时间]
+```
 
-Per `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md`. Routine correspondence may or may not be a flag trigger depending on the supervision style the professor chose. If lighter-touch: these go out after student review without a queue step. If formal queue: even routine letters queue.
+## 发送前
 
-## What this skill does NOT do
+向当事人发送信函是一项具有法律后果的行为。本插件的门控是 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 中 `## 指导风格` 描述的指导工作流程，由确认持证指导律师拥有诊所设置的 Part 0 身份检查强化。该门控仍有效：每封信函在离开诊所前均需通过审查。
 
-- **Substantive advice.** If the letter would say "here's what I think about your case" or "here's what you should do," that's not routine — that's `/status client` or a conversation with the professor first.
-- **Bad news.** Case closing, adverse ruling, can't-help — those need thought, not a template. Flag for professor.
-- **Anything to opposing counsel or a court.** Different audience, different skill (`/draft` or `/status court`).
+在发送上述任何信函前，确认：
+
+1. 草稿已按 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 中的指导协议审查（队列 / 标记 / 较轻触）。
+2. 所有内部审查标签（`[AI辅助草稿]`、任何 `[待核实]` 或 `[需补充事实]` 标签）已从当事人可见版本中移除。
+3. 签字符合你所在法域关于法学学生签署信函的学生实践规则。
+
+**这是供指导律师审查的学生草稿，不是最终信函。** 发送它具有对当事人的法律后果，可能构成法律建议或代表当事人进行沟通。持证指导律师在信函离开诊所前审查、编辑并签字。未经指导老师批准不得发送。
+
+## 通俗语言检查
+
+按 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 标准。短句。无法律术语。强制阅读水平目标。如果上述模板中包含当事人可能不理解的法律术语，首次出现时解释："我们已提交了'答辩状'——这是向法院说明您对案件看法的文件。"
+
+## 指导路由
+
+按 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md`。常规信函是否触发标记取决于指导老师选择的指导风格。如为较轻触：信函经学生审查后直接发送，无需队列步骤。如为正式队列：即使是常规信函也需排队。
+
+## 本技能不做什么
+
+- **实质性建议。** 如果信函会说"这是我对您案件的分析"或"这是您应该做的"，那不是常规信函——那是 `/status client` 或先与指导老师对话。
+- **坏消息。** 结案、不利裁决、无法帮助——这些需要思考，不是模板。标记给指导老师。
+- **任何给对立方律师或法院的内容。** 不同受众，不同技能（`/draft` 或 `/status court`）。

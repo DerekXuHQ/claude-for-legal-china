@@ -1,39 +1,32 @@
 ---
 name: review-proposals
 description: >
-  Review and approve (or reject) pending playbook update proposals from the
-  playbook-monitor agent and apply approved changes to the practice profile. Use
-  when the playbook-monitor agent has surfaced proposals, when the user says
-  "review playbook proposals", "what playbook updates are pending", or wants to
-  step through deviation-driven playbook changes.
-argument-hint: "[no arguments needed — works from the pending proposals file]"
+  审查并批准（或拒绝）来自审查指引监控代理的待处理更新建议，并将批准的变更
+  应用到业务领域配置中。当审查指引监控代理提出建议时使用，或当用户说
+  "审查审查指引建议""有哪些待处理的审查指引更新"或想逐一处理偏离驱动的审查指引变更时使用。
+argument-hint: "[无需参数——从待处理建议文件工作]"
 ---
 
 # /review-proposals
 
-Steps through pending playbook update proposals from the monitor agent and applies approved changes to `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`.
+逐步审查来自监控代理的待处理审查指引更新建议，并将批准的变更应用到 `~/.claude/plugins/config/claude-for-legal-zh/commercial-legal/CLAUDE.md`。
 
-## Instructions
+## 指令
 
-1. **Load the playbook-monitor agent** and run Step 5 (review and approval flow).
+1. **加载审查指引监控代理** 并运行步骤5（审查和批准流程）。
 
-2. **If no proposals file exists** or it is empty: respond *"No pending proposals. Playbook is up to date."* Do not proceed further.
+2. **如果不存在建议文件** 或为空：回应*"无待处理建议。审查指引已是最新。"*不要继续。
 
-3. **Present proposals one at a time.** For each, show the full proposal block and offer four options: Accept, Reject, Edit, Defer.
+3. **逐一呈现建议。** 对每项建议，展示完整建议块并提供四个选项：接受、拒绝、编辑、延期。
 
-4. **For Accept or Edit:** show the exact diff to `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md` before writing. Only apply after the attorney explicitly confirms.
+4. **对于接受或编辑：** 在写入前展示对审查指引的确切差异。仅在律师明确确认后应用。
 
-5. **For Reject or Defer:** log the decision. Do not modify `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md`.
+5. **对于拒绝或延期：** 记录决定。不修改审查指引。
 
-6. **After all proposals are resolved:** show a summary of what changed, then archive the proposals file.
+6. **全部建议处理完毕后：** 展示变更摘要，然后归档建议文件。
 
-## Examples
-
-```
-/commercial-legal:review-proposals
-```
+## 示例
 
 ```
 /commercial-legal:review-proposals
-(runs automatically after playbook-monitor notifies you)
 ```

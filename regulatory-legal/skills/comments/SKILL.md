@@ -1,90 +1,69 @@
 ---
 name: comments
-description: Review open NPRM comment periods, log decisions, track deadlines. Use when an NPRM has a comment window open and you need to surface deadlines, decide whether to file, or record a filing / not-filing / waived decision (--decide CMT-ID).
-argument-hint: "[optional: --decide CMT-ID]"
+description: 审阅公开的征求意见期，记录决策，跟踪截止日期。适用于征求意见稿征求意见窗口开启时，你需要呈现截止日期、决定是否提交意见或记录已提交/不提交/放弃的决策时（--decide CMT-ID）。
+argument-hint: "[可选: --decide CMT-ID]"
 ---
 
 # /comments
 
-## Purpose
+## 目的
 
-NPRMs have deadlines. The decision to file a comment or not is an attorney
-call — but the deadline disappearing without a logged decision is the risk.
-This skill surfaces open comment periods and records decisions.
+征求意见稿有截止日期。是否提交反馈意见是律师的决定——但截止日期在未被记录决策的情况下悄然消失才是风险。此技能呈现开放的征求意见期并记录决策。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/regulatory-legal/comment-tracker.yaml` → all tracked NPRMs and their status.
-`~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md` → default comment decision owner.
+`~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/comment-tracker.yaml` → 所有已跟踪的征求意见稿及其状态。
+`~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` → 默认意见征集决策负责人。
 
-## Default view — open comment periods
+## 默认视图——开放的征求意见期
 
 ```markdown
-## Comment Period Tracker — [date]
+## 意见征集跟踪器 — [日期]
 
-### ⏰ Deadline in <14 days
+### ⏰ 14天内截止
 
-| ID | Regulation | Deadline | Days left | Decision | Owner |
-|---|---|---|---|---|---|
-| CMT-001 | [name] | [date] | [N] | Undecided | [owner] |
+| ID | 法规 | 截止日期 | 剩余天数 | 决策 | 负责人 |
+|----|------|----------|----------|------|--------|
+| CMT-001 | [名称] | [日期] | [N] | 待决定 | [负责人] |
 
-### 🟡 Open (>14 days)
+### 🟡 开放（>14天）
 
-[same table]
+[同上表]
 
-### Recently decided
+### 最近已决定
 
-| ID | Regulation | Decision | Rationale |
-|---|---|---|---|
-| CMT-002 | [name] | Not filing | [reason] |
+| ID | 法规 | 决策 | 理由 |
+|----|------|------|------|
+| CMT-002 | [名称] | 不提交 | [理由] |
 
 ---
 
-**Total open:** [N]  **Undecided with deadline <30 days:** [N]
+**总开放数：** [N]  **30天内截止且待决定：** [N]
 ```
 
-## Log a decision
+## 记录决策
 
 ```
 /regulatory-legal:comments --decide CMT-001
-Decision: [filing / not-filing / waived]
-Rationale: "[brief — e.g., 'Rule doesn't apply to our model' or 'Filing comment on Section 3']"
+决策：[提交 / 不提交 / 放弃]
+理由："[简要——如'该法规不适用于我们的业务模式'或'就第3条提交意见']"
 ```
 
-Updates tracker. If decision is "filing": prompt for filing deadline reminder
-(comment deadline minus 5 business days for internal review).
+更新跟踪器。如果决策为"提交"：提示设置提交截止日期提醒（征求意见截止日期前至少5个工作日供内部审阅）。
 
-## Notifications
+## 通知
 
-On first detection of an NPRM (populated by reg-feed-watcher): Slack DM to
-comment decision owner if Slack MCP is configured and `owner_slack` is set.
+首次检测到征求意见稿时（由 reg-feed-watcher 填充）：向意见征集决策负责人发送通知（如企业通讯工具已配置且 `owner_contact` 已设置）。
 
-Reminder at 14 days before deadline if decision is still "undecided."
-Reminder at 3 days before deadline if still undecided — elevated urgency.
+截止日期前14天提醒（如决策仍为"待决定"）。
+截止日期前3天提醒（如仍待决定）——升级紧急度。
 
-## Consequential-action gate (submit a regulatory comment / respond to a regulator)
-
-**Before logging a decision as "filing" — and always before producing a comment letter or regulator-response draft for submission:** Read `## Who's using this` in ~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md. If the Role is **Non-lawyer**:
-
-> Submitting a comment or response to a regulator has legal consequences. It's a public statement of the company's position, it's on the record in the rulemaking or enforcement matter, and positions taken here bind the company and can be used against it in subsequent proceedings. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
->
-> - The rulemaking or inquiry (regulator, docket, deadline)
-> - What the proposed comment/response says and on what sections
-> - Open questions and what's unresolved
-> - What could go wrong (adverse admissions, inconsistent prior positions, coordination-of-comment concerns with trade associations)
-> - What to ask the attorney (should we file at all; should we file jointly through a trade group; are there positions we should not take)
->
-> If you need to find a lawyer: your professional regulator's referral service is the fastest starting point (state bar in the US; SRA/Bar Standards Board in England & Wales; Law Society in Scotland/NI/Ireland/Canada/Australia; or your jurisdiction's equivalent).
-
-Do not log a "filing" decision or produce a submission-ready draft past this gate without an explicit yes. Tracking views, deadline reminders, and "not-filing / waived" decisions do not require the gate.
+> `comment-decision` 的 `gap_type` 语义、逐次发送确认规则和 comment-tracker.yaml 的 schema 位于 **gap-surfacer** 参考技能中——在实质工作前加载。
 
 ---
 
-## What this skill does not do
+## 本技能不做的事
 
-- Draft the comment letter. That is a separate attorney task.
-- Make the filing decision. It tracks the decision; the attorney makes it.
-- Monitor post-comment activity. Once a decision is filed, this tracker's job
-  is done — follow the rulemaking through `/regulatory-legal:reg-feed-watcher`.
-
-> The `comment-decision` `gap_type` semantics, the per-send Slack confirmation rule, and the comment-tracker.yaml schema live in the **gap-surfacer** reference skill — load it before doing substantive work.
+- 不起草意见书。那是独立的律师任务。
+- 不做出提交决策。它跟踪决策；律师做出决策。
+- 不监测征集后的活动。一旦决策已记录，此跟踪器的工作就完成了——通过 `/regulatory-legal:reg-feed-watcher` 跟踪规则的后续进展。

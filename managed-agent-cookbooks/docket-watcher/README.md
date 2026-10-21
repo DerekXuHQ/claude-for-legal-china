@@ -2,7 +2,7 @@
 
 ## Overview
 
-Monitors court dockets for matters in the active litigation portfolio. Trellis covers state trial courts; CourtListener / PACER covers federal. For each active matter the agent pulls new filings since the last check, maps filing types to candidate deadlines, cross-references against the matter's history and open deliverables, and produces a docket status report plus a structured deadline feed.
+Monitors court dockets for matters in the active litigation portfolio. 人民法院案例库 covers published judgments; 裁判文书网 covers trial-court filings; 元典/聚法案例 supplements for broader coverage. For each active matter the agent pulls new filings since the last check, maps filing types to candidate deadlines, cross-references against the matter's history and open deliverables, and produces a docket status report plus a structured deadline feed.
 
 Same source as the [`docket-watcher`](../../litigation-legal/agents/docket-watcher.md) agent in the litigation-legal Claude Code plugin — this directory is the Managed Agent cookbook for `POST /v1/agents`.
 
@@ -17,9 +17,9 @@ Same source as the [`docket-watcher`](../../litigation-legal/agents/docket-watch
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-export TRELLIS_MCP_URL=...
-export COURTLISTENER_MCP_URL=...
-export GDRIVE_MCP_URL=...
+export YUANDIAN_MCP_URL=...
+export CAIPANWENSHU_MCP_URL=...
+export FEISHU_MCP_URL=...
 ../../scripts/deploy-managed-agent.sh docket-watcher
 ```
 
@@ -33,8 +33,8 @@ Court filings are public records, but they are also UNTRUSTED INPUT. The filer c
 
 | Tier | Touches filings? | Tools | Connectors |
 |---|---|---|---|
-| **`docket-reader`** | **Yes** | `Read`, `Grep` only | trellis, courtlistener (read-only) |
-| `deadline-mapper` / Orchestrator | No — sees structured JSON only | `Read`, `Grep`, `Glob`, `Agent` | gdrive (jurisdiction config, read-only) |
+| **`docket-reader`** | **Yes** | `Read`, `Grep` only | yuandian, caiPanWenShu (read-only) |
+| `deadline-mapper` / Orchestrator | No — sees structured JSON only | `Read`, `Grep`, `Glob`, `Agent` | feishu (jurisdiction config, read-only) |
 | **`tracker-writer`** (Write-holder) | No | `Read`, `Write`, `Edit` | None |
 
 `docket-reader` returns length-capped, schema-validated JSON. `deadline-mapper` has no MCP and no web — it applies rules the deploying team has configured. `tracker-writer` produces `./out/docket-report-<date>.md` and `./out/deadlines.yaml` and never sees raw filings.
@@ -43,7 +43,7 @@ Court filings are public records, but they are also UNTRUSTED INPUT. The filer c
 
 This cookbook is a starting point. It will not work in production until you have done the following:
 
-- **Set the MCP URLs.** `TRELLIS_MCP_URL` and `COURTLISTENER_MCP_URL` must point at your deployment's endpoints, with whatever authentication your platform requires. `GDRIVE_MCP_URL` (or a substitute) points at wherever your jurisdiction-rule tables live.
+- **Set the MCP URLs.** `YUANDIAN_MCP_URL` and `CAIPANWENSHU_MCP_URL` must point at your deployment's endpoints, with whatever authentication your platform requires. `FEISHU_MCP_URL` (or a substitute) points at wherever your jurisdiction-rule tables live.
 - **Load the portfolio.** The agent reads `matters/_log.yaml` plus the per-matter `docket_id` and `court` from the deploying team's litigation-legal configuration. If your docketing system is the source of truth, front it with an MCP or a scheduled sync into the config path.
 - **Configure jurisdiction rules.** Ship the deadline-mapper a local-rule table for every court in your portfolio. Federal rules you can encode once; state trial courts and individual judges are where the landmines live. An unknown court should produce `confidence: low` + `needs_verification: true`, never a silent default.
 - **Wire delivery.** Decide where the output goes: your docketing system ingests `./out/deadlines.yaml`; the narrative report goes to Slack, email, or your matter management workspace; critical flags route to whoever you want woken up.

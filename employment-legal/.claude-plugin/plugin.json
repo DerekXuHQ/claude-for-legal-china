@@ -1,8 +1,8 @@
 {
   "name": "employment-legal",
-  "version": "1.0.2",
-  "description": "Reviews hires and terminations for jurisdiction-specific risk flags, classifies workers against the controlling state test, tracks leave deadlines before they're missed, runs internal investigations, and drafts policies with state supplements where the law differs.",
+  "version": "1.0.2-zh",
+  "description": "中国劳动法插件：用工审查与解除风险评估、劳动关系认定（劳社部发〔2005〕12号三要素）、假期管理与法定期限跟踪、内部调查、劳动规章制度起草（含民主程序+公示要求）及各省/直辖市口径差异适配。",
   "author": {
-    "name": "Anthropic"
+    "name": "陈石 律师"
   }
 }

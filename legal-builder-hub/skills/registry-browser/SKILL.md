@@ -1,82 +1,81 @@
 ---
 name: registry-browser
 description: >
-  Search watched registries for community legal skills, showing matches with
-  descriptions and offering to show the full SKILL.md before install. Use when
-  the user says "browse", "search skills", "find a skill for", "what's out
-  there for", or wants to add a new registry to the watchlist.
-argument-hint: "[search query]"
+  搜索已监视注册表中的社区法律技能，显示匹配项及其描述，并提供在安装前
+  查看完整 SKILL.md 的选项。当用户说"浏览""搜索技能""找某个方面的技能"
+  "有什么可用的"或想添加新注册表到监视列表时使用。
+argument-hint: "[搜索关键词]"
 ---
 
 # /registry-browser
 
-1. Load `~/.claude/plugins/config/claude-for-legal/legal-builder-hub/CLAUDE.md` → watched registries.
-2. Use the workflow below.
-3. Search each registry. Show matches with descriptions.
-4. Offer to show full SKILL.md for any match.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/legal-builder-hub/CLAUDE.md` → 已监视注册表。
+2. 使用以下工作流。
+3. 搜索每个注册表。显示匹配项及描述。
+4. 对任意匹配项提供查看完整 SKILL.md 的选项。
 
 ---
 
-## Purpose
+## 目的
 
-Find skills across the watched registries. Search, preview, decide.
+跨已监视注册表查找技能。搜索、预览、决策。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/legal-builder-hub/CLAUDE.md` → watched registries list.
+`~/.claude/plugins/config/claude-for-legal-zh/legal-builder-hub/CLAUDE.md` → 已监视注册表列表。
 
-## Workflow
+## 工作流
 
-### Step 1: Fetch registry indexes
+### 第1步：获取注册表索引
 
-For each watched registry:
+对每个已监视注册表：
 
-- GitHub repos: fetch `skills/` directory listing and each `SKILL.md` frontmatter (name + description).
-- Marketplace-style registries: fetch the index.
+- GitHub 仓库：获取 `skills/` 目录列表及每个 `SKILL.md` 的 frontmatter（name + description）。
+- 市场式注册表：获取索引。
 
-Cache the index locally (`references/registry-cache.json`) so browsing is fast. Refresh cache if >7 days old or on request.
+将索引缓存到本地（`references/registry-cache.json`），使浏览更快。缓存超过 7 天或用户要求时刷新。
 
-### Step 2: Search
+### 第2步：搜索
 
-Match query against skill names and descriptions. Simple keyword match is fine — these are small enough that fuzzy search is overkill.
+将查询词与技能名称和描述进行匹配。简单关键词匹配即可——这些数据规模足够小，模糊搜索是大材小用。
 
-Also: browse by category if the registry organizes skills that way.
+此外：若注册表按类别组织技能，支持按类别浏览。
 
-### Step 3: Present matches
+### 第3步：呈现匹配项
 
 ```markdown
-## Search: "[query]"
+## 搜索："[关键词]"
 
-**Found [N] skills across [M] registries:**
+**在 [M] 个注册表中找到 [N] 个技能：**
 
-### [skill-name]
-**From:** [registry name]
-**Description:** [from frontmatter]
-[View full SKILL.md] [Install]
+### [技能名称]
+**来源：** [注册表名称]
+**描述：** [来自 frontmatter]
+[查看完整 SKILL.md] [安装]
 
-### [skill-name]
+### [技能名称]
 [...]
 ```
 
-### Step 4: Preview
+### 第4步：预览
 
-On "view full SKILL.md": fetch and show the whole file. User reads it before deciding to install. No surprises.
+当用户选择"查看完整 SKILL.md"：获取并展示完整文件。用户在决定安装前阅读它。无意外。
 
-### Step 5: Add a registry
+### 第5步：添加注册表
 
-If the user has a URL to a registry not in the watchlist:
+如果用户有一个不在监视列表中的注册表 URL：
 
-1. Fetch it, validate it's a skills repo (has `skills/` or `.claude-plugin/`)
-2. Show what's in it
-3. Add to `~/.claude/plugins/config/claude-for-legal/legal-builder-hub/CLAUDE.md` → watched registries on confirmation
+1. 获取它，验证它是技能仓库（有 `skills/` 或 `.claude-plugin/`）
+2. 展示其中的内容
+3. 经确认后添加到 `~/.claude/plugins/config/claude-for-legal-zh/legal-builder-hub/CLAUDE.md` → 已监视注册表
 
-## Default registries
+## 默认注册表
 
-- **lpm-skills** — 14 legal project management skills. Practice-agnostic. Good starting point.
-- Space for others to be added as the ecosystem grows.
+- **lpm-skills** — 14 个法律项目管理技能。实践领域无关。良好的起点。
+- 为生态系统的成长留出添加其他注册表的空间。
 
-## What this skill does not do
+## 本技能不做什么
 
-- Install anything. It browses. skill-installer installs.
-- Rate or review skills. It shows you the SKILL.md; you judge.
-- Search the whole internet. Only watched registries.
+- 安装任何东西。它只浏览。skill-installer 负责安装。
+- 评价或审查技能。它向你展示 SKILL.md；你来判断。
+- 搜索整个互联网。仅搜索已监视注册表。

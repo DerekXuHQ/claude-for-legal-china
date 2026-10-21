@@ -1,22 +1,19 @@
 ---
 name: plain-language-letters
 description: >
-  Reference: DEPRECATED — use `/client-letter` for routine correspondence or
-  `/status client` for substantive updates. Split into two more focused skills
-  during the v2 rebuild. Kept as a redirect for migration.
+  参考：已弃用——常规信函请使用 `/client-letter`，实质性更新请使用
+  `/status client`。在 v2 重构中拆分为两个更聚焦的技能。保留为重定向以支持迁移。
 user-invocable: false
 ---
 
-# [DEPRECATED] Plain-Language Letters → see `/client-letter` and `/status client`
+# [已弃用] 通俗语言信函 → 参见 `/client-letter` 和 `/status client`
 
-This skill was split during the v2 rebuild:
+本技能在 v2 重构中已拆分：
 
-- **Routine correspondence** (appointment confirms, document requests, brief
-  "we filed it" updates) → `skills/client-letter/` — use `/client-letter [type]`
+- **常规信函**（预约确认、文件索取、简要"已提交"更新） → `skills/client-letter/` — 使用 `/client-letter [类型]`
 
-- **Substantive client status updates** → `skills/status/` in client-facing
-  mode — use `/status client`
+- **实质性当事人状态更新** → `skills/status/` 当事人面向模式 — 使用 `/status client`
 
-Both apply the plain-language standards (reading level, no jargon) from CLAUDE.md.
+两者均适用 CLAUDE.md 中的通俗语言标准（阅读水平、无法律术语）。
 
-See the respective SKILL.md files for full workflows.
+完整工作流见各 SKILL.md 文件。

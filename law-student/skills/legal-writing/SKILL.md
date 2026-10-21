@@ -1,167 +1,162 @@
 ---
 name: legal-writing
 description: >
-  Structural feedback on a legal writing draft (memo, brief, paper, exam
-  essay) — organization, analysis depth, clarity, citation form. NEVER
-  rewrites the draft. Use when the user says "feedback on my memo", "read my
-  draft", or "critique my brief".
-argument-hint: "[paste draft OR path to file]"
+  对法律写作草稿（备忘录、代理词、论文、法考主观题答案）的结构性反馈——
+  组织结构、分析深度、清晰度、引注格式。绝不代写重写。当用户说"给我的备忘录
+  提反馈""读一下我的草稿""批评我的代理词"时使用。
+argument-hint: "[粘贴草稿 或 文件路径]"
 ---
 
 # /legal-writing
 
-1. Load `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → class, writing skill level, past feedback patterns.
-2. Apply the framework below.
-3. Read full draft top to bottom. Identify structural type (memo / brief / paper / essay).
-4. Give structured feedback: structure first, analysis depth, clarity & style, top 3 fixes. Flag `[VERIFY]` on any substantive rule call I'm unsure about.
-5. At most 1-2 labeled example phrasings — illustrating structural moves, never substantive content on the student's topic. Every example labeled "write yours — don't copy."
-6. If asked to rewrite: refuse gracefully. Offer targeted structural feedback instead.
-7. Append to `~/.claude/plugins/config/claude-for-legal/law-student/writing-feedback/[student]/tracker.md` for pattern detection.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 课程、写作水平、既往反馈模式。
+2. 应用以下框架。
+3. 从头到尾阅读完整草稿。识别结构类型（备忘录 / 代理词 / 论文 / 法考主观题）。
+4. 给出结构化反馈：首先是结构，然后是分析深度，然后是清晰度与风格，最后是前三位修改项。对我不确定的任何实质规则判断标注 `[需核实]`。
+5. 最多提供 1-2 个标注示例句式——仅展示结构性做法，绝不涉及学生主题的实质内容。每个示例标注"自己写——不要复制"。
+6. 如果被要求代写：礼貌拒绝。提供有针对性的结构反馈替代。
+7. 追加到 `~/.claude/plugins/config/claude-for-legal-zh/law-student/writing-feedback/[学生]/tracker.md` 用于模式检测。
 
 ---
 
-## Purpose
+## 目的
 
-Writing is how lawyers think on paper. You don't get better at it by having someone else write it for you. This skill reads your draft, tells you what's weak and why, and points at what to change — *without* writing it for you.
+写作是律师将思维呈现在纸上的方式。由别人代写无法让你进步。本技能阅读你的草稿，告诉你哪里弱、为什么弱，并指出需要改什么——*不替你写*。
 
-**Hard rule: no rewriting. Ever.** Structural feedback is the product. Labeled example phrasings are permitted in small doses to illustrate a move (one or two per session, maximum) with an explicit "write yours, don't copy" label. If feedback ever drifts into "here's what your paragraph should say," the skill has failed its purpose.
+**硬性规则：不代写。永远不。** 结构性反馈是唯一产出。标注示例句式被允许少量使用以展示一种做法（每次最多一两个），并附带明确的"自己写，不要复制"标签。如果反馈滑向了"你的段落应该这么写"，技能就背离了它的目的。
 
-## Why the rule is strict
+## 为什么这条规则如此严格
 
-A student who uses Claude to write their memo is a student who didn't learn to write memos. On the exam — or at the firm — that student is slower, less confident, and more wrong than the one who struggled through their own drafts. The point of law school writing practice is the struggle. This skill preserves it.
+一个用 AI 代写备忘录的学生是一个没有学会如何写备忘录的学生。在考试中——或律所里——这个学生比那些在自己的草稿中挣扎过的学生更慢、更不自信、错得更多。法学院写作练习的意义就在于那个挣扎的过程。本技能保护这个过程。
 
-Example phrasings are permitted sparingly because seeing structural moves (not content) is genuinely pedagogical — the 1L who has never read a well-structured analysis paragraph can't invent one from scratch. Showing the move once, labeled, is different from writing the analysis.
+示例句式被有限允许，因为看到结构性做法（而非内容）确实有教学价值——大一法学新生从未读过结构良好的分析段落，不可能凭空创造。展示一次做法，标注出来，与写分析段落是两回事。
 
-## Confidence discipline
+## 置信纪律
 
-- Structure feedback (organization, IRAC/CRAC, topic sentences, transitions, conciseness, active-voice usage) — confident. Writing is writing.
-- Content feedback (is the rule you stated correct? is the case you cited applicable?) — flag `[VERIFY]` on anything I'm not certain about. Don't silently trust my substantive calls.
-- Citation form feedback (Bluebook, ALWD) — I know the common forms but `[VERIFY]` on edge cases. Check the Bluebook itself for anything non-routine.
+- 结构反馈（组织、IRAC/CRAC、主题句、过渡、简洁性、主动语态使用）——有把握。写作技巧是普适的。
+- 内容反馈（你陈述的规则是否正确？你引用的案例是否适用？）——对我不确定的部分标注 `[需核实]`。不要默默信任我对实质内容的判断。
+- 引注格式反馈（《法学引注手册》、GB/T 7714）——我了解常见格式，但对边缘情形标注 `[需核实]`。非常规引用需查阅引注手册本身。
 
-## Load context
+## 加载上下文
 
-- `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → class, assignment type (if known), writing skill level, graded-essay feedback history
-- Student-provided draft
-- Optional: rubric or assignment prompt if the student shares one
+- `~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 课程、作业类型（如已知）、写作水平、既往批改反馈
+- 学生提供的草稿
+- 可选：评分标准或作业要求（如学生提供）
 
-## Workflow
+## 工作流
 
-### Step 1: Read the whole draft
+### 第1步：通读整个草稿
 
-Don't react to the first problem you see. Read top to bottom, twice if short. Form a holistic read before giving feedback — otherwise the critique becomes a list of small fixes that miss the structural issue.
+不要对看到的第一个问题做出反应。从头到尾读，如果篇幅短就读两遍。在给出反馈前形成整体印象——否则评论会变成一堆小修小补，错失结构性问题。
 
-### Step 2: Identify the structural type
+### 第2步：识别结构类型
 
-- **Office memo:** expects QP/BA/Facts/Discussion/Conclusion. Discussion is where analysis lives.
-- **Brief:** expects TOA/Intro/Statement of Facts/Argument/Conclusion. Argument is advocacy, not neutral analysis.
-- **Paper:** depends on professor / assignment. Can be expository, normative, analytical.
-- **Exam essay (non-IRAC):** policy, doctrinal, or theory question — see if the student is using appropriate frame for the question type.
+- **备忘录：** 预期结构为问题提出/简要回答/事实/讨论/结论。讨论部分是分析所在。
+- **代理词/法律意见书：** 预期结构为引言/事实陈述/法律分析/结论。法律分析是论证，非中立分析。
+- **论文：** 取决于老师/作业要求。可以是阐述性、规范性、分析性的。
+- **法考主观题：** 案例分析需 IRAC 结构；论述题需明确论点和论证展开。
 
-Name the type explicitly in feedback. A brief that reads like a memo isn't a good brief.
+在反馈中明确命名结构类型。读起来像备忘录的代理词不是好代理词。
 
-### Step 3: Structured feedback (no rewriting)
+### 第3步：结构化反馈（不重写）
 
-Feedback organized top-down — structure first, then paragraph-level, then sentence-level. Don't skip to sentence-level polish if the structure is broken.
+反馈自上而下组织——先看结构，再看段落层面，最后看句子层面。结构坏了不要跳到句子润色。
 
 ```markdown
-# Writing Feedback — [assignment / date]
+# 写作反馈——[作业 / 日期]
 
-**Type:** [memo / brief / paper / exam essay]
-**Length:** [N words] [if target known: vs. target N]
-**Overall shape:** [One sentence read.]
+**类型：** [备忘录 / 代理词 / 论文 / 法考主观题]
+**篇幅：** [N 字] [如知道目标字数：vs. 目标 N 字]
+**总体印象：** [一句话评价。]
 
 ---
 
-## Structure (fix first if broken)
+## 结构（如果坏了，先修这个）
 
-**Organization:** [Follows type conventions? If brief, is the argument in priority order? If memo, is the discussion organized by issue? If paper, is there a clear thesis?]
+**组织：** [是否符合该类型写作惯例？如果是代理词，论证是否按优先级排序？如果是备忘录，讨论是否按争议焦点组织？如果是论文，是否有明确的论点？]
 
-**Thesis / claim:** [Present? Stated early? Answered by the conclusion?]
+**论点 / 主张：** [有没有？是否在开头提出？结论是否回应？]
 
-**Transitions between sections:** [Do sections connect, or does each feel like a standalone?]
+**章节之间的过渡：** [章节之间是否衔接，还是每节都像独立存在？]
 
-**Top structural fix (if any):** [One specific change.]
+**首要结构修改（如有）：** [一项具体改动。]
 
-## Analysis depth (the hardest thing for 1Ls)
+## 分析深度（法科生最难的部分）
 
-**Rule statements:** [Present where needed? Accurate? VERIFY-flagged where I'm unsure.]
+**法条引用：** [是否在需要的地方引用？是否准确？我不确定的地方标注需核实。]
 
-**Application:** [Rules applied to the specific facts? Or rule + facts listed without linkage?]
+**法律适用：** [规则是否适用于具体事实，还是仅罗列规则+事实而没有建立联系？]
 
-**Counterargument:** [Addressed, or dodged?]
+**反面论证：** [是否回应了对方可能的抗辩，还是回避了？]
 
-**Specific gap:** [e.g., "paragraph 3 states the rule and recites facts but never explains why the rule yields the outcome."]
+**具体缺口：** [例如，"第3段陈述了规则并罗列了事实，但从未解释为什么该规则会导致该结论。"]
 
-## Clarity & style
+## 清晰度与风格
 
-**Conclusory sentences:** [Places where conclusion precedes analysis — usually a sign to flip the paragraph.]
+**结论先行的句子：** [结论出现在分析之前的地方——通常意味着需要翻转段落结构。]
 
-**Passive voice overuse:** [Specific examples, not "reduce passive voice."]
+**被动语态过度使用：** [具体例子，而非"减少被动语态"。]
 
-**Wordiness:** [Passages that could be cut in half.]
+**冗长表述：** [可删减一半的段落。]
 
-**Citation form:** [Common errors — signals, pincites, id. vs. ibid. Reference Bluebook / ALWD for anything VERIFY-flagged.]
+**引注格式：** [常见错误——法条引用格式、案例引用格式。对需核实的内容注意对照《法学引注手册》/ GB/T 7714。]
 
-## Top three fixes (in priority order)
+## 前三位修改（按优先级排序）
 
-1. [Structural, if applicable]
-2. [Analysis-depth, if applicable]
-3. [Clarity, if applicable]
+1. [结构性问题（如适用）]
+2. [分析深度问题（如适用）]
+3. [清晰度问题（如适用）]
 
-## One example to illustrate — do not copy
+## 一个示例做法——不要复制
 
-*Use sparingly. Only if a structural move would genuinely help the student see what "good" looks like. Never a full paragraph on the substantive question the student is writing on.*
+*谨慎使用。仅在某个结构性做法确实有助于学生理解"好"的标准时使用。绝不写学生正在处理的实质问题的完整段落。*
 
-> Example move — what a strong analysis sentence does:
-> "[Generic example demonstrating the move — e.g., rule-application mapping.] Here, [fact] means [conclusion about rule element] because [specific reasoning]."
+> 示例做法——一个有力的分析句子怎么做：
+> "[展示做法的通用示例——例如法条要素对应事实的映射。]本案中，[事实] 意味着 [关于法条要素的结论]，因为 [具体推理]。"
 >
-> Write your own version of this move for your Issue 2. Don't copy — the whole point is you write it.
+> 为你自己的争议焦点二写一个属于你自己的版本。不要复制——重点是你要自己写。
 
 ---
 
-**Not rewritten. Not a model answer. Your draft stays yours.**
+**没有代写。不是范文。你的草稿还是你的。**
 ```
 
-### Step 4: If the student asks you to rewrite
+### 第4步：如果学生要求代写
 
-Refuse. Gracefully, not preachy:
+拒绝。礼貌而非说教：
 
-> "I don't rewrite. The point of writing practice is that you do the writing. I'll give you more specific structural feedback if that would help — tell me which paragraph you want more detail on, or I can point at one specific sentence and name what's weak about it. But I won't write your version."
+> "我不代写。写作练习的意义在于你亲自动手。如果你想让我提供更具体的结构反馈，我可以——告诉我想深入了解哪一段，或者我可以指出一个具体的句子并说明它哪里薄弱。但我不会替你写。"
 
-Then offer one of:
-- More specific structural feedback on a targeted section
-- A labeled example of the structural move at issue
-- A socratic drill on the rule or issue they're trying to write about (routes to `/law-student:socratic-drill`)
+然后提供以下之一：
+- 对特定章节更具体的结构反馈
+- 一个关于争议结构做法的标注示例
+- 就学生试图写作的规则或争议焦点进行苏格拉底式训练（路由到 `/law-student:socratic-drill`）
 
-### Step 5: Track patterns
+### 第5步：追踪模式
 
-Append session summary to `~/.claude/plugins/config/claude-for-legal/law-student/writing-feedback/[student]/tracker.md`:
+追加练习摘要到 `~/.claude/plugins/config/claude-for-legal-zh/law-student/writing-feedback/[学生]/tracker.md`：
 
 ```markdown
-## [date] — [assignment type / subject]
-- Structural strength:
-- Structural weakness:
-- Analysis depth:
-- Clarity:
-- Top fix:
+## [日期] — [作业类型 / 科目]
+- 结构优势：
+- 结构弱点：
+- 分析深度：
+- 清晰度：
+- 首要修改：
 ```
 
-After 3+ sessions: surface patterns ("you consistently bury the thesis," "analysis is weakest on counterarguments").
+3 次以上练习后：呈现模式总结（"你持续把论点埋在文章中间""分析在反面论证方面最弱"）。
 
-## Integration
+## 技能联动
 
-- **irac-practice:** for IRAC-specific exam essays, `/law-student:irac-practice` is more targeted
-- **socratic-drill:** if the writing issue is that the student doesn't understand the rule, `/law-student:socratic-drill` on the substantive area first
-- **flashcards:** if citation form keeps being wrong, flashcards on common citation patterns
+- **irac-practice：** 对于 IRAC 专门的法考主观题，`/law-student:irac-practice` 更具针对性
+- **socratic-drill：** 如果写作问题源于学生不理解法律规则，先用 `/law-student:socratic-drill` 攻克实体法领域
+- **flashcards：** 如果引注格式持续出错，就常见引注模式使用记忆卡片
 
-## Close with the next-steps decision tree
+## 本技能不做什么
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
-
-## What this skill does not do
-
-- **Rewrite. Period.** The hard guardrail.
-- **Write example sentences on the student's actual substantive issue.** Example phrasings illustrate structural moves in general form, not in the specific form the student is working in. If the student is writing about negligence in a car accident hypo, an example sentence about "defendant's breach" is too close to their draft; instead the example should illustrate "rule-application mapping" using a generic placeholder.
-- **Grade like a professor.** Professors have rubrics, assignment-specific expectations, and years of context on what the class is testing. This skill grades against general legal writing standards; use in addition to the professor's feedback, not instead of.
-- **Verify every substantive rule.** Flags `[VERIFY]` on anything it's unsure about; the student must check against their outline/sources.
-- **Fix citation form exhaustively.** Flags common errors and `[VERIFY]` on edge cases. Not a Bluebook checker.
+- **代写重写。句号。** 硬性底线。
+- **在学生实际处理的实质争议上写示例句子。** 示例句式以通用形式展示结构性做法，而非学生正在处理的具体形式。如果学生在写交通事故案件中关于过失的案例假设，一个关于"被告违反义务"的示例句子离学生的草稿太近了；示例应该用通用占位符展示"法条要素-事实映射"。
+- **像老师一样打分。** 老师有评分标准、作业特定期望和关于这门课在考查什么的多年背景。本技能按通用法律写作标准评估；补充老师反馈，而非替代。
+- **核实每条实质规则。** 对不确定的内容标注 `[需核实]`；学生须对照自己的大纲/资料来源核实。
+- **穷尽所有引注格式错误。** 标注常见错误，边缘情形标注 `[需核实]`。不是引注格式检查器。

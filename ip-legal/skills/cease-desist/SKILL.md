@@ -1,501 +1,243 @@
 ---
 name: cease-desist
 description: >
-  Draft a cease-and-desist letter (send mode) or triage one you received
-  (receive mode). Use when asserting your rights against an infringer with a
-  demand letter calibrated to your enforcement posture, or when an incoming
-  C&D needs triage into a structured options memo with a recommendation.
-argument-hint: "<--send | --receive> [context, counterparty, or path to incoming letter]"
+  起草侵权警告函（发送模式）或对收到的警告函进行分诊（接收模式）。当依你的
+  执法姿态对侵权人主张权利并发送校准后的警告函，或对收到的警告函进行分诊生成
+  结构化选项备忘录附建议时使用。
+argument-hint: "<--send | --receive> [上下文、对方当事人或收函路径]"
 ---
 
 # /cease-desist
 
-Two modes. Pick one:
+两种模式。选一：
 
-- `/ip-legal:cease-desist --send` — draft a cease-and-desist letter calibrated to your enforcement posture. Loud gate runs before delivery.
-- `/ip-legal:cease-desist --receive` — triage a C&D someone sent you. Produces an options memo with a recommendation.
+- `/ip-legal:cease-desist --send` — 起草警告函，校准至你的执法姿态。发送前运行响亮的关口。
+- `/ip-legal:cease-desist --receive` — 对收到的警告函做分诊。产出选项备忘录附建议。
 
-## Instructions
+## 指令
 
-1. **Read the practice profile.** Load `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`. If it contains `[PLACEHOLDER]` markers or does not exist, stop and say: "This plugin needs setup before it can give you useful output. Run `/ip-legal:cold-start-interview` — the C&D skill depends on your enforcement posture, approval matrix, and practice-area mix, none of which are configured yet."
+1. **读取实践档案。** 加载 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md`。如含占位符，停止并提示运行 `/ip-legal:cold-start-interview`。
+2. **检查事项工作区。**
+3. **根据参数分发：** `--send` 运行发送模式。`--receive` 运行接收模式。无参数时询问一次。
+4. **尊重关口。** 发送模式中，响亮关口在草稿落盘前运行。不要跳过。
+5. **尊重审批矩阵。** 从 `## 执法姿态 → 审批矩阵` 中提取警告函行的审批人。提取自动升级条件。在关口中呈现两者。
+6. **适当交接。** 接收模式中，如果建议坚决回应，提供链入发送模式。如果建议以确认不侵权之诉或无效宣告先发制人，按实践档案升级至外部律师——不要起草。
 
-2. **Check matter workspaces.** Per `## Matter workspaces`: if `Enabled` is `✗`, skip — skills use practice-level context. If enabled and there is no active matter, ask: "Which matter is this for? Run `/ip-legal:matter-workspace switch <slug>` or say `practice-level`."
-
-3. **Dispatch on `$ARGUMENTS`:**
-   - If `--send` is present: run send mode (below). Walk through identify-the-right, identify-the-conduct, identify-the-relationship, identify-the-demand, calibrate-to-posture, draft, and the pre-delivery gate.
-   - If `--receive` is present: run receive mode (below). Ask for the incoming letter (path or pasted text), then assess, identify exposure, present options, and write the triage memo.
-   - If neither flag is present: ask once — "Are we sending a cease-and-desist (you're asserting) or triaging one we received (you're defending)?" — and then dispatch.
-
-4. **Respect the gate.** In send mode, the loud gate runs before any final draft is written to disk. Do not skip it.
-
-5. **Respect the approval matrix.** Pull the approver for the C&D row from `## Enforcement posture → Approval matrix`. Pull automatic escalations. Surface both in the gate; do not smother them.
-
-6. **Hand off where appropriate.** In receive mode, if the recommendation is to respond firmly, offer to chain into `/ip-legal:cease-desist --send` pre-populated with the response context. If the recommendation is to pre-empt with a DJ action or TTAB cancellation, escalate to outside counsel per the practice profile's IP litigation row — do not draft.
-
-## Examples
+## 示例
 
 ```
 /ip-legal:cease-desist --send
-/ip-legal:cease-desist --receive ~/Downloads/incoming-cd-acme.pdf
+/ip-legal:cease-desist --receive ~/Downloads/收函-acme.pdf
 /ip-legal:cease-desist
 ```
 
-## Notes
+---
 
-- The outgoing C&D does not carry the work-product header. The internal draft, the pre-send brief, and the triage memo do.
-- Trademark rights are territorial; the draft assumes the jurisdictions declared in your practice profile's `Registered in:` footprint. If the conduct or counterparty is somewhere else, flag before drafting.
-- Every `[CITE:___]` is unverified until a citator run. Source attribution tags stay on the draft.
-- Non-lawyer users get a one-page brief for the attorney conversation before the gate clears.
+## 目的
+
+侵权警告函主张一项法律权利并要求某人停止做某事。它是IP执业中发送或接收的最重要的
+函件之一。发送一封是迈向诉讼的第一步——收件人可在其选择的管辖地提起确认不侵权
+之诉，且过度或恶意主张可被用于反制发送人。收到一封启动时限并强制决策。
+本技能以该决定应得的护栏处理两侧。
+
+> **对外发送文件（发送模式）：** 起草的警告函发送给对方当事人。对外函上**勿**包含
+> `保密 — 律师工作成果`的抬头。内部草稿、发送前摘要和分诊备忘录保留该抬头。
+
+## 法域假设
+
+知识产权权利具有地域性——中国注册商标的保护限于中国大陆境内。著作权基于国际公约
+（伯尔尼公约）具有多边性，但执法和法定赔偿（著作权法第54条 `[法条原文]`）取决于
+当地法律。本技能假定事项或实践档案中声明的法域。如侵权行为、对方当事人或管辖地
+在其他法域，标注——本稿可能不直接适用。
+
+## 加载上下文
+
+- 实践档案 → `## 执法姿态`、`## IP实践档案`、`## 输出`、`## 谁在使用`
+- 实践档案中种子文档引用的任何警告函模板或执法操作手册
+- 事项上下文
 
 ---
 
-## Purpose
+## 发送模式 — 起草侵权警告函
 
-A cease-and-desist letter asserts a legal right and demands that someone stop doing something. It is one of the most consequential letters an IP practice sends or receives. Sending one is a first step toward litigation — recipients can file a declaratory judgment action in a forum of their choosing, and overbroad or bad-faith assertions can be used against the sender. Receiving one starts a clock and forces a decision. This skill handles both sides with the guardrails the decision deserves.
+### 第1步：识别权利
 
-Two modes:
-
-- `--send` — you are asserting. Draft a C&D calibrated to the posture, gate before delivery.
-- `--receive` — you are defending. Triage the incoming letter, produce an options memo, route to matter creation if warranted.
-
-If the user does not pass a flag, ask once: "Are we sending a cease-and-desist (you're asserting) or triaging one we received (you're defending)?"
-
-> **External deliverable (send mode):** the drafted C&D is sent to counterparty. Do NOT include the `PRIVILEGED & CONFIDENTIAL — ATTORNEY WORK PRODUCT` header on the outgoing letter. Internal drafts, pre-send briefs, and triage memos keep the header per plugin config `## Outputs`.
-
-## Jurisdiction assumption
-
-Trademark rights are territorial — a US registration does not travel. Copyright is Berne-multilateral but enforcement is jurisdiction-specific, and statutory remedies (including US §504 statutory damages) turn on local law. This skill assumes the jurisdiction declared in the matter or the practice profile's `Registered in:` footprint. If the infringing conduct, counterparty, or forum is somewhere else, flag it — the draft may not apply as written.
-
-## Load context
-
-- `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md` → `## Enforcement posture` (posture, C&D triggers, soft-letter criteria, approval matrix, automatic escalations), `## IP practice profile` (practice area mix, registered jurisdictions, outside counsel roster), `## Outputs` (work-product header, role), `## Who's using this` (role — lawyer vs. non-lawyer)
-- Any C&D template or enforcement playbook referenced in the practice profile's seed documents — read it, match the structure
-- **Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip matter machinery — skills use practice-level context. If enabled and there is no active matter, ask: "Which matter is this for? Run `/ip-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific overrides (e.g., posture override, approver override). Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/ip-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
-
-## Send mode — drafting the C&D
-
-### Step 1: Identify the right
-
-Ask, in one batch:
-
-> Which IP right are we asserting?
+> 我们在主张哪项知识产权？
 >
-> - **Trademark** — is it registered? Where (USPTO, EUIPO, UKIPO, national)? Reg number and class(es)? Or common-law-only (first-use date, geographic scope)?
-> - **Copyright** — is it registered? Title, registration number, date? Or unregistered (note: US suits require registration for filed claims; statutory damages and fees require pre-infringement registration)?
-> - **Both** — identify each.
+> - **商标** — 是否注册？在哪里（CNIPA/其他国家）？注册号和类别？或仅为未注册驰名商标（首次使用日期、地理范围、知名度证据）？
+> - **著作权** — 是否登记？作品名称、登记号、日期？或未登记（注：中国著作权登记为自愿登记，可作为初步证据，《最高人民法院关于审理著作权民事纠纷案件适用法律若干问题的解释》第7条）？
+> - **专利** — 发明、实用新型还是外观设计？专利号、授权日？
+> - **多种** — 分别识别。
 
-Record each right. Registered rights get cited by number. Common-law rights get the first-use evidence paragraph. Unregistered copyrights get a flag: "We may not be able to file suit on an unregistered US copyright without registering first — `[SME VERIFY]` before the letter threatens litigation."
+### 第2步：识别侵权行为
 
-### Step 2: Identify the conduct
-
-> Describe the infringing conduct in specifics, not adjectives:
+> 用具体事实而非形容词描述侵权行为：
 >
-> - **Who** is doing it — entity name, individual, platform handle?
-> - **What** — the accused mark, the accused copy, the accused product? Attach or describe samples.
-> - **Where** — website URL, marketplace listing, physical retail, social media?
-> - **Since when** — date first observed, date of the earliest use you can document?
-> - **Evidence** — screenshots, receipts, watch-service hit, customer confusion reports?
+> - **谁**在做——主体名称、个人、平台账号？
+> - **什么**——被控侵权商标、被控抄袭作品、被控侵权产品？附样品或描述。
+> - **哪里**——网站URL、电商平台链接、实体零售、社交媒体？
+> - **从何时起**——首次观察日期、你能记录的最早使用日期？
+> - **证据**——截图、购买记录、监测服务线索、消费者混淆报告？
 
-Facts go in specific. "You sold product X on [URL] bearing the mark [Y] on [date]" beats "You have been infringing our rights." Adjectives tell on a thin record.
+### 第3步：识别关系
 
-### Step 3: Identify the relationship
-
-> What's the relationship between us and the recipient?
+> 我们与收件人之间是什么关系？
 >
-> - **Competitor** (direct or adjacent) — standard posture applies
-> - **Reseller / channel partner** — tone adjusts; consider the soft-letter path
-> - **Former licensee / ex-employee / former partner** — contract provisions likely apply; cite them
-> - **Stranger / random infringer** — standard
-> - **Current customer / partner** — automatic escalation per practice profile; flag before drafting
+> - **竞争对手**（直接或间接）— 适用标准姿态
+> - **经销商/渠道伙伴** — 语气调整；考虑软函路径
+> - **前被许可人/前员工/前合伙人** — 合同条款可能适用；引用它们
+> - **陌生人/随机侵权人** — 标准
+> - **当前客户/合作伙伴** — 按实践档案自动升级；起草前标注
 
-This changes tone, approver, and whether to draft at all without escalation.
+### 第4步：识别诉求
 
-### Step 4: Identify the demand
-
-> What does the client actually want?
+> 客户实际想要什么？
 >
-> - **Stop** — cease the infringing use
-> - **Account** — report sales, profits, volumes (for damages baseline)
-> - **Destroy** — destroy or recall infringing inventory
-> - **Damages** — monetary settlement
-> - **Transfer / assign** — transfer the domain, hand over the account, assign the accused mark or copyright
-> - **Public correction** — takedown of offending content, public statement
-> - **Confirm in writing** — compliance undertaking by a date
+> - **停止** — 停止侵权使用
+> - **提供信息** — 报告销量、利润、体量
+> - **销毁** — 销毁或召回侵权产品
+> - **赔偿** — 金钱赔偿
+> - **转移/转让** — 转让域名、移交账户、转让被控标识或作品
+> - **公开纠正** — 删除侵权内容、公开声明
+> - **书面确认** — 在某日前作出合规承诺
 
-Pick the actual remedies. The demand must be proportionate to the harm — an overbroad demand is evidence of bad faith if the matter is ever litigated.
+**平台投诉并行路径（电商平台侵权）。** 如果被控行为在电商平台（淘宝、天猫、京东、
+拼多多、抖音电商、快手小店等），标注平台知识产权保护投诉路径作为更快、更便宜的
+并行路径。依据《电子商务法》第42-43条 `[法条原文]`，平台在收到通知后应采取删除、
+屏蔽、断开链接等必要措施，并转送通知。平台投诉通常在数天内解决；警告函给侵权人
+时间在谈判期间销售库存。两条路径不互相排斥——当行为以平台为主时建议同时提交。
 
-**Channel-takedown parallel path (marketplace infringement).** If the accused conduct is on a marketplace (Amazon, Etsy, eBay, Alibaba, TikTok Shop, AliExpress, Walmart Marketplace, Shopify-hosted storefronts), flag the platform's brand-protection / IP-infringement reporting path as a faster, cheaper parallel track that does not require a C&D or litigation:
+### 第5步：校准至执法姿态
 
-- **Amazon Brand Registry** (trademark and copyright takedown, counterfeit removal)
-- **Etsy IP Infringement reporting** (trademark / copyright / patent forms)
-- **eBay VeRO** (Verified Rights Owner program)
-- **Alibaba IPP** (IP Protection Platform)
-- **TikTok Shop IP Protection**
-- **Shopify DMCA / trademark reporting**
+读取实践档案中的默认姿态并应用。
 
-A marketplace takedown often resolves in days; a C&D gives the infringer time to sell through inventory while negotiating. The two paths are not mutually exclusive — recommend filing both when the conduct is marketplace-based, with the C&D covering off-platform conduct (DTC site, wholesale, social, physical retail) that the platform report cannot reach. Note in the pre-send brief whether the parallel-path has been filed, is queued, or is declined (and why).
+### 第5.5步：对方当事人尽职调查 — 强制性前提
 
-### Step 5: Calibrate to posture
+**起草前，运行对方当事人尽职调查并向用户呈现结果。** 每封警告函均带有确认不侵权
+之诉 / 恶意诉讼风险敞口，取决于收件人是谁。在用户已审阅尽职调查并确认仍想打这仗
+之前，技能不起草警告函。
 
-Read `## Enforcement posture` → `Default posture:` and apply:
+收集并呈现：法律主体、规模和资源、知识产权组合、诉讼历史、律师情况、确认不侵权
+之诉风险、关系风险。
 
-- **Aggressive** — firm letter, short deadline (often 7–14 days), explicit consequence language (litigation, statutory damages, fees, injunctive relief), no settlement softening
-- **Measured** — firm but professional, standard deadline (14–30 days), consequences noted without theatrics, openness to discussion if they respond
-- **Conservative** — soft letter framing, longer deadline or no hard deadline, "we'd like to discuss" opening, consequence language muted or absent
+以简短的摘要备忘录在聊天中呈现，**在用户与该尽职调查块交互前不继续起草**。
 
-Also read `When we send a C&D`, `When we send a soft letter first`, and `When we just file`. If the facts suggest this should be a soft letter or a direct filing per the practice profile, flag it before drafting: "Per your enforcement posture, this pattern matches [soft letter / filing]. Do you still want a C&D, or would you prefer [alternative]?"
+### 第6步：起草
 
-Matter-level overrides in `matter.md` beat the practice default.
+起草结构遵循中国实践惯例：
+1. 发函人/函头及日期
+2. 收件人信息
+3. 事由 — 简明，不泄露保密策略
+4. 权利说明 — 商标：注册号、类别、知名度；著作权：作品名称、登记信息；专利：专利号
+5. 侵权事实 — 具体行为描述，附证据
+6. 法律依据 — 商标法第57条/第63条 `[法条原文]`、著作权法第52-53条 `[法条原文]`、
+   专利法第11条/第65条 `[法条原文]`、反不正当竞争法第6条等
+7. 诉求 — 编号、具体、相称
+8. 期限 — 日历日期，确认方式
+9. 不遵守的后果 — 校准至姿态（诉讼、行政投诉、平台投诉等）
+10. 证据保全要求
+11. 权利保留声明
+12. 签署栏
 
-### Step 5.5: Counterparty diligence — REQUIRED PRECONDITION
+**起草规则：** 具体而非形容词；不做过度主张；引用为占位符直至验证；后果语言匹配姿态。
 
-**Before drafting, run counterparty diligence and present the results to the user.** This is not conditional on "if the counterparty looks big." Every C&D assertion carries DJ / fee-shifting / bad-faith exposure calibrated to *who* the recipient is. The skill does not draft a C&D until the user has seen the diligence and confirmed they still want to pick this fight.
-
-Collect and present — in one block, for user sign-off — the following:
-
-- **Legal entity** — exact corporate name, state/country of formation, registered agent, any `d/b/a` aliases. USPTO / EUIPO ownership records; state Secretary of State business search; public company filings if any. Flag `[SME VERIFY]` if the source is unconfirmed.
-- **Size and resources** — approximate headcount, revenue band if publicly known, funding if a startup, parent company if a subsidiary. Public sources (LinkedIn headcount, press, Crunchbase, SEC filings). Flag honestly if size can't be determined.
-- **IP portfolio** — do they hold registered marks, patents, or copyrights in adjacent classes? A counterparty with its own IP portfolio is more likely to (a) understand the posture, (b) counter-assert, and (c) file DJ. USPTO TESS / TSDR quick search on the accused entity and affiliates.
-- **Litigation history** — PACER / Court Listener quick pass for prior IP litigation as plaintiff or defendant. A repeat litigant or DJ-happy counterparty changes the calculus. Flag any prior C&D campaigns in the industry.
-- **Counsel** — do they have known outside IP counsel? Firm, lead partner if identifiable from prior filings. "No counsel on file" is itself a data point.
-- **DJ-plaintiff risk posture** — given size, IP portfolio, litigation history, counsel, and forum: is this a counterparty likely to welcome a C&D as an invitation to file DJ in a forum of their choosing? Flag high / medium / low with a one-sentence reason.
-- **Relationship risk** — are we a customer of theirs, do we share investors, are they a potential acquirer or partner? "Not a customer" confirmation pulled from the practice profile; anything else flagged.
-
-Present this as a short memo in-chat BEFORE the draft:
-
-```
-## Counterparty diligence — [Entity Name]
-
-- **Entity:** [name, state of formation, parent if any]
-- **Size:** [headcount band, revenue band, funding stage] — [source, `[SME VERIFY]` where applicable]
-- **IP portfolio:** [registered marks / patents / copyrights in adjacent classes — or "none found"]
-- **Litigation history:** [prior IP cases as plaintiff or defendant — or "none found in quick pass"]
-- **Counsel:** [known outside IP counsel — or "none identified"]
-- **DJ-plaintiff risk:** [high / medium / low — reasoning]
-- **Relationship risk:** [any customer / investor / partner / acquirer overlap — or "none identified"]
-
-**Automatic escalations this triggers** (per practice profile `## Enforcement posture` → Automatic escalations):
-- [list each trigger that this diligence surfaces]
-
-**Confirm before I draft:**
-- Do you want to proceed with a C&D against this counterparty, given the diligence above?
-- Any of the automatic escalations applicable? If yes, the approver named in the profile signs off before drafting, not after.
-```
-
-**Do not proceed to Step 6 (Draft) until the user has engaged with the diligence block.** A blank "ok" is worse than no confirmation — push back: "Before I draft — anything in the diligence that changes the calculus? Size, prior litigation, their counsel, relationship?"
-
-If diligence surfaces anything in the practice profile's automatic-escalation list (customer, bigger counterparty, patent matter, press-attracting, etc.), route to the named approver per the profile — do not draft on the reviewer's behalf until the approver has signed off on going forward.
-
-If critical diligence items cannot be answered (e.g., entity cannot be confirmed, size is unknown and the counterparty is not on any public register), say so and flag: "I can't confirm [entity / size / counsel] from available sources. Do you have this, or should we pause until a paralegal or OC runs the confirmation?"
-
-### Step 6: Draft
-
-Draft structure:
-
-1. **Sender / letterhead and date**
-2. **Recipient block**
-3. **Re: line** — concise, does not reveal privileged strategy. `Re: Unauthorized use of [MARK] (US Reg. No. [•])`
-4. **Opening** — identify the sender, the right, the registration (if any), and the fact of the letter
-5. **The right** — trademark: reg number, class, first-use date, registration status; copyright: registration number, title, year, work description; common-law: first-use date, geographic scope, evidence of acquired distinctiveness
-6. **The infringing conduct** — specific: who, what, where, when, evidence
-7. **The legal basis** — `[CITE: Lanham Act §32 / §43(a) / 17 U.S.C. §501 / state UCL / contract §]` as applicable
-8. **The demand** — numbered, specific, proportionate
-9. **The deadline** — calendar date, method of confirmation
-10. **Consequences of non-compliance** — calibrated to posture
-11. **Preservation demand** — documents, communications, metadata related to the accused conduct
-12. **Reservation of rights** — "without waiver of any claims or remedies, whether at law or in equity"
-13. **Signature block** — approver per practice profile
-
-**Drafting rules:**
-
-- **Specificity over adjectives.** Dates, URLs, reg numbers, samples. Adjectives are a draftsperson's tell that the facts are thin.
-- **No overbroad assertions.** If the mark is registered in one class and the accused use is in a different class, say so — don't pretend the registration covers both. Overbroad C&Ds are evidence of bad faith and can support §43(a)(1)(B) or Rule 11 exposure.
-- **Citations as placeholders unless verified.** `[CITE: Lanham Act §32, 15 U.S.C. §1114]` stays as a placeholder unless the user provided the cite or a research tool returned it. Tag every citation with source — `[Westlaw]`, `[user provided]`, `[model knowledge — verify]`, `[web search — verify]`. Never strip the tags.
-- **Consequence language matches posture.** Aggressive → specific relief threatened (injunction, statutory damages under 15 U.S.C. §1117 / 17 U.S.C. §504, attorneys' fees). Measured → "we reserve all rights." Conservative → "we'd like to discuss before considering further steps."
-- **Jurisdiction-specific hooks** — if US, watch for Anti-Cybersquatting (15 U.S.C. §1125(d)) for domain matters, §43(a) for unregistered marks, §504(c) for pre-registration timing. Non-US: flag the forum and note the draft may need foreign associate review.
-
-### Step 7: The loud gate before delivery
-
-Before presenting the draft in-chat or writing the .docx, display this gate verbatim. **The user must engage with it** — a blank acknowledgment is worse than no gate.
+### 第7步：发送前响亮关口
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  BEFORE THIS DRAFT GOES ANYWHERE                            │
+│  在此警告函到达任何地方之前                                  │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  This is a draft for attorney review — not a letter to      │
-│  send. Sending a cease-and-desist letter is an assertion    │
-│  of legal rights with real consequences:                    │
+│  这是供律师审核的草稿 — 非发送就绪的函件。发送侵权警告函    │
+│  是法律权利的主张，具有真实后果：                            │
 │                                                             │
-│  • It can trigger a declaratory judgment action in a        │
-│    jurisdiction of the recipient's choosing. A well-funded  │
-│    recipient can use a C&D as an invitation to pick a       │
-│    hostile forum.                                           │
+│  · 它可触发对收件人有利的管辖地的确认不侵权之诉。            │
+│    有资金的收件人可将警告函用作选择敌对管辖地的邀请。        │
 │                                                             │
-│  • Overbroad or bad-faith assertions can be used against    │
-│    the sender — §43(a)(1)(B) claims, Rule 11 sanctions,     │
-│    attorneys' fees under the Lanham Act / Copyright Act.    │
+│  · 过度或恶意的主张可被用于反制发送人 — 商业诋毁、           │
+│    不正当竞争、恶意诉讼等反制主张。                          │
 │                                                             │
-│  • It starts a dispute that may not settle cheaply.         │
+│  · 它启动了不一定能廉价和解的争议。                          │
 │                                                             │
-│  Confirm before the letter leaves:                          │
+│  函件发出前确认：                                          │
 │                                                             │
-│    1. The rights asserted are valid — registered (pulled    │
-│       from the register, not assumed) or solidly common     │
-│       law with evidence of acquired distinctiveness.        │
-│    2. The claim is colorable — a reasonable practitioner    │
-│       would make it on these facts.                         │
-│    3. The demand is proportionate — we are asking for       │
-│       relief the conduct warrants, not everything.          │
-│    4. Whoever has authority to start a fight has approved.  │
-│    5. Counterparty diligence (Step 5.5) was presented       │
-│       and confirmed — entity, size, IP portfolio, prior     │
-│       litigation, counsel, DJ-plaintiff risk, and           │
-│       relationship risk. Not conditional. Required.         │
+│    1. 所主张的权利有效 — 注册权利来自注册簿（非假设）。      │
+│    2. 主张有合理基础 — 理性的执业者在此事实上会作出主张。    │
+│    3. 诉求相称 — 我们要求的救济与行为相匹配。               │
+│    4. 有权启动争议的人已批准。                              │
+│    5. 对方当事人尽职调查（第5.5步）已呈现并确认。            │
 │                                                             │
-│  Approver per your practice profile: [approver name/role    │
-│  from Enforcement posture → Approval matrix → C&D row]      │
-│                                                             │
-│  Automatic escalations that apply here: [list any from the  │
-│  practice profile that this matter triggers — customer,     │
-│  bigger counterparty, patent, press-attracting, etc. —      │
-│  surfaced in Step 5.5 diligence]                            │
-│                                                             │
-│  Parallel-path status (marketplace conduct): [filed /       │
-│  queued / declined — from Step 4. "Not applicable" if       │
-│  conduct is not on a marketplace.]                          │
+│  审批人按你的实践档案：[审批人姓名/角色]                     │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-If the user is a non-lawyer (per `## Who's using this`), add:
+非律师用户附律师咨询提示。
 
-> Sending a C&D has legal consequences that go beyond the recipient's response — it is an affirmative assertion of rights that can be held against you. Have you reviewed this with an attorney? If not, here's a brief to bring to them: [generate a 1-page summary: parties, rights asserted, infringing conduct, demand, posture, risks flagged above, what could go wrong, specific questions for the attorney].
->
-> If you need to find a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction: your professional regulator's referral service is the fastest starting point (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent). The ABA IP section and state IP associations (US), CIPA/ITMA (UK), and equivalent bodies elsewhere maintain referral rosters for trademark and copyright practitioners.
+### 第8步：输出
 
-Do not write the .docx or mark the draft as ready without explicit engagement with the gate.
+写入事项文件夹或实践输出文件夹。使用 docx 技能。在聊天中以纯文本展示草稿供审核。
 
-### Step 8: Output
+---
 
-**Primary:** `<matter-folder>/cease-desist/<slug>/draft-v<N>.docx` (or `cease-desist/<slug>/draft-v<N>.docx` at practice level). Use the `docx` skill. Letter-formatted per the draft structure above. Strip the work-product header from the outgoing letter.
+## 接收模式 — 对收到的警告函进行分诊
 
-**In-chat:** show the draft as plain text for review before writing the .docx. Iterate before committing to disk.
+### 第1步：阅读来函
 
-**Reviewer-facing closing note** (appended to the in-chat preview only, stripped from the .docx):
+提取：发函人、收件人、送达方式和日期、被主张的权利、被指控的行为、法律依据（引用的法条）、
+诉求、威胁、语气。
 
-> This is a draft cease-and-desist letter for attorney review, not a letter ready to send. Sending it is an assertion of legal rights with the consequences described in the pre-delivery gate. A licensed attorney reviews, edits, and takes professional responsibility before sending. Do not send this draft unreviewed.
+### 第2步：评估主张
 
-**Citation verification.** Every `[CITE:___]` and every cite carried from a template or provided authority is unverified until run through a citator. Before sending, verify each cite is good law on a legal research platform. Fabricated or misquoted cites in sent assertion letters are professional responsibility exposure. Preserve the source-attribution tags — `[Westlaw]`, `[CourtListener]`, `[Descrybe]`, `[user provided]`, `[model knowledge — verify]`, `[web search — verify]` — tags flagged `verify` get checked first.
+- **权利有效性。** 被主张的注册存在且有效吗？（检查CNIPA商标公告、中国版权保护中心、
+  CNIPA专利公告——标注任何看起来休眠或无效的。）
+- **混淆/近似/侵权的合理性。** 在被指控的事实上，这是一个有合理依据的主张还是牵强？
+  商标：混淆可能性（商标法第57条）。著作权：接触+实质性相似。专利：全面覆盖原则+等同。
+  标注主张最弱的地方。
+- **是否过度。** 他们要求的超出了行为的正当范围？
+- **时限。** 诉讼时效（《民法典》第188条三年 `[法条原文]`）、权利时间线——标注函件表面的任何日期问题。
+- **管辖。** 他们会在哪里起诉？是否对我们有确认不侵权之诉的机会？
 
-**No silent supplement.** If a configured research tool returns few or no results for an authority the draft needs, report what was found and stop. Do NOT backfill from web search or model knowledge without asking. Present options — broaden the query, try a different tool, accept web search with tags, leave the placeholder — and let the user decide.
+### 第3步：评估我们的敞口
 
-**Post-send checklist.** After the draft is approved, write `<matter-folder>/cease-desist/<slug>/checklist.md` with: final read by approver, all `[VERIFY]` resolved, all `[CITE]` filled and verified, privilege markings stripped from the outgoing letter, approver signed, delivery method executed, proof of delivery retained, compliance deadline calendared, escalation plan if no response, matter created in `matters/` if not already.
+- **我们实际是否侵权？** 诚实的审视。
+- **能否轻松停止？** 合规成本 vs. 应战成本。
+- **发函人的可信度。** 职业维权人/真实权利主张人？
 
-## Receive mode — triaging the incoming C&D
+### 第4步：选项
 
-### Step 1: Read the letter
+**A — 快速合规** | 当主张有依据，合规成本低，不值得打。
+**B — 谈判** | 有中间地带的商业解决方案（许可、共存、更名时间表）。
+**C — 坚决回应（驳回）** | 当他们的主张弱、过度或事实错误。
+**D — 忽略（并保全）** | 当主张离谱，发函人无起诉能力。
+**E — 主动提起确认不侵权之诉** | 当面临真实商业不确定性，主张弱。
+**F — 申请宣告权利无效（商标无效/专利无效）** | 当他们的权利本身脆弱。
 
-Extract:
+以两句话理由推荐一个选项。
 
-- **Sender** — entity, signer, outside counsel if any
-- **Recipient** — which of our entities/people
-- **Delivery method and date**
-- **Asserted right** — trademark (reg number? jurisdiction?), copyright (registered? title?), both, something else
-- **Alleged conduct** — their version of what we're doing
-- **Legal basis** — statutes, contract provisions, theories cited
-- **Demand** — what they want; is the deadline stated?
-- **Threats** — what they say they'll do
-- **Tone** — firm / soft / scorched-earth; counsel signature usually signals seriousness
+### 第5步：期限分诊
 
-### Step 2: Assess the assertion
+- 他们声明的期限——注意，但不在法律上约束我们。
+- 我们的内部决策期限。
+- 法律期限——诉讼时效、合同约定的补救期。
 
-Not a legal opinion — a structured read:
+### 第6步：撰写分诊备忘录
 
-- **Rights validity.** Are the asserted registrations real and active? (Check USPTO TSDR, EUIPO eSearch, Copyright Office records — flag any that look dormant or not in force.) For common-law claims, what evidence do they actually cite?
-- **Plausibility of confusion / similarity / infringement.** On the facts as alleged, is this a colorable claim or is it stretching? For trademark: likelihood of confusion turns on multi-factor tests (Polaroid / AMF / Sleekcraft depending on circuit — `[SME VERIFY]` the forum's test). For copyright: access + substantial similarity. Flag where the claim looks weakest.
-- **Overbreadth.** Are they demanding more than the conduct warrants? (They want the mark transferred when registration would at most cover re-labeling? They want all sales when only one channel touched the right?) Overbroad demands weaken leverage and strengthen a §43(a)(1)(B) / unclean-hands counter.
-- **Timing.** Laches, statute of limitations, registration timing (for US copyright statutory damages) — flag any date issues on the face of the letter.
-- **Forum.** Where would they sue? Is the forum contractually fixed (most unlikely in a stranger IP dispute)? Is there a DJ opportunity for us?
+输出至事项文件夹。包含：主张摘要、权利有效性、引用的法律依据、合理性评估、我们的敞口、
+选项及推荐、期限、立即行动。
 
-### Step 3: Assess our exposure
+---
 
-- **Are we actually infringing?** Honest look. What does the record show?
-- **Could we stop easily?** Cost of compliance vs. cost of fight.
-- **Is the sender a troll or a real claimant?** Repeat-plaintiff? Known-willing-to-fight? Recent C&D campaign on comparable use? Check public dockets if time permits.
-- **What's at stake beyond this dispute?** Brand equity, customer relationships, precedent for similar inbound C&Ds.
+## 决策立场
 
-### Step 4: Options
+按实践档案中的决策立场：当不确定是否构成侵权、是否构成近似、是否系合理主张或发送是否
+安全时——不默认定其为安全。标注供律师审核，呈现各有利弊的因素，注明不确定。
+在假定基础上发送警告函是单行道；呈现疑虑是双行道。
 
-Present 4-5 options with tradeoffs:
+## 本技能不做的事
 
-**A — Comply quickly**
-- When: the claim is colorable, compliance is cheap, and the fight isn't worth it
-- Tradeoff: establishes a concession they may point to later; may embolden future assertions
-- Next step: confirm compliance in writing (narrow), do not concede broader theory
-
-**B — Negotiate**
-- When: there's a middle-ground business deal (license, coexistence, rebranding timeline) that resolves it
-- Tradeoff: commits time; requires care on settlement-communication posture (FRE 408 or state equivalent; protection attaches from substance and context, not labeling alone)
-- Next step: holding letter + opening negotiation track
-
-**C — Respond firmly (reject)**
-- When: their claim is weak, overbroad, or factually wrong; we want to close this down without litigating
-- Tradeoff: locks in a position; if the claim is in fact colorable, our response becomes an exhibit
-- Next step: draft a response letter — consider running it through `/ip-legal:cease-desist --send` reframed as a response
-
-**D — Ignore (and preserve)**
-- When: the claim is frivolous, the sender has no apparent capacity to sue, the deadline has no legal consequence
-- Tradeoff: silence can be used as non-denial in some contexts; legal hold required regardless; risk that filing follows
-- Next step: issue legal hold via matter-level process; log the demand; move on
-
-**E — Pre-empt with a DJ action or cancellation**
-- When: we face real business uncertainty, the claim is weak, and we benefit from our own forum
-- Tradeoff: we go on offense; budget and leadership sign-off required; now there's a lawsuit
-- Next step: escalate to outside counsel per practice profile, do not draft
-
-**F — File to cancel their mark (TTAB) or invalidate their copyright registration**
-- When: their rights themselves are vulnerable and we want to take the instrument off the board
-- Tradeoff: slow, expensive, public; separate from the dispute itself
-- Next step: escalate to outside counsel
-
-Recommend one with two sentences of rationale. Be specific about why.
-
-### Step 5: Deadline triage
-
-- Their stated deadline — note it, but it doesn't legally bind us (unless a specific statute gives it teeth).
-- Our internal decision deadline — typically stated deadline minus enough time to draft, review, and approve a response. Flag it on the calendar.
-- Legal deadlines — statute of limitations on any underlying claim, contractual cure periods, forum-specific timelines.
-
-Ignoring a stated deadline entirely is a choice, not a default. Note that filing usually follows silence, not the deadline date.
-
-### Step 6: Write the triage memo
-
-Output: `<matter-folder>/cease-desist/inbound/<slug>/triage.md` (or at practice level if matter workspaces are off).
-
-```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
-
-[PRIVILEGE INHERITANCE BLOCK — pick by role and matter type; see guidance below the template]
-
-# C&D Received — Triage
-
-> **READ FOR TRIAGE, NOT OPINION.** This is an intake scan and options analysis — not a legal merit opinion. The assessment below is a structured read to support counsel's decision on routing and response. Every cited statute, rule, or case is flagged for SME verification; every merit call is the counsel's, not this skill's.
-
-**Slug:** [slug]
-**Received:** [YYYY-MM-DD]
-**Received by:** [entity / person]
-**Incoming file:** [path]
-
-## The assertion
-
-**Sender:** [entity, signer, counsel]
-**Asserted right:** [trademark / copyright / both — with specifics, reg numbers, jurisdictions]
-**Alleged conduct:** [their version, one paragraph]
-**Demand:** [list — specific asks]
-**Their stated deadline:** [date]
-**Tone:** [firm / soft / scorched-earth]
-
-## Rights validity
-
-[Registrations as asserted — `[SME VERIFY]` against the register; common-law claims evaluated against the evidence cited]
-
-## Legal basis cited
-
-[Each citation inline-tagged with `[SME VERIFY: applicability / currency / jurisdiction]` and source `[Westlaw / user provided / model knowledge — verify / web search — verify]`. Do not rely on any citation here without independent check.]
-
-## Plausibility assessment
-
-- **Confusion / similarity / infringement on the facts:** [read]
-- **Overbreadth:** [read]
-- **Timing issues (laches, SoL, registration timing):** [read]
-- **Forum:** [their likely forum; DJ opportunity]
-
-## Our exposure
-
-- **Actually infringing?** [honest look]
-- **Cost of compliance vs. cost of fight:** [read]
-- **Sender credibility:** [troll / real claimant / repeat plaintiff — with any public-docket evidence]
-- **Collateral stakes:** [brand, customers, precedent]
-
-**Triage rating:** [substantial / debatable / weak / frivolous] — *structured read for routing, not a merit opinion; `[SME VERIFY]`*
-
-## Options
-
-### A. Comply quickly
-[Rationale, tradeoffs, next step]
-
-### B. Negotiate
-[Rationale, tradeoffs, next step]
-
-### C. Respond firmly
-[Rationale, tradeoffs, next step]
-
-### D. Ignore + preserve
-[Rationale, tradeoffs, next step]
-
-### E. Pre-empt (DJ)
-[Rationale, tradeoffs, next step]
-
-### F. File to cancel / invalidate
-[Rationale, tradeoffs, next step]
-
-**Recommendation:** [A/B/C/D/E/F] — [two sentences why] — `[SME VERIFY: counsel to confirm before executing]`
-
-## Deadlines
-
-- **Their stated deadline:** [date]
-- **Our internal decision deadline:** [date]
-- **Legal deadlines on any underlying claim:** [SoL, cure, procedural — with dates]
-
-## Immediate actions
-
-- [ ] Legal hold issued — [yes/no]
-- [ ] Matter created in log — [yes/no/TBD]
-- [ ] Counsel assigned — [who]
-- [ ] Insurance tendered — [yes/no/N-A]
-- [ ] Internal escalation — [who/when]
-```
-
-**Privilege inheritance block — pick by role and matter type.** Read `## Who's using this` (Role) in the plugin config and the matter type (trademark / copyright / patent / OSS / other). This triage records a first-pass merit read on an adverse assertion; whether it's actually privileged depends on who prepared it and what it's about. Getting this wrong in either direction is harmful — a false "privileged" marking creates a discoverable admission that reads as a concession; under-marking a genuinely privileged memo can waive the protection. Insert exactly one of the following:
-
-- **Role = Lawyer / legal professional:**
-  > **Privilege inheritance.** This triage records our first-pass merit read and response posture on an adverse assertion. It is attorney-client and/or work-product material. Do not forward, attach to an insurance tender without scrubbing, or share with counterparty. Store with privileged matter material and mark per house privilege conventions.
-
-- **Role = Registered patent agent, matter is a patent matter before the USPTO:**
-  > **Privilege (patent agent-client).** This triage is privileged under the federal patent agent-client privilege recognized in *In re Queen's University at Kingston*, 820 F.3d 1287 (Fed. Cir. 2016), because it relates to a matter reasonably necessary and incident to the prosecution of patents before the USPTO. That privilege is narrow: it does not extend to matters outside USPTO practice. Do not forward, attach to an insurance tender without scrubbing, or share with counterparty. Bring to supervising counsel for matter-specific privilege decisions.
-
-- **Role = Registered patent agent, matter is NOT a patent matter** (trademark, copyright, OSS, trade secret, contract, or anything else outside USPTO practice):
-  > **CONFIDENTIAL — NOT PRIVILEGED.** This triage is not privileged because a registered patent agent's privilege is limited to patent prosecution before the USPTO (*In re Queen's University at Kingston*, 820 F.3d 1287 (Fed. Cir. 2016)). A trademark, copyright, OSS, or other non-patent matter falls outside that privilege. Treat this document as confidential, store it with care, bring it to counsel, and let counsel mark it. Do not forward it as a privileged document.
-
-- **Role = Non-lawyer and not a registered patent agent:**
-  > **CONFIDENTIAL — NOT PRIVILEGED.** This document is not privileged unless and until reviewed by a licensed attorney. Treat it as confidential; do not forward to anyone outside the legal review chain; bring it to counsel and let counsel mark it. Forwarding this document as "privileged" before an attorney reviews it does not make it so and can harm you if the matter becomes contested.
-
-Close the in-chat presentation with this guardrail verbatim:
-
-> This is a triage memo, not advice. The strength assessment above is a first read based on the letter alone — it does not account for facts you haven't told me, registrations I can't verify, or jurisdictional issues. An attorney evaluates before you respond, decide to ignore, or commit to a path.
-
-If the user is a non-lawyer, add the "find-an-attorney" routing paragraph from send mode.
-
-### Step 7: Hand off
-
-Based on the recommendation and user confirmation:
-
-- Respond firmly → hand off to `/ip-legal:cease-desist --send` with context pre-populated as a response letter (this triggers the send-mode gate anew).
-- Negotiate → start a holding letter / negotiation track in the matter.
-- Pre-empt or file to cancel → escalate to outside counsel per the practice profile's IP litigation row; do not draft.
-- Matter creation → if there isn't one and the matter is material, offer `/ip-legal:matter-workspace new <slug>` pre-populated.
-- Comply / ignore → log the decision in the matter history; issue or confirm the legal hold; close the triage record.
-
-## Decision posture
-
-Per `## Decision posture on subjective legal calls` in the practice profile: when uncertain whether there is infringement, whether a mark is confusingly similar, whether a work is substantially similar, whether a claim is colorable, or whether sending is safe — do not silently decide it's fine. Flag for attorney review, surface the factors cutting both ways, note the uncertainty. Sending a C&D on an assumption is a one-way door; surfacing doubt is a two-way door.
-
-## What this skill does not do
-
-- **Send the letter.** Drafting only. The user sends, after approval.
-- **Research citations.** Placeholders stay as placeholders unless the user provides authorities or a connected research tool returns them. Inventing cites is professional responsibility exposure.
-- **Bypass the gate.** The send-mode gate runs every time. Even with an `--skip-gate` flag (none is provided), the skill would log the skip in the draft file.
-- **Decide merit definitively on the receive side.** The rating is a structured read for routing; a formal merit opinion lives with counsel.
-- **Validate the sender's cited law.** Flags for the user; does not autonomously call a claim valid or invalid.
-- **Make the matter-creation call.** Surfaces the recommendation; user decides.
+- **发送函件。** 仅起草。用户经审批后发送。
+- **研究引用。** 占位符保持为占位符，除非用户提供依据或连接的检索工具返回。
+- **绕过关口。** 发送模式关口每次运行。
+- **在接收侧对实质问题做终局判断。** 评级是结构化阅读供路由；正式实质意见由律师作出。
+- **不验证发函人引用的法律。** 标注供用户；不自行判断主张有效或无效。

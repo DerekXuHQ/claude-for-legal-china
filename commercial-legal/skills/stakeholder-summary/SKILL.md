@@ -1,192 +1,103 @@
 ---
 name: stakeholder-summary
 description: >
-  Translates a contract review into a summary the business stakeholder will
-  actually read. Not a legal memo — a two-minute answer to "can I sign this
-  and what do I need to know." Use when user says "summarize for the business",
-  "write this up for [stakeholder]", "explain this to procurement", "non-legal
-  summary", or when a review is done and needs to go to someone outside legal.
+  将合同审查转化为业务利益方实际会阅读的摘要。不是法律备忘录——是对
+  "能签吗？需要知道什么？"的两分钟回答。当用户说"给业务部门总结一下"
+  "写给[利益方]"解释给采购""非法务摘要"或审查完成后需要发送给法务以外的人时使用。
 ---
 
-# Stakeholder Summary
+# 利益方摘要
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/commercial-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/commercial-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查业务领域级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`，跳过本段。
 
 ---
 
-## Destination check
+## 发送对象检查
 
-Before producing output, check where it's going. If the user has named a destination (a channel, a distribution list, a counterparty, "everyone"), ask whether it's inside the privilege circle. Public channels, company-wide lists, counterparty/opposing counsel, vendors, and clients (for work product) waive the protection. When the destination looks outside the circle, flag it and offer (a) the privileged version for legal only, (b) a sanitized version for the broader channel, or (c) both — don't silently apply a privileged header and then help paste it somewhere the header won't protect it. See the canonical `## Shared guardrails → Destination check` in this plugin's CLAUDE.md.
+生成输出前检查发送对象。当发送对象在保密特权圈外时，标注并给出保密版本或脱敏版本。
 
-## Purpose
+## 目的
 
-The business owner who asked for this contract doesn't want a legal memo. They want to know: can I sign it, what's the catch, and what do I need to do. This skill takes a completed review and turns it into that.
+要签这份合同的业务负责人不想要法律备忘录。他们想知道：能签吗？有什么坑？需要我做什么？本技能将完成的审查转化为这样的回答。
 
-## Which side?
+## 哪一方？
 
-The underlying review memo was run against either the sales-side or the purchasing-side playbook. Carry that framing through. A purchasing-side summary tells the business owner "here's what we're getting and what we agreed to give up"; a sales-side summary tells them "here's what we're selling and what we're on the hook for." Check which side the review was run on (it should be noted at the top of the review memo) and match the voice. If it's not obvious from the memo, ask the lawyer before summarizing.
+底层审查备忘录是针对销售方还是采购方审查指引运行的。相应延续该框架。采购方摘要告诉业务负责人"我们能得到什么以及同意放弃什么"；销售方摘要告诉他们"我们卖的什么以及需要承担什么义务"。
 
-## Audience calibration
+## 受众校准
 
-Read `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md` → `## House style` → who reads stakeholder summaries, how long should they be. If not specified, default to: procurement or a department head, two paragraphs max, no legal terms of art.
+不同的受众需要不同的摘要：
 
-Different audiences need different summaries:
-
-| Audience | Cares about | Doesn't care about |
+| 受众 | 关心 | 不关心 |
 |---|---|---|
-| **Procurement** | Price, renewal mechanics, approval routing | Liability cap structure |
-| **Department head (budget owner)** | Can their team use it, what happens if it breaks, cost | Indemnity scope |
-| **Finance** | Total cost of ownership, renewal price risk, off-balance-sheet commitments | Governing law |
-| **Security / IT** | Data handling, subprocessors, SOC 2, where data lives | Everything else |
-| **Executive sponsor** | Is this going to embarrass us, is legal a blocker | Details |
+| **采购** | 价格、续约机制、审批路由 | 责任上限结构 |
+| **部门负责人（预算持有人）** | 团队能否使用、坏了怎么办、成本 | 赔偿范围 |
+| **财务** | 总持有成本、续约价格风险 | 管辖法律 |
+| **安全/IT** | 数据处理、再处理者、安全认证、数据存放在哪里 | 其他一切 |
+| **发起高管** | 这会不会让我们难堪、法务是否阻碍 | 细节 |
 
-Ask who this is for if it's not obvious from context.
+如果不清楚，询问这是给谁的。
 
-## The summary
+## 摘要
 
-### Length cap — enforced
+### 篇幅上限——强制执行
 
-The summary is:
-- **One paragraph** for the verdict and what this is (business terms, plain English)
-- **One paragraph** for the catch — the thing the stakeholder would be surprised by later if nobody told them now
-- **A 2-3 item checklist** for what the stakeholder actually needs to do (at most three items; if you want a fourth, the first three aren't tight enough)
-- **A one-line close** with approval timing
+摘要为：
+- **一段** 给出结论和这是什么的说明（商业用语）
+- **一段** 说明需要注意的地方
+- **2-3项清单** 列出利益方实际需要做的事
+- **一行收尾** 附审批时间
 
-**Under 200 words total.** If you're writing more, you're including detail the stakeholder doesn't need — they have the memo for that. This is the quick read before the stakeholder hits reply.
+**总计不超过200字。** 如果超过，说明你包含了利益方不需要的细节。
 
-If the close needs a third paragraph, fold it into the checklist instead. Don't let the close grow into a fourth block.
-
-### Scope of quote — discipline
-
-When quoting a contract clause (in the summary, in the "catch" paragraph, or in the checklist), quote the **full conditional sentence**, not a truncated version. A clause that reads "Except as expressly provided in the Order Form, renewal of promotional or one-time priced subscriptions resets to list price" means something different from "renewal resets to list price" — the truncation drops the condition and misrepresents what the term does.
-
-If a full conditional quote doesn't fit the summary's length cap, paraphrase rather than truncate. "For promotional pricing, renewal resets to list" is a fair paraphrase; "renewal resets to list" is not — it promotes the exception to the rule.
-
-### Format
-
-Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md` `## Outputs` (it differs by user role — see `## Who's using this`).
+### 格式
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
-<!-- Remove the header above if forwarding outside the legal-privileged circle (e.g., to a business stakeholder, counterparty, or vendor). Confirm the correct marking for your jurisdiction and matter before forwarding. -->
+[工作成果文件头 — 按插件配置 ## 输出]
 
-**[Counterparty] [Agreement type]** — [READY TO SIGN | NEEDS CHANGES | BLOCKED]
+**[对方当事人] [协议类型]** — [可以签字 | 需要变更 | 受阻]
 
-[One paragraph: what this agreement does, in business terms. Not "Master Services
-Agreement for the provision of cloud-based analytics" — "this is the contract
-for the dashboard tool the marketing team wants."]
+[一段：本协议在商业用语中是什么。不是"提供基于云的分析平台主服务协议"——而是"这是市场团队想要的仪表盘工具的合同。"]
 
-[One paragraph: what the stakeholder needs to know. The catch, if there is one.
-The thing that will surprise them later if nobody tells them now. E.g., "Heads
-up: this auto-renews every year and we have to cancel 60 days out. I've added
-it to the tracker but you should know." Or: "Clean agreement, no surprises,
-cleared to sign."]
+[一段：利益方需要知道的事。如果有需要注意的地方——"注意：每年自动续约，必须在到期60天前取消。已加入追踪器，但你应该知道。"或者："干净的协议，无意外，可以签字。"]
 
-<!-- Do not claim "I've added it to the tracker" unless `renewal-tracker` has
-actually been run for this contract — see Verify tracker entries before
-asserting them below. -->
+**你需要做的：**
+- [ ] [操作事项]
 
-**Verify tracker entries before asserting them.** Before the summary says "I've added it to the tracker" (or any equivalent — "it's in the tracker," "tracked," "set a reminder"), verify that `renewal-tracker` has been run for this contract. Check the outputs folder or the matter folder for a `renewal-tracker` output that names this counterparty / agreement. If there isn't one:
-
-- Either run `renewal-tracker` for this contract first, then write the summary.
-- Or write the summary without asserting the tracker entry, and include an action item: "Add to renewal tracker — not yet done."
-
-Claiming a tracker entry exists when it does not is worse than omitting the reassurance. The stakeholder then trusts the reminder that will never fire. If the truthful statement is "tracked," the skill runs the tracker. If it's "you should add this to your calendar — I haven't logged it," say that.
-
-**What you need to do:**
-- [ ] [Action item, if any — "confirm the team is okay with data living in EU"
-  or "nothing — I'll route for signature"]
-
-**Approval:** [who's approving and expected timing]
+**审批：** [谁在审批及预期时间]
 ```
 
-### What to translate
+### 转化参考
 
-| Legal finding | Business translation |
+| 法律发现 | 商业转化 |
 |---|---|
-| "Liability capped at 12 months fees" | "If they break something, the most we can recover is a year's worth of what we paid them." |
-| "No termination for convenience" | "Once we sign, we're locked in for the full term — we can't just cancel if we stop using it." |
-| "Auto-renewal with 60-day notice" | "This renews automatically every year. To cancel, we have to tell them two months before the renewal date." |
-| "No IP indemnity" | "If someone sues us claiming this tool infringes their patent, the vendor isn't on the hook to defend us." |
-| "Subprocessor list not disclosed" | "We don't know what other companies will have access to our data through them." |
-| "Data deletion within 30 days of termination" | "When we cancel, they delete our data within a month. Export anything you need before then." |
-| "SLA credits capped at 10% of monthly fee" | "If the service goes down, we get a small credit back. It won't cover the cost of the downtime to the business." |
+| "责任上限为12个月费用" | "如果他们出问题，我们能追回最多一年付给他们的钱。" |
+| "无任意解除权" | "一旦签了，整个期限内都被锁定——不能用就停用是不能直接取消的。" |
+| "60天通知自动续约" | "每年自动续约。要取消须在续约日前两个月通知他们。" |
+| "无知识产权赔偿" | "如果有人告我们这工具侵犯了他们的专利，供应商不兜底。" |
+| "未披露再处理者名单" | "我们不知道哪些其他公司会通过他们接触到我们的数据。" |
+| "终止后30天内数据删除" | "取消时他们一个月内删除数据。之前需要导出任何你需要的内容。" |
+| "SLA积分上限为月费10%" | "服务宕机了我们拿到一点点积分。远远不能覆盖宕机对业务的损失。" |
 
-### What NOT to include
+### 不包含什么
 
-- Section numbers
-- Defined terms in quotes
-- The word "indemnification" (say "they cover us if" / "we cover them if")
-- The word "notwithstanding"
-- Risk matrices with colored dots (unless this stakeholder has specifically asked for them before)
-- Caveats about how this isn't legal advice — the stakeholder knows who sent it
+- 条款编号
+- 带引号的定义术语
+- "赔偿"这个词（说"他们兜底我们"）
+- "尽管有"这个词
+- 带颜色圆点的风险矩阵
+- 关于这不构成法律意见的保留说明
 
-## When the review found problems
+## 交接
 
-If the review has 🔴 or 🟠 issues, the summary still needs to be two paragraphs — but the second paragraph is "here's what we're pushing back on and why."
+**来自供应商协议审查/SaaS审查：** 这些技能产出完整备忘录。本技能读取备忘录并压缩。
 
-```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
-<!-- Remove the header above if forwarding outside the legal-privileged circle. -->
+**至利益方：** 通过审查指引中指定的频道发送。
 
-**[Counterparty] [Agreement type]** — NEEDS CHANGES
+## 语气说明
 
-[What it is, one paragraph.]
+利益方记住关于法务的两件事：是否阻碍了我，是否讲清楚了。本技能是法务如何讲清楚。写得像在咖啡旁向聪明同事解释一样。
 
-We're going back to them on [N] things before this is ready. The main one:
-[the critical issue in plain English — "they want the right to use our data
-to improve their product, which means our competitors' instance gets smarter
-from our data"]. We've asked them to strike it. [Realistic assessment: "They'll
-probably agree" / "This might be a sticking point — will keep you posted."]
-
-**What you need to do:**
-- [ ] Nothing yet — I'll let you know when it's back from them.
-  OR
-- [ ] [Business decision they need to make: "If they won't budge on X, are you
-  okay with Y, or do we walk?"]
-```
-
-## Handoffs
-
-**From vendor-agreement-review / saas-msa-review:** Those skills produce the full memo. This skill reads the memo and compresses it. Don't re-review the contract — read the review.
-
-**To the stakeholder:** Via whatever channel `~/.claude/plugins/config/claude-for-legal/commercial-legal/CLAUDE.md` says. If Slack, keep it under 150 words. If email, the format above is fine as-is.
-
-## Escalation-fan-out reconciliation
-
-The upstream review is a one-to-many producer: it can name five escalation targets (Deputy GC, CISO, Privacy Officer, CFO, business owner) across different findings. `escalation-flagger` routes one finding at a time. Without a reconciliation step, the Deputy GC sees the memo and the other four approvers never do.
-
-Before producing the summary, read the upstream review memo and tally escalations:
-
-1. **Count the escalation targets the review named.** Look for the routing / escalation block at the end of the review, or for per-finding "escalate to [X]" tags. De-dupe by approver name — a reviewer named for two findings counts once.
-2. **Count the escalations actually routed.** Read the review folder (or matter folder) for `escalation-*.md` drafts produced by `escalation-flagger` since the review was written. Each draft names one approver.
-3. **Reconcile.** If N approvers were named and M drafts exist, (N − M) escalations have not been routed.
-
-Include a short reconciliation block in the summary — above the checklist, below the catch paragraph:
-
-```markdown
-**Escalation status:** [M] of [N] escalation targets routed. The following have not been routed and require action:
-- [Approver name] — [one line on the finding that named them]
-- [Approver name] — [one line]
-```
-
-If all N have been routed:
-```markdown
-**Escalation status:** [N] of [N] escalation targets routed.
-```
-
-If the upstream review surfaced no escalations, omit the block.
-
-**Do not omit a named approver from the reconciliation because the stakeholder wouldn't recognize the name.** Business stakeholders often do not know who the Privacy Officer or CISO is. The reconciliation is internal-facing — it tells the lawyer sending the summary whether all the routing is done, not the stakeholder. If the stakeholder-facing summary needs to stay narrow, the reconciliation can live in a "routing status" footer or attached note — but it has to exist. A summary that implies routing is complete when it is not is worse than no summary.
-
-**Word-count carve-out.** The escalation reconciliation block is exempt from the 200-word cap. Length-cap discipline on the summary body stays; the reconciliation is housekeeping, not narrative.
-
-**When no escalation-flagger drafts exist.** If the upstream review named approvers and no drafts are in the folder, treat the count as M = 0. The reconciliation block lists all N as unrouted. That is the finding.
-
-## A note on tone
-
-Stakeholders remember two things about legal: did it block me, and did it make sense. This skill is how legal makes sense. Write like you're explaining it to a smart colleague over coffee, not like you're writing a memo to file.
-
-If the honest summary is "this is fine, sign it," say that. Don't pad a clean review into three paragraphs to look thorough.
+如果诚实的摘要是"没问题，签吧"，就这样说。不要把干净的审查写成三段来显得详尽。

@@ -1,20 +1,19 @@
 ---
 name: ramp
 description: >
-  Student semester onboarding — clinic procedures, tool walkthrough, practice
-  exercises before real cases. Reads the handbook the professor uploaded at
-  setup and teaches it interactively. Use when a new clinic student says
-  "onboard me", "I'm new to the clinic", "getting started", or at the start of
-  each semester; pass --card for the one-page reference.
-argument-hint: "[--card for the one-page reference]"
+  学生学期导入——诊所程序、工具导览、真实案件之前的实践练习。
+  读取指导老师在设置时上传的手册并以互动方式教学。
+  当新诊所学生说"帮我导入""我是诊所新人""开始"，或每学期开始时使用；
+  传入 --card 获取一页参考卡。
+argument-hint: "[--card 生成一页参考卡]"
 ---
 
 # /ramp
 
-1. Check `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` is set up. If placeholders: "Ask [professor] to run `/legal-clinic:cold-start-interview` first."
-2. Use the walkthrough below.
-3. Walk through: clinic context (from handbook) → commands → practice exercises (fake intake, practice draft, research roadmap) → verification habits.
-4. `--card`: generate the one-page reference card.
+1. 检查 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 是否已设置。如有占位符："请[指导老师]先运行 `/legal-clinic:cold-start-interview`。"
+2. 使用以下导览。
+3. 逐步讲解：诊所背景（来自手册）→ 命令 → 实践练习（模拟接待、练习起草、检索路线图）→ 核实习惯。
+4. `--card`：生成一页参考卡。
 
 ```
 /legal-clinic:ramp
@@ -26,111 +25,111 @@ argument-hint: "[--card for the one-page reference]"
 
 ---
 
-# Ramp: Semester Onboarding
+# Ramp：学期导入
 
-## Purpose
+## 目的
 
-Every semester, the clinic loses its entire workforce and rebuilds from scratch. New students need to learn procedures, case management, filing conventions, and practice-area basics before they're useful. Traditionally that takes weeks of reading PDFs and asking the professor the same questions every semester.
+每学期诊所失去其全部劳动力并从头重建。新学生需要学习程序、案件管理、提交规范和基本实践领域知识才能发挥作用。传统上这需要数周阅读 PDF 和每学期向指导老师问同样的问题。
 
-This skill is the guided walkthrough. It reads what the professor uploaded during cold-start — the handbook, the filing guides, the local rules — and teaches it interactively, with practice exercises so students try the tools in a low-stakes setting before a real client is on the line.
+本技能是引导式导览。它读取指导老师在冷启动时上传的内容——手册、提交指南、本地规则——并以互动方式教学，附实践练习让学生在真实当事人在线之前以低风险方式尝试工具。
 
-**Audience: students.** Professors don't run this (they run `/cold-start-interview`).
+**受众：学生。** 指导老师不运行此技能（他们运行 `/cold-start-interview`）。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → clinic profile, practice areas, jurisdiction, handbook path, supervision style, practice-area templates.
+`~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 诊所画像、实践领域、管辖地、手册路径、指导风格、实践领域模板。
 
-If that file is missing or still has placeholders: "The clinic hasn't been set up yet. Ask [supervising professor] to run `/cold-start-interview` first."
+如果该文件缺失或仍有占位符："诊所尚未设置。请[指导老师]先运行 `/cold-start-interview`。"
 
-## The walkthrough
+## 导览
 
-### Opening
+### 开场
 
-> Welcome to [clinic name]. I'm going to walk you through how this clinic works and how to use these tools — about twenty minutes, and you can pause anytime. By the end you'll have run a practice intake, drafted a practice document, and you'll know what to do when you get your first real case.
+> 欢迎来到[诊所名称]。我将带你了解这家诊所如何运作以及如何使用这些工具——大约二十分钟，你可以随时暂停。结束时你将完成一次模拟接待、起草一份练习文件，并知道当你接到第一个真实案件时该做什么。
 >
-> One thing up front: everything I generate is a starting point, not a final answer. You do the analysis. [Professor] reviews your work [per supervision style]. I handle the formatting and the first draft so you spend your time on the lawyering, not on writing "Dear Judge" for the twentieth time.
+> 一件事先说：我生成的一切都是起手点，不是最终答案。你做分析。[指导老师]按[指导风格]审查你的工作。我处理格式和初稿，让你把时间花在法律实务上，而不是第二十次写"尊敬的法官"。
 
-### Part 1: This clinic (5 min)
+### 第1部分：这家诊所（5分钟）
 
-Read from `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` and the ingested handbook. Cover, interactively:
+从 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 和已收录的手册中读取。以互动方式涵盖：
 
-- **Practice areas** — what the clinic handles, what it doesn't (and where to refer if someone walks in with an out-of-scope issue)
-- **Clients** — who they are, what they're facing, languages
-- **Jurisdiction** — which courts, which judges, what the local quirks are
-- **Case management** — how cases are tracked, where files live, what a well-documented case looks like
-- **Supervision** — how review works in this clinic (per the supervision style in CLAUDE.md). Be specific: "Before anything goes to a client or a court, [it goes in the review queue / you check with Professor X / etc.]"
+- **实践领域** — 诊所处理什么，不处理什么（以及当有人带着超出范围的问题来时该向哪里转介）
+- **当事人群体** — 他们是谁，面临什么，使用的语言
+- **管辖地** — 哪些法院，哪些法官，本地特殊规则
+- **案件管理** — 案件如何跟踪，文件存放何处，一个文档齐全的案件是什么样
+- **指导流程** — 本诊所的审查如何运作（按 CLAUDE.md 中的指导风格）。具体说明："在内容发给当事人或法院之前，[它进入审查队列 / 你与指导老师X确认 / 等]"
 
-Don't lecture — check understanding. "So if a client comes in with an eviction notice but also mentions they're undocumented, what do you do?" (Answer: both issues get noted in intake; the immigration question may need a referral or a flag to the professor, depending on the clinic's scope.)
+不要讲课——检查理解。"所以如果有当事人带着一份驱逐通知进来，但同时提到她没有合法身份，你怎么办？"（答案：两个问题都在接待中标注；身份问题可能需要转介或标记给指导老师，取决于诊所范围。）
 
-### Part 2: The commands (5 min)
+### 第2部分：命令（5分钟）
 
-Walk through each command the student will actually use:
+逐一讲解学生实际会使用的每个命令：
 
-| Command | When you use it | What you get |
+| 命令 | 何时使用 | 你获得什么 |
 |---|---|---|
-| `/client-intake` | Client interview | Formatted case summary with issues spotted, conflict flags, triage |
-| `/draft [doc type]` | Need a first draft of a common document | Practice-area template filled from case notes — *starting point, not final* |
-| `/memo` | Need to analyze a case internally | IRAC-format memo with research gaps flagged |
-| `/research-start [issue]` | Starting legal research | Roadmap: statutes to check, case law areas, search terms — *leads, not authoritative cites* |
-| `/status [audience]` | Updating someone on a case | Summary tailored to client / professor / court |
-| `/client-letter [type]` | Routine correspondence | Appointment confirm, doc request, status update from templates |
+| `/client-intake` | 当事人访谈 | 附问题识别、冲突标记、分类的格式化案件摘要 |
+| `/draft [文件类型]` | 需要常见文件的初稿 | 从案件笔记填充的实践领域模板——*起手点，非最终稿* |
+| `/memo` | 需要内部分析案件 | IRAC 格式备忘录，附标注的检索缺口 |
+| `/research-start [问题]` | 开始法律检索 | 路线图：需查阅的法条、案例法领域、检索词——*线索，非权威引注* |
+| `/status [受众]` | 更新某人的案件状态 | 针对当事人 / 指导老师 / 法院定制的摘要 |
+| `/client-letter [类型]` | 常规信函 | 预约确认、文件索取、从模板生成的状态更新 |
 
-For each: what it does, what it explicitly doesn't do, what the student verifies before relying on it.
+每个：它做什么，它明确不做什么，学生在依赖前核实什么。
 
-### Part 3: Practice exercises (8-10 min)
+### 第3部分：实践练习（8-10分钟）
 
-**Low-stakes. Fake client. Real tools.**
+**低风险。模拟当事人。真实工具。**
 
-**Exercise 1 — Practice intake:**
-> Here's a fake client scenario: [practice-area-appropriate hypo — e.g., for a housing clinic, "Maria got a 3-day notice to quit last Tuesday. She's two months behind on rent after losing her job. The apartment has had a broken heater since November. She has two kids."]
+**练习1 — 模拟接待：**
+> 这里是一个模拟当事人场景：[适合实践领域的假设——如劳动争议诊所用"张某，在某公司工作三年未签劳动合同，上月被口头辞退，未支付经济补偿金。他有工资银行流水和微信聊天记录。"]
 >
-> Run `/client-intake` and interview me as if I'm Maria. I'll answer as Maria would. At the end, look at the case summary it produces — what issues did it spot? Did it catch the habitability defense?
+> 运行 `/client-intake` 并把我当作张先生。我将以张先生的身份回答。最后，看看它生成的案件摘要——它识别出哪些问题？它捕捉到未签劳动合同的双倍工资问题了吗？
 
-Debrief: what the intake caught, what the *student* should have probed deeper on, what gets flagged for the professor.
+讲评：接待捕捉了什么，*学生*本应在哪些方面深入追问，什么标记给指导老师。
 
-**Exercise 2 — Practice draft:**
-> Using Maria's intake, run `/draft eviction-answer`. You'll get a first draft.
+**练习2 — 练习起草：**
+> 用张某的接待记录，运行 `/draft 劳动仲裁申请书`。你将获得初稿。
 >
-> Read it. What's right about it? What's wrong? What would you change before showing it to [Professor]?
+> 读它。哪里对？哪里错？在给[指导老师]看之前你会改什么？
 
-The point: the draft is competent but not final. The student learns to read critically, not accept.
+要点：草稿是合格的但非最终的。学生学习批判性阅读，而非接受。
 
-**Exercise 3 — Research roadmap:**
-> Run `/research-start "habitability defense to eviction in [state]"`. You'll get a roadmap — statutes, case law areas, search terms.
+**练习3 — 检索路线图：**
+> 运行 `/research-start "[省份]劳动争议中未签劳动合同的双倍工资差额"`。你将获得路线图——法条、案例法领域、检索词。
 >
-> None of those citations are verified. That's on purpose. Pick one statute from the roadmap and tell me how you'd verify it's current and applies here.
+> 那些引注全部未经核实。这是故意的。从路线图中选一个法条，告诉我你如何核实它是现行有效的并在此适用。
 
-The point: `/research-start` is a starting place, not a citation. The student still does the research.
+要点：`/research-start` 是起手点，不是引注。学生仍做检索工作。
 
-### Part 4: Verification habits (2 min)
+### 第4部分：核实习惯（2分钟）
 
-The habits that matter:
+重要的习惯：
 
-- **Every output is a starting point.** If it went to a client or a court without you reading it critically, something went wrong.
-- **Verify every citation** before it goes in anything. `/research-start` gives leads, not authorities.
-- **Check jurisdiction-specific details.** The plugin knows your state from setup, but local court quirks change — double-check against current local rules.
-- **When uncertain, it says so.** If an output has a `[UNCERTAIN: ...]` flag, that's a prompt to research or ask the professor, not to delete the flag and move on.
-- **[Supervision reminder per CLAUDE.md style]** — what gets reviewed before it goes out, and how.
+- **每个产出都是起手点。** 如果它在未经你批判性阅读的情况下发给当事人或法院，就有问题。
+- **核实每条引注** 在它进入任何内容之前。`/research-start` 给的是线索，不是权威。
+- **检查管辖地特定细节。** 插件从设置中知道你的省份，但本地法院的特殊规则会变——对照现行本地规则再次确认。
+- **当不确定时，它说出来。** 如果某输出中有 `[不确定：...]` 标记，那是提示去检索或问指导老师，不是删除标记然后继续。
+- **[按 CLAUDE.md 风格的指导提醒]** — 在发出前什么需要审查，以及如何审查。
 
-### Closing
+### 结语
 
-> That's it. You've run an intake, drafted a document, and built a research roadmap. Your first real case will feel similar, except the client is real and the professor is reading your work.
+> 就这些。你完成了一次接待、起草了一份文件、构建了一份检索路线图。你的第一个真实案件会感觉类似，除了当事人是真实的，指导老师在阅读你的工作。
 >
-> The one-page reference card: `/ramp --card`
+> 一页参考卡：`/ramp --card`
 
 ## `/ramp --card`
 
-Generate the one-page student reference card per the one-page card spec. Contents:
+按一页卡规格生成学生参考卡。内容：
 
-- The commands (table from Part 2, condensed)
-- What Claude can help with / what it can't (starting points yes, final work product no, authoritative citations no)
-- Verification habits (the bullets from Part 4)
-- Who to ask when stuck (professor name from CLAUDE.md)
+- 命令（来自第2部分的表格，精简）
+- Claude 能帮助什么 / 不能帮助什么（起手点可以，最终工作成果不行，权威引注不行）
+- 核实习惯（来自第4部分的要点）
+- 遇到困难找谁（来自 CLAUDE.md 的指导老师姓名）
 
-Printable. One page. Hand it out on day one.
+可打印。一页。第一天发。
 
-## What this skill does NOT do
+## 本技能不做什么
 
-- Replace the professor's orientation. It covers procedures and tools; the professor covers judgment, strategy, and the things you only learn by watching someone good do it.
-- Teach substantive law. Practice-area *orientation*, not a doctrinal course.
-- Certify the student as ready. The professor decides when a student takes a real case.
+- 替代指导老师的迎新。它涵盖程序和工具；指导老师涵盖判断力、策略和只有通过观察优秀律师才能学到的东西。
+- 教实体法。实践领域*概览*，不是学理课程。
+- 认证学生已准备好。指导老师决定学生何时接手真实案件。

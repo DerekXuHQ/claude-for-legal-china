@@ -1,288 +1,268 @@
 ---
 name: matter-intake
-description: Intake a new matter — uniform questions covering identification, conflicts, source, risk triage, materiality, outside counsel, owners, legal hold, and key dates; writes matter.md and history.md and appends a structured row to _log.yaml. Use when the user says "new matter", "intake this matter", or wants to bring a new matter into the portfolio.
-argument-hint: "[optional matter name]"
+description: >
+  登记新案件——统一问题涵盖标识信息、利益冲突检索、来源、
+  风险分流、重要性、外聘律师、内部负责人、证据保全和关键日期；
+  写入 matter.md 和 history.md 并在 _log.yaml 中追加结构化行。
+  当用户说"新案件"、"登记这个案件"或需要将新案件纳入案件组合时使用。
+argument-hint: "[可选案件名称]"
 ---
 
 # /matter-intake
 
-1. Load `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` → risk calibration (for triage), landscape (for context, conflicts method), stakeholders (for who to loop in).
-2. Follow the workflow and reference below.
-3. Run the uniform intake: identification, conflicts check, source, risk triage, materiality, outside counsel, internal owners, legal hold, key dates, initial posture.
-4. Generate slug from matter name (lowercase, hyphens, year).
-5. Create `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/matter.md` — full narrative intake.
-6. Create `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/history.md` — seeded with the intake as the first entry.
-7. Append structured row to `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml`.
-8. Confirm with the user: "Here's the row I'll write — any edits?"
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` → 风险校准（用于分流）、执业背景（用于上下文、冲突检索方法）、相关方（用于抄送人员）。
+2. 按以下工作流操作。
+3. 运行统一登记：标识信息、利益冲突检索、来源、风险分流、重要性、外聘律师、内部负责人、证据保全、关键日期、初始姿态。
+4. 从案件名称生成代号（小写、连字符、年份）。
+5. 创建 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/matter.md` —— 完整记述式登记。
+6. 创建 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/history.md` —— 以本次登记作为首条记录。
+7. 追加结构化行至 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml`。
+8. 与用户确认："这是我将写入的行——需要修改吗？"
 
 ---
 
-# Matter Intake
+# 案件登记
 
-## Purpose
+## 目的
 
-Every new matter goes through the same intake so the portfolio stays comparable. Uniform rows in `_log.yaml` let the status skill roll up. Narrative in `matter.md` captures what the row can't. History file seeded here becomes the event record.
+每个新案件统一登记，确保案件组合具有可比性。`_log.yaml` 中统一的行让组合状态技能可以汇总。`matter.md` 中的记述捕获行格式无法表达的内容。在此播种的历史文件成为事件记录。
 
-## Load context
+## 加载上下文
 
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` — risk calibration (triage thresholds, materiality, settlement ladder), landscape (stakeholders, outside counsel bench).
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml` — to confirm slug uniqueness.
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` —— 风险校准（分流门槛、重要性、和解阶梯）、执业背景（相关方、外聘律师库）。
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml` —— 确认代号唯一性。
 
-## The intake
+## 登记内容
 
-### 1. Identification
+### 1. 标识信息
 
-- Matter name (as commonly referenced, e.g., "Acme v. Us 2026")
-- Counterparty
-- Matter type: `contract | employment | ip | regulatory | investigation | product | other`
-- Our role: `plaintiff | defendant | claimant | respondent | investigated`
-  - If the practice profile's `## Side` is `plaintiff`, `defense`, or a "both — default X" variant, pre-fill the role from that default and confirm. If `## Side` is `varies by matter`, ask cold. Never silently assume a posture the practice profile hasn't set.
-  - The role drives downstream skills: plaintiff-posture matters route risk triage to case value / contingency economics; defense-posture matters route to exposure / reserves / insurance tender.
-- Jurisdiction (court, arbitration forum, or regulatory body)
+- 案件名称（常用指代，如"某某公司诉我方 2026 合同纠纷案"）
+- 对方当事人
+- 案件类别：`合同纠纷 | 劳动争议 | 知识产权 | 行政监管 | 内部调查 | 产品责任 | 其他`
+- 案由（依据最高人民法院《民事案件案由规定》）`[法条原文]`
+- 我方地位：`原告 | 被告 | 申请人 | 被申请人 | 被调查人`
+  - 如实践画像的默认角色已设定，据此预填充并确认。如默认角色为"因案而异"，直接询问。
+- 管辖（受理法院、仲裁机构或行政机关）
 
-### 2. Conflicts check
+### 2. 利益冲突检索
 
-Before going further, run the conflicts step per `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` → Conflicts clearance.
+在进一步操作前，按 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` → 利益冲突审查运行冲突检索步骤。
 
-- **Status:** `cleared | pending | not-run | waived`
-- **Method:** match what `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` declares (`corporate-legal | outside-counsel | system-check | informal | other`). If the declared method is `informal`, say so — the record still captures that a counsel's-judgment check was the basis.
-- **Cleared by:** name / team / firm
-- **Cleared date:** YYYY-MM-DD
-- **Checked against:** brief list of the specific names/entities run (counterparty, known affiliates, adverse counsel if known, key witnesses). Thin is fine; "no" is not.
-- **Notes:** anything flagged but cleared (e.g., "Smith on our board sat on counterparty's board 2019–2021 — cleared as non-overlapping to this matter").
+- **状态：** `已通过 | 待定 | 未运行 | 已豁免`
+- **方式：** 匹配 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 声明的方式。
+- **审查人：** 姓名/团队/律所
+- **审查日期：** YYYY-MM-DD
+- **审查对象：** 简要列出实际运行的特定名称/主体（对方、已知关联方、对方律师（如已知）、关键证人）。数量少没关系；"无"不行。
+- **备注：** 任何标注但已通过的事项。
 
-Behavior by status:
+各状态的行为：
 
-- `cleared` → proceed.
-- `pending` → proceed with intake; flag prominently in `matter.md` and in the log row that conflicts are outstanding; surface again on every `/matter-update` and in `/portfolio-status` until resolved.
-- `waived` → rare; requires a conflict-waiver rationale (writing the waiver is outside this skill — capture that one exists, who signed it, and where it lives).
-- `not-run` → **STOP. This is a gate.** The skill will not create `matter.md`, `history.md`, or a `_log.yaml` entry until the conflicts posture is resolved. Three acceptable paths:
+- `已通过` → 继续。
+- `待定` → 继续登记；在 `matter.md` 和日志行中显著标注冲突尚未解决；每次 `/matter-update` 和 `/portfolio-status` 中再次提示，直至解决。
+- `已豁免` → 罕见；需有冲突豁免理由（起草豁免书超出本技能——记录其存在、签署人和存放位置）。
+- `未运行` → **停止。此处为门禁。** 冲突姿态解决前不创建 `matter.md`、`history.md` 或 `_log.yaml` 条目。三条可接受路径：
 
-  **Path 1 — Run conflicts now.** Pause this intake. Clear per `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` Conflicts clearance. Return with `status: cleared` or `status: waived` with rationale.
+  **路径1 —— 现在运行冲突检索。** 暂停本登记。按 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 的冲突审查完成。返回时带 `status: cleared` 或 `status: waived` 附理由。
 
-  **Path 2 — Mark pending with owner + due date.** Allowed only when `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` Conflicts clearance declares parallel-intake acceptable. Capture: who is running conflicts, when they're expected to return, what entities they're checking. Intake proceeds; matter row carries `conflicts.status: pending`; `/portfolio-status` flags it every run; `/matter-update` re-prompts until resolved.
+  **路径2 —— 标注待定，附负责人+截止日期。** 仅在 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 的冲突审查声明允许平行登记时可用。记录：谁在运行冲突检索、预计何时返回、检查哪些主体。登记继续；案件行携带 `conflicts.status: pending`；`/portfolio-status` 每次运行均标注；`/matter-update` 重复提示直至解决。
 
-  **Path 3 — Bypass with documented rationale.** Only if the user explicitly acknowledges the bypass. Record in `conflicts.override`:
+  **路径3 —— 附书面理由绕过。** 仅在用户明确确认绕过时可用。在 `conflicts.override` 中记录：
 
   ```yaml
   conflicts:
-    status: not-run               # preserved as-is
+    status: not-run
     override:
-      by: [user name]
+      by: [用户名]
       date: [YYYY-MM-DD]
-      rationale: [why conflicts were bypassed — permanent record; does not auto-expire]
+      rationale: [为什么绕过冲突检索——永久记录；不会自动过期]
   ```
 
-  This field is visible in every `/portfolio-status`, every `/matter` briefing, and every `/matter-update` until removed. It is never removed by the skill — only by explicit user edit to `_log.yaml` after conflicts are actually cleared.
+  此字段在每次 `/portfolio-status`、每次 `/matter` 简报和每次 `/matter-update` 中可见，直至被移除。本技能不会自动移除——仅在用户明确编辑 `_log.yaml` 且在冲突实际清除后。
 
-  **Do not proceed silently.** "I'll do it later" is not an acceptable response. One of Path 1/2/3 must be chosen, and the choice is captured in the record.
+### 3. 来源
 
-This step is not about the skill deciding whether a conflict exists — that's the user's/firm's judgment. It's about making sure the check happened and the record reflects it.
+该案件如何进入？
+- `律师函 | 起诉状送达 | 调查令/协查通知 | 行政监管问询 | 内部报告 | 诉前威胁`
 
-### 3. Source
+### 4. 风险分流——对照事务所校准
 
-How did this arrive?
-- `demand-letter | complaint-served | subpoena | regulator-inquiry | internal-report | pre-suit-threat`
-- *Seed doc opportunity:* "If you have the initiating document (complaint, demand, subpoena), attach or share the path. It sharpens the intake."
+- 严重性：高 | 中 | 低（参考 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 的严重性分级）
+- 可能性：高 | 中 | 低（参考可能性分级）
+- 综合风险评级（矩阵结果）：高 | 中 | 低 | 危急
+- 赔偿敞口范围（最佳估计）
+- 非金钱敞口（禁令？行政处罚？声誉影响？先例效应？）
 
-### 4. Risk triage — against house calibration
+### 5. 重要性
 
-- Severity: high | medium | low (reference the `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` severity bands)
-- Likelihood: high | medium | low (reference the `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` likelihood bands)
-- Resulting risk rating (per the matrix): high | medium | low | critical
-- Damages exposure range (best estimate)
-- Non-monetary exposure (injunction? consent decree? publicity? precedent?)
+对照 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 中的事务所门槛：
+- `需计提 | 已披露 | 监控中 | 不适用`
 
-If the risk calibration in `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` is thin, don't fake precision. Use the user's gut and note the thinness.
+### 6. 外聘律师
 
-### 5. Materiality
+- 律所
+- 主办合伙人
+- 委托合同状态：`已签署 | 待定 | 无`
+- 预算授权：金额和审批人
 
-Against the house thresholds in `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`:
-- `reserved | disclosed | monitored | none`
-- If `reserved`: reserve amount and whether finance has been notified
-- If `disclosed`: filing and footnote location
+如风险为中及以上且未指定外聘律师——标注。
 
-### 6. Outside counsel
+### 7. 内部负责人
 
-- Firm
-- Lead partner
-- **Lead partner email** (used by `/oc-status` to draft status requests)
-- Engagement letter status: `signed | pending | none`
-- Budget authorization: amount and approver
-- *Seed doc opportunity:* "Engagement letter path, if signed."
+来自 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 执业背景——哪些内部相关方需要参与？
+- 业务负责人
+- HR 负责人（如是劳动争议）
+- 公关联系人（如有声誉风险）
+- 信息安全负责人（如涉及数据或网络安全）
+- 其他
 
-If risk is medium or higher and no outside counsel is assigned — flag it.
+### 8. 证据保全
 
-### 7. Internal owners
+- 是否已发出？如是：日期、范围、保管人（姓名列表）。
+- 下次刷新日期（默认：发出后六个月；按案件调整）。
+- 如否且本案件为已进入诉讼或合理预期将进入诉讼：紧急标注。
 
-From `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` landscape — which internal stakeholders are involved?
-- Business lead
-- HR partner (if employment)
-- Comms contact (if reputational risk)
-- CISO (if data or cyber)
-- Other
+### 9. 关键日期
 
-### 8. Legal hold
+- 答复期限（答辩、异议、反诉）
+- 下次开庭/庭前会议
+- 诉讼时效截止日（如适用）
+- 任何行政监管期限
 
-- Issued? If yes: date, scope, custodians (list of names).
-- Next refresh date (default: six months from issuance; adjust per matter).
-- If no and this is active litigation or reasonably anticipated: flag urgently; offer to run `/litigation-legal:legal-hold [slug] --issue` after intake completes.
-- *Seed doc opportunity:* "Hold notice, if issued."
+### 10. 初始姿态
 
-### 9. Key dates
+一段话理论：
+- 我方案件逻辑是什么？
+- 对方案件逻辑是什么？
+- 关键事实是什么？
+- 初始姿态：`积极应对 | 寻求和解 | 调查中 | 观望`
 
-- Response deadline (answer, objection, opposition)
-- Next hearing / conference
-- Statute of limitations cutoff (if applicable)
-- Any regulatory deadlines
+## 写入输出
 
-### 10. Initial posture
+### 代号
 
-One-paragraph theory:
-- What's our story?
-- What's theirs?
-- What's the pivot fact?
-- Initial posture: `fight | settle | investigate | wait`
+小写、连字符、末尾年份。示例：`acme-v-us-2026`、`employment-smith-2026`、`ftc-inquiry-2026`。
 
-## Writing the outputs
+写入前在 `_log.yaml` 中确认代号唯一。
 
-### Slug
-
-Lowercase, hyphens, year at the end. Examples: `acme-v-us-2026`, `employment-smith-2026`, `ftc-inquiry-2026`.
-
-Confirm slug is unique in `_log.yaml` before writing.
-
-### `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/matter.md`
+### `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/matter.md`
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果标头——根据插件配置 ## 输出——因角色不同；见 `## 使用者`]
 
-# [Matter Name]
+# [案件名称]
 
-**Slug:** [slug]
-**Opened:** [YYYY-MM-DD]
-**Our role:** [plaintiff/defendant/etc.]
-**Status:** [status]
-
----
-
-## Identification
-
-[counterparty, jurisdiction, matter type, source]
-
-## Conflicts
-
-**Status:** [cleared / pending / not-run / waived]
-**Method:** [corporate-legal / outside-counsel / system-check / informal / other]
-**Cleared by:** [name]
-**Cleared date:** [YYYY-MM-DD]
-**Checked against:** [entities run]
-**Notes:** [any flags cleared, waiver reference if applicable]
-
-## Risk triage
-
-**Severity:** [band] — [why, with reference to house severity definitions]
-**Likelihood:** [band] — [why]
-**Risk rating:** [high/medium/low/critical]
-**Exposure:** [dollar range + non-monetary]
-
-## Materiality
-
-[reserved/disclosed/monitored/none — with reserve amount, disclosure location, or reasoning if "none"]
-
-## Outside counsel
-
-[firm, lead, engagement status, budget]
-
-## Internal owners
-
-[stakeholders and why each is involved]
-
-## Legal hold
-
-[status, date, scope]
-
-## Key dates
-
-[list]
-
-## Initial theory
-
-[one paragraph: our story, their story, pivot fact, initial posture] `[SME VERIFY — theory at intake is a working hypothesis; confirm with outside counsel before any filing or material communication that assumes this framing]`
-
-## Open questions
-
-[anything not yet known that matters — e.g., "insurance tender pending", "unclear whether we have coverage for X"]
+**代号：** [slug]
+**立案/登记日期：** [YYYY-MM-DD]
+**我方地位：** [原告/被告等]
+**状态：** [status]
 
 ---
 
-## Seed documents
+## 标识信息
 
-| Doc | Path / pointer |
-|---|---|
-| [e.g., complaint] | [path or "not yet shared"] |
+[对方、管辖、案件类别、案由、来源]
+
+## 利益冲突
+
+**状态：** [已通过 / 待定 / 未运行 / 已豁免]
+**方式：** [事务所/外聘律师/其他]
+**审查人：** [姓名]
+**审查日期：** [YYYY-MM-DD]
+**审查对象：** [已运行的实体]
+**备注：** [任何标注但已通过的事项、豁免引用（如适用）]
+
+## 风险分流
+
+**严重性：** [分级] —— [理由，引用事务所严重性定义]
+**可能性：** [分级] —— [理由]
+**风险评级：** [高/中/低/危急]
+**敞口：** [金额范围 + 非金钱敞口]
+
+## 重要性
+
+[需计提/已披露/监控中/不适用——附计提金额、披露位置或不适用理由]
+
+## 外聘律师
+
+[律所、主办人、委托状态、预算]
+
+## 内部负责人
+
+[相关方及各自参与理由]
+
+## 证据保全
+
+[状态、日期、范围]
+
+## 关键日期
+
+[列表]
+
+## 初始理论
+
+[一段：我方案件逻辑、对方案件逻辑、关键事实、初始姿态] `[需审查——登记时的理论是工作假设；在任何以此假设为前提的诉讼行为或实质性沟通前应经外聘律师确认]`
+
+## 待解决问题
+
+[任何尚未知晓但重要的事项——如"保险通知待定"、"是否涵盖X事项尚不明确"]
 ```
 
-### `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/history.md`
+### `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/history.md`
 
-Seed the history file with the intake as entry zero:
+播种历史文件，以本次登记作为第零条记录：
 
 ```markdown
-# History: [Matter Name]
+# 历史记录：[案件名称]
 
-Append-only event log. Most recent at top.
+仅追加的事件日志。最新记录在最前。
 
 ---
 
-## [YYYY-MM-DD] — Matter opened
+## [YYYY-MM-DD] —— 案件立案/登记
 
-[Source, who brought it in, initial triage summary, outside counsel assigned, legal hold issued yes/no.]
+[来源、由谁引入、初始分流摘要、外聘律师指定情况、证据保全发出情况（是/否）。]
 ```
 
-### Append to `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml`
+### 追加至 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml`
 
-Add a row per the schema. Example:
+按模式添加行。示例：
 
 ```yaml
 - id: acme-v-us-2026
-  name: "Acme Corp v. Company"
+  name: "某某公司诉我方合同纠纷案"
   type: contract
   role: defendant
-  counterparty: "Acme Corp"
-  jurisdiction: "N.D. Cal."
-  # status is derived from source:
-  #   source: pre-suit-threat | demand-letter           → status: threatened
-  #   source: complaint-served | subpoena | regulator-inquiry → status: active
-  #   source: internal-report                           → status: threatened (default) or active if formal process has started
+  counterparty: "某某公司"
+  jurisdiction: "北京市朝阳区人民法院"
   status: active
   stage: pleadings
   source: complaint-served
   outside_counsel:
-    firm: "Wilson Sonsini"
-    lead: "J. Reyes"
-    email: "jreyes@wsgr.example.com"
+    firm: "某某律师事务所"
+    lead: "张律师"
+    email: "zhang@example.com"
     engagement: signed
   conflicts:
     status: cleared
-    method: corporate-legal
-    cleared_by: "K. Patel"
+    method: firm
+    cleared_by: "内部法务"
     cleared_date: 2026-04-20
-    override:                   # populated only on Path 3 bypass
+    override:
       by: null
       date: null
       rationale: null
   risk: high
   materiality: reserved
-  exposure_range: "$2M–$5M"
+  exposure_range: "200万-500万元"
   internal_owners:
-    business_lead: "Jane Smith"
+    business_lead: "业务负责人"
     hr_partner: null
     comms_contact: null
   legal_hold:
     issued: true
     issued_date: 2026-02-15
-    scope: "Sales org 2023–2026"
-    custodians: ["Jane Smith", "R. Chen", "T. Patel"]
+    scope: "销售部门 2023-2026"
+    custodians: ["张三", "李四", "王五"]
     last_refresh: 2026-02-15
     next_refresh: 2026-08-15
     released: null
@@ -293,18 +273,18 @@ Add a row per the schema. Example:
   path: matters/acme-v-us-2026/
 ```
 
-## Confirm before writing
+## 写入前确认
 
-Show the user the row and the matter.md content:
+向用户展示日志行和 matter.md 内容：
 
-> Here's what I'll write. Flag anything wrong or thin before I commit.
+> 这是我将写入的内容。在正式写入前，请标注任何错误或不足之处。
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出` 中的下一步决策树收尾。根据本技能刚产生的内容自定义选项——五个默认分支（起草X、上报、获取更多事实、观察等待、其他选择）是起点而非锁定项。决策树本身就是输出；由律师选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- **Run the conflicts check itself.** It records the result, status, method, and the entities checked. The actual clearance happens in whatever system (or judgment) the house practice profile declares. If the user says "cleared," the skill takes that at face value and captures the metadata.
-- Decide the initial theory. It captures what the user says; it doesn't invent one.
-- Issue the legal hold. Flags it if missing. User issues it.
+- **自行运行利益冲突检索。** 记录结果、状态、方式和审查实体。实际审查在事务所实践画像声明的不论什么系统（或判断）中完成。如用户说"已通过"，本技能按面值接受并记录元数据。
+- 决定初始理论。记录用户所说的；不自行发明。
+- 发出证据保全通知。如缺失则标注。用户发出。

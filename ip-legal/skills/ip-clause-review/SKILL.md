@@ -1,286 +1,280 @@
 ---
 name: ip-clause-review
 description: >
-  Review the IP clauses in an agreement — assignment, ownership, license
-  grants, warranties, indemnities. Use when reviewing IP terms in employment,
-  consulting, SOW, vendor, or licensing agreements, when asked to check the
-  assignment language or license scope, or when an agreement with IP
-  provisions is pasted or attached.
-argument-hint: "[file path | Drive link | paste text]"
+  审查协议中的知识产权条款——权利归属、所有权、许可授予、
+  保证、赔偿。用于审查劳动/顾问/SOW/供应商/许可协议中的知识产权条款，
+  当被要求检查权利归属语言或许可范围时，或当知识产权条款的协议被粘贴或附加时。
+argument-hint: "[文件路径 | 网盘链接 | 粘贴文本]"
 ---
 
 # /ip-clause-review
 
-Reviews the IP clauses in an agreement against the practice profile in `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`. Flags assignment gaps, ownership ambiguity, license-scope issues, and IP warranty/indemnity problems. Produces a memo with per-clause findings, prioritized by risk, with suggested redline language where appropriate.
+对照 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md` 中的实务画像审查协议中的知识产权条款。
+标注权利归属缺陷、所有权模糊、许可范围问题及知识产权保证/赔偿问题。
+生成按风险排序的逐条审查备忘录，附建议修改语言。
 
-## Instructions
+## 使用说明
 
-1. **Load `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`.** If placeholders present, stop and prompt: "Run `/ip-legal:cold-start-interview` first — I need to learn your practice profile before I can review IP clauses against it."
+1. **加载 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md`。** 如含占位符，停止并提示："先运行 `/ip-legal:cold-start-interview`——在审查知识产权条款前，我需要了解你的实务画像。"
 
-2. **Get the agreement:** From file path, Drive link, or pasted text. If none provided, ask.
+2. **获取协议：** 从文件路径、网盘链接或粘贴文本。如未提供，询问。
 
-3. **Follow the workflow below.** In particular:
-   - Establish the agreement type and which side the company is on for IP (granting / receiving / both). The side question is per-document, not a one-time setup answer.
-   - Run the assignment gap check first if the agreement is an employment, consulting, SOW, or work-for-hire document.
-   - Produce per-clause findings prioritized by risk.
-   - Check cross-clause consistency, not just clause-by-clause.
-   - Note jurisdiction implications (moral rights, work-for-hire, implied license, patent indemnity).
+3. **按以下工作流执行。** 特别是：
+   - 确定协议类型及公司在知识产权上的立场（授权方/接受方/双方）。立场问题按单份文件判断，非一次性设置。
+   - 如协议为劳动合同、顾问协议、SOW或职务作品文件，优先执行权利归属缺陷检查。
+   - 按风险优先级生成逐条审查意见。
+   - 检查跨条款一致性，不仅逐条审查。
+   - 标注管辖影响（著作人身权、职务作品、默示许可、专利赔偿）。
 
-4. **Output the memo** per the template below — work-product header first, bottom line, assignment gap check, clauses by severity, consistency flags, jurisdiction note, approval routing.
+4. **按以下模板输出备忘录** — 工作成果页眉居首、底线结论、权利归属缺陷检查、按严重程度分组的条款、一致性标注、管辖提示、审批路由。
 
-5. **Respect the decision posture.** When a clause could be read to allocate IP either way, flag for attorney review and surface the factors cutting both ways. Never silently decide a subjective allocation question.
+5. **尊重决策立场。** 当某条款可被解读为以任一方式分配知识产权时，标注供律师审查并展示各方有利因素。对主观分配问题绝不沉默决定。
 
-## Examples
+## 示例
 
 ```
-/ip-legal:ip-clause-review ~/Documents/vendor-sow.pdf
+/ip-legal:ip-clause-review ~/Documents/供应商-SOW.pdf
 /ip-legal:ip-clause-review https://docs.google.com/document/d/...
 /ip-legal:ip-clause-review
 ```
 
 ---
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/ip-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/ip-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如 `Enabled` 为 `✗`（法务用户的默认状态），跳过本段其余内容——各技能使用实务级上下文，事项机制不可见。如已启用且无活跃事项，询问："此事项属于哪个案件？运行 `/ip-legal:matter-workspace switch <slug>` 或回复 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖设置。将输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/matters/<事项slug>/`。除非 `跨事项上下文` 开启，否则绝不读取其他事项的文件。
 
 ---
 
-## Purpose
+## 目的
 
-Read the IP clauses in an agreement and tell the lawyer what each one does, how it deviates from market or from the team's standard position, what the risk is, and — where appropriate — the specific redline to propose. The goal is a memo the lawyer can act on in one pass.
+阅读协议中的知识产权条款，告诉律师每一条款的作用、与市场惯例或团队标准立场的偏差、风险是什么及——适当时——具体的修改建议。目标是生成律师可一次性采纳的备忘录。
 
-**The highest-stakes clauses in most agreements are IP ownership and assignment.** They are hard to fix later. A failure to get a clean assignment on an employment or consulting agreement surfaces in M&A diligence, in financing, and in litigation, sometimes years after the agreement was signed. If assignment language is weak or missing in a document that should have it, flag it loudly at the top of the memo — not buried as one line item among many.
+**大多数协议中赌注最高的条款是知识产权归属和权利转让。** 修复起来极其困难。劳动合同或顾问协议中的权利转让缺陷会在并购尽调、融资和诉讼中暴露出来，有时甚至是在协议签署多年之后。如本应具备的转让语言薄弱或缺失，在备忘录顶部响亮地标注——不得作为普通一项淹没在众多项目中。
 
-## Precondition: load the practice profile
+## 前置条件：加载实务画像
 
-**Before reading the agreement, read `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`.** If it is missing or still contains placeholders, stop and run `/ip-legal:cold-start-interview`. The practice profile tells you:
+**阅读协议前，先读取 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md`。** 如缺失或仍含占位符，停止并运行 `/ip-legal:cold-start-interview`。实务画像告诉你：
 
-- The jurisdiction footprint — which affects whether moral rights waivers are enforceable, whether work-for-hire applies, whether implied assignment fills a gap, how broad license grants can be
-- Who approves deviations and at what severity
-- The work-product header to prepend to outputs
+- 管辖范围 — 影响著作人身权放弃是否可强制执行、职务作品规则是否适用、默示转让能否填补空白、许可授予可以多宽泛
+- 谁在什么严重程度批准偏差
+- 附加在输出上的工作成果页眉
 
-## Workflow
+## 工作流
 
-### Step 1: Orient
+### 第一步：定位
 
-Read the whole agreement once, fast. Answer:
+快速通读整个协议。回答：
 
-| Question | Answer |
+| 问题 | 回答 |
 |---|---|
-| What kind of agreement is this? | Employment / consulting or SOW / vendor MSA / in-license / out-license / collaboration or JDA / settlement / acquisition or asset purchase / other |
-| Which side are we on for IP? | Granting rights or receiving them / assigning IP or acquiring it / licensor or licensee |
-| Who is the counterparty? | Name, and sophistication — individual, startup, BigCo |
-| Is there consideration flowing for the IP specifically? | Salary, fee, royalty, upfront payment, equity, none |
-| Governing law and venue | What does it say — and does our practice profile flag that jurisdiction as escalate/never? |
+| 这是什么类型的协议？ | 劳动合同 / 顾问协议或SOW / 供应商主协议 / 授权入 / 授权出 / 合作协议或联合开发 / 和解协议 / 收购或资产购买 / 其他 |
+| 我们在知识产权上的立场？ | 授予权利或接收权利 / 转让知识产权或获取知识产权 / 许可人或被许可人 |
+| 相对方是谁？ | 名称及专业程度 — 个人、初创公司、大型企业 |
+| 是否为知识产权专门支付对价？ | 工资、费用、版税、预付、股权、无 |
+| 管辖法律和审判地 | 协议如何约定 — 我们的实务画像是否将该管辖标注为升级/永不接受？ |
 
-The side question is per-document, not a one-time setup answer. An in-house counsel reviewing an employment agreement is on the "receiving" side; reviewing an out-license the same day, on the "granting" side. The posture inverts.
+立场问题按单份文件判断，非一次性设置。法务审查劳动合同时是"接收"方；同一天审查对外许可时是"授予"方。立场颠倒。
 
-If the side is ambiguous (a collaboration agreement where both parties contribute and both receive rights, a reseller agreement with flow-through IP), ask:
+如立场不明确（双方贡献并接收权利的合作协议、含知识产权传递的转售协议），询问：
 
-> Which side is [company] on for this agreement's IP? Granting rights, receiving rights, or both? If both, I'll review each direction separately.
+> [公司]在这份协议的知识产权上是什么立场？授予权利、接收权利，还是两者皆是？如为两者，我将分别审查每个方向。
 
-### Step 2: Assignment gap check (highest priority)
+### 第二步：权利归属缺陷检查（最高优先级）
 
-If the agreement is an employment agreement, consulting agreement, SOW, work-for-hire contract, or anything else where the company should be receiving an assignment of the counterparty's IP in work product — check the assignment language first.
+如协议为劳动合同、顾问协议、SOW、职务作品合同或其他公司应从相对方获取工作成果知识产权转让的任何文件——首先检查转让语言。
 
-Look for:
+查找：
 
-- **Present-tense assignment** ("hereby assigns" or "hereby irrevocably assigns and agrees to assign"). A bare "agrees to assign" is a promise to assign, not an assignment, and can require a second document to perfect.
-- **Scope** — does it cover all IP created in the course of engagement, or only IP related to the company's business, or only IP created using company resources? Narrow scope is a gap if work product is expected to range broadly.
-- **Moral rights waiver** (for jurisdictions that recognize moral rights — EU member states, Canada, many others — the US recognizes a narrow version for visual art). If the agreement is governed by or has counterparties in a moral-rights jurisdiction, a waiver or non-assertion covenant matters.
-- **Further assurances** clause — counterparty agrees to sign whatever else is needed to perfect the assignment later.
-- **Pre-existing IP carveout** — what does the counterparty exclude from the assignment, and is that list specific or open-ended?
+- **现在时态转让**（"在此转让"或"在此不可撤销地转让并同意转让"）。仅仅是"同意转让"是转让的承诺而非转让本身，可能需要第二份文件才能完成。
+- **范围** — 是否涵盖工作过程中创造的全部知识产权，还是仅涵盖与公司业务相关的知识产权，或仅涵盖使用公司资源创造的知识产权？如预期工作产品范围广泛，狭窄的范围存在缺陷。
+- **著作人身权放弃**（对承认著作人身权的管辖——中国《著作权法》第10条 `[法条原文]` 规定了署名权、修改权和保护作品完整权等著作人身权。著作人身权不可转让，但可约定作者不行使）。如协议受中国法管辖或涉及中国相对方，著作人身权放弃或不主张承诺至关重要。
+- **进一步协助条款** — 相对方同意在未来签署完成转让所需的其他文件。
+- **已有知识产权排除** — 相对方从转让中排除什么，该清单是具体还是开放式的？
 
-If any of the above is missing or weak, flag at the top of the memo with a 🔴 or 🟠 severity and a specific redline.
-
-```markdown
-## ⚠️ ASSIGNMENT GAP
-
-**Section [X]** assigns IP in the work product, but: [specific issue — e.g.,
-"'agrees to assign' rather than 'hereby assigns,'" or "no moral rights waiver
-and governing law is France," or "no carveout list is provided and the
-counterparty has pre-existing platform IP"].
-
-**Risk:** This is the kind of gap that surfaces in M&A diligence years later.
-The counterparty (or a successor) may have residual rights in work product we
-thought we owned.
-
-**Proposed redline:**
-> "[specific replacement language]"
-
-**Escalation:** Per `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`, assignment-scope gaps escalate to [approver].
-```
-
-> **Can the assignment convey AI-generated content?** *Thaler v. Perlmutter* and the Copyright Office's 2023 AI registration guidance suggest that AI-generated works without any human authorship may not be copyrightable, though the boundaries remain unclear and this area is evolving. If the contractor uses AI for substantial portions of the deliverables, the copyright status of those portions is uncertain — and an assignment clause can only convey rights that exist.
->
-> Check: does the agreement have an AI-use disclosure obligation? A representation about the role of AI in the deliverables? A mechanism to identify which portions are AI-assisted vs. human-authored?
->
-> If absent and AI-assisted creation is foreseeable (consulting, development, content creation, design): 🟠 High. "The assignment clause is well-drafted but there's no AI-use disclosure. The copyright status of AI-generated content is unsettled, and without a disclosure obligation you won't know which portions are affected. Add an AI-use representation and a disclosure obligation." `[review — copyright status of AI-generated works is an evolving area; verify against current Copyright Office guidance and case law]`
-
-> **AI-assisted inventorship.** A patent filed with incorrect inventorship is unenforceable. If a consultant uses AI tools that contribute to an inventive concept, the inventorship question is unsettled and the patent is at risk. For any agreement with patent assignment provisions covering potentially patentable work product:
->
-> Check: does the agreement have an AI-use representation? A process for determining inventorship where AI contributed? A disclosure obligation about AI use in the inventive process?
->
-> If absent: flag. "Patent assignment without an AI-use representation. If AI tools contributed to the inventive concept, inventorship determination is complicated and an incorrectly-attributed patent is unenforceable. Add an AI-use representation and inventorship protocol."
-
-### Step 3: Clause-by-clause review
-
-For every IP-relevant clause, produce a block. The clauses to look for:
-
-- **Assignment / work-for-hire** — who owns what's created under the agreement
-- **Ownership of deliverables** — distinct from assignment; often states the output of the engagement
-- **Improvements and derivatives** — who owns improvements to pre-existing IP, who owns derivative works
-- **Background IP vs. foreground IP** — does the agreement define pre-existing IP and newly-created IP separately, and license the background IP to the extent needed?
-- **License grants** — scope, exclusivity, territory, field of use, sublicensability, term, termination triggers, royalty or fee structure
-- **IP warranties** — non-infringement of third-party rights, authority to grant, original work
-- **IP indemnities** — scope, cap, procedure, exclusions (user modifications, combinations, unauthorized use)
-- **Moral rights waiver** — jurisdiction-dependent
-- **Open source representations** — representations about what OSS is and is not embedded in deliverables
-- **Trademark use** — any grant or restriction on use of the other party's marks; brand guidelines; quality control for licensor
-- **Confidentiality / trade secrets** — treatment of trade secret material, reasonable measures, return or destruction, post-term obligations
-
-For each clause present, produce:
+如以上任何一项缺失或薄弱，在备忘录顶部以 🔴 或 🟠 严重程度标注并提供具体修改建议。
 
 ```markdown
-### [Section X.X]: [Clause name]
+## ⚠️ 权利归属缺陷
 
-**What it says:** [plain-English summary, one or two sentences]
+**第[X]条** 转让工作成果中的知识产权，但：[具体问题 — 例如
+"'同意转让'而非'在此转让'，"或"未放弃著作人身权且管辖法律为中国，"
+或"未提供排除清单且相对方已有平台知识产权"]。
 
-**What's market (for this agreement type, this side, this jurisdiction):**
-[brief reference point]
+**风险：** 这是那种多年后会在并购尽调中暴露的缺陷。
+相对方（或继承者）可能在我们认为已拥有的工作成果中保留剩余权利。
 
-**Risk:** 🔴 Critical | 🟠 High | 🟡 Medium | 🟢 Low
+**建议修改：**
+> "[具体替代语言]"
 
-**Why it matters:** [one or two sentences — what goes wrong for the business
-if this stays as-is]
-
-**Proposed redline (if needed):**
-> "[specific replacement language]"
-
-**Decision call:** [If uncertain whether the clause achieves the intended IP
-allocation, flag for attorney review and state the factors cutting both
-ways. Do not silently decide a subjective allocation question.]
+**升级：** 依据 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md`，权利归属范围缺陷升级至[审批人]。
 ```
 
-**Severity calibration:**
+> **转让能否覆盖AI生成内容？** 中国关于AI生成内容可版权性的规则正在发展中。北京互联网法院在(2023)京0491民初11279号案中认可了AI生成图片在特定条件下的可版权性。如承包方在工作成果的实质部分使用了AI工具，这些部分的权利状况是不确定的——转让条款只能传递既存的权利。
+>
+> 检查：协议是否含AI使用披露义务？关于AI在交付物中作用的陈述？识别哪些部分是AI辅助vs人类创作的机制？
+>
+> 如缺失且可预见AI辅助创作（咨询、开发、内容创作、设计）：🟠 高。"转让条款起草良好，但缺少AI使用披露。AI生成内容的权利状况仍在发展中，没有披露义务你无法知道哪些部分受影响。增加AI使用陈述和披露义务。" `[审查 — AI生成作品的权利状况为持续演进领域；请与当前司法实践核实]`
 
-| Level | Means |
+> **AI辅助发明人资格。** 依据《专利法》第17条，发明人署名权是重要权利。发明人资格错误是专利无效事由之一。如协议涉及可能包含专利成果的工作产品：
+>
+> 检查：协议是否含AI使用陈述？是否有确定发明人资格的程序？是否有关于创作过程中AI使用的披露义务？
+>
+> 如缺失：标注。"专利转让条款缺少AI使用陈述。应增加AI使用陈述和发明人资格确定程序。"
+
+### 第三步：逐条审查
+
+对每项知识产权相关条款，生成一个审查块。需查找的条款：
+
+- **转让 / 职务作品** — 协议项下创作内容的知识产权归属
+- **交付物所有权** — 区别于转让；通常陈述工作成果
+- **改进和衍生作品** — 已有知识产权改进的知识产权归属、衍生作品的知识产权归属
+- **背景知识产权 vs 前景知识产权** — 协议是否分别定义已有知识产权和新创知识产权，并在必要范围内许可背景知识产权？
+- **许可授予** — 范围、独占性、地域、使用领域、可再许可性、期限、终止触发条件、版税或费用结构
+- **知识产权保证** — 不侵犯第三方权利、有权授予、原创作品
+- **知识产权赔偿** — 范围、上限、程序、排除（用户修改、组合、未经授权使用）
+- **著作人身权放弃** — 管辖相关
+- **开源陈述** — 关于交付物中嵌入和不嵌入何种开源软件的陈述
+- **商标使用** — 任何关于使用相对方标识的授予或限制；品牌指南；许可人的质量控制
+- **保密 / 商业秘密** — 商业秘密材料的处理、合理措施、返还或销毁、协议终止后义务
+
+对每项存在的条款，生成：
+
+```markdown
+### [第X.X条]：[条款名称]
+
+**条款内容：** [通俗语言概括，一至两句]
+
+**市场惯例（本协议类型、本方立场、本管辖）：** [简要参考]
+
+**风险：** 🔴 严重 | 🟠 高 | 🟡 中 | 🟢 低
+
+**为何重要：** [一至两句 — 如维持现状，对业务的不利影响]
+
+**建议修改（如需）：**
+> "[具体替代语言]"
+
+**决策判断：** [如不确定条款是否达到了预期知识产权分配，
+标注供律师审查并说明各方有利因素。对主观分配问题绝不沉默决定。]
+```
+
+**严重程度校准：**
+
+| 等级 | 含义 |
 |---|---|
-| 🔴 Critical | Don't sign without fixing. Assignment gap in a document that should have one. Unlimited license where a narrow one was intended. Exclusive grant where non-exclusive was intended. |
-| 🟠 High | Strongly push; escalate if they won't move. Ambiguous scope, missing moral rights waiver in a moral rights jurisdiction, missing further assurances, narrow indemnity. |
-| 🟡 Medium | Push in first round; accept if it's the last open item. Cosmetic but imprecise language, survival periods shorter than standard. |
-| 🟢 Low | Note it, don't spend capital. A stylistic deviation that doesn't change the allocation. |
+| 🔴 严重 | 修复前不应签署。本应含权利转让文件中的转让缺陷。本意窄许可却写成宽许可。本意非独占却写成独占授予。 |
+| 🟠 高 | 强力推动；如对方不让步则升级。模糊的范围、缺少著作人身权放弃、缺少进一步协助、狭窄的赔偿。 |
+| 🟡 中 | 第一轮推动；如是最后一个未决事项可接受。修饰性但不精确的语言、短于标准的存续期。 |
+| 🟢 低 | 标注即可，不花费谈判资本。不改变分配的文风偏差。 |
 
-### Step 4: Cross-clause consistency
+### 第四步：跨条款一致性
 
-IP clauses fail as a system. Check:
+知识产权条款作为系统可能失败。检查：
 
-- **Does the license grant match the scope of what's being licensed?** (A license to "use" the deliverable is narrower than a license to "use, modify, and create derivative works.")
-- **Do the warranties cover everything the grant covers?** (A warranty of non-infringement limited to patents, in a license that also covers copyrights and trade secrets, leaves gaps.)
-- **Does the indemnity cover what the warranty promises?** (A warranty without indemnity is a promise without a remedy.)
-- **Does termination pull the license back?** (Or does a paid-up license survive termination? Either is defensible — the question is whether it matches intent.)
-- **Is the IP allocation between this agreement and any related SOW, order form, or related side letter consistent?** Flag conflicts.
+- **许可授予是否与许可范围匹配？** （"使用"交付物的许可窄于"使用、修改和创作衍生作品"的许可。）
+- **保证是否覆盖授予所涵盖的一切？** （限于专利的非侵权保证，在同时涵盖著作权和商业秘密的许可中，存在空白。）
+- **赔偿是否覆盖保证所承诺的？** （没有赔偿的保证是缺少救济的承诺。）
+- **终止是否收回许可？** （还是已付清许可在终止后继续有效？任一立场均可辩护——问题在于是否与意图匹配。）
+- **本协议与任何相关SOW、订单表或补充协议之间的知识产权分配是否一致？** 标注冲突。
 
-### Step 5: Jurisdiction note
+### 第五步：管辖提示
 
-IP rules are jurisdiction-specific in ways that change the outcome. Flag if the agreement implicates any of these:
+知识产权规则在管辖上存在差异，可能改变结果。如协议涉及以下任何情形，标注：
 
-- **Moral rights** — EU member states, Canada, much of the civil-law world recognize moral rights (paternity, integrity) that may not be fully assignable or waivable. US recognition is narrow (VARA, for visual art).
-- **Work-for-hire** — US doctrine is statutory (17 U.S.C. § 101) and only applies to enumerated categories for independent contractors. UK implies assignment in the employment context but not always for contractors. Civil-law jurisdictions handle this differently again.
-- **Implied license** — common-law jurisdictions may read in an implied license where the written grant is silent. Civil-law jurisdictions tend not to.
-- **Patent indemnity exclusions** — combinations, modifications, and user supply of accused features are standard US exclusions; the interaction with EU patent and UPC is still developing.
+- **著作人身权** — 中国《著作权法》第10条 `[法条原文]` 承认署名权、修改权和保护作品完整权等著作人身权，不可转让但可约定不行使。
+- **职务作品** — 中国《著作权法》第18条 `[法条原文]` 规定了职务作品的著作权归属。一般情况下作者享有著作权，但主要利用单位物质技术条件创作且由单位承担责任的工程设计图、产品设计图等，以及特殊职务作品，署名权以外著作权归单位。
+- **默示许可** — 中国司法实践对默示许可的认定较为谨慎，一般需要明确约定。
+- **专利赔偿排除** — 组合、修改和用户提供被控特征的排除为国际常见做法。
 
-State what jurisdiction the agreement is governed by, and whether the practice profile flags that jurisdiction as standard, escalate, or never.
+说明协议受何法管辖，以及实务画像将该管辖标注为标准、升级或永不接受。
 
-## Redline granularity
+## 修改粒度
 
-**Edit at the smallest possible granularity.** A redline is a negotiation artifact, not a rewrite. Wholesale clause replacement signals "we threw out your drafting" — it's aggressive, it forces the counterparty to re-read the whole clause, and it discards the parts of their drafting that were fine. Surgical redlines — strike a word, insert a phrase, restructure a subclause — signal "we have specific asks" and are faster to read, understand, and accept.
+**在最小可能粒度进行编辑。** 修改是谈判产物，非重写。整条替换发出"我们抛弃了你的起草"的信号——具有攻击性，迫使相对方重新通读整个条款，并抛弃了他们起草中本无问题的部分。精准修改——删除一词、插入一短语、重构一款——发出"我们有具体诉求"的信号，且阅读、理解和接受更快。
 
-Default to the smallest edit that achieves the playbook position:
-- Replace a **word** before a phrase. ("twelve (12)" → "twenty-four (24)")
-- Replace a **phrase** before a sentence. ("paid by the Buyer" → "paid and payable by the Buyer")
-- Restructure a **subclause** before replacing the sentence. (Add "(a)" and "(b)" to split a compound condition.)
-- Replace a **sentence** before replacing the clause.
-- Only replace a **whole clause** when the counterparty's version is so far from your position that surgical edits would be harder to read than a fresh draft — and when you do, say so in the transmittal: "We've replaced §8.2 rather than marking it up because the changes were extensive. Happy to walk you through the delta."
+默认选择能达到实务立场的最小编辑：
+- 替换**词**优先于短语。
+- 替换**短语**优先于句子。
+- 重构**款**优先于替换句子。
+- 替换**句子**优先于替换条款。
+- 仅当相对方版本与你的立场差异过大、精准修改反而更难阅读时才替换**整个条款**——且替换时在传送函中说明："我们替换了§8.2而非逐点标记，因为修改范围广泛。乐意带你过一遍差异。"
 
-When in doubt, smaller. A client who receives a surgical redline trusts that you read carefully. A client who receives a wholesale replacement wonders whether you read at all.
+有疑问时，选更小的。收到精准修改的客户信任你仔细阅读了。收到整条替换的客户想问你到底读没读。
 
-### Step 6: Assemble the memo
+### 第六步：组装备忘录
 
-Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md` → `## Outputs` (it differs by user role — see `## Who's using this`).
+在 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md` → `## 输出` 前附加工作成果页眉（因角色不同而异——见 `## 使用者`）。
 
-This memo and the underlying agreement may be privileged, confidential, or both. The output inherits that status from the source. Distribute only within the privilege circle; mark and store it where privileged materials live; strip the work-product header before any external delivery.
+本备忘录及审查的底层协议可能属于保密和/或特权保护。输出继承来源状态。仅在保密圈内分发；标记并存储在保密材料存放的位置；对外交付前去除工作成果页眉。
 
-> **No silent supplement.** If a research query to the configured legal research tool returns few or no results for a rule the memo needs (enforceability of a moral rights waiver in a given jurisdiction, scope of an implied license, standard for an IP warranty survival period), report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [rule / jurisdiction]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against a primary source before relying, or (4) flag as unverified and stop. Which would you like?" A lawyer decides whether to accept lower-confidence sources.
+> **无静默补全。** 如法律研究工具对备忘录需要的规则返回结果很少或无结果，报告已发现的内容并停止。未经询问不得通过网络搜索或模型知识填补空白。说明："搜索从[工具]返回[N]条结果。[规则/管辖]的覆盖似乎薄弱。选项：(1) 扩大搜索查询，(2) 尝试其他研究工具，(3) 搜索网络——结果将标记为`[联网检索 — 需复核]`，依赖前应与权威来源核对，(4) 标注为未核实并停止。你选哪个？"由律师决定是否接受较低可靠度的来源。
 >
-> **Source attribution.** Where the memo cites a statute, regulation, case, or treatise, tag the citation: `[Westlaw]`, `[statute / regulator site]`, or the MCP tool name for citations retrieved from a legal research connector; `[web search — verify]` for web-search citations; `[model knowledge — verify]` for citations recalled from training data; `[user provided]` for citations from the counterparty draft or house files. Citations tagged `verify` carry higher fabrication risk and should be checked first. Never strip or collapse the tags.
+> **来源归属。** 备忘录引用法条、法规、案例或专著时，标注引用：`[元典检索]`、`[北大法宝]`、`[CNIPA]`或法律研究连接器的MCP工具名；网络搜索引用标注`[联网检索 — 需复核]`；训练数据中回忆的引用标注`[模型知识 — 需验证]`；来自相对方草案或内部文件中的引用标注`[用户提供]`。标注`需验证`的引用具有较高造假风险，应优先核对。绝不剥离或合并标签。
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
+[工作成果页眉 — 按插件配置 ## 输出]
 
-# IP Clause Review: [Counterparty] [Agreement Type]
+# 知识产权条款审查：[相对方] [协议类型]
 
-**Reviewed:** [date]
-**Our side for IP:** [Granting / Receiving / Both]
-**Governing law:** [jurisdiction]
-
----
-
-## Bottom line
-
-[Two sentences. Can the IP allocation stand? What has to change first?]
-
-**Issues:** [N]🔴 [N]🟠 [N]🟡 [N]🟢
-
-**Approval needed from:** [name, per practice profile]
+**审查日期：** [日期]
+**我方知识产权立场：** [授予 / 接收 / 双方]
+**管辖法律：** [管辖区]
 
 ---
 
-## Assignment gap check
+## 底线结论
 
-[✅ Clear | ⚠️ Gap present — see above]
+[两句话。知识产权分配能站住吗？必须首先改变什么？]
 
----
+**问题：** [N]🔴 [N]🟠 [N]🟡 [N]🟢
 
-## Clauses by severity
-
-[All clause blocks from Step 3, grouped Critical → Low]
+**需要审批人：** [姓名，按实务画像]
 
 ---
 
-## Cross-clause consistency
+## 权利归属缺陷检查
 
-[Flags from Step 4]
-
----
-
-## Jurisdiction note
-
-[Flags from Step 5]
+[✅ 清晰 | ⚠️ 缺陷存在 — 见上文]
 
 ---
 
-## Approval routing
+## 按严重程度分组的条款
 
-[From practice profile — who approves, what triggers automatic escalation]
+[第三步的所有条款块，按严重 → 低分组]
+
+---
+
+## 跨条款一致性
+
+[第四步的标注]
+
+---
+
+## 管辖提示
+
+[第五步的标注]
+
+---
+
+## 审批路由
+
+[来自实务画像 — 谁审批，什么触发自动升级]
 ```
 
-## Decision posture
+## 决策立场
 
-When a clause could be read to allocate IP either way, or when it is unclear whether the drafter's chosen words achieve the stated intent, **flag it for attorney review and surface the factors cutting both ways**. Do not silently decide a subjective allocation question. An unresolved IP allocation that gets signed is a one-way door — the error surfaces in diligence, financing, or litigation. Flagging an ambiguous clause that turns out to be fine is a two-way door.
+当某条款可被解读为以任一方式分配知识产权，或不清楚起草者选择的词语是否实现所述意图时，**标注供律师审查并展示各方有利因素**。对主观分配问题绝不沉默决定。未解决的知识产权分配一旦签署就是一扇单向门——错误会在尽调、融资或诉讼中暴露。标注被证明有问题的模糊条款是一扇双向门。
 
-## Quality checks before delivering
+## 交付前质量检查
 
-- [ ] Practice profile was loaded and the jurisdiction note reflects what's there
-- [ ] Assignment gap checked first (for employment/consulting/SOW/WFH)
-- [ ] Every 🔴 and 🟠 issue has specific replacement language
-- [ ] Cross-clause consistency checked, not just clause-by-clause
-- [ ] Source tags applied to citations; no stripped `verify` tags
-- [ ] Approver named per practice profile, not "escalate to legal"
-- [ ] Output marked with the work-product header
+- [ ] 实务画像已加载，管辖提示反映其中内容
+- [ ] 权利归属缺陷首先检查（针对劳动/顾问/SOW/职务作品）
+- [ ] 每个 🔴 和 🟠 问题有具体替代语言
+- [ ] 跨条款一致性已检查，不仅逐条审查
+- [ ] 引用上已标注来源标签；无剥离的 `需验证` 标签
+- [ ] 审批人按实务画像具名，非"升级至法务"
+- [ ] 输出标记工作成果页眉
 
-## Close with the next-steps decision tree
+## 以行动选项决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
-
+以 CLAUDE.md `## 输出` 规定的行动选项决策树收尾。将选项定制为本技能刚生成的内容——五个默认分支（起草X、升级、收集更多事实、观察等待、其他事项）仅为起点，非固定模板。由律师从决策树中选择。

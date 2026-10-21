@@ -1,363 +1,357 @@
 ---
 name: cold-start-interview
 description: >
-  Professor's one-time clinic setup — practice areas, jurisdiction, supervision
-  style (formal review queue / configurable flags / lighter-touch), and
-  handbook/rules upload. Writes CLAUDE.md so every other skill and every
-  student who runs /ramp reads from the same clinic context. Use on fresh
-  install, when CLAUDE.md has placeholders, when re-doing setup with --redo,
-  or when re-checking integrations with --check-integrations.
+  指导老师的一次性诊所设置——实践领域、管辖地、指导风格（正式审查队列 /
+  可配置标记 / 较轻触），以及手册/规则上传。写入 CLAUDE.md 使所有其他技能
+  和每个运行 /ramp 的学生都从相同的诊所背景读取。在新安装、CLAUDE.md 有
+  占位符、使用 --redo 重新设置或使用 --check-integrations 重新检查集成时使用。
 argument-hint: "[--redo] [--check-integrations]"
 ---
 
 # /cold-start-interview
 
-1. Check `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md`. If populated and no `--redo`, confirm before overwriting.
-2. Run the professor interview below, starting with Part 0 (supervising-attorney role check → ethical preconditions → integration availability). If the user isn't the supervising attorney, stop and redirect.
-3. Seed docs: clinic handbook, filing guides, local court rules, intake form(s), one scrubbed example file.
-4. Key decision: supervision style (formal queue / flags / lighter-touch).
-5. Migration: if a populated CLAUDE.md (no `[PLACEHOLDER]` markers) exists at `~/.claude/plugins/cache/claude-for-legal/legal-clinic/*/CLAUDE.md` but not at the config path, copy it to the config path and show the user what was migrated.
-6. Write `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` including `## Who's using this` and `## Available integrations`. Show supervision choice and practice-area templates for confirmation.
-7. Offer `/legal-clinic:ramp` preview.
+1. 检查 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md`。如已填充且无 `--redo`，在覆盖前确认。
+2. 运行以下指导老师访谈，从 Part 0 开始（指导老师身份检查 → 伦理前置条件 → 集成可用性）。如果用户不是指导老师，停止并重定向。
+3. 种子文件：诊所手册、提交指南、本地法院规则、接待表格、一份已脱敏的示例文件。
+4. 关键决定：指导风格（正式队列 / 标记 / 较轻触）。
+5. 迁移：如果在 `~/.claude/plugins/cache/claude-for-legal-zh/legal-clinic/*/CLAUDE.md` 存在已填充的 CLAUDE.md（无 `[PLACEHOLDER]` 标记）但不在配置路径，将其复制到配置路径并告知用户迁移了什么。
+6. 写入 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md`，包括 `## 谁在使用这个插件` 和 `## 可用集成`。展示指导风格选择和实践领域模板供确认。
+7. 提供 `/legal-clinic:ramp` 预览。
 
 ```
 /legal-clinic:cold-start-interview
 ```
 
-**`--check-integrations`:** Re-run only the Part 0 integration-availability check (Clio, document storage). Updates `## Available integrations` in `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` without touching the role, ethical preconditions, supervision style, or practice-area templates. Use after adding or removing an MCP connector.
+**`--check-integrations`：** 仅重新运行 Part 0 集成可用性检查。更新 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` 中的 `## 可用集成`，不触及身份、伦理前置条件、指导风格或实践领域模板。在添加或移除 MCP 连接器后使用。
 
-When probing: only report ✓ if an MCP tool call actually succeeded. Configured-but-untested connectors should be marked ⚪ with a one-line how-to for confirming. Never report ✓ based on `.mcp.json` declarations alone — that misleads users into thinking something is wired up when it isn't.
+探测时：仅在实际 MCP 工具调用成功时报告 ✓。已配置但未测试的连接器应标记为 ⚪ 并附一行确认方法。绝不基于 `.mcp.json` 声明单独报告 ✓——这会误导用户以为某些东西已接入而实际未接入。
 
 ---
 
-# Cold-Start Interview: Law School Clinic
+# 冷启动访谈：法学院诊所
 
-## Purpose
+## 目的
 
-Clinics are structurally capacity-constrained. A supervising professor manages 5–10 students, each carrying a handful of cases while juggling classes, and the whole workforce turns over every semester. The waitlist grows. People give up waiting.
+诊所存在结构性容量限制。一位指导老师管理 5-10 名学生，每人同时处理数件案件同时兼顾课程，整个劳动力每学期更替。候访名单增长。人们放弃等待。
 
-This plugin's job is to cut the time cost of everything *around* the lawyering — intake write-up, first drafts, research starting points, status updates — so the same students and professor serve more clients, and students spend more time on the analysis and strategy that make clinical education worthwhile.
+本插件的工作是削减法律实务*周围*所有事务的时间成本——接待记录、初稿、检索起手点、状态更新——使同样的学生和指导老师服务更多当事人，学生花更多时间在使诊所教育有价值的分析和策略上。
 
-This interview sets up the clinic context once, so every student who onboards via `/ramp` and every skill that runs afterward is working from the same understanding of how *this* clinic operates.
+本访谈一次性设置诊所背景，使每个通过 `/ramp` 导入的学生和每个之后运行的技能都从*这家*诊所如何运作的共同理解出发。
 
-**Audience: the supervising professor.** Students don't run this — they run `/ramp`.
+**受众：指导老师。** 学生不运行此技能——他们运行 `/ramp`。
 
-## Cold-start check
+## 冷启动检查
 
-Read `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md`:
-- **Does not exist** → start the interview.
-- **Contains `<!-- SETUP PAUSED AT: -->`** → greet the user and offer to resume from that section.
-- **Contains `[PLACEHOLDER]` markers but no pause comment** → the template was never completed; offer to start fresh or resume from wherever the placeholders begin.
-- **Populated (no placeholders, no pause comment)** → already configured; skip unless `--redo`.
+读取 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md`：
+- **不存在** → 开始访谈。
+- **包含 `<!-- SETUP PAUSED AT: -->`** → 欢迎用户并提供从该节恢复。
+- **包含 `[PLACEHOLDER]` 标记但无暂停注释** → 模板从未完成；提供从头开始或从占位符起始处恢复。
+- **已填充（无占位符，无暂停注释）** → 已配置；跳过，除非 `--redo`。
 
-## Check for the shared company profile
+## 检查共享机构画像
 
-Look for `~/.claude/plugins/config/claude-for-legal/company-profile.md`.
+查找 `~/.claude/plugins/config/claude-for-legal-zh/company-profile.md`。
 
-- **If it exists:** Read it. Show a one-line confirmation: "You're [name], [practice setting], at [company], [industry], operating in [jurisdictions]. Right? (Or say 'update' to change the shared profile.)" If confirmed, skip the company questions — go straight to the plugin-specific ones.
-- **If it doesn't exist:** You'll be the first plugin this user set up. After the orientation and fork, ask the company questions and write them to the shared profile (per the template at `references/company-profile-template.md` in the plugin root), then continue with the plugin-specific questions. Tell the user: "I've saved your company profile — the other legal plugins will read it and skip these questions."
+- **如存在：** 读取它。展示一行确认："你是[姓名]，[执业设置]，在[机构]，[行业]，在[管辖地]执业。对吗？（或说'更新'来更改共享画像）"如确认，跳过机构相关问题——直接进入插件特定问题。
+- **如不存在：** 你将是用户设置的第一个插件。在导览和分叉后，询问机构相关问题并写入共享画像（按插件根目录下 `references/company-profile-template.md` 的模板），然后继续插件特定问题。告诉用户："我已保存你的机构画像——其他法律插件将读取它并跳过这些问题。"
 
-The company questions that belong in the shared profile (and should NOT be re-asked if it exists): practice setting, company name, industry, what-you-sell, size, jurisdictions, regulators, risk appetite, escalation names. The plugin-specific questions (playbook positions, review framework, house style, supervision model, etc.) stay per-plugin.
+属于共享画像的机构问题（如存在则不应重问）：执业设置、机构名称、行业、你们销售什么、规模、管辖地、监管机构、风险偏好、升级联系人姓名。插件特定问题（手册立场、审查框架、机构风格、指导模式等）保留在各插件。
 
-## Install scope check
+## 安装范围检查
 
-Before the orientation, if you notice the working directory is inside a project (not the user's home directory), flag it. Say once:
+在导览前，如发现工作目录在项目内（非用户主目录），标记它。说一次：
 
-> **Heads up — it looks like this plugin may be project-scoped, which means I can only read files in [current directory]. If you'll want me to read documents from elsewhere (Downloads, Documents, Dropbox), install user-scoped instead — see QUICKSTART.md. You can continue with project scope, but you'll need to move files into this folder.**
+> **提醒——看起来本插件可能是项目范围的，这意味着我只能读取[当前目录]中的文件。如果你需要我读取其他位置的文件（下载、文档、云盘），改为安装用户范围——参见 QUICKSTART.md。你可以以项目范围继续，但需要将文件移入此文件夹。**
 
-Ask the user to confirm before proceeding: continue with project scope, or pause to reinstall user-scoped. If the working directory *is* the user's home directory, skip this check silently.
+在继续前请用户确认：以项目范围继续，或暂停以重新安装用户范围。如果工作目录*是*用户主目录，静默跳过此检查。
 
-## Before the interview starts
+## 访谈开始前
 
-Show this preamble first (3-4 short lines, nothing more):
+先展示此导言（3-4 短行，不多）：
 
-> **`legal-clinic` is for supervising attorneys setting up a law school clinic and onboarding students.** Not your area? `/legal-builder-hub:related-skills-surfacer`.
+> **`legal-clinic` 面向设置法学院诊所和导入学生的指导律师。** 不是你的领域？`/legal-builder-hub:related-skills-surfacer`。
 >
-> **2 minutes** gets you practice area(s), jurisdiction, and supervision model basics — plus working defaults for client-letter format, IRAC scaffolding, and deadline cadence. **15 minutes** adds your ethical-preconditions record, supervision flag triggers, per-practice-area document templates from your filings, handbook content feeding `/ramp`, local court rules feeding `/draft`, and semester dates.
+> **2分钟** 获得实践领域、管辖地和指导模式基础——外加 client-letter 格式、IRAC 框架和截止日期节奏的工作默认值。**15分钟** 增加你的伦理前置条件记录、指导标记触发条件、来自你提交文件的按实践领域文件模板、输入 `/ramp` 的手册内容、输入 `/draft` 的本地法院规则、以及学期日期。
 >
-> Quick or full? (Upgrade any time with `/cold-start-interview --full`.)
+> 快速还是完整？（随时可通过 `/cold-start-interview --full` 升级。）
 
-## After the user picks quick or full
+## 用户选择快速或完整后
 
-Once the supervising attorney has picked, orient them. Cover, in your own voice:
+指导老师选择后，进行导览。用你自己的话涵盖：
 
-- **What this plugin maintains:** your clinic profile (practice areas, supervision model, house templates), per-case files (intake, deadlines, comms log, handoff memos), and a supervisor review queue.
-- **What this setup does:** supports a law school legal clinic — intake, case memos, client letters, status updates, deadlines — across your practice areas, with supervision built in. Learns the clinic's practice areas, jurisdiction, and supervision model, and writes them into a plain-text file every skill reads from and every student's `/ramp` onboarding reads from. Everything can be changed later. Once it's done, the commands will work the way the clinic actually operates, not the way a generic template does.
-- **Data sources:** setup builds a fresh clinic profile from the attorney's answers and from documents uploaded during the interview (handbook, filing guides, local rules, intake forms, example case files). It does not read personal Claude history, other conversations, or the home-directory CLAUDE.md. If something relevant came up earlier in this conversation (e.g., school or practice area), ask before folding it in. Nothing gets added to configuration unless the attorney types or approves it.
-- **Next up:** Part 0 — who's running the setup and the ethical preconditions.
+- **本插件维护什么：** 你的诊所画像（实践领域、指导模式、机构模板）、按案件文件（接待、截止日期、沟通日志、交接备忘录）以及指导老师审查队列。
+- **本设置做什么：** 支持法学院法律诊所——接待、案件备忘录、当事人信函、状态更新、截止日期——跨你的实践领域，内建指导。学习诊所的实践领域、管辖地和指导模式，并将其写入每个技能和每个学生的 `/ramp` 导入都读取的纯文本文件。一切可后续更改。完成后，命令将按诊所实际运作的方式工作，而非通用模板的方式。
+- **数据来源：** 设置从指导律师的回答和访谈中上传的文件（手册、提交指南、本地规则、接待表格、示例案件文件）构建全新的诊所画像。它不读取个人 Claude 历史、其他对话或主目录 CLAUDE.md。如果本对话中更早出现了相关内容（如学校或实践领域），在纳入前询问。未经指导律师输入或批准的内容不会加入配置。
+- **接下来：** Part 0 — 谁在运行设置以及伦理前置条件。
 
-**Why this matters.** Every `/ramp` onboarding, every `/client-intake`, every `/draft`, every `/client-letter`, every `/status` reads from the configuration this interview writes. A generic configuration gives students generic output — a default supervision model, default filing conventions, generic client-letter tone — and the first week of a semester is spent correcting what the tool assumed about the clinic. Telling the plugin the practice areas, supervision style, and local formatting is what makes the difference between "a clinic AI tool" and "a tool that runs the way the clinic runs." The more specific the answers, the less a new student has to unlearn.
+**为什么重要。** 每次 `/ramp` 导入、每次 `/client-intake`、每次 `/draft`、每次 `/client-letter`、每次 `/status` 都从本访谈写入的配置读取。一个通用配置给学生通用输出——默认指导模式、默认提交规范、通用当事人信函语气——学期第一周花在纠正工具对诊所的假设上。告诉插件实践领域、指导风格和本地格式是"一个诊所 AI 工具"和"一个按诊所运行方式运行的工具"之间的区别所在。回答越具体，新学生需要反学习的东西越少。
 
-### Quick start or full setup — branching
+### 快速启动或完整设置——分支
 
-The attorney picked quick or full in the preamble. Branch:
+指导律师在导言中选择了快速或完整。分支：
 
-**Quick start path:** ask only the basics (practice area, jurisdiction, supervision style). Write the config with `[DEFAULT]` markers on everything else. Close with: "Done. You can start using the commands now. I've used sensible defaults for client-letter format, IRAC scaffolding, and deadline cadence. When a skill's output feels off, that's usually a default you should tune — it'll tell you which. Run `/legal-clinic:cold-start-interview --full` anytime to do the whole interview, or `/legal-clinic:cold-start-interview --redo <section>` to re-do one part."
+**快速启动路径：** 仅询问基础（实践领域、管辖地、指导风格）。在其他一切上写入 `[DEFAULT]` 标记。以如下结束："完成。你现在可以开始使用命令了。我已为 client-letter 格式、IRAC 框架和截止日期节奏使用了合理默认值。当某技能输出感觉不对时，那通常是一个你应调节的默认值——它会告诉你哪个。随时运行 `/legal-clinic:cold-start-interview --full` 做完整访谈，或 `/legal-clinic:cold-start-interview --redo <节>` 重做一部分。"
 
-**Full setup path:** the existing interview flow below.
+**完整设置路径：** 以下现有访谈流程。
 
-## Interview pacing
+## 访谈节奏
 
-- **Assume the answer exists somewhere.** When a question asks for information that's probably written down somewhere — company description, playbook, escalation matrix, style guide, handbook, jurisdiction list, matter portfolio — prompt for a link or a paste before asking the user to type it from memory. "Paste a link or a doc, or give me the short version" is the default ask for anything that's more than a sentence. An interviewer who makes people re-type what they've already written has failed the first job of an interviewer.
+- **假定答案存在于某处。** 当问题询问可能已在某处写下的信息——机构描述、手册、升级矩阵、风格指南、手册、管辖地列表、事项组合——提示粘贴链接或粘贴内容，再要求用户凭记忆输入。"粘贴链接或文档，或给我简短版本"是对任何超过一句话内容的默认请求。一个让人重新输入已写好的内容的访谈者已失败了访谈的第一项工作。
 
-**Pause for real answers.** Part 0 has tap-through role and integration checks. The ethical preconditions, Parts 1–5, and especially Part 4 (seed documents) need the supervising attorney to type out answers or upload files. When a question needs more than a quick tap:
+**为真实回答暂停。** Part 0 有快速的角色和集成检查。伦理前置条件、第1-5部分，尤其是第4部分（种子文件）需要指导律师输入答案或上传文件。当问题需要比快速点击更多的内容时：
 
-- **Ask the question and wait.** Say explicitly: "This one needs a typed answer — I'll wait." Do not move to the next question until the attorney responds.
-- **For uploads (handbook, filing guides, local rules, intake forms, example case files, sample motions, sample client letters):** "Paste the contents, share a file path, or say 'skip for now.' If you skip, I'll flag the gap in the practice profile so you can fill it later — and I'll note what that means for `/ramp`, `/draft`, and `/client-letter` (they'll be thinner or fall back to defaults)." Then actually wait. Don't silently move on.
-- **Before writing the practice profile:** review the interview. List every question that was skipped or answered with a placeholder — ethical preconditions still open, practice areas without templates, supervision-flag triggers not set, handbook promised but not uploaded. Say: "Before I write your practice profile, here's what's still open: [list]. Want to fill any of these now, or leave them as placeholders?" Then wait.
-- **Never** write a practice profile with silent gaps. Every placeholder should be a deliberate choice the supervising attorney made to skip — not a question that scrolled past.
-- **Batch size — count subparts.** "Never ask more than 2-3 questions in one turn" means 2-3 *answerable prompts*, counting subparts. One question with 5 subparts is 5 questions. The test: can the user answer without scrolling? If the questions don't fit on one screen, it's too many. Prefer structured tap-through questions where possible — they don't require scrolling or typing.
-- **Pause and resume.** Tell the supervising attorney up front: "If you need to stop, say 'pause' (or 'stop', or 'let me come back to this') and I'll save your progress. Run `/legal-clinic:cold-start-interview` again later and I'll pick up where you left off." When the attorney pauses, write a partial configuration to `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` with a `<!-- SETUP PAUSED AT: [section name] — run /legal-clinic:cold-start-interview to resume -->` comment at the top and `[PENDING]` markers (distinct from `[PLACEHOLDER]`) on unanswered fields. When setup re-runs and finds a paused config, greet the attorney: "Welcome back. You paused at [section]. Your earlier answers are saved. Pick up where we left off, or start over?" Do not re-ask questions already answered.
+- **提问并等待。** 明确说："这个问题需要输入回答——我会等待。"在律师回应前不要移到下一个问题。
+- **对于上传（手册、提交指南、本地规则、接待表格、示例案件文件、示例动议、示例当事人信函）：** "粘贴内容，分享文件路径，或说'暂时跳过'。如果跳过，我将在实践画像中标记该缺口以便你之后补充——并说明对 `/ramp`、`/draft` 和 `/client-letter` 意味着什么（它们会更薄或降级到默认值）。"然后真正等待。不要静默跳过。
+- **写入实践画像前：** 回顾访谈。列出每个被跳过或用占位符回答的问题——仍待处理的伦理前置条件、无模板的实践领域、未设定的指导标记触发条件、承诺但未上传的手册。说："在我写入你的实践画像前，以下是仍待处理的内容：[列表]。现在要补充吗，还是留作占位符？"然后等待。
+- **绝不**写入带有静默缺口的实践画像。每个占位符应是指导律师做出的有意跳过选择——而非滚过去的问题。
+- **批量大小——计算子问题。** "一轮不超过2-3个问题"意味着2-3个*可回答的提示*，计算子问题。一个有5个子问题的问题是5个问题。检验：用户能不用滚动就回答吗？如果问题不能在一个屏幕中放下，就太多了。尽可能使用结构化快速点击问题——它们不需要滚动或输入。
+- **暂停与恢复。** 提前告诉指导律师："如果你需要停下，说'暂停'（或'停止'或'让我回来再继续'），我将保存你的进度。之后再次运行 `/legal-clinic:cold-start-interview` 我会从你离开的地方继续。"当律师暂停时，将部分配置写入 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md`，在顶部附 `<!-- SETUP PAUSED AT: [节名称] — 运行 /legal-clinic:cold-start-interview 继续 -->` 注释，未回答字段使用 `[PENDING]` 标记（区别于 `[PLACEHOLDER]`）。当设置重新运行并发现暂停的配置时，问候律师："欢迎回来。你暂停在[节]。你早先的回答已保存。从离开的地方继续，还是重新开始？"不重问已回答的问题。
 
-**Verify user-stated legal facts as they come up in setup.** When the user answers an interview question with a specific rule citation, statute number, case name, deadline, threshold, jurisdiction, or registration number — and it's something you can sanity-check — do the check before writing it into the configuration. If what they said conflicts with your understanding or with something they've pasted, surface it: "You said the threshold is X; my understanding is Y — can you confirm which goes in the profile? `[premise flagged — verify]`" A wrong fact written into CLAUDE.md propagates into every future output; catching it here is one of the highest-leverage moments in the product.
+**在设置中核实用户陈述的法律事实。** 当用户以具体的规则引注、法条编号、案例名称、日期、截止日期、阈值、管辖地或注册号回答访谈问题时——且是你可以做合理性检查的——在写入配置前进行检查。如果用户所述与你的理解或他们已粘贴的内容冲突，浮现出来："你说阈值是X；我的理解是Y——能否确认哪个写入画像？`[前提已标记 — 需核实]`"一个写入 CLAUDE.md 的错误事实会传播到每个未来输出中；在此处捕捉它是产品中最高杠杆的时刻之一。
 
-## The interview
+## 访谈
 
-### Part 0: Who's running this setup, ethical preconditions, and what's connected (before anything else)
+### Part 0：谁在运行本设置、伦理前置条件以及什么已连接（先于一切）
 
-#### Who's running this setup?
+#### 谁在运行本设置？
 
-> Are you the supervising attorney for this clinic? You need to be licensed and supervising students under your jurisdiction's student practice rule for this setup to be valid. (This feeds Part 0's role gate — setup can only be run by the supervising attorney, and the answer writes supervising-attorney name and bar details into the profile that every skill references.)
+> 你是本诊所的指导律师吗？你需要是持证律师并根据你所在法域的学生实践规则指导学生，本设置才有效。（这输入 Part 0 的身份门控——设置只能由指导律师运行，该回答将指导律师姓名和执业信息写入每个技能引用的画像。）
 >
-> 1. **Yes, I'm the supervising attorney.** Continue.
-> 2. **No, I'm a student / staff / administrator.** Stop. This setup writes the clinic's governing context — supervision model, client-data rules, ethical preconditions — and must be done by the supervising attorney who will be accountable for the work. Ask them to run `/legal-clinic:cold-start-interview`. Students run `/legal-clinic:ramp` to onboard each semester.
+> 1. **是的，我是指导律师。** 继续。
+> 2. **不，我是学生/工作人员/行政人员。** 停止。本设置写入诊所的管理背景——指导模式、当事人数据规则、伦理前置条件——必须由将对工作负责的指导律师完成。请他们运行 `/legal-clinic:cold-start-interview`。学生每学期运行 `/legal-clinic:ramp` 进行导入。
 
-If the answer is 2, stop the interview and surface the above. Do not proceed.
+如果答案是2，停止访谈并浮现上述内容。不要继续。
 
-If the answer is 1, record it in the plugin config under `## Who's using this` (Role: Supervising attorney; name and jurisdiction captured) and continue.
+如果答案是1，将其记录在插件配置 `## 谁在使用这个插件` 下（身份：指导律师；姓名和管辖地已记录）并继续。
 
-*Why this matters:* the clinic runs on a student practice rule that requires supervision by a licensed attorney, solicitor, barrister, or other authorised legal professional in the clinic's jurisdiction. Cold-start decisions — supervision model, consequential-action gating, ethics preconditions — are the supervising attorney's call. The role question gates those decisions to the right person.
+*为什么重要：* 诊所依据学生实践规则运行，该规则要求由诊所管辖地的持证律师进行指导。冷启动决定——指导模式、重要行为门控、伦理前置条件——是指导律师的决定。身份问题将这些决定控制在正确的人手中。
 
-#### Ethical & confidentiality preconditions
+#### 伦理与保密前置条件
 
-Before the professor interview starts — and before any student uses this plugin on a real client matter — confirm the following with the clinic's supervising attorney and the school's IT / ethics office. Do not skip this step.
+在指导老师访谈开始前——以及任何学生在本插件上处理真实当事人事项前——与诊所的指导律师和学校的 IT/伦理办公室确认以下内容。不要跳过此步骤。
 
-1. **Account tier and data-handling terms.** Your Claude account tier and its data retention and training policies — Team, Enterprise, Work, Education, and individual accounts have different guarantees about retention, use for training, and subprocessor handling. Confirm which tier the clinic is on and what the applicable terms say about client data. Document the answer in the plugin config.
+1. **账户层级和数据处理条款。** 你的 Claude 账户层级及其数据留存和训练政策——团队版、企业版、教育版和个人版在数据留存、用于训练和分包商处理方面有不同的保证。确认诊所在哪个层级以及适用条款对当事人数据的规定。将答案记录在插件配置中。
 
-2. **Client consent and disclosure practices for AI-assisted work.** Review ABA Formal Opinion 512 (2024), your state bar's AI guidance (if any), and Model Rules of Professional Conduct 1.1 (competence), 1.4 (communication), 1.6 (confidentiality), and 5.3 (supervision of nonlawyer assistance). Decide whether and how the clinic discloses AI use to clients, and document the practice.
+2. **当事人对 AI 辅助工作的同意和披露实践。** 审查中国法学院法律诊所实践规范、《律师执业管理办法》及《法律援助法》相关规定，以及你所在省律协关于 AI 使用的任何指引。决定诊所是否及如何向当事人披露 AI 使用，并记录实践。
 
-3. **How privileged and confidential material is handled.** What gets pasted into sessions, where outputs are stored, who has access, how long material is retained locally, how student turnover affects access. Document the data-handling rules the clinic expects students to follow.
+3. **保密和特免材料如何处理。** 什么会被粘贴到会话中，输出存储在哪里，谁有访问权限，材料本地保留多久，学生更替如何影响访问。记录诊所期望学生遵循的数据处理规则。
 
-4. **Practice-area heightened-confidentiality considerations.** Immigration, criminal defense, domestic violence, family, and some civil rights matters carry heightened confidentiality and security expectations that go beyond the baseline — adversary exposure risk, subpoena risk, safety risk for survivors. Confirm whether any clinic practice area requires additional safeguards (e.g., limiting what facts are put into sessions, additional redaction, not using the plugin for a given case type at all).
+4. **实践领域的高度保密考虑。** 刑事辩护、家庭暴力、婚姻家庭和部分民事权利事项带有超出基线的更高保密和安全期望——对立方暴露风险、调查令风险、幸存者安全风险。确认是否有任何诊所实践领域需要额外保障（如限制何种事实可放入会话、额外脱敏、某类案件完全不用插件）。
 
-Capture the professor's answers. If any precondition is unresolved, flag that in the plugin config and note that students should not use the plugin on real client matters until resolved.
+记录指导老师的回答。如果任何前置条件未解决，在插件配置中标记并注明学生在该问题解决前不应在真实当事人事项上使用插件。
 
-#### What's connected?
+#### 什么已连接？
 
-> This plugin can work with a case management system (Clio) and document storage (Google Drive, SharePoint, Box). Let me check which connectors are configured — features that need them will work, and features that don't have them will fall back to manual gracefully instead of failing silently.
+> 本插件可与文件存储系统协同工作。让我检查哪些连接器已配置——需要它们的功能将工作，不需要的功能将优雅降级到手动而非静默失败。
 
-**Check what's actually connected, not what's configured.** A connector listed in `.mcp.json` is *available*. A connector that's actually responding is *connected*. These are different, and confusing them destroys trust. For each connector this plugin uses:
+**检查实际已连接的，而非已配置的。** `.mcp.json` 中列出的连接器是*可用*的。实际响应的连接器是*已连接*的。这两者不同，混淆它们会破坏信任。对本插件使用的每个连接器：
 
-- If you can test the connection (call a simple MCP tool like a list or search), report ✓ only on a successful response.
-- If you can't test (no way to probe from here), report ⚪ "configured but not verified — open your MCP settings to confirm" with a one-line how-to.
-- Never report ✓ based on configuration alone.
+- 如果你能测试连接（调用简单的 MCP 工具如列表或搜索），仅在实际成功响应时报告 ✓。
+- 如果你不能测试（无法从此处探测），报告 ⚪ "已配置但未验证——打开你的 MCP 设置确认"附一行确认指引。
+- 绝不基于仅配置报告 ✓。
 
-For connectors that show as not connected, tell the user how to connect. Example phrasing: "Box isn't connected. In Claude Cowork: Settings → Connectors → Add → Box → sign in. In Claude Code: add the Box MCP to your config or via `/mcp`. This plugin works without it — you'll paste documents instead of pulling them — but connecting it makes document pulls automatic."
+对显示为未连接的连接器，告诉用户如何连接。
 
-Then report findings in this form:
+然后以此形式报告发现：
 
-> - ✓ [Integration] — connected (tested)
-> - ⚪ [Integration] — configured but not verified. Open your MCP settings to confirm.
-> - ✗ [Integration] — not found. [Feature] will fall back to [manual alternative]. [How to connect.]
+> - ✓ [集成] — 已连接（已测试）
+> - ⚪ [集成] — 已配置但未验证。打开你的 MCP 设置确认。
+> - ✗ [集成] — 未找到。[功能]将降级到[手动替代]。[如何连接。]
 
-You don't need all of these. Core features — intake, draft, client letter, research-start, deadlines, semester handoff, supervisor review — work with local file access alone.
+你不全部需要这些。核心功能——接待、起草、当事人信函、检索起手、截止日期、学期交接、指导老师审查——仅靠本地文件访问即可工作。
 
-Write Part 0 answers to the plugin config under `## Who's using this` and `## Available integrations`. If a populated CLAUDE.md exists at the old cache path `~/.claude/plugins/cache/claude-for-legal/legal-clinic/*/CLAUDE.md` but not here, copy it forward first.
+将 Part 0 回答写入插件配置 `## 谁在使用这个插件` 和 `## 可用集成` 下。如果旧缓存路径 `~/.claude/plugins/cache/claude-for-legal-zh/legal-clinic/*/CLAUDE.md` 存在已填充的 CLAUDE.md 但不在当前路径，先将其复制过来。
 
-### Opening
+### 开场
 
-> This is the one-time setup for your clinic. Ten to fifteen minutes. I'll ask about your practice areas, your jurisdiction, how you supervise, and then I'll ask you to point me at your clinic handbook and any filing guides or local court rules you give students. Everything I learn here feeds the `/ramp` onboarding your students will run at the start of each semester, and every other command in this plugin.
+> 这是你诊所的一次性设置。十到十五分钟。我会询问你的实践领域、管辖地、你如何指导，然后请你指向你的诊所手册和你给学生的任何提交指南或本地法院规则。我在这里学到的每项内容都将输入你的学生每学期初运行的 `/ramp` 导入，以及本插件的其他每项命令。
 >
-> None of this replaces your judgment or your students' analysis. The goal is to cut the hours spent on formatting, structuring, and writing up — so more of your students' time goes to the lawyering, and more clients get served.
+> 这些都不替代你的判断或你学生的分析。目标是削减花在格式、结构和记录上的时间——让你学生更多时间花在法律实务上，让更多当事人得到服务。
 >
-> I'll ask for materials along the way — handbook, filing guides, local rules, intake forms, example case files, sample motions you've filed, sample client letters. Ten to twenty documents across the interview is the target. More is better. If you share fewer than ten, I'll flag the practice profile as LIMITED DATA — the plugin still works, but `/ramp` is thinner (commands but not your clinic's specific procedures), `/draft` falls back to state defaults instead of your local formatting, and `/client-letter` uses generic templates instead of matching your voice. Templates-first: if you upload a document, I read it and match your format rather than asking you to describe it.
+> 我会在过程中请求材料——手册、提交指南、本地规则、接待表格、示例案件文件、你曾提交的示例动议、示例当事人信函。整个访谈的目标是十到二十份文件。更多更好。如果你分享少于十份，我会将实践画像标记为数据有限（LIMITED DATA）——插件仍工作，但 `/ramp` 更薄（只有命令而没有诊所特定程序），`/draft` 降级到省级默认而非你的本地格式，`/client-letter` 使用通用模板而非匹配你的风格。模板优先：如果你上传一份文件，我读取它并匹配你的格式，而非让你描述它。
 
-### Part 1: The clinic (2-3 min)
+### 第1部分：诊所（2-3分钟）
 
-**What kind of clinic?** (Practice area feeds /client-intake and /draft — each area has its own intake template and document templates, so this is the key that switches between an immigration-clinic workflow and a housing-clinic workflow.)
-- Clinic name and school
-- Practice area(s): immigration, housing, family law, consumer protection, criminal defense, civil rights, other? (Can be multiple — many clinics handle overlapping issues)
+**什么类型的诊所？**（实践领域输入 /client-intake 和 /draft——每个领域有其自己的接待模板和文件模板，所以这是切换劳动争议诊所工作流和婚姻家庭诊所工作流的关键。）
+- 诊所名称和所在学校
+- 实践领域：劳动争议、婚姻家庭、消费者权益、行政纠纷、刑事辩护、其他？（可以有多个——许多诊所处理重叠问题）
 
-   **Practices that don't fit the boxes.** If the clinic's practice doesn't match the options (international human rights, tribal court, military justice, environmental justice, entrepreneurship/transactional clinics, appellate-only, mediation/restorative-justice, or anything else the standard categories assume away), offer: "It sounds like your clinic doesn't fit my usual categories. Tell me about it in your own words — what the clinic does, who it serves, what jurisdictions and forums, what the work looks like — and I'll build your clinic profile from that instead of forcing it into boxes that don't fit. I'll skip or adapt the questions that don't apply." Then build the profile from the free-form description, flagging which template fields were filled, adapted, or left empty because they don't apply. A profile built from a forced fit is worse than a sparse profile built from what's actually true.
-- How many students this semester? How many active cases at a time, roughly?
-- How many supervising professors/attorneys?
+   **不适合标准分类的实践。** 如果诊所的实践不匹配选项（国际人权、军事法庭、环境公益、创业/交易型诊所、仅上诉案件、调解/恢复性司法，或任何标准分类假定忽略的其他类型），提供："听起来你的诊所不符合我的常规分类。用你自己的话告诉我——诊所做什么、服务谁、哪些管辖地和裁判机构、工作是什么样的——我将基于此构建你的诊所画像，而非将其强行塞入不匹配的分类。我将跳过或调整不适用的那些问题。"然后从自由形式描述构建画像，标记哪些模板字段已填充、已调整或因不适用而留空。从强制匹配构建的画像比从实际真相构建的稀疏画像更糟糕。
+- 本学期多少学生？大约同时多少活跃案件？
+- 多少位指导老师/律师？
 
-**Who are the clients?**
-- Typical client situations — who walks in, what are they facing?
-- Languages spoken beyond English?
-- Common referral sources (legal aid, court self-help center, community orgs)?
+**当事人是谁？**
+- 典型当事人情形——谁走进来，他们面临什么？
+- 中文之外的语言？
+- 常见转介来源（法律援助中心、法院诉讼服务中心、社区组织）？
 
-### Part 2: Jurisdiction (1-2 min)
+### 第2部分：管辖地（1-2分钟）
 
-(This feeds /draft, /research-start, /memo, and /deadlines — jurisdiction determines filing formats, research scope, and default deadline calculations.)
+（这输入 /draft、/research-start、/memo 和 /deadlines——管辖地决定提交格式、检索范围和默认截止日期计算。）
 
-- State. This drives everything jurisdiction-aware — eviction timelines, protective order procedures, filing formats.
-- Primary court(s): which county/district court do cases land in most often?
-- Any local rules or standing orders that diverge from state defaults?
+- 省份/直辖市。这驱动所有管辖地相关的内容。
+- 主要法院：案件最常落在哪个区/县法院？
+- 是否有不同于省级默认的本地规则或通行规定？
 
-### Part 3: Supervision style (2-3 min — this is the key design question)
+### 第3部分：指导风格（2-3分钟——这是关键设计问题）
 
-> Clinics vary a lot in how tightly student work is reviewed before it goes out. Some want every draft in a formal review queue — student submits, professor approves, then it goes. Others are lighter-touch — students check in, professor signs off informally, the structure is more conversational. What's your model? (This feeds /supervisor-review-queue and the flag-triggering logic across /draft, /client-letter, and /status — formal queue turns the supervisor-review-queue skill on; configurable flags only surface triggers; lighter-touch suppresses the queue entirely.)
+> 诊所之间在学生工作发出前审查的严格程度差异很大。有些希望每份草稿进入正式审查队列——学生提交、指导老师批准、然后发出。其他是较轻触——学生报到、指导老师非正式签字、结构更具对话性。你的模式是什么？（这输入 /supervisor-review-queue 以及 /draft、/client-letter 和 /status 中的标记触发逻辑——正式队列开启 supervisor-review-queue 技能；可配置标记仅浮现触发器；较轻触彻底抑制队列。）
 
-Three options to offer:
+三种选项供选择：
 
-**Formal review queue:** Student output that's client-facing or court-bound goes into a queue. Professor reviews, approves or edits, then it releases. Every approval logged. (I'll keep a review queue skill active — `supervisor-review-queue` turns on.)
+**正式审查队列：** 面向当事人或法院的学生输出进入队列。指导老师审查、批准或编辑，然后发布。每次批准记录在案。（我将保持审查队列技能活跃——`supervisor-review-queue` 开启。）
 
-**Configurable flags, informal review:** Certain triggers (deadlines, sensitive topics, court filings) flag the output with "CHECK WITH [PROFESSOR] BEFORE SENDING" — but no formal queue mechanism. Student is responsible for checking in. (I won't add the queue; students flag directly when a trigger hits and loop you in.)
+**可配置标记，非正式审查：** 特定触发器（截止日期、敏感主题、法院提交）将输出标记为"发送前请与[指导老师]确认"——但没有正式队列机制。学生负责报到。（我将不添加队列；学生在触发器命中时直接标记并让你参与。）
 
-**Lighter-touch:** Outputs carry the standard AI-assisted label and verification prompts, but no additional review gates. Professor supervises through the clinic's existing structure (case rounds, one-on-ones), not through the plugin. (I won't add the queue or extra flags; I'll rely on your existing case rounds and check-ins.)
+**较轻触：** 输出携带标准 AI 辅助标签和核实提示，但没有额外审查门控。指导老师通过诊所的现有结构（案件讨论会、一对一）进行指导，而非通过插件。（我将不添加队列或额外标记；我将依赖你现有的案件讨论会和报到机制。）
 
-> There's no right answer — it depends on your students' experience level, your caseload, and how you already run supervision. You can change this later by editing CLAUDE.md.
+> 没有正确答案——取决于你学生的经验水平、你的案件量以及你已如何运行指导。你可以稍后通过编辑 CLAUDE.md 进行更改。
 
-Capture the choice and, if formal queue or configurable flags: what should trigger a flag? (Court filings always? Any deadline mention? Topics like DV, immigration status, criminal exposure?)
+记录选择，如果为正式队列或可配置标记：什么应触发标记？（始终法院提交？任何截止日期提及？家庭暴力、身份问题、刑事暴露等主题？）
 
-**Pedagogy dial.** After the supervision choice is captured, ask:
+**教学旋钮。** 记录指导风格选择后，询问：
 
-> **How much should the skills do?** This is the most important setting. Three options:
+> **技能应做多少？** 这是最重要的设置。三个选项：
 >
-> - **Guide (default):** The skill produces structure; students fill in substance; the skill gives feedback. Balanced — most clinics start here.
-> - **Assist:** The skill produces work product; students review, edit, and learn by seeing. Fastest, most productive, least pedagogical. Good for high-volume clinics.
-> - **Teach:** The skill doesn't produce work product — students draft, the skill asks Socratic questions and gives feedback, and only shows a model after two attempts. Slowest, most pedagogical. Good for clinics where learning is the primary goal.
+> - **Guide（默认）：** 技能产出结构；学生填入实质内容；技能给予反馈。平衡——大多数诊所从这里开始。
+> - **Assist：** 技能产出工作成果；学生审查、编辑并通过观察学习。最快，生产力最高，教学性最低。适合高案件量诊所。
+> - **Teach：** 技能不产出工作成果——学生起草，技能提出追问式问题并给予反馈，仅在两次尝试后才展示示范。最慢，教学性最高。适合学习为首要目标的诊所。
 >
-> You can set this per document type later with `/legal-clinic:build-guide`. For now, pick a default.
+> 你可以稍后通过 `/legal-clinic:build-guide` 按文件类型设置。现在，选择一个默认值。
 
-Write the answer to the practice profile as `pedagogy_default: assist | guide | teach` (default `guide` if the supervisor doesn't pick).
+将回答写入实践画像为 `pedagogy_default: assist | guide | teach`（如指导老师不选，默认 `guide`）。
 
-**Practice-area guide.** After the pedagogy default is captured, offer:
+**实践领域指南。** 记录教学默认值后，提供：
 
-> Do you want to author a practice-area guide that tailors how the skills work for your clinic — intake questions, per-document pedagogy overrides, review gates? I can help you build one in 5-10 minutes with `/legal-clinic:build-guide`. You can also do it later. For now, the skills use sensible defaults: the pedagogy default you just picked, and everything client-facing flagged for your review.
+> 你想撰写一份实践领域指南来定制技能在你的诊所如何工作吗——接待问题、按文件类型的教学覆盖、审查门控？我可以通过 `/legal-clinic:build-guide` 帮你在5-10分钟内构建一份。你也可以稍后做。现在，技能使用合理默认值：你刚选的教学默认值，以及所有面向当事人的内容标记供你审查。
 
-Note the answer in the setup state — if the supervisor wants to build a guide, surface that as a next step after the interview closes (under Step 3 of the "After writing" section). Do not interrupt this interview to run `/legal-clinic:build-guide` inline; finish the profile first, then offer the handoff.
+在设置状态中记录回答——如果指导老师想构建指南，在访谈结束后浮现为下一步（在"写入后"部分的第3步下）。不要在此访谈中内嵌运行 `/legal-clinic:build-guide` 而中断；先完成画像，再提供移交。
 
-### Part 4: Seed documents (3-4 min)
+### 第4部分：种子文件（3-4分钟）
 
-> Three things, as many as you have. (The handbook feeds /ramp onboarding; filing guides feed /draft formatting; the intake form becomes the backbone of /client-intake.)
+> 三样东西，你有多少给多少。（手册输入 /ramp 导入；提交指南输入 /draft 格式；接待表格成为 /client-intake 的骨干。）
 >
-> 1. **Your clinic handbook or procedures doc.** Whatever you give students on day one. I'll use it to build the `/ramp` onboarding so students get a guided walkthrough instead of a PDF they skim.
+> 1. **你的诊所手册或程序文件。** 你第一天发给学生的任何东西。我将用它来构建 `/ramp` 导入，让学生得到引导式导览而非他们浏览的 PDF。
 >
-> 2. **Filing guides and local court rules.** Anything that tells students how to format a caption, where to file, what the local judge wants. These feed `/draft` so first drafts are jurisdictionally correct from the start.
+> 2. **提交指南和本地法院规则。** 任何告诉学生如何格式化文书标题、在哪里提交、本地法官想要什么的东西。这些输入 `/draft` 使初稿从开始就管辖地正确。
 >
-> 3. **Your intake form, and if you have one, a scrubbed example case file.** The intake form becomes the backbone of `/client-intake`. The example file shows me what a well-documented case looks like in your clinic.
+> 3. **你的接待表格，如果有的话，一份已脱敏的示例案件文件。** 接待表格成为 `/client-intake` 的骨干。示例文件向我展示你诊所中一个文档良好的案件是什么样。
 
-**From the handbook:** Clinic procedures, case management conventions, student expectations, ethical reminders. This is what `/ramp` will teach.
+**来自手册：** 诊所程序、案件管理规范、学生期望、职业道德提醒。这些是 `/ramp` 将教学的内容。
 
-**From filing guides/local rules:** Caption format, service requirements, local motion practice quirks. This is what `/draft` will apply.
+**来自提交指南/本地规则：** 文书标题格式、送达要求、本地动议实践特殊规则。这些是 `/draft` 将应用的内容。
 
-**From the intake form:** Practice-area-specific fields. If the clinic has separate intake forms per practice area (immigration vs. housing), take all of them.
+**来自接待表格：** 实践领域特定字段。如果诊所有按实践领域的独立接待表格（劳动争议 vs. 婚姻家庭），全部接收。
 
-### Part 5: Practice-area templates (1-2 min)
+### 第5部分：实践领域模板（1-2分钟）
 
-For each practice area the clinic handles: what are the 3-5 documents students draft most often? (This feeds /draft — each listed document becomes a template the skill can start from, and anything not listed falls back to a generic first pass.)
+对诊所处理的每个实践领域：学生最常起草的3-5份文件是什么？（这输入 /draft——每份列出的文件成为技能可起手的模板，未列出的降级到通用初稿。）
 
-| Practice area | Common documents |
+| 实践领域 | 常见文件 |
 |---|---|
-| Immigration | Asylum application (I-589), motion to change venue, client declaration, FOIA request |
-| Housing | Eviction answer, demand letter, repair request, motion to stay |
-| Family | Protective order petition, custody motion, financial disclosure |
-| Consumer | Debt validation letter, FDCPA demand, answer to collection suit |
+| 劳动争议 | 劳动仲裁申请书、起诉状、答辩状、证据清单、代理词 |
+| 婚姻家庭 | 离婚起诉状、人身保护令申请书、子女抚养权变更申请书、财产分割协议 |
+| 消费者权益 | 律师函、起诉状、答辩状、撤诉申请书 |
+| 行政纠纷 | 行政复议申请书、行政起诉状、证据清单、代理词 |
 
-These become the template set for `/draft`. If the professor has existing templates, ingest them. If not, note which ones to build.
+这些成为 `/draft` 的模板集。如果指导老师有现成模板，收录它们。如果没有，注明需要构建哪些。
 
-**If the professor didn't upload a handbook or intake form:** at the end of this section, offer: "Want me to draft a starter clinic handbook and intake form from what you told me? Same content I just captured — supervision style, practice areas, jurisdiction — in a format you can edit and share with next semester's cohort."
+**如果指导老师没有上传手册或接待表格：** 在本节结束时，提供："想让我根据你告诉我的内容起草一份入门诊所手册和接待表格吗？我刚记录的同样内容——指导风格、实践领域、管辖地——以你可以编辑并与下学期群体分享的格式。"
 
-## Before writing — re-read
+## 写入前——重读
 
-Before committing the practice profile to the plugin config, re-read every captured answer in order. Catches:
+在将实践画像提交到插件配置前，按顺序重读每个已记录的回答。捕捉：
 
-1. **Contradictions between answers** — e.g., "formal review queue" in supervision style but "lighter-touch, through case rounds" in describing how review actually happens. Surface both and ask which governs.
-2. **Drifted specifics** — names, court references, dates that changed between sections. Confirm final values.
-3. **Skipped gaps worth naming** — practice areas listed without templates, supervision style chosen without flag triggers populated, handbook promised but not uploaded. Offer to complete now rather than leaving for `--redo`.
+1. **回答之间的矛盾** — 如指导风格中的"正式审查队列"但在描述审查实际如何进行时说"较轻触，通过案件讨论会"。浮现两者并询问哪个为准。
+2. **漂移的具体细节** — 姓名、法院引用、日期在节之间变化。确认最终值。
+3. **值得指出的跳过缺口** — 列出实践领域但无模板、选定指导风格但未填充标记触发器、承诺手册但未上传。提供现在完成而非留给 `--redo`。
 
-## Writing the practice profile
+## 写入实践画像
 
-Per the CLAUDE.md template. Key sections:
+按 CLAUDE.md 模板。关键节：
 
-- **Clinic profile** — name, school, practice areas, jurisdiction, student count
-- **Supervision style** — which of the three models, and flag triggers if applicable
-- **Practice-area templates** — intake templates and document templates per area
-- **Jurisdiction** — state, courts, local rules ingested
-- **Semester** — when do students turn over (so `/ramp` knows when it'll be needed, and `/semester-handoff` knows when it'll be triggered)
-- **Handbook path** — where the ingested handbook lives, for `/ramp` to read
+- **诊所画像** — 名称、学校、实践领域、管辖地、学生人数
+- **指导风格** — 三种模式中的哪一种，及适用的标记触发器
+- **实践领域模板** — 按领域的接待模板和文件模板
+- **管辖地** — 省份、法院、已收录的本地规则
+- **学期** — 学生何时更替（使 `/ramp` 知道何时需要，使 `/semester-handoff` 知道何时触发）
+- **手册路径** — 已收录的手册存放位置，供 `/ramp` 读取
 
-**LIMITED DATA flag:** if fewer than 10 materials were shared across the interview, add a `> LIMITED DATA` note at the top of CLAUDE.md (under the written-on date), stating: "This practice profile was written from [N] materials. Downstream skills will operate but outputs will be thinner — `/ramp` covers commands but not clinic-specific procedures, `/draft` uses state defaults instead of local formatting, `/client-letter` uses generic templates. Re-run `/legal-clinic:cold-start-interview --redo` after collecting more exemplars to sharpen calibration."
+**数据有限（LIMITED DATA）标记：** 如果整个访谈中分享的材料少于10份，在 CLAUDE.md 顶部（写入日期下）添加 `> LIMITED DATA` 注释，说明："本实践画像由[N]份材料写成。下游技能将运行但输出更薄——`/ramp` 涵盖命令但不涵盖诊所特定程序，`/draft` 使用省级默认而非本地格式，`/client-letter` 使用通用模板。在收集更多示例后重新运行 `/legal-clinic:cold-start-interview --redo` 以提高精准度。"
 
-## Built-in safeguard framing
+## 内建保障框架
 
-Write into the plugin config the safeguard standards every skill will apply:
+写入插件配置中每项技能将应用的保障标准：
 
 ```markdown
-## Output safeguards (applied by every skill)
+## 产出保障（每项技能适用）
 
-Every output includes:
-- **AI-assisted label:** "[AI-ASSISTED DRAFT — requires student analysis and attorney review]"
-- **Confidence indicators:** Where the skill is uncertain, it says so explicitly
-- **Verification prompts:** Specific things the student should fact-check before relying on the output
-- **Ethical reminders calibrated to task:** e.g., /draft outputs remind about ABA Formal Op. 512 supervision requirements
+每份输出包含：
+- **AI 辅助标签：** "[AI辅助草稿 —— 需学生分析和指导律师审查]"
+- **置信度指标：** 当技能不确定时，明确说明
+- **核实提示：** 学生在依赖输出前应核查的特定事项
+- **针对任务的伦理提醒：** 如 /draft 输出包含关于中国法学院法律诊所实践规范中指导要求的提醒
 
-These are not optional and not configurable. They're the baseline.
+这些不是可选的，不可配置。它们是基线。
 ```
 
-## After writing
+## 写入后
 
-**Show what this plugin can do.** Before closing, offer:
+**展示本插件可以做什么。** 在结束前，提供：
 
-> **Want to see what I can help with?**
+> **想看看我能帮你做什么吗？**
 
-If yes, show this tailored list (not a generic template — these are the concrete things this plugin does best):
+如果同意，展示此定制列表（非通用模板——这些是本插件最擅长的具体事项）：
 
-> **Here's what I'm good at in law school clinic practice:**
+> **这是我在法学院诊所实践中擅长的：**
 >
-> - **Student intake on a new case** — e.g., "Walk a student through a practice-area-specific intake with red-flag spotting and conflict checks." Try: `/legal-clinic:client-intake`
-> - **Draft a client letter at 6th-grade reading level** — e.g., "Produce an appointment confirm or status update in plain language; student edits and you approve." Try: `/legal-clinic:client-letter`
-> - **Build an IRAC memo scaffold** — e.g., "Give a student the structure and research-gap list for a case memo — pedagogy default is guide." Try: `/legal-clinic:memo`
-> - **Track deadlines across the active docket** — e.g., "See what's due in the next 14 / 7 / 3 / 1 days with warnings per your cadence." Try: `/legal-clinic:deadlines`
-> - **Ramp up a new cohort** — e.g., "Onboard this semester's students to the clinic's procedures, tools, and case-handling norms." Try: `/legal-clinic:ramp`
-> - **Semester handoff** — e.g., "Build per-case transition memos for the incoming cohort." Try: `/legal-clinic:semester-handoff`
+> - **新案件的学生接待** — 如"引导学生完成实践领域特定的接待，含红旗信号识别和冲突检查。" 尝试：`/legal-clinic:client-intake`
+> - **以初中阅读水平起草当事人信函** — 如"以通俗语言生成预约确认或状态更新；学生编辑，你批准。" 尝试：`/legal-clinic:client-letter`
+> - **构建 IRAC 备忘录框架** — 如"为学生提供案件备忘录的结构和检索缺口清单——教学默认值为 guide。" 尝试：`/legal-clinic:memo`
+> - **跨活跃案件追踪截止日期** — 如"查看未来 14/7/3/1 天到期的内容，按你的节奏预警。" 尝试：`/legal-clinic:deadlines`
+> - **新群体导入** — 如"将本学期学生导入诊所的程序、工具和案件处理规范。" 尝试：`/legal-clinic:ramp`
+> - **学期交接** — 如"为下个群体构建按案件的移交备忘录。" 尝试：`/legal-clinic:semester-handoff`
 >
-> **My suggestion for your first one:** Run `/ramp` yourself first so you see what your students will see at the start of the semester. Or tell me what's on your plate and I'll pick.
+> **我对你的第一个建议：** 自己先运行 `/ramp`，这样你能看到你的学生学期初会看到什么。或者告诉我你手头的事，我来选。
 
-This solves the cold-start problem (the supervisor doesn't know what to do first) and the value-prop problem (they don't know what the plugin can do) in one offer. Make the list specific. Skip this step if the supervisor already named a concrete first task during the interview.
+这在一个提议中解决了冷启动问题（指导老师不知道先做什么）和价值主张问题（他们不知道插件能做什么）。让列表具体。如果指导老师在访谈中已经提了一个具体的首要任务，跳过此步。
 
+1. **展示指导风格选择。** "你选了[正式队列 / 标记 / 较轻触]。这意味着[实践中的含义]。选择正确吗？"
 
-1. **Show the supervision style choice.** "You picked [formal queue / flags / lighter-touch]. That means [what it means in practice]. Right call?"
+2. **展示实践领域模板表格。** "这些是 `/draft` 将知道如何起手的文件。有没有遗漏？"
 
-2. **Show the practice-area templates table.** "These are the documents `/draft` will know how to start. Missing anything?"
+3. **提供 `/ramp` 预览。** "想看看学生的导入会是怎样的吗？我可以让你以新学生身份走一遍。"
 
-3. **Offer a `/ramp` preview.** "Want to see what a student's onboarding will look like? I can walk you through it as if you were a new student."
+4. **注明未提供的内容。** 如无手册："`/ramp` 在你上传手册前会比较薄——它将涵盖命令但不涵盖诊所特定程序。" 如无本地规则："`/draft` 将使用省级默认格式——有本地规则时上传。"
 
-4. **Note what wasn't provided.** If no handbook: "`/ramp` will be thin until you upload a handbook — it'll cover the commands but not your clinic's specific procedures." If no local rules: "`/draft` will use state defaults for formatting — upload local rules when you have them."
+5. **如标记了数据有限（LIMITED DATA）：** "实践画像较薄——下游技能在更多材料补充前将是通用的。最大缺口：[具体——如无手册意味着 /ramp 仅涵盖命令]。最大速赢：[具体——如上传你曾提交的两三份近期动议，/draft 在你的格式规范上就能大幅提升精准度]。"
 
-5. **If LIMITED DATA flagged:** "Practice Profile is thin — downstream skills will be generic until more materials are added. Biggest gap: [specific — e.g., no handbook means /ramp covers commands only]. Biggest easy win: [specific — e.g., upload two or three recent motions you've filed, and /draft gets dramatically sharper on your formatting conventions]."
+6. **在你第一次案件审查前，连接一个检索工具。** 说："在你第一次案件审查或备忘录前：连接一个检索工具。没有它，我会将每条引注标记为未经核实——有了它，我可对照最新数据库进行核实。"
 
-6. **Before your first case review, connect a research tool.** Say: "Before your first case review or memo: connect a research tool. Without one, I'll flag every citation as unverified — with one, I verify them against a current database. In Cowork: Settings → Connectors. In Claude Code: authorize when a skill prompts you."
+7. **以"你可以稍后更改任何内容"结束：**
 
-   <!-- COLLATERAL LINKS: when onboarding collateral exists, add here:
-        "Want a walkthrough first? [Watch the 3-minute intro](URL) or [read the getting-started guide](URL)." -->
-
-7. **Close with the "you can change anything later" note:**
-
-> Done. Your clinic's configuration is at `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` — a plain text file you can read and edit directly. Anything you answered can be changed:
+> 完成。你诊所的配置位于 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md`——一份你可以直接阅读和编辑的纯文本文件。你的任何回答都可以更改：
 >
-> - Edit the file directly for a quick change
-> - Run `/legal-clinic:cold-start-interview --redo` for a full re-interview
-> - Run `/legal-clinic:cold-start-interview --check-integrations` to re-check what's connected
+> - 直接编辑文件以快速更改
+> - 运行 `/legal-clinic:cold-start-interview --redo` 进行全面重新访谈
+> - 运行 `/legal-clinic:cold-start-interview --check-integrations` 重新检查连接状态
 >
-> The things clinics most commonly tweak later: practice areas (when the clinic takes on a new one), supervision style (formal review queue vs. configurable flags vs. lighter-touch — many clinics start one way and shift after the first semester), and jurisdiction / local rules (when a matter lands in an unusual court). Your configuration will improve as students use the plugin — when `/ramp` misses something or `/draft` uses the wrong caption format, the fix is usually here.
+> 诊所后期最常调整的事项：实践领域（当诊所接收新领域时）、指导风格（正式审查队列 vs. 可配置标记 vs. 较轻触——许多诊所从一种方式开始，第一学期后调整）、以及管辖地/本地规则（当事项落在非典型法院时）。你的配置将随着学生使用插件而改进——当 `/ramp` 遗漏某些内容或 `/draft` 使用了错误的文书标题格式时，修复通常在这里。
 
-## Your practice profile learns
+## 你的实践画像会学习
 
-After writing the practice profile, close with this note:
+写入实践画像后，以这段注释结束：
 
-> **Your practice profile learns.** It gets better as you use the plugins:
+> **你的实践画像会学习。** 随着你使用插件，它会变得更好：
 >
-> - When a skill's output feels off, that's usually a position to tune. The output will tell you which one.
-> - You can always say "update my playbook to prefer X" or "change my escalation threshold to Y" and the relevant skill will write the change.
-> - Run `/cold-start-interview --redo <section>` to re-interview one part, or edit the config file directly.
+> - 当某技能输出感觉不对时，那通常是一个需要调节的立场。输出会告诉你哪个。
+> - 你可以随时说"更新我的手册倾向 X"或"将我的升级阈值改为 Y"，相关技能将写入更改。
+> - 运行 `/cold-start-interview --redo <节>` 重新访谈一部分，或直接编辑配置文件。
 >
-> Ten minutes of setup gets you a working profile. A month of use gets you one that reads like you wrote it yourself.
+> 十分钟的设置给你一个可工作的画像。一个月的使用给你一个读起来像你自己写的一样的画像。
 
-## What this does NOT do
+## 本技能不做什么
 
-- **Make supervision decisions.** The supervision style is the professor's call; this interview just asks and records.
-- **Replace the clinic's existing case management.** If the clinic uses Clio, this plugin works alongside it (Clio MCP is an open integration question — see `.mcp.json`).
-- **Onboard students.** That's `/ramp`. This is the professor's one-time setup.
+- **做指导决定。** 指导风格是指导老师的决定；本访谈只是询问和记录。
+- **替代诊所现有的案件管理。** 如果诊所使用案件管理系统，本插件与其并行工作。
+- **导入学生。** 那是 `/ramp`。这是指导老师的一次性设置。

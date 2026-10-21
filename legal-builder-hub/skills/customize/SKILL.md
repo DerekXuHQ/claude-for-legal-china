@@ -1,94 +1,45 @@
 ---
 name: customize
 description: >
-  Guided customization of your Legal Builder Hub profile — change one thing
-  without re-running the whole cold-start interview. Adjust practice profile,
-  installed starter pack, watched registries, update preferences, or QA
-  strictness. Use when the user says "change my [thing]", "add a registry",
-  "update my profile", "edit my config", or "customize".
-argument-hint: "[section name, or describe what you want to change]"
+  引导式定制你的法律构建中心画像——无需重新运行整个冷启动访谈即可更改一项内容。
+  调整实践画像、已安装入门包、监视的注册表、更新偏好或质量评估严格度。
+  当用户说"更改我的[某内容]""添加注册表""更新我的画像""编辑我的配置"
+  或"定制"时使用。
+argument-hint: "[节名称，或描述你想更改的内容]"
 ---
 
 # /customize
 
-## When this runs
+## 何时运行
 
-The user typed `/legal-builder-hub:customize`. They want to change something
-in their Builder Hub profile — a watched registry, update notification
-preferences, a practice area for recommendations — without re-running the
-whole cold-start interview and without hand-editing YAML.
+用户输入了 `/legal-builder-hub:customize`。他们想更改构建中心画像中的某项内容——监视的注册表、更新通知偏好、推荐的实践领域——无需重新运行整个冷启动访谈。
 
-## What to do
+## 做什么
 
-1. **Read the config.** Read
-   `~/.claude/plugins/config/claude-for-legal/legal-builder-hub/CLAUDE.md`
-   (and `~/.claude/plugins/config/claude-for-legal/company-profile.md` one
-   level up). If the plugin config does not exist or still contains
-   `[PLACEHOLDER]` values, say:
+1. **读取配置。** 读取 `~/.claude/plugins/config/claude-for-legal-zh/legal-builder-hub/CLAUDE.md`。如果不存在或仍包含占位符，提示先运行设置。
 
-   > You haven't run setup yet. Run `/legal-builder-hub:cold-start-interview`
-   > first — customize is for adjusting a profile you already have.
+2. **展示可定制的图谱。** 列出内容，分组，附当前值摘要：
 
-2. **Show the customizable map.** List what's in the profile, grouped, with a
-   one-line summary of the current value:
+   - **机构 / 你是谁** — 姓名、行业、管辖地、执业设置
+   - **你的实践画像** — 范围内的实践领域
+   - **已安装入门包** — 通过中心安装的插件和技能
+   - **监视的注册表** — 中心拉取社区技能的仓库/URL
+   - **更新偏好** — 检查节奏、通知渠道
+   - **质量评估严格度** — 安装前 `/qa` 标记候选技能问题的强度
+   - **技能安装默认值** — 安装范围、是否自动运行质量评估
+   - **集成** — 通知/文件存储状态、降级方案
 
-   - **Company / who you are** — name, industry, jurisdictions, stage, practice
-     setting *(shared across all 12 plugins — changes flow through
-     `company-profile.md`)*
-   - **Your practice profile** — practice areas in scope, used to recommend
-     community skills
-   - **Installed starter pack** — which plugins and skills are installed via
-     the hub, with install source
-   - **Watched registries** — GitHub repositories / URLs the hub pulls
-     community skills from
-   - **Update preferences** — check cadence (daily / weekly / on demand),
-     notification channel (Slack / in-session), auto-update vs. prompt
-   - **QA strictness** — how aggressively `/skills-qa` flags issues on a candidate
-     skill before install (lenient / middle / strict), and which
-     failure-mode checks are on
-   - **Skill install defaults** — install scope (user / project), whether
-     to run `/skills-qa` automatically before install
-   - **Integrations** — Slack / document storage status, fallbacks
+3. **询问他们想更改什么。**
 
-3. **Ask what they want to change.**
+4. **做出更改。** 展示当前值、询问新值、说明下游变化、确认、写入配置。
 
-   > What would you like to adjust? Pick a section, or describe the change in
-   > your own words.
+5. **对于共享画像更改：** 写入 `company-profile.md` 并注明影响所有插件。
 
-4. **Make the change.** Show the current value, ask for the new value, explain
-   what changes downstream, confirm, write it to the config.
+6. **结束。**
 
-   Examples:
-   - *Adding a new watched registry:* "`/registry-browser` will search this registry
-     alongside the existing ones. `/auto-updater` will check it on its next run."
-   - *QA strictness strict → middle:* "`/skills-qa` will report the same findings
-     but not block install on the medium band unless you confirm."
-   - *Auto-update on → off:* "The hub will prompt you before applying
-     updates instead of applying them automatically."
+## 安全保障
 
-5. **For shared-profile changes** (company name, industry, jurisdictions,
-   practice setting, stage): write to
-   `~/.claude/plugins/config/claude-for-legal/company-profile.md` and note:
-
-   > This change affects all 12 plugins — any plugin that reads your
-   > jurisdiction footprint now sees [new value].
-
-6. **Close.**
-
-   > Done. Your next output will reflect the change. Anything else? You can
-   > run `/legal-builder-hub:customize` anytime.
-
-## Guardrails
-
-- **Never delete a section.** If the user wants to "remove" a watched
-  registry, offer to mark it `[Paused]` and explain that pausing keeps the
-  install history but stops update checks.
-- **Flag internal inconsistency.** If the change would make the profile
-  inconsistent (e.g., auto-update on + QA strictness off; or practice
-  profile that doesn't match any installed plugin), flag the tension.
-- **Flag guardrail degradation.** The Legal Skill Design Framework checks
-  (nine design parameters, three legal failure modes, trust-surface check)
-  are what `/skills-qa` exists to run — turning them off defeats the point. If the
-  user wants to lower strictness, recommend the middle band rather than
-  disabling the check.
-- **One change at a time.** Don't re-ask the whole interview.
+- **绝不删除某节。** 如用户想"移除"监视的注册表，提供标记为 `[已暂停]`。
+- **标记内部不一致。** 如自动更新开启 + 质量评估严格度关闭等矛盾。
+- **标记保障降级。** 法律技能设计框架检查是 `/qa` 存在的目的——关闭它们就失去了意义。
+- **一次更改一件事。** 不要重新问整个访谈。

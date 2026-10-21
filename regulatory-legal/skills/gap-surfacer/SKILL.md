@@ -1,242 +1,146 @@
 ---
 name: gap-surfacer
 description: >
-  Reference: shared gap- and comment-tracker framework backing /regulatory-legal:gaps
-  and /regulatory-legal:comments. Tracks open policy gaps with remediation status,
-  ingests gaps from policy-diff, surfaces what's open and aging, routes to owners,
-  and notifies gap owners via Slack with per-send confirmation. Loaded by the gaps
-  and comments skills before doing substantive work.
+  参考资料：支持 /regulatory-legal:gaps 和 /regulatory-legal:comments
+  的共享差距和意见征集跟踪框架。跟踪未关闭的政策差距及其整改状态，
+  从 policy-diff 中获取差距，呈现开放和即将到期的事项，路由给负责人，
+  并通过企业通讯工具通知差距负责人，每次发送前需确认。
+  由 gaps 和 comments 技能在实质工作前加载。
 user-invocable: false
 ---
 
-# Gap Surfacer
+# 差距呈现
 
-> Owner notifications: on by default. To opt an owner out, leave `owner_slack` empty.
+> 负责人通知：默认开启。如需选择某个负责人不接收通知，将 `owner_contact` 留空。
 
-## Per-send confirmation — no exceptions
+## 逐次发送确认——无例外
 
-Before sending ANY Slack message (assignment notice, overdue reminder, bulk notification, status report):
+在发送**任何**通知消息（分配通知、逾期提醒、批量通知、状态报告）之前：
 
-1. Show the user exactly what you're about to send and to whom: "I'm about to send this to [N] people: [preview]."
-2. Wait for an explicit yes.
-3. If the message contains any citations, deadlines, or compliance conclusions, add: "⚠️ The citations in this message are unverified — I'm not confirming they're current before sending. Do you want me to add a 'verify before acting' line?"
-4. Never send without the confirm. Not on a cadence. Not in a batch. Not because it was sent yesterday.
+1. 向用户展示你即将发送给谁、发送什么内容。
+2. 等待明确的同意。
+3. 绝不要不经确认就发送。不因是定时任务而跳过。不因是批量而跳过。不因昨天发送过而跳过。
 
-Auto-send without confirmation is the most irreversible action in this plugin, sending content this plugin's own footer says may be wrong, to people who have no way to check. That combination does not get to skip review.
-
-## Matter context
-
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/regulatory-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/regulatory-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+未经确认的自动发送是本插件中最不可逆的操作——发送了插件自身页脚声明可能出错的内容，给无法检查的人。这种组合不能跳过审阅。
 
 ---
 
-## Purpose
+## 目的
 
-Gaps get found and then forgotten. This skill tracks them until they're closed
-and notifies the people responsible for closing them.
+差距被发现后就忘了。此技能跟踪它们直到关闭，并通知负责关闭它们的人。
 
-## The tracker
+## 跟踪文件
 
-Lives at `~/.claude/plugins/config/claude-for-legal/regulatory-legal/gap-tracker.yaml`:
-
-> **Note on comment-tracker.yaml:** `~/.claude/plugins/config/claude-for-legal/regulatory-legal/comment-tracker.yaml` is a sibling file owned by the comments skill. It is written to by reg-feed-watcher (which logs NPRMs automatically) and the comments skill (which tracks user-initiated comment decisions). This skill does not read or cross-reference it. If you modify the comment-tracker schema, update both actual consumers.
+位于 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/gap-tracker.yaml`：
 
 ```yaml
 gaps:
   - id: GAP-001
-    requirement: "[what the reg requires]"
-    regulation: "[name + cite]"
-    policy_affected: "[name or 'new policy needed']"
+    requirement: "[法规要求的内容]"
+    regulation: "[名称 + 引用]"
+    policy_affected: "[名称或'需要制定新政策']"
     gap_type: "partial"  # none | partial | full | new-policy | watch | comment-decision
-    owner: "[name from policy index]"
-    owner_slack: "[Slack user ID or handle, if known]"
+    owner: "[政策索引中的姓名]"
+    owner_contact: "[联系方式，如已知]"
     opened: 2026-03-01
-    due: 2026-06-01  # reg effective date, internal deadline, or comment deadline
-    status_verified: true  # false if upstream policy-diff could not confirm the rule is in force; unverified items never hit 🔴 Overdue
+    due: 2026-06-01  # 法规生效日期、内部截止日期或意见征集截止日期
+    status_verified: true  # 如果上游政策差异分析无法确认法规有效，则为false；未验证的事项永不会进入🔴逾期分类
     status: "open"  # open | in-progress | closed | risk-accepted
-    notified: false  # set to true after assignment notification sent
-    resolution: ""  # filled on close
+    notified: false  # 分配通知发送后设为true
+    resolution: ""  # 关闭时填写
 ```
 
-**Never classify a gap as Overdue on an unverified rule.** The 🔴 Overdue classification means "we missed a binding deadline." If the rule's status is unverified (policy-diff set `status_verified: false`, or the rule is >12 months old / past its applicability date with no currency confirmation), the deadline may not be binding. Use 🟡 "Review needed" and note: "If this rule is in force as published, this would be overdue by [N] days. Verify rule status before escalating." Route unverified-rule items to `watch`, not to the active overdue/due-soon buckets; the `watch` revisit cadence forces a rule-status check before the item can re-surface as a compliance gap.
+**绝不要将差距分类为"逾期"——如果法规未经验证。** 🔴逾期分类意味着"我们错过了一个具有约束力的截止日期"。如果法规状态未经验证（政策差异分析设置了 `status_verified: false`，或法规>12个月/已超过适用日期且未确认时效性），截止日期可能不具有约束力。使用🟡"需要审查"并注明。
 
-**`gap_type` semantics:**
+**`gap_type` 语义：**
 
-| Value | Meaning | Typical reminder cadence |
-|---|---|---|
-| `none` | Policy already covers the requirement. Logged for audit trail only. Should be rare — if most entries are `none`, the diff is probably running against the wrong policy. | No auto-reminder. |
-| `partial` | Policy addresses the topic but doesn't fully cover the new requirement. Needs an amendment. | 30 days before due. |
-| `full` | Policy contradicts or silently omits the new requirement. Needs a rewrite or new section. | 30 days before due. |
-| `new-policy` | No existing policy covers this. Policy needs to be drafted. | 30 days before due. |
-| `watch` | Forward-looking item — ANPR, RFI, proposed rule not yet final. No compliance obligation today; policy work waits for the final rule. `due:` is a revisit date (typically the NPRM expected date or a one-year horizon), not a compliance deadline. | No auto-reminder; re-evaluate when an NPRM drops or at the revisit date. |
-| `comment-decision` | Pre-rulemaking comment decision pending — ANPR or NPRM where the team is deciding whether to file a comment. `due:` is the comment deadline. | 21 days before due (tighter than compliance gaps because comment-drafting windows are short). |
+| 值 | 含义 | 典型提醒频率 |
+|----|------|------------|
+| `none` | 政策已涵盖此要求。仅为审计追踪记录。 | 无自动提醒。 |
+| `partial` | 政策涵盖该主题但未完全覆盖新要求。需要修订。 | 到期前30天。 |
+| `full` | 政策与新要求矛盾或未提及。需要重写或添加新章节。 | 到期前30天。 |
+| `new-policy` | 现有政策中无此项内容。需要起草政策。 | 到期前30天。 |
+| `watch` | 前瞻性事项——预征求意见、调研通知、尚未最终确定的征求意见稿。当前没有合规义务；政策工作等待正式法规出台。`due:` 是重访日期，不是合规截止日期。 | 无自动提醒；在征求意见稿发布时或重访日期重新评估。 |
+| `comment-decision` | 预规则意见征集决策待定——团队正在决定是否提交反馈意见。`due:` 是意见征集截止日期。 | 截止日期前21天（比合规差距更紧凑）。 |
 
-A `watch` or `comment-decision` entry is not a compliance gap — it's a tracking artifact for pre-rule items that the watch skill and comments skill produce. Surface them in the status report in their own bucket so counsel reading at 7am can tell at a glance which items are "fix this before a regulator notices" vs. "keep an eye on this."
+## 模式
 
-## Modes
+### 模式1：从政策差异分析中获取
 
-### Mode 1: Ingest from policy-diff
+当政策差异分析发现差距时，追加到 gap-tracker.yaml。去重——相同要求 + 相同政策 = 相同差距，不重复计算。
 
-When policy-diff finds gaps, append them to gap-tracker.yaml. De-dupe — same
-requirement + same policy = same gap, don't double-count.
+**获取后，通知负责人：**
 
-**After ingesting, notify the owner:**
+如果企业通讯工具可用且 `owner_contact` 已设置：向差距负责人发送通知——但仅在完成逐次发送确认之后。预览消息给用户，等待明确的同意，然后发送。发送后将 `notified: true` 设置在跟踪条目中。
 
-If Slack MCP is available and `owner_slack` is set:
-
-Send a Slack DM to the gap owner — but only after the per-send confirmation at the top of this file. Preview the message to the user, wait for an explicit yes, then send:
-
-```
-📋 New compliance gap assigned to you
-
-Gap: [GAP-ID] — [requirement, one sentence]
-Regulation: [name + link]
-Policy affected: [policy name or "new policy needed"]
-Due: [reg effective date]
-
-View full gap tracker: /regulatory-legal:gaps
-```
-
-Set `notified: true` in the tracker entry after sending.
-
-If Slack MCP is not available: note in the status report that owner notification
-was not sent and flag for manual follow-up.
-
-### Mode 2: Status report
+### 模式2：状态报告
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果头 — 按照插件配置 ## 输出]
 
-## Open Gaps — [date]
+## 开放差距 — [日期]
 
-### Bottom line
+### 要点
 
-[N gaps need action by [date] — top 3: X, Y, Z]
+[N个差距需要在[日期]前采取行动 — 前3项：X、Y、Z]
 
-### 🔴 Overdue
+### 🔴 逾期
 
-| ID | Requirement | Policy | Owner | Due | Days over |
-|---|---|---|---|---|---|
+| ID | 要求 | 政策 | 负责人 | 截止日期 | 逾期天数 |
+|----|------|------|--------|----------|---------|
+| | | | | | |
 
-### 🟠 Due in <30 days
+### 🟠 30天内到期
 
-[same]
+[同上]
 
-### 🟡 Open
+### 🟡 开放
 
-[same]
+[同上]
 
-### 👀 Watch items (forward-looking — pre-rule)
+### 👀 观察事项（前瞻性——预法规）
 
-[Pre-rule tracking — `watch` and `comment-decision` entries. These are not
-compliance gaps. Surface separately so the overdue / due-soon bands contain
-only real compliance deadlines.]
+[预法规跟踪——`watch` 和 `comment-decision` 条目。这些不是合规差距。单独呈现。]
 
-| ID | Item | Type (ANPR/NPRM/RFI) | Comment deadline | Owner |
-|---|---|---|---|---|
+### 进行中
 
-### In progress
+[同上]
 
-[same]
+### 最近关闭
 
-### Recently closed
-
-[last 5, with resolution]
+[最近5项，附解决方案]
 
 ---
 
-**Oldest open gap:** [ID], [N] days
-**Gaps by owner:** [breakdown]
-**Owner notifications sent:** [N] / [N total gaps]
+**最早开放的差距：** [ID]，[N]天
+**按负责人分组的差距：** [分布]
+**负责人通知已发送：** [N] / [N个总差距]
 
 ---
 
-**Next step for each open gap:** `/regulatory-legal:policy-redraft` produces a marked-up policy redraft with `[verify]` tags and a change summary. It's a proposal for the policy owner's review — not a direct edit to source documents.
+**依赖前核实引注。** 此跟踪文件中的法规引注由AI在上游生成（reg-feed-watcher 和 policy-diff），未经对照一手来源核实。在关闭、接受风险或引用到任何合规声明、董事会报告或监管机构回复之前，通过法律研究工具确认。
+```
+
+### 模式3：关闭差距
+
+更新状态为 closed，记录解决方案和关闭日期。
+
+### 模式4：风险接受
+
+有时答案是"我们不打算修复这个"。这是一个有效的决定——但应被记录。
+
+状态 → risk-accepted。保留在跟踪文件中（不删除），但不出现在开放差距报告中。
+
+## 收尾
+
+以 CLAUDE.md `## 输出` 规定的下一步决策树收尾。
+
+如果跟踪器呈现超过约10个开放差距，或用户任何时候提出要求：提供仪表板——按严重程度统计、按截止日期排列的差距时间线、及附有负责人、状态和最后更新日期的可排序网格。
 
 ---
 
-**Verify citations before relying on them.** Regulation citations in this tracker were AI-generated upstream (by reg-feed-watcher and policy-diff) and have not been checked against a primary source. Before closing or risk-accepting a gap — or citing one in an attestation, board report, or regulator response — confirm the underlying rule against Westlaw, your firm's research platform, or the issuing authority's website. AI-generated regulatory citations are sometimes fabricated, misquoted, or stale. Source tags carried forward from upstream (e.g., `[Federal Register]`, `[web search — verify]`) show where each citation originated; `verify` tags carry higher fabrication risk and should be checked first. Never strip the tags when surfacing gaps.
-```
+## 本技能不做的事
 
-## Config-dependent fallbacks
-
-This skill reads gap-response owners and the escalation path from `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`. When a value it needs is empty or still `[PLACEHOLDER]`:
-
-- **Gap-response triager missing:** leave assignment open and append to the output: "No triager is set in `## Gap response process`. Assign one with `/regulatory-legal:cold-start-interview --redo` or by editing `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md` so new gaps get routed."
-- **Owner unknown for a newly-ingested gap (no owner in policy library):** log the gap with `owner: [unassigned]` and append: "[N] gaps were ingested without an owner because the policy library doesn't name one for the affected policy. Fill in the Owner column in the policy library to route them."
-- **Escalation path missing for an overdue material gap:** still report it as overdue, and append: "No escalation path is set for material overdue gaps. Configure it with `/regulatory-legal:cold-start-interview --redo` or by editing `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`."
-
-Say nothing about config when the values are populated.
-
-**Due-date reminder logic (runs during status report and scheduled agent):**
-
-Reminder cadence is a function of `gap_type` — compliance gaps get a 30-day heads-up, comment-decision items get 21 days (tighter because the drafting window is shorter), watch items get no auto-reminder (re-evaluate when an NPRM drops).
-
-For each gap with status "open" or "in-progress":
-- `partial`, `full`, `new-policy`, `none`: if due date is within 30 days and a reminder has not been sent in the last 7 days, PREVIEW a Slack DM (subject "⏰ Reminder: compliance gap due in [N] days") and wait for per-send confirm before sending.
-- `comment-decision`: if comment deadline is within 21 days and a reminder has not been sent in the last 7 days, PREVIEW a Slack DM (subject "💬 Comment-decision deadline in [N] days") and wait for per-send confirm before sending.
-- `watch`: no auto-reminder. Revisit when the tracker is reviewed or an NPRM is logged for the same regulation.
-- If due date has passed on a compliance gap: flag as overdue in the report and PREVIEW a Slack DM — wait for per-send confirm before sending.
-- If comment deadline has passed on a `comment-decision` item and no comment was filed: flag as overdue, PREVIEW a Slack DM (wait for per-send confirm), and ask the owner to update to `risk-accepted` (deliberate no-comment) or `closed` (comment filed) with a note.
-- Record reminder timestamps in the tracker to avoid repeat nags.
-- Batch reminders still require per-send confirm — previewing "you're about to send 12 DMs" and waiting for yes counts; silently firing a batch does not.
-
-### Consequential-action gate (certify compliance)
-
-**Before closing a gap as resolved, or producing any output that certifies compliance with a regulatory requirement (internal attestation, board report, audit response, regulator response):** Read `## Who's using this` in ~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md. If the Role is **Non-lawyer**:
-
-> Certifying compliance — or closing a gap as resolved — has legal consequences. The certification can be used against the company if it's later shown to be wrong, and premature closure leaves exposure unaddressed. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
->
-> - The gap (requirement, source, what the policy diff found)
-> - What the proposed resolution does and does not cover
-> - Any residual gap or ambiguity
-> - Open questions and what's unresolved
-> - What could go wrong (overbroad certification, unresolved residual obligation, inconsistent prior position)
-> - What to ask the attorney (is this truly closed; should we risk-accept with rationale instead; do we need outside-counsel concurrence)
->
-> If you need to find a lawyer: your professional regulator's referral service is the fastest starting point (state bar in the US; SRA/Bar Standards Board in England & Wales; Law Society in Scotland/NI/Ireland/Canada/Australia; or your jurisdiction's equivalent).
-
-Do not mark a gap closed or produce a compliance certification past this gate without an explicit yes. Status reports and tracking views do not require the gate.
-
-### Mode 3: Close a gap
-
-```
-/regulatory-legal:gaps --close GAP-001
-Resolution: "Policy updated v2.3, approved [date]"
-```
-
-Updates status to closed, records resolution and close date.
-
-### Mode 4: Risk-accept a gap
-
-Sometimes the answer is "we're not going to fix this." That's a valid decision
-— but it should be documented.
-
-```
-/regulatory-legal:gaps --accept GAP-002
-Rationale: "Requirement applies only to [condition we don't meet]. Revisit if [trigger]."
-Accepted by: [name with authority]
-```
-
-Status → risk-accepted. Stays in the tracker (not deleted) but falls out of
-the open-gaps report.
-
-## Integration: reg-change-monitor agent
-
-The agent's digest includes the gap count and oldest-open-gap age. If anything
-goes overdue, that goes at the top of the digest. The agent also runs the
-due-date reminder check and sends any outstanding Slack notifications.
-
-## Close with the next-steps decision tree
-
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
-
-If the tracker surfaced more than ~10 open gaps, or any time the user asks: offer the dashboard (see CLAUDE.md `## Outputs → Dashboard offer for data-heavy outputs`). Shape the offer for this output — counts by severity, a timeline of gaps by due date, and a sortable grid with owner, status, and last-touched date.
-
-## What this skill does not do
-
-- Close gaps on its own. Closing requires the resolution note and the human
-  action that the note describes.
-- Send Slack notifications if the Slack MCP is not configured. Falls back to
-  flagging in the status report.
-- Send more than one reminder per 7-day period per gap. Nag once, not constantly.
+- 不自行关闭差距。关闭需要解决方案说明和该说明所描述的人工操作。
+- 如果企业通讯工具未配置，不发送通知。回退到在状态报告中标记。
+- 不对每个差距在7天内发送超过一次提醒。提醒一次，不反复催促。

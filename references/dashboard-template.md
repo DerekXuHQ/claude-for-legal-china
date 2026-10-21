@@ -1,30 +1,30 @@
-# Dashboard Template
+# 仪表盘模板
 
-*Referenced by the Dashboard offer guardrail. Keep dashboards simple and consistent — the value is speed of comprehension, not visual polish.*
+*由仪表盘交付物安全机制引用。保持仪表盘简洁一致——价值在于快速理解，而非视觉美化。*
 
-## Structure (top to bottom)
+## 结构（从上到下）
 
-1. **Title and metadata.** What this is, when it was generated, what it covers. One line.
-2. **Summary stats.** The counts that matter, color-coded. "40 findings: 🔴 3 blocking · 🟠 8 high · 🟡 15 medium · 🟢 14 low — 6 due this week." This is the most valuable line. Make it scannable.
-3. **The reviewer note.** Same one-block format as any output. Sources, scope, flags, before-relying. Dashboards don't skip the safety metadata.
-4. **Chart(s).** One or two max. Pick the one that shows the shape:
-   - **Risk distribution** (bar): counts by severity. Use for findings, issues, flags.
-   - **Category breakdown** (pie or stacked bar): counts by type. Use for OSS licenses, contract types, matter categories.
-   - **Timeline** (Gantt-lite or sorted table): dates in order. Use for renewal registers, deadline trackers, closing checklists.
-   - Never more than two. A dashboard with five charts is a report, and reports are harder to read than the table.
-5. **The table.** Sortable, filterable, color-coded by severity/status. Columns: the ones that were in the original output, trimmed to what fits on a screen. Put a "details" or "notes" column last — it's the one that gets truncated.
-6. **The decision tree.** Same options as the text output. "What next?"
+1. **标题和元数据。** 这是什么、何时生成、涵盖什么。一行。
+2. **汇总统计。** 重要的统计数字，颜色编码。"40 项发现：🔴 3 阻塞 · 🟠 8 高风险 · 🟡 15 中风险 · 🟢 14 低风险——6 项本周到期。"这是最有价值的一行。使其可快速扫读。
+3. **审查备注。** 与任何输出相同的单块格式。来源、范围、标记、使用前须知。仪表盘不跳过安全元数据。
+4. **图表。** 一到两个，最多。选择最能展现格局的：
+   - **风险分布**（柱状图）：按严重度的计数。用于发现、问题、标记。
+   - **类别分解**（饼图或堆叠柱状图）：按类型的计数。用于开源许可证、合同类型、案件类别。
+   - **时间线**（轻量甘特图或排序表）：按日期排列。用于续签台账、截止日期追踪、交割清单。
+   - 绝不超过两个。五个图表的仪表盘是一份报告，报告比表格更难读。
+5. **表格。** 可排序、可过滤，按严重度/状态颜色编码。列：原输出中存在的列，裁剪到适合屏幕。将"详情"或"备注"列放在最后——它会首先被截断。
+6. **决策树。** 与文本输出相同的选项。"下一步怎么做？"
 
-## Rendering by surface
+## 按终端渲染
 
-- **Cowork / Claude Desktop:** HTML artifact. Self-contained, single file, inline CSS. No external dependencies, no CDN, no npm. Tables: HTML `<table>` with `data-sort` attributes and a small inline JS sorter. Charts: inline SVG or Unicode block chars for bar charts. Keep the JS minimal — sorting and filtering, nothing else.
-- **Claude Code:** Write the same HTML file to the plugin's outputs folder (`~/.claude/plugins/config/claude-for-legal/<plugin>/outputs/dashboard-<topic>-<date>.html`) and tell the user to open it: `open <path>` on macOS, or "open in your browser." Also produce a markdown version with Unicode block charts for the summary stats so the user can see the shape without leaving the terminal.
-- **Excel (optional, where it fits):** For `tabular-review`, `renewal-tracker`, `entity-compliance`, and anything the user will take into a meeting or share with a non-technical stakeholder. Use the existing Excel output spec. Apply the formula-injection defense.
-- **Escape untrusted input (apply every dashboard, every time).** Every value that came from outside this session — OSS package/license fields from third-party manifests, counterparty contract text, diligence findings, vendor names, matter descriptions, any user- or VDR-supplied string — must be HTML-escaped before it lands in the document. Escape `&`, `<`, `>`, `"`, `'` into entities when writing into table cells, summary lines, chart labels, and tooltip text. In the inline JS sorter/filter, set cell text via `textContent`, never `innerHTML`. Do not emit `<script>` blocks whose contents interpolate untrusted strings. Do not render untrusted URLs into `href` or `src` without scheme-checking (`http:` / `https:` / `mailto:` only). This is the HTML-surface equivalent of the formula-injection defense on the Excel side — same threat (attacker-controlled cell content), different execution surface (browser JS instead of spreadsheet formula). A dashboard the reviewer opens in a browser is a trust boundary; treat it like one.
+- **Cowork / Claude Desktop：** HTML artifact。自包含、单文件、内联 CSS。无外部依赖、无 CDN、无 npm。表格：HTML `<table>` 带 `data-sort` 属性和小型内联 JS 排序器。图表：内联 SVG 或柱状图用 Unicode 块字符。JS 保持最小——排序和过滤，无其他。
+- **Claude Code：** 将同一 HTML 文件写入插件的输出文件夹（`~/.claude/plugins/config/claude-for-legal-zh/<插件名>/outputs/dashboard-<主题>-<日期>.html`）并告知用户打开：macOS 用 `open <路径>`，或"在浏览器中打开"。同时生成带 Unicode 块字符图表的 Markdown 版汇总统计，让用户无需离开终端就能看到格局。
+- **Excel（可选，适当场景）：** 用于 `tabular-review`、`renewal-tracker`、`entity-compliance` 及用户会带入会议或与非技术利益相关方分享的任何内容。使用现有 Excel 输出规范。应用公式注入防御。
+- **转义不可信输入（每次仪表盘均适用，无例外）。** 任何来自本会话之外的值——第三方清单中的 OSS 包/许可证字段、合同对方文本、尽调发现、供应商名称、案件描述、任何用户或数据室提供的字符串——必须在落入文档前进行 HTML 转义。将 `&`、`<`、`>`、`"`、`'` 转义为实体后写入表格单元格、汇总行、图表标签和工具提示文本。在内联 JS 排序/过滤器中，通过 `textContent` 设置单元格文本，绝不使用 `innerHTML`。不生成内插不可信字符串的 `<script>` 块。不对 `href` 或 `src` 渲染不可信 URL，除非经过协议检查（仅 `http:` / `https:` / `mailto:`）。这是 Excel 端公式注入防御在 HTML 端的对等物——同一威胁（攻击者控制的单元格内容），不同的执行面（浏览器 JS 而非电子表格公式）。审查者在浏览器中打开的仪表盘是一个信任边界；照此处理。
 
-## Keep it boring
+## 保持朴实
 
-- **Color palette:** Red / orange / yellow / green for severity. Gray for neutral. Blue for status. Nothing else.
-- **No animations, no frameworks, no external fonts.** A dashboard that breaks offline is a dashboard that breaks.
-- **No clever layouts.** Summary, reviewer note, chart, table, decision tree. Top to bottom. Every dashboard looks the same so the reader knows where to look.
-- **The markdown version matters.** Some users are in a terminal and won't open a browser. The summary stat line with Unicode bars (e.g., `🔴 ███ 3  🟠 ████████ 8  🟡 ███████████████ 15  🟢 ██████████████ 14`) gives them the shape.
+- **色板：** 红 / 橙 / 黄 / 绿用于严重度。灰色用于中性。蓝色用于状态。无其他。
+- **无动画、无框架、无外部字体。** 离线时崩溃的仪表盘就是不堪用的仪表盘。
+- **无花哨布局。** 汇总、审查备注、图表、表格、决策树。从上到下。每个仪表盘看起来一样，让读者知道往哪看。
+- **Markdown 版本很重要。** 有些用户在终端中，不会打开浏览器。带 Unicode 柱状图的汇总统计行（如 `🔴 ███ 3  🟠 ████████ 8  🟡 ███████████████ 15  🟢 ██████████████ 14`）让他们看到格局。

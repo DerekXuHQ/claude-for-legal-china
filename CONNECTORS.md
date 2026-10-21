@@ -1,66 +1,37 @@
-# Adding a Connector
+# 法律连接器目录与接入边界
 
-The plugins are at their best when connected to authoritative sources. If you build or operate a legal data source, research tool, CLM, DMS, eDiscovery platform, or practice management system, we want your MCP connector in the suite.
+本页记录截至 2026-09-28 查到的公开接入资料。机器可读端点在 [`connectors/catalog.json`](connectors/catalog.json)。**供应商公开文档、仓库声明、宿主已配置、当前可调用、实测通过是五种不同状态**；本仓库只验证配置结构，未持有用户认证，也未运行付费查询。
 
-## What makes a good legal MCP connector
+## 已有官方 MCP 文档
 
-- **Remote MCP server over HTTPS** with OAuth or API-key auth (streamable HTTP or SSE transport)
-- **Read-heavy tools** — search, fetch, list. Write tools (create, send, file) need an explicit confirmation prompt on the client side; say so in your tool descriptions.
-- **Provenance in results** — return the source, date retrieved, and a citation-ready identifier. The plugins tag every cite by source; your connector should make that possible.
-- **No instruction-like content in results** — the plugins treat retrieved content as data, not commands. If your tool results include metadata or system notes, mark them clearly so they don't look like embedded directives.
-- **Rate limits and errors that degrade gracefully** — the plugins have a fallback for when a connector isn't responding; a clean error is better than a timeout.
+| 服务 | 本仓库策略 | 能力 | 认证与官方资料 |
+|---|---|---|---|
+| 华宇元典 | 16 个领域的 `.mcp.json` 声明统一入口 `https://open.chineselaw.com/mcp`，保留 `yuandian` 服务名 | 法规、案例、企业、证券合规等；具体工具以当前连接发现为准 | 宿主内 OAuth 或开放平台 API Key；[官方接入页](https://open.chineselaw.com/mcp-config/) |
+| 北大法宝 | 按需接入；不在默认配置写占位 Token 或无认证端点 | 法规/案例语义与关键词检索、条文识别、引用校验等 | 自有 Access Token；[官方 MCP 指南](https://mcp.pkulaw.com/docs) |
+| 威科先行 | 按需接入综合 `wk-mcp` 或法规、案例、引用单项服务 | 法规、案例、引用识别 | OAuth 优先，亦支持自有凭证；[官方接入页](https://mcp.wkinfo.com.cn/docs) |
+| 聚法 | 按需接入案例、法规、招投标等单项服务，或审查后使用官方本地桥接 | 案例、法规、检察文书、合同模板、招投标等 | 自有 API Key；[官方平台](https://www.jufaai.com/agent)和[桥接源码](https://github.com/jufaai/jufa-mcp-server) |
 
-## How to submit
+元典还提供[官方本地 MCP Server](https://github.com/yuandian-ailaw/yuandian-mcp-server)。它要求 Node.js 20+ 和 `YUANDIAN_API_KEY`；安装前检查源码、版本、许可和权限。默认 `.mcp.json` 采用远程 HTTP，避免在打开插件时执行 `npx -y`。元典商业数据库结果是发现与比对资料，重要法律结论仍应核验原始法源、版本、地域和时点。
 
-1. Publish your MCP server and document its tools, auth flow, and data coverage.
-2. Open a PR adding your server to the relevant plugin's `.mcp.json` with the URL, auth method, and a one-line description of what it gives Claude.
-3. Include a note on which practice areas / plugins it's most useful for.
-4. We'll test against the plugin workflows and merge. Connectors that pass the retrieval-quality and injection-resistance checks go in the default `.mcp.json`; others get documented in the plugin README for users to add themselves.
+北大法宝目前公开列出九个服务端点；威科先行公开列出综合及三个单项服务；聚法提供多类远程服务。具体地址见 catalog。需要哪种能力就在宿主中添加对应端点，并由宿主的凭据机制处理 OAuth 或 Token；不要把令牌写入 `.mcp.json`、命令、日志或仓库。仅连接成功不代表每个工具均有权限或已实测。
 
-## Current connectors
+## 官方网页来源，不冒充 MCP
 
-Connectors shipped in the default `.mcp.json` of each plugin:
+- [国家法律法规数据库](https://flk.npc.gov.cn/)：法规原文与版本核验。
+- [人民法院案例库](https://rmfyalk.court.gov.cn/)：指导性、参考案例的官方入口。
+- [中国政府采购网](https://www.ccgp.gov.cn/)：政府采购公告与政策资料。
+- [国家企业信用信息公示系统](https://www.gsxt.gov.cn/)：企业公示信息。
 
-| Connector | Plugins |
-|---|---|
-| **Slack** | all 12 |
-| **Google Drive** (`gdrive`) | all 12 |
-| **CourtListener** | legal-clinic, ip-legal, litigation-legal, law-student |
-| **Descrybe** | legal-clinic, ip-legal, law-student |
-| **Definely** | commercial-legal, corporate-legal |
-| **iManage** | commercial-legal, corporate-legal |
-| **Solve Intelligence** | corporate-legal, ip-legal |
-| **TopCounsel** | commercial-legal, corporate-legal, litigation-legal |
-| **Box** | corporate-legal |
-| **Ironclad** | commercial-legal |
-| **DocuSign / DocuSign CLM** | commercial-legal |
-| **Everlaw** | litigation-legal |
-| **Trellis** | litigation-legal |
-| **Aurora** | litigation-legal |
-| **Courtroom5** | legal-clinic |
-| **Lawve AI** | legal-builder-hub |
-| **Linear** | product-legal |
-| **Atlassian (Jira)** | product-legal |
-| **Asana** | product-legal |
+这些是网页/数据库来源，本仓库没有为其核实到可直接使用的官方 MCP 接口。不能用猜测的 URL 拼成 `.mcp.json`。推送前复核已从默认声明移除飞书、e签宝和法大大三个未核实的历史端点；需要这些服务时，须先逐家核实官方 MCP 端点、认证、工具范围与客户授权，再在宿主中按需配置。其他既有协作服务声明也须分别验证，不表示本次完成可用性实测。
 
-See the `.mcp.json` in each plugin directory for the authoritative list.
+## 连接器运行契约
 
-## Wanted connectors
+1. **权限**：默认只用搜索、读取、获取、列表工具。创建、发送、提交、签署、付款和写入工具需要用户对该动作的明确授权。
+2. **保密**：公共或已授权脱敏查询才可发送到外部服务；真实案卷、采购报价、个人信息、商业秘密默认本地处理。服务商的日志与跨境条款应由用户或机构自行评估。
+3. **溯源**：记录 provider、tool、调用时间、查询词、原始 ID/URL、结果类型和失败状态。摘要、检索命中与法条原文分开；API 错误或空结果不等于法源不存在。
+4. **验证**：先看宿主工具清单，再以非敏感公开问题做一次实际调用，确认返回结构、来源和权限；随后单独复核现行法和案例状态。静态检查 `python3 scripts/check-connectors.py` 不替代真实调用。
+5. **降级**：未授权、额度不足、限频或连接失败时，保留失败证据，改走官方网页或已许可数据库；关键依据仍无法核验时停止确定性结论。
 
-These would make specific plugins significantly more useful. If you build or operate one, see "How to submit" above.
+## 提交新连接器
 
-- **IP management systems** (Anaqua, Clarivate IPfolio, AppColl, Patrix, Alt Legal, FoundationIP) — full docket sync for `ip-legal` portfolio tracking
-- **USPTO by customer number** — full portfolio status and deadlines, not just per-application lookup
-- **USPTO TSDR / Trademark Status** — trademark status and deadlines for `ip-legal` brand management
-- **Jira / Linear / Asana for OSS requests** — `ip-legal` OSS clearance can monitor and respond to incoming tickets
-- **Thomson Reuters** (CoCounsel, Practical Law, Westlaw) — research and drafting for every plugin
-- **SS&C Intralinks / Datasite** — VDR access for `corporate-legal` diligence
-- **Relativity / Everlaw beyond read** — eDiscovery workflow for `litigation-legal`
-- **State bar CLE trackers** — `law-student` bar prep
-- **Court e-filing systems** (PACER write, state e-filing) — with a hard irreversibility gate, obviously
-- **Global AI Regulation Tracker** (techieray.com/GlobalAIRegulationTracker) — jurisdiction-tagged AI regulation tracking with structured API. Curated, verified, multi-jurisdiction. Would be a primary-source-adjacent feed for `ai-governance-legal` and `regulatory-legal`.
-- **Regulatory primary sources** — a connector to official registers (eCFR, Federal Register, EUR-Lex, legislation.gov.uk, Federal Register of Legislation AU, Singapore Statutes Online) that bypasses the agent-blockers many legislative sites use. A curated regulatory knowledge base would be a high-value addition.
-
-## Questions
-
-Open an issue on this repo. For partnership or integration questions, see the contact on each plugin's README.
+供应商或贡献者应提供官方服务文档、端点、传输与认证方式、工具清单、数据覆盖及更新周期、收费与限频、结果来源字段、只读/写入边界、失败语义和许可。合并前以合成查询验证结构与注入防护；真实账户冒烟测试由持权人执行并单独记录。

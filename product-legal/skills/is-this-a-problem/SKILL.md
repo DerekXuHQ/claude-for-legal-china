@@ -1,143 +1,136 @@
 ---
 name: is-this-a-problem
 description: >
-  Fast "is this a problem?" answer for the quick Slack question — pattern-matches
-  against your calibration. Use when the user says "is this a problem", "quick
-  question", "can we do X", "do I need legal review for", "sanity check", or
-  pastes a PM's question that needs a same-minute fine / needs a look / hold call.
-argument-hint: "[the question]"
+  对快速的飞书/钉钉问题给出"这有问题吗？"答复——对照您的校准进行模式匹配。
+  当用户说"这有问题吗""快速问一下""我们能做X吗""这个需要法务审查吗""帮我看看"
+  或粘贴一个需要即时判断（没问题/需要审查/暂停）的产品经理问题时使用。
+argument-hint: "[问题]"
 ---
 
 # /is-this-a-problem
 
-1. Load `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → Risk calibration.
-2. Apply the triage workflow below.
-3. Pattern-match. Check for common traps.
-4. Answer in one minute: ✅ Fine / ⚠️ Needs a look / 🛑 Hold. One sentence why.
-5. If ⚠️ or 🛑: name the next step.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → 风险校准。
+2. 执行以下分流工作流。
+3. 模式匹配。检查常见陷阱。
+4. 一分钟内回答：✅ 没问题 / ⚠️ 需要审查 / 🛑 暂停。一句话说明理由。
+5. 如为 ⚠️ 或 🛑：指明下一步。
 
 ```
-/product-legal:is-this-a-problem "Can we use customer logos on the pricing page?"
+/product-legal:is-this-a-problem "我们能在定价页用客户的logo吗？"
 ```
 
 ---
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/product-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/product-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作空间`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `/product-legal:matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
-## Destination check
+## 发送目的地检查
 
-Before producing output, check where it's going. If the user has named a destination (a channel, a distribution list, a counterparty, "everyone"), ask whether it's inside the privilege circle. Public channels, company-wide lists, counterparty/opposing counsel, vendors, and clients (for work product) waive the protection. When the destination looks outside the circle, flag it and offer (a) the privileged version for legal only, (b) a sanitized version for the broader channel, or (c) both — don't silently apply a privileged header and then help paste it somewhere the header won't protect it. See the canonical `## Shared guardrails → Destination check` in this plugin's CLAUDE.md.
+在产出输出前，检查其去向。如果用户指定了目的地（频道、分发列表、对方、"所有人"），询问是否在保密范围内。公共频道、全公司列表、对方/对方律师、供应商和客户（对于工作成果）将导致保护丧失。当目的地显示在保密范围外时，予以标记并提供 (a) 仅供法务的保密版本，(b) 适合更广泛频道的净化版本，或 (c) 两者——不要默不作声地加上保密页眉，然后帮助粘贴到页眉无法保护的地方。参见本插件 CLAUDE.md 中的 `## 共享安全机制 → 发送目的地检查`。
 
-## Purpose
+## 目的
 
-Most "quick legal question" Slacks are one of three things: (a) not a problem, say so fast, (b) a real thing that needs a real look, route it, (c) a thing that looks fine but has a trap, catch the trap. This skill sorts in under a minute using the calibration table.
+大多数"快速法务问题"飞书消息属于以下三种之一：(a) 不是问题，快速告知，(b) 确实需要认真审查，转交处理，(c) 看起来没问题但有陷阱，捕捉陷阱。本技能使用校准表在一分钟内完成分流。
 
-The goal is speed. The PM asked at 4:47pm. They want an answer, not a memo.
+目标是速度。产品经理在下午4:47提问。他们想要答案，不是备忘录。
 
-## Load calibration
+## 加载校准
 
-Read `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → `## Risk calibration`. The whole point of this skill is pattern-matching against that table.
+读取 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → `## 风险校准`。本技能的核心目的就是对照该表进行模式匹配。
 
-## The triage
+## 分流
 
-### Match against calibration
+### 对照校准匹配
 
-Does the question match a pattern in the calibration table?
+该问题是否匹配校准表中的某一模式？
 
-**Matches "usually FYI":**
-→ Say so. One line. "You're fine — [pattern]. Ship it."
+**匹配"通常仅FYI告知"：**
+→ 告知。一句话。"没问题——[模式]。可以上线。"
 
-**Matches "usually requires work":**
-→ Name the work. "Needs a [PIA / vendor review / claims check]. Takes [timeline from table]. Want me to start it?"
+**匹配"通常需付出工作量"：**
+→ 指明所需工作量。"需要[个人信息保护影响评估/供应商审查/宣传检查]。需要[表中时限]。需要我启动吗？"
 
-**Matches "usually blocks":**
-→ Stop them. "Hold on — [pattern]. This needs a real look before anyone commits to a date. Let's talk."
+**匹配"通常阻断上线"：**
+→ 阻止他们。"暂停——[模式]。这在任何人承诺日期前需要认真审查。我们来谈。"
 
-**Doesn't match anything:**
-→ Say that too. "This doesn't pattern-match to anything I've seen here. Needs a human look — [your name] or me tomorrow?"
+**不匹配任何模式：**
+→ 也说明。"这与我在这里见过的任何模式都不匹配。需要人工审查——[您的名字]还是我明天处理？"
 
-### The trap check
+### 陷阱检查
 
-Some questions are fine on the surface but have a twist. Recognize the fact pattern, ask the catch question, then research the applicable doctrine for the specific fact pattern before concluding whether it's a problem or not.
+有些问题表面上没问题但有陷阱。识别事实模式，提出捕捉问题，然后针对具体事实模式检索适用规则，再判断是否构成问题。
 
-| Question sounds like | Why it might not be simple | Catch it by asking |
+| 问题听起来像 | 为何可能不简单 | 通过询问捕捉 |
 |---|---|---|
-| "Can we add [vendor] to the integration?" | Vendor touches a new data category — flag as potentially implicating privacy and vendor-risk regimes and route for research | "What data flows to them?" |
-| "Can we A/B test the pricing page?" | Differential pricing by segment can implicate consumer-protection and anti-discrimination regimes — flag and route for research | "Are both arms seeing the same price for the same thing? How are users assigned to arms?" |
-| "Can we auto-enroll users in the new feature?" | Default-on behavior for users who previously opted out can implicate consent and consumer-protection rules — flag and route for research | "Does this respect existing preferences?" |
-| "Can we use customer logos on the site?" | Logo use is a separate permission from the contract relationship — flag as potentially implicating publicity / endorsement rules and the customer's own contract terms | "What does the contract say about publicity? Do we have written permission?" |
-| "Can we train on this data?" | Usage rights for the original collection purpose may not extend to training — flag and research the notice/consent the users were given at collection | "What did we tell users when we collected it? What jurisdictions are the users in?" |
-| "It's just an internal tool" | Internal tools still process personal data — flag as potentially implicating privacy regimes and route for research | "Whose data does it touch? Employees, customers, third parties?" |
-| "We already do something similar" | "Similar" is doing a lot of work — the delta is where the issue usually is | "Similar how? What's actually different?" |
-| "Can we use [AI vendor / LLM] for this?" | Vendor AI terms may permit training on inputs; use case may need an AIA — flag and route to `/ai-governance-legal:use-case-triage` | "Is there an AI addendum? What data goes into the model?" |
-| "Can we add AI to this feature?" | May be a new use case not in the registry; may trigger AIA requirement — flag and route to `/ai-governance-legal:use-case-triage` | "What does the AI do — assistive or automated? Who does it act on?" |
-| "The model just decides automatically" | Automated decision-making without human review is regulated in some jurisdictions — flag and research the applicable rules for the affected users' jurisdictions | "Who's affected? Is there a human in the loop? Where are the affected users?" |
-| "It's AI-generated content" | Output IP and disclosure duties vary by jurisdiction and vendor terms — flag and route for research | "What's the content type? Does the vendor's ToS address output ownership? Who is the audience?" |
-| "We're just fine-tuning on our data" | Training data rights, output IP, and vendor obligations all change — flag and route to `/ai-governance-legal:vendor-ai-review` | "What's in the training data? Is any of it customer or employee data?" |
+| "我们能接入[供应商]吗？" | 供应商接触新的数据类别——标记为可能涉及个人信息保护和供应商风险制度，转研究 | "哪些数据流向他们？" |
+| "我们能对定价页做A/B测试吗？" | 按人群差异化定价可能涉及消费者保护和歧视相关制度——标记并转研究 | "两个版本看到的价格一样吗？用户如何分配到不同版本的？" |
+| "我们能自动为用户注册新功能吗？" | 对先前已选择退出的用户默认开启可能涉及同意和消费者保护规则——标记并转研究 | "这尊重了用户既有偏好吗？" |
+| "我们能在网站上用客户的logo吗？" | Logo使用是合同关系以外的单独授权——标记为可能涉及公开权/推荐权规则和客户自身合同条款 | "合同关于公开宣传怎么说？我们有书面授权吗？" |
+| "我们能拿这些数据训练模型吗？" | 原始采集目的的使用权可能不涵盖模型训练——标记并检索采集时向用户作出的告知/同意 | "采集时我们告诉用户什么了？用户在哪些法域？" |
+| "这只是一个内部工具" | 内部工具仍处理个人信息——标记为可能涉及个人信息保护制度，转研究 | "它处理谁的数据？员工、客户还是第三方？" |
+| "我们已经做过类似的了" | "类似"一词承载了很多内容——差异所在通常就是问题所在 | "怎么类似？实际有什么不同？" |
+| "我们能使用[AI供应商/大模型]吗？" | 供应商AI条款可能允许对输入进行训练；用例可能需要算法备案——标记并转 `/ai-governance-legal:use-case-triage` | "有AI附录吗？什么数据输入了模型？" |
+| "我们能给这个功能加上AI吗？" | 可能是登记册中未包含的新用例；可能触发算法备案要求——标记并转 `/ai-governance-legal:use-case-triage` | "AI做什么——辅助型还是自动化型？它作用于谁？" |
+| "模型自动决定就行" | 无人工介入的自动化决策在某些法域受监管——标记并检索受影响用户所在法域的适用规则 | "谁受影响？流程中有人工吗？受影响用户在哪里？" |
+| "这是AI生成的内容" | 输出IP和披露义务因法域和供应商条款而异——标记并转研究 | "内容类型是什么？供应商服务条款是否涉及输出所有权？受众是谁？" |
+| "我们只是用自己的数据微调" | 训练数据权利、输出IP和供应商义务都变了——标记并转 `/ai-governance-legal:vendor-ai-review` | "训练数据里有什么？有没有客户或员工的数据？" |
 
-If a trap might be present, ask the one question before answering. One question, not a checklist. When the answer suggests a real issue, flag for research and route — don't pattern-match to a legal conclusion from the question alone.
+如果可能存在陷阱，在回答前先问那一个问题。一个问题，不是整个检查表。当答案提示确实存在问题，标记并转研究——不要仅凭问题本身模式匹配到法律结论。
 
-## Output format
+## 输出格式
 
-**For Slack (the common case):**
+**针对飞书/钉钉（常见情况）：**
 
-Slack triage replies are internal legal advice. If the reply is being pasted into a ticket, document, or channel that's broadly shared with non-legal, prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` `## Outputs` (it differs by user role — see `## Who's using this`):
-
-```
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
-```
-
-For an in-the-flow Slack DM reply to the PM, the short form is:
+飞书/钉钉分流回复属于内部法律建议。如果回复将被粘贴到广泛与非法律人员共享的工单、文档或频道中，冠以 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` `## 输出规范` 中的工作成果页眉（因用户角色而异——参见 `## 使用者`）：
 
 ```
-[✅ Fine | ⚠️ Needs a look | 🛑 Hold]
-
-[One sentence: the call and why.]
-
-[If ⚠️: what the look involves, how long]
-[If 🛑: who to talk to, when]
+[工作成果页眉 — 按插件配置 ## 输出规范]
 ```
 
-**Examples:**
+对产品经理的即时飞书私信回复，短格式为：
 
 ```
-✅ Fine — adding an analytics event is an FYI here as long as it's covered by
-the existing privacy policy categories. This one is.
+[✅ 没问题 | ⚠️ 需要审查 | 🛑 暂停]
+
+[一句话：判断及原因。]
+
+[如为 ⚠️：审查涉及什么，多长时间]
+[如为 🛑：与谁谈，何时谈]
 ```
 
+**示例：**
+
 ```
-⚠️ Needs a PIA — new data collection for [category]. Usually takes a day.
-Want me to kick it off?
+✅ 没问题——只要隐私政策现有类别涵盖，增加一个分析事件在这里属于FYI告知。这个是被涵盖的。
 ```
 
 ```
-🛑 Hold — "train on customer data" triggers a bunch of things. What did the
-customer agreement say about data use? Let's pull it before anyone promises
-this to the customer.
+⚠️ 需要个人信息保护影响评估——[类别]新增数据采集。通常需要一天。需要我启动吗？
 ```
 
 ```
-⚠️ Needs an AI governance triage — adding an LLM to this workflow means we need
-to check the use case against the registry and confirm an AIA is done before it
-ships. Takes a day. Want me to run `/ai-governance-legal:use-case-triage` now?
+🛑 暂停——"拿客户数据训练模型"触发多个事项。客户协议对数据使用怎么说？在任何人向客户承诺之前我们先调取协议。
 ```
 
-## When to NOT use this skill
+```
+⚠️ 需要AI治理分流——在此工作流中加入大模型意味着我们需要对照登记册检查用例，确认上线前已完成算法备案。需要一天。需要我现在运行`/ai-governance-legal:use-case-triage`吗？
+```
 
-- The question is actually complex (multiple issues, novel area) → route to launch-review or feature-risk-assessment
-- The question is "can you review this PRD" → that's launch-review, not triage
-- You're not sure → say "I'm not sure, let me look properly" — a wrong fast answer is worse than a slow right one
+## 何时不使用本技能
 
-## Tone
+- 问题实际上很复杂（多个议题、全新领域）→ 转上线审查或功能风险评估
+- 问题是"你能审查这份PRD吗"→ 那是上线审查，不是分流
+- 您不确定 → 说"我不确定，让我正经查一下"——一个错误但快速的答案比一个慢但正确的答案更糟糕
 
-Fast, direct, helpful. The PM is not asking for a lecture. If it's fine, say "fine" — don't list the seven things you checked. If it's not fine, say what's not fine and what to do about it.
+## 语气
 
-You are the lawyer people want to ask, not the one they route around.
+快速、直接、有帮助。产品经理不是在求讲课。如果没问题，说"没问题"——不要列出您检查的七个事项。如果有问题，说什么有问题以及如何解决。
 
-## Close with the next-steps decision tree
+您是人们愿意咨询的律师，不是他们绕开的律师。
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+## 以下一步决策树收尾
+
+以 CLAUDE.md `## 输出规范` 中的下一步决策树收尾。将选项定制为本技能刚刚产出的内容——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁死。决策树是输出；律师做选择。

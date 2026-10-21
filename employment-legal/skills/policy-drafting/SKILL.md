@@ -1,131 +1,134 @@
 ---
 name: policy-drafting
 description: >
-  Draft an employment policy with state supplements where law differs across
-  the jurisdictional footprint. Use when the user says "draft a [topic]
-  policy", "we need a policy on", "update our [topic] policy", or names a
-  policy gap.
-argument-hint: "[policy topic — e.g., 'remote work', 'parental leave', 'PTO']"
+  起草劳动规章制度/员工手册——含省级补充条款，在管辖范围内法律有差异时
+  生成地方版本。当用户说"起草一份[主题]制度"、"我们需要关于[主题]的规定"、
+  "更新我们的[主题]制度"或指出制度空白时使用。
+argument-hint: "[制度主题——如'远程办公'、'考勤管理'、'绩效考核']"
 ---
 
 # /policy-drafting
 
-1. Load `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` → jurisdictional footprint, handbook location.
-2. Use the workflow below.
-3. Draft core policy. Check each jurisdiction in footprint for required variants.
-4. Output: core policy + state supplements. Flag where law is currently shifting.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → 管辖范围、规章制度位置。
+2. 使用以下工作流。
+3. 起草核心制度。检查管辖范围中每个省/直辖市是否需要差异化版本。
+4. 输出：核心制度 + 省级补充条款。标记法律正在变动的领域。
 
 ---
 
-## Matter context
+## 案件上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/employment-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/employment-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**案件上下文。** 检查实务级 CLAUDE.md 中的 `## Matter workspaces`。如果 `Enabled` 为 `✗`（法务用户默认值），跳过本段——技能使用实务级上下文，案件机制不可见。如果已启用且无活跃案件，询问："这是哪个案件的？运行 `/employment-legal:matter-workspace switch <slug>` 或说 `practice-level`。" 加载活跃案件的 `matter.md` 获取案件特定上下文和覆盖项。将输出写入案件文件夹。除非 `Cross-matter context` 为 `on`，否则不得读取其他案件的文件。
 
 ---
 
-## Purpose
+## 目的
 
-A policy that's right for California may be wrong (or unnecessary) in Texas. This skill drafts a core policy and generates state supplements where the footprint requires different rules.
+一项对北京合适的制度可能对新疆是错误的（或不必要）。本技能起草核心制度并生成管辖范围要求的差异化省级版本。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md` → jurisdictional footprint, handbook location and format.
+`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → 管辖范围、规章制度位置和格式。
 
-## Workflow
+## 工作流
 
-### Step 1: Scope the policy
+### 步骤1：确定制度范围
 
-- What's the policy for? (Remote work, parental leave, social media, etc.)
-- Why now? (Legal requirement, incident, growth, gap noticed)
-- Who does it apply to? (All employees, certain roles, certain locations)
+- 制度是关于什么的？（考勤管理、绩效考核、劳动纪律、保密、培训等）
+- 为什么现在？（法律要求、事件驱动、业务增长、发现空白）
+- 适用于谁？（全体员工、特定岗位、特定地区）
 
-### Step 2: Jurisdictional scan
+**《劳动合同法》第4条强制性要求。** 用人单位在制定、修改或者决定有关劳动报酬、工作时间、休息休假、劳动安全卫生、保险福利、职工培训、劳动纪律以及劳动定额管理等直接涉及劳动者切身利益的规章制度或者重大事项时，应当经职工代表大会或者全体职工讨论，提出方案和意见，与工会或者职工代表平等协商确定。`[法条原文]` 用人单位应当将直接涉及劳动者切身利益的规章制度和重大事项决定公示，或者告知劳动者。`[法条原文]`
 
-For each state/country in the footprint, check: does this jurisdiction have a specific rule on this topic?
+### 步骤2：管辖地扫描
 
-**Common topics with jurisdictional variance:**
+对于管辖范围中每个省/直辖市，检查：该管辖地是否对该主题有具体规定？
 
-| Topic | Variance |
+**常见有管辖地差异的主题：**
+
+| 主题 | 差异 |
 |---|---|
-| Paid leave | State mandates (CA, NY, CO, WA, etc.) with different accrual rates, uses, carryover |
-| Parental leave | State programs layer on top of FMLA (CA PFL, NY PFL, etc.) |
-| Meal and rest breaks | CA is the outlier (penalty pay); most states minimal |
-| Expense reimbursement | CA requires; most states don't |
-| Pay transparency | Growing list of states requiring ranges in postings |
-| Non-competes | See hiring-review skill — unenforceable in some states |
-| Final pay | Timing varies widely |
+| 加班制度 | 加班费计算基数认定规则因省/直辖市不同（合同约定工资 vs 实际工资 vs 最低工资） |
+| 带薪假期 | 各省/直辖市婚假、产假奖励天数不同（见人口与计划生育条例） |
+| 病假/医疗期 | 各省/直辖市病假工资计算基数可能不同（不低于最低工资80%为底线） |
+| 高温津贴 | 各省/直辖市发放标准和期限不同 |
+| 竞业限制 | 补偿金最低标准因省/直辖市不同（如北京不低于离职前12个月平均工资的30%） |
+| 最终工资支付 | 时点因省/直辖市不同 |
 
-If the topic has no jurisdictional variance (dress code, say), skip this step.
+如果主题没有管辖地差异（如反骚扰政策），跳过此步骤。
 
-### Step 3: Draft the core policy
+### 步骤3：起草核心制度
 
-One policy. Applies everywhere. Clear and readable — employees should understand it without a lawyer.
+一份制度。适用于所有地方。清晰可读——员工在没有律师的情况下应能理解。
 
-Structure:
-- Purpose (one sentence — why this policy exists)
-- Scope (who it applies to)
-- The rule (what's required/permitted/prohibited)
-- Process (how to request, who approves, what happens if)
-- Questions (who to ask)
+结构：
+- 目的（一句话——为什么存在此制度）
+- 适用范围（适用于谁）
+- 制度内容（什么是要求的/允许的/禁止的）
+- 程序（如何申请、谁批准、如果违反怎么办）
+- 咨询（有问题找谁）
 
-Avoid: "heretofore," "notwithstanding," nested exceptions. This is a handbook policy, not a contract.
+避免：过度的法律术语、嵌套例外。这是规章制度，不是合同。
 
-### Step 4: State supplements
+### 步骤4：省级补充条款
 
-For each jurisdiction where the rule differs, a supplement:
+对于规则有差异的每个省/直辖市，一份补充：
 
 ```markdown
-### [State] Supplement
+### [省/直辖市]补充条款
 
-Employees working in [State] are subject to the following in addition to / instead of the core policy:
+在[省/直辖市]工作的员工，在核心制度基础上适用以下替代/补充规定：
 
-- [Specific difference]
-- [Cite the state law if helpful]
+- [具体差异]
+- [如有帮助，引用省级法规]
 ```
 
-Keep supplements tight. Only what's different — don't repeat the core.
+保持补充条款简洁。只写不同之处——不重复核心内容。
 
-### Step 5: Cross-check
+### 步骤5：交叉检查
 
-- Does this policy conflict with anything already in the handbook?
-- Does it promise more than the company intends to deliver? (A policy is a promise — courts hold employers to handbook promises.)
-- Does it inadvertently create a contract? (Some states treat handbook policies as contractual — include the standard "this is not a contract" language if the handbook doesn't already.)
+- 该制度是否与规章制度中已有的任何内容冲突？
+- 它是否承诺了比公司愿意兑现的更多的内容？（制度是一种承诺——劳动仲裁庭和法院会要求用人单位遵守规章制度中的承诺。）
+- 是否确保了民主程序和公示流程的合规？（《劳动合同法》第4条）
+- 是否包含了标准的"本制度不构成劳动合同"的声明？
+- 处罚条款（如罚款、降级等）是否合法合理？
 
-## Output
+## 输出
 
 ```markdown
-# [Policy Name]
+# [制度名称]
 
-## Core Policy
+## 核心制度
 
-[Full text]
+[全文]
 
-## State Supplements
+## 省级补充条款
 
-### [State 1]
-[Supplement]
+### [省/直辖市 1]
+[补充条款]
 
-### [State 2]
-[Supplement]
+### [省/直辖市 2]
+[补充条款]
 
 ---
 
-## Drafting Notes (internal — remove before handbook insertion)
+## 起草说明（内部——纳入规章制度前删除）
 
-- **Jurisdictional scan:** [which states checked, which have variance]
-- **Conflicts with existing handbook:** [none | list]
-- **Law currently shifting:** [any state where this is in flux]
-- **Review cadence:** [when to revisit — annual, or when X happens]
+- **管辖地扫描：** [检查了哪些省/直辖市，哪些有差异]
+- **与现行规章制度的冲突：** [无 | 列举]
+- **法律当前在变动：** [任何省/直辖市正在变动的规则]
+- **审查节奏：** [何时重新审视——每年一次，或当X发生时]
+- **民主程序状态：** [是否已经/需要经过职代会讨论、公示]
 ```
 
-> **Draft, not a policy in effect.** This is a drafting aid for attorney review, not a policy you can publish. Publishing a handbook policy has legal consequences — in several states it can bind the company as a contractual promise, and wage/leave/accommodation policies are routinely read against the employer. A licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction reviews, edits as needed, and takes professional responsibility before the policy is rolled out. Do not publish or distribute this draft unreviewed.
+> **草案，非生效制度。** 这是供律师审查的起草辅助材料，不是可以发布的制度。发布规章制度具有法律后果——在多个省/直辖市，它可以约束公司作为承诺，且工资/假期/劳动纪律相关规定常规性地被司法机关用于对抗用人单位。具备执业资格的律师审查、在需要时编辑并承担专业责任后，制度才能施行。不要将未经审查的草案发布或分发。
 
-## Handoff
+## 交接
 
-To handbook-updates skill: when this policy is approved, it diffs against the current handbook and flags what changes.
+至规章制度更新技能：当该制度获得批准后，diff 对比现行规章制度并标记变更。
 
-## What this skill does not do
+## 本技能不做什么
 
-- Approve the policy. It drafts; a human approves.
-- Roll out the policy. Communication to employees is an HR workflow.
-- Cover every jurisdiction on earth — only the ones in the footprint. If the footprint expands, re-run.
+- 批准制度。它起草；人工批准。
+- 施行制度。向员工的传达是 HR 工作流。
+- 覆盖天底下每个管辖地——仅管辖范围中的。如果管辖范围扩大，重新运行。

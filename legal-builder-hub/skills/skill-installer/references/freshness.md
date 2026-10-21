@@ -64,7 +64,7 @@ quoted, never interpreted) and treats the field as missing.
 - **regulatory** — rules, statutes, agency guidance. Moves fast.
 - **procedural** — court rules, filing procedures, forms tied to procedure.
 - **stylistic** — house style, formatting templates, clause libraries.
-- **stable** — historical references, bar exam outlines, doctrinal primers
+- **stable** — historical references, law exam outlines (法考大纲), doctrinal primers
   that move on the scale of years, not months.
 
 If you're not sure, pick the narrower (faster-moving) category. The user's

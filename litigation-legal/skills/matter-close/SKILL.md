@@ -1,130 +1,133 @@
 ---
 name: matter-close
-description: Close a matter — capture outcome, final exposure, and lessons, then archive it out of the active portfolio without deleting the record. Use when the user wants to close a matter, says "[matter] is done", or needs to record a settlement, dismissal, judgment, withdrawal, or consolidation outcome.
-argument-hint: "[slug]"
+description: >
+  结案——捕获结果、最终敞口和反思教训，从活跃案件组合中归档但不删除记录。
+  当用户需要结案、说"[案件]结束了"或需要记录和解、撤诉、判决、
+  撤回或合并结果时使用。
+argument-hint: "[代号]"
 ---
 
 # /matter-close
 
-1. Follow the workflow and reference below.
-2. Confirm slug and current status.
-3. Capture outcome: resolution type (settled, dismissed, judgment for/against, withdrawn, consolidated), date, final exposure/cost, lessons.
-4. Update `_log.yaml`: `status: closed`, add `closed: YYYY-MM-DD` and `outcome:` fields.
-5. Append final entry to `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/history.md`.
-6. Matter stays in `_log.yaml` and `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/` — not deleted. `/portfolio-status` filters it from active rollups.
+1. 按以下工作流操作。
+2. 确认代号和当前状态。
+3. 捕获结果：结案类型（和解、撤诉、判决我方胜诉/败诉、撤回、合并）、日期、最终敞口/成本、反思教训。
+4. 更新 `_log.yaml`：`status: closed`，添加 `closed: YYYY-MM-DD` 和 `outcome:` 字段。
+5. 向 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/history.md` 追加最终条目。
+6. 案件保留在 `_log.yaml` 和 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/` 中——不删除。`/portfolio-status` 从活跃汇总中过滤。
 
 ---
 
-# Matter Close
+# 案件结案
 
-## Purpose
+## 目的
 
-Matters end. The outcome is the single most valuable data point the portfolio generates — it calibrates the risk framework for future matters. Closing a matter captures the outcome structurally so the record is useful, not just archived.
+案件会结束。结果是案件组合生成的最有价值的数据点——它校准未来案件的风险框架。结案以结构化方式捕获结果，使记录有用，而不只是归档。
 
-## Load context
+## 加载上下文
 
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml` — find the row
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/matter.md` — reference (intake context)
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/history.md` — append target
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml` —— 找到对应行
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/matter.md` —— 参考（登记时上下文）
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/history.md` —— 追加目标
 
-**Conflicts gate — unbypassable.** Before closing, check `_log.yaml` for the matter slug. If the matter is not in `_log.yaml`, refuse and route:
+**冲突门禁——不可绕过。** 结案前，检查 `_log.yaml` 中是否存在该案件代号。如果案件不在 `_log.yaml` 中，拒绝并路由：
 
-> "I don't see [matter slug] in the matter log. Nothing to close — either the slug is wrong or the matter was never intaken through `/litigation-legal:matter-intake`. Check the slug first; if it genuinely was never intaken, there's no row to update and no file structure to close."
+> "我在案件日志中没有找到 [案件代号]。没有可结的案件——要么代号有误，要么该案件从未通过 `/litigation-legal:matter-intake` 登记。请先检查代号；如确实从未登记，则没有可更新的行，也没有可结案的文件结构。"
 
-## Input
+## 输入
 
-Slug (required).
+代号（必填）。
 
-## The close
+## 结案内容
 
-### 1. Resolution type
+### 1. 结案类型
 
-- `settled` — with counterparty, dollar amount, structural terms
-- `dismissed` — with or without prejudice, by what mechanism
-- `judgment-for-us` — at what stage, appeal exposure
-- `judgment-against-us` — at what stage, appeal status, exposure crystallized
-- `withdrawn` — by counterparty, circumstances
-- `consolidated` — merged into another matter (provide slug of parent)
-- `other` — with explanation
+- `和解` —— 与对方达成和解，含金额、结构条款
+- `撤诉` —— 对方撤回起诉/我方撤回起诉
+- `判决我方胜诉` —— 在何阶段、上诉风险
+- `判决我方败诉` —— 在何阶段、上诉状态、敞口已确定
+- `撤回` —— 由对方撤回，附情况说明
+- `合并` —— 并入其他案件（提供母案代号）
+- `其他` —— 附说明
 
-### 2. Resolution date
+### 2. 结案日期
 
-The date the matter actually ended (settlement executed, order issued, dismissal filed).
+案件实际结束的日期（和解协议签署、裁定下达、撤诉立案）。
 
-### 3. Final exposure
+### 3. 最终敞口
 
-- Actual cost to company (settlement amount + fees + injunctive/structural cost)
-- vs. initial exposure range at intake (did we call it?)
-- Reserve accuracy (if reserved): booked vs. actual
+- 公司实际成本（和解金额 + 律师费 + 禁令/结构性成本）
+- vs. 登记时的初始敞口范围（我们的预判是否准确？）
+- 计提准确性（如有计提）：账面 vs. 实际
 
-### 4. Lessons
+### 4. 反思教训
 
-Two or three sentences. What did we get right? What did we misjudge? Anything the intake should have flagged earlier?
+两到三句话。我们哪些判断正确？哪些误判了？登记时本应更早标注什么？
 
-This is the part future counsel will reread. Be honest. "Misjudged likelihood — plaintiff firm was more aggressive than expected" is worth more than "resolved favorably."
+这是未来律师会重读的部分。诚实。"误判了可能性——原告方比预期更激进"比"结果对我方有利"更有价值。
 
-### 5. Seed doc prompt
+### 5. 文件关联提示
 
-Settlement agreement, final order, dismissal — path if available. Not required.
+和解协议、终局裁定、撤诉裁定——如有路径。非必填。
 
-## Writing
+## 写入
 
-**Before closing the matter (the consequential act — the matter is archived and active tracking ends):** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`. If the Role is Non-lawyer:
+**在结案（产生后果的行为——案件被归档且停止主动追踪）之前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 中的 `## 使用者`。如果角色是**非律师**：
 
-> Closing a matter has legal consequences — it ends active tracking, may affect any associated legal hold (run `/legal-hold --release` separately if appropriate), and establishes the final record the company relies on. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> 结案具有法律后果——它结束主动追踪，可能影响相关联的证据保全（如适用，另行运行 `/legal-hold --release`），并建立公司依赖的最终记录。您是否已与律师审查过此事？如已审查，继续。如未审查，以下是带去给律师的简要材料：
 >
-> [Generate a 1-page summary: the matter, resolution type and terms, final exposure vs. initial, reserve accuracy, related matters or appeals still live, what could go wrong with premature closure, what to ask the attorney.]
+> [生成一页摘要：案件、结案类型和条款、最终敞口 vs. 初始、计提准确性、关联案件或上诉是否仍在进行、提前结案可能出错的事项、需要问律师的问题。]
 >
-> If you need to find a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction: your professional regulator's referral service is the fastest starting point (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent).
+> 如果您需要寻找律师：请联系当地律师协会或拨打 12348 法律援助热线获取推荐。
 
-Do not write the close fields or append the close entry without an explicit yes.
+未收到明确确认之前，不写入结案字段或追加结案条目。
 
-### Update `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml`
+### 更新 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml`
 
 ```yaml
 status: closed
 closed: [YYYY-MM-DD]
-outcome: [resolution-type]
-final_cost: [dollar amount]
-last_updated: [today]   # close is the last touch; record it
+outcome: [结案类型]
+final_cost: [金额]
+last_updated: [今天]   # 结案是最后的触及；记录它
 ```
 
-Retain all existing fields. Do not delete the row.
+保留所有既有字段。不删除日志行。
 
-### Append final entry to `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/history.md`
+### 向 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/history.md` 追加最终条目
 
 ```markdown
-## [YYYY-MM-DD] — Matter closed: [resolution-type]
+## [YYYY-MM-DD] —— 案件结案：[结案类型]
 
-**Resolution:** [narrative — what happened, on what terms]
-**Final cost:** [amount + structural terms if any]
-**vs. initial exposure:** [compare to matter.md intake range]
-**Reserve accuracy:** [if applicable]
+**结果：** [叙述——发生了什么、以什么条件]
+**最终成本：** [金额 + 如有结构条款]
+**vs. 初始敞口：** [对比 matter.md 登记范围]
+**计提准确性：** [如适用]
 
-**Lessons:**
-[2-3 sentences — honest retrospective]
+**反思教训：**
+[2-3句话——诚实的回顾]
 
-**Related doc:** [settlement agreement / final order / etc., if provided]
+**关联文件：** [和解协议 / 终局裁定 / 等，如有提供]
 ```
 
-### Touch `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/[slug]/matter.md`
+### 触及 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/[slug]/matter.md`
 
-Add a closing block at the end (don't modify earlier sections — they're the historical intake):
+在末尾添加结案块（不修改前面各节——它们是历史登记记录）：
 
 ```markdown
 ---
 
-## Closed [YYYY-MM-DD]
+## 结案于 [YYYY-MM-DD]
 
-[Resolution summary in one paragraph. Pointer to the final history entry for detail.]
+[结果摘要，一段。指向最终历史条目获取详情。]
 ```
 
-## Confirm
+## 确认
 
-Show the user the full close entry and the yaml changes before writing.
+写入前向用户展示完整的结案条目和 yaml 变更。
 
-## What this skill does not do
+## 本技能不做什么
 
-- Delete matters. Closed matters stay in `_log.yaml` and on disk — they're the training set for the portfolio's judgment.
-- Re-open. If a closed matter comes back (appeal, related litigation), open a new matter that references the closed one in `matter.md`.
-- Summarize lessons the user didn't say. If the user skips the lessons section, leave it empty rather than invent.
+- 删除案件。已结案件保留在 `_log.yaml` 和磁盘中——它们是案件组合判断力的训练集。
+- 重新立案。如已结案件重新出现（上诉、关联诉讼），开新案并在 `matter.md` 中引用已结案件。
+- 总结用户未提及的教训。如用户跳过教训部分，留空而非编造。

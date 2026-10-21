@@ -1,21 +1,20 @@
 ---
 name: launch-review
 description: >
-  Full launch review against your framework and risk calibration. Use when the
-  user says "review this launch", "legal review for [feature]", "can we ship
-  this", "what are the legal issues with [product]", or references a launch
-  tracker ticket or PRD that needs a category-by-category review memo.
-argument-hint: "[PRD file | Drive link | tracker ticket ID]"
+  对照您的框架和风险校准进行全面产品上线审查。当用户说"审查这个上线"
+  "[功能]法务审查""我们能上线吗""[产品]有什么法律问题"或引用了需要
+  逐类审查备忘录的产品需求文档或上线追踪工单时使用。
+argument-hint: "[PRD文件 | 飞书文档链接 | 追踪工单号]"
 ---
 
 # /launch-review
 
-1. Load `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → framework + calibration. Stop if placeholders.
-2. Get PRD + related docs. If tracker connected, pull ticket and comments.
-3. Walk every framework category using the workflow below.
-4. Calibrate each finding against the table. Novel = flag explicitly.
-5. Output review memo in house format. Post summary to ticket if connected.
-6. Hand off: marketing-claims-review if substantial marketing; feature-risk-assessment if a finding needs depth.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → 框架 + 校准。如为占位符则停止。
+2. 获取PRD + 相关文档。如追踪器已连接，拉取工单和评论。
+3. 使用下述工作流遍历每个框架类别。
+4. 将每个发现对照校准表进行校准。全新 = 明确标记。
+5. 以内部格式输出审查备忘录。如已连接，发布摘要至工单。
+6. 交接：如涉及大量营销，转marketing-claims-review；如某发现需要深度分析，转feature-risk-assessment。
 
 ```
 /product-legal:launch-review PROJ-1234
@@ -23,237 +22,230 @@ argument-hint: "[PRD file | Drive link | tracker ticket ID]"
 
 ---
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/product-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/product-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作空间`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `/product-legal:matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
-## Destination check
+## 发送目的地检查
 
-Before producing output, check where it's going. If the user has named a destination (a channel, a distribution list, a counterparty, "everyone"), ask whether it's inside the privilege circle. Public channels, company-wide lists, counterparty/opposing counsel, vendors, and clients (for work product) waive the protection. When the destination looks outside the circle, flag it and offer (a) the privileged version for legal only, (b) a sanitized version for the broader channel, or (c) both — don't silently apply a privileged header and then help paste it somewhere the header won't protect it. See the canonical `## Shared guardrails → Destination check` in this plugin's CLAUDE.md.
+在产出输出前，检查其去向。如果用户指定了目的地（频道、分发列表、对方、"所有人"），询问是否在保密范围内。公共频道、全公司列表、对方/对方律师、供应商和客户（对于工作成果）将导致保护丧失。当目的地显示在保密范围外时，予以标记并提供 (a) 仅供法务的保密版本，(b) 适合更广泛频道的净化版本，或 (c) 两者——不要默不作声地加上保密页眉，然后帮助粘贴到页眉无法保护的地方。参见本插件 CLAUDE.md 中的 `## 共享安全机制 → 发送目的地检查`。
 
-## Purpose
+## 目的
 
-Read the PRD, check every category in this team's framework, calibrate against what actually blocks here (per `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md`), and output a review in house format. Goal: a PM reads it and knows exactly what has to happen before they ship.
+阅读PRD，检查该团队框架中的每个类别，对照在此实际阻断什么进行校准（依据 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md`），并以内部格式输出审查。目标：产品经理读完就知道上线前必须完成什么。
 
-## Load calibration
+## 加载校准
 
-Read `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md`:
-- `## Review framework` — the categories to check
-- `## Risk calibration` — what blocks vs. what's FYI *at this company*
-- `## Launch review process` — output format
-- `## Escalation` — when to route up
+读取 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md`：
+- `## 审查框架`——需检查的类别
+- `## 风险校准`——在*这家公司*什么阻断vs.什么是FYI告知
+- `## 产品上线审查流程`——输出格式
+- `## 上报`——何时转上级
 
-The calibration table is the difference between this skill and a generic checklist. If the table says "new data collection → PIA, ships in 1-2 days," don't write "this might require a full DPIA and regulatory consultation." Match the team's actual practice.
+校准表是本技能与通用检查表之间的区别。如果表说"新增数据采集→需个人信息保护影响评估，1-2天可上线"，不要写"这可能需要完整的数据保护影响评估和监管咨询"。匹配团队的实际操作。
 
-## Workflow
+## 工作流
 
-### Step 1: Get the inputs
+### 第1步：获取输入
 
-- **PRD** — from file, Drive, or the launch tracker ticket
-- **Spec/design doc** — if separate
-- **Marketing plan** — if there is one (hands off to marketing-claims-review if substantial)
-- **Launch date** — for urgency calibration
-- **Launch tracker ticket** — if connected, pull it for context and comments
+- **PRD**——来自文件、飞书文档或上线追踪工单
+- **规格/设计文档**——如有独立
+- **营销计划**——如有（如涉及大量营销，转交marketing-claims-review）
+- **上线日期**——用于紧迫性校准
+- **上线追踪工单**——如已连接，拉取以获取上下文和评论
 
-If Jira/Linear MCP is connected, pull the ticket history — often there's context in earlier comments that the PRD doesn't capture.
+如果飞书多维表格/钉钉/Teambition的MCP已连接，拉取工单历史——通常PRD未捕获的上下文在早期评论中。
 
-### Step 2: Understand what's launching
+### 第2步：理解上线内容
 
-Before the checklist, answer in plain English:
+在检查表之前，用通俗语言回答：
 
-- What does this thing do?
-- Who uses it — existing users, new users, a new segment?
-- What's new vs. what's an extension of something already reviewed?
-- Any new data, new vendors, new claims, new jurisdictions?
+- 这个东西做什么？
+- 谁使用它——已有用户、新用户、新群体？
+- 有什么是新的vs.什么是已有审查过的延伸？
+- 有无新数据、新供应商、新宣传、新法域？
 
-**AI detection — run before the framework walk.** Check whether this launch uses
-AI in any form: a third-party model, an internally built model, an AI-powered
-vendor feature, automated scoring or classification, generative content,
-recommendations, predictions. Look for this even if the PRD doesn't label it
-"AI" — words like "intelligent", "automated", "personalized", "generated",
-"suggested" are tells.
+**AI检测——在遍历框架前运行。** 检查此次上线是否以任何形式使用AI：第三方模型、内部构建的模型、AI赋能的供应商功能、自动评分或分类、生成内容、推荐、预测。即使PRD未标注"AI"也要寻找——"智能""自动""个性化""生成""推荐"等词语是信号。
 
-If AI component detected → flag it, then run `/ai-governance-legal:use-case-triage [feature]`
-alongside the framework walk. Category 8 below handles the detail; this flag
-ensures it's never skipped even if the PRD is vague.
+如检测到AI组件 → 标记，然后在遍历框架的同时运行 `/ai-governance-legal:use-case-triage [功能]`。以下第8类处理细节；此标记确保即使PRD含糊也绝不被跳过。
 
-### Step 3: Walk the framework
+### 第3步：遍历框架
 
-For each category in `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → Review framework. If the team doesn't have one, use the 8-category default below. The categories are stable framing concepts; within each category, research the regulatory regimes applicable to the product's sector, audience, and jurisdictions before calibrating severity. What blocks in one jurisdiction or sector may be routine in another — `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` captures the team's calibration.
+对 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → 审查框架中的每个类别。如果团队没有，使用以下8类默认框架。类别是稳定的框架概念；在每个类别内，在校准严重程度之前，检索适用于产品领域、受众和法域的监管制度。在一个法域或领域是阻断的，可能在另一个是常规——`~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` 捕获团队的校准。
 
-| # | Category | Key question | Auto-skip if |
+| # | 类别 | 关键问题 | 自动跳过条件 |
 |---|---|---|---|
-| 1 | **Contractual commitments** | Does this conflict with any customer-facing promise (ToS, SLA, marketing)? | No customer-facing changes |
-| 2 | **Privacy** | New data collection, new purpose, new sharing? | No data changes |
-| 3 | **Security** | New attack surface, new data at rest, new access patterns? | UI-only, no backend change |
-| 4 | **IP** | Third-party code/content? Open-source license check? Outputs that could infringe? | No new dependencies, no user-generated content |
-| 5 | **Third-party** | New vendor, partner, or integration? | No new external parties |
-| 6 | **Regulatory** | Does this touch a regulated sector, audience, or jurisdiction? Research the applicable regimes. | Same users, same sectors, same jurisdictions as existing product |
+| 1 | **合同承诺** | 是否与任何面向客户的承诺（服务条款、SLA、营销）冲突？ | 无面向客户变更 |
+| 2 | **个人信息保护** | 新数据采集、新目的、新共享？ | 无数据变更 |
+| 3 | **数据安全** | 新攻击面、新静态数据、新访问模式？ | 仅UI变更，无后端变更 |
+| 4 | **知识产权** | 第三方代码/内容？开源许可检查？可能侵权的输出？ | 无新依赖、无用户生成内容 |
+| 5 | **第三方合作** | 新供应商、合作伙伴或集成？ | 无新外部方 |
+| 6 | **行业监管** | 是否涉及受监管领域、受众或法域？检索适用制度。 | 与现有产品相同的用户、领域、法域 |
 
-> **No silent supplement.** If a research query to the configured legal research tool (Westlaw, CourtListener, regulator sites, or firm platform) returns few or no results for a regime, enforcement precedent, or regulator guidance, report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [regime / topic]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against the issuing authority before relying, or (4) flag as unverified and stop. Which would you like?" A lawyer decides whether to accept lower-confidence sources.
+> **禁止静默补充。** 如果对已配置的法律研究工具的检索查询返回的结果很少或无结果，报告检索到的情况并停止。不要未经询问从联网搜索或模型知识中填补。说："[工具]搜索返回[N]条结果。关于[制度/主题]的覆盖似乎有限。选项：(1) 扩大检索查询，(2) 尝试不同的研究工具，(3) 搜索网络——结果将标记 `[联网检索 — 需复核]`，依赖前应比照发布机关核实，或 (4) 标记为未核实并停止。您选哪个？"由律师决定是否接受较低置信度的来源。
 >
-> **Source attribution tiering.** Tag every citation in the review with its source. For model-knowledge citations, use one of three tiers rather than a single blanket "verify" tag:
+> **来源归属分层。** 将审查中的每个引用标记其来源。对于模型知识引用，使用三个层级而非单一笼统的"需验证"标签：
 >
-> - `[settled]` — stable, well-known statutory and regulatory references unlikely to have changed (e.g., FTC Act § 5, GDPR Art. 33, CCPA § 1798.100). Still verify before relying on it to clear a launch, but lower priority.
-> - `[verify]` — model-knowledge citations that are real but should be verified: specific implementing regulations, agency guidance, enforcement actions, case holdings, thresholds, effective dates, post-2023 amendments.
-> - `[verify-pinpoint]` — pinpoint citations (specific subsection letters, volume/page numbers, paragraph numbers) carry the highest fabrication risk and should ALWAYS be verified against a primary source.
+> - `[已确认]` —— 稳定、众所周知的法条和法规引用，不太可能已变化（如《广告法》第9条、《个人信息保护法》第13条、《反不正当竞争法》第8条作为概念）。在依赖其来通过上线前仍需核实，但优先级较低。
+> - `[需验证]` —— 模型知识引用是真实的但应被核实：具体实施细则、监管指引、执法行动、案件判决、阈值、生效日期、2024年后的修订。
+> - `[需精准核实]` —— 精准引用（具体条款项、司法解释编号、案件案号）具有最高的编造风险，应始终对照原始来源核实。
 >
-> Tool-retrieved citations keep their source tag (`[Westlaw]`, `[CourtListener]`, `[regulator site]`, or the MCP tool name); web-search citations remain `[web search — verify]`; user-supplied citations (from the PRD or seed materials) remain `[user provided]`. The tiering surfaces the real verification work — a reader who verifies everything verifies nothing. Never strip or collapse the tags.
+> 工具获取的引用保留其来源标签（`[北大法宝]`、`[威科先行]`、`[监管机构网站]`或MCP工具名称）；联网搜索引用保留 `[联网检索 — 需复核]`；用户提供的引用（来自PRD或种子材料）保留 `[用户提供]`。分层使真实的核实工作凸显——一个什么都核实的人等于什么都没核实。绝不剥离或折叠标签。
 >
-> `[platform policy — verify against live docs]` — platform rules (Apple App Store Review Guidelines, Google Play policies, Meta / Snap / TikTok creator rules, ESRB / PEGI descriptors, card-network rules, app-store in-app-purchase policies) cited without fetching the live page. Never use `[settled]` for a platform policy — these change without notice and the model's snapshot is almost always stale. If the launch hinges on a platform rule, fetch the current policy page in-session before relying on it.
-| 7 | **Marketing claims** | Any claims that need substantiation? | No marketing component |
-| 8 | **AI governance** | Does this use AI in any form? Is the use case in the registry? AIA done? Vendor AI terms reviewed? | No AI component detected in Step 2 |
+> `[平台政策 — 需对照现行规则核实]` —— 平台规则（Apple App Store审核指南、华为应用市场、微信小程序、支付宝小程序等规则）未获取现行政策页面即引用。平台政策绝不使用 `[已确认]` ——这些可能未经通知而变更，模型快照几乎总是滞后。如果上线依赖某个平台规则，在依赖前在会话中获取当前政策页面。
+| 7 | **营销宣传** | 有无需要证实的宣传？ | 无营销组件 |
+| 8 | **AI治理** | 是否以任何形式使用AI？用例是否在登记册中？完成算法备案了吗？供应商AI条款已审查？ | 第2步中未检测到AI组件 |
 
-**For each category, output:**
+**对每个类别，输出：**
 
 ```markdown
-### [N]. [Category]
+### [N]. [类别]
 
-**Checked:** [what you looked at]
-**Finding:** [Clear | Needs work | Blocker | Skipped]
-**Detail:** [what the issue is, if any — specific to the PRD, not generic]
-**Calibration:** [per the config CLAUDE.md — this is usually an FYI / usually needs X / usually blocks]
-**Action:** [what has to happen, who owns it, by when]
+**已检查：**[您看了什么]
+**发现：**[清晰 | 需要修复 | 阻断 | 已跳过]
+**详情：**[有什么问题，如有——具体到PRD，不泛泛]
+**校准：**[依据配置 CLAUDE.md —— 这通常是FYI告知/通常需要X/通常阻断]
+**行动：**[需要做什么，谁负责，何时完成]
 ```
 
-**Auto-skip honestly.** If a category doesn't apply, say so with a one-line reason. Don't pad.
+**诚实地自动跳过。** 如果某类别不适用，以一句话理由说明。不要填充。
 
-**Sector hints.** The 8-category framework above is enterprise-SaaS-shaped. If the launch involves any of the sectors below, add the overlay: ask the overlay question alongside the base-framework question for each affected category, and surface the sector-specific regime before calibrating severity. A launch that checks all 8 boxes but misses a sector regime still ships with a hole.
+**行业提示。** 以上8类框架面向企业SaaS产品。如果上线涉及以下任何行业，增加覆盖层：对每个受影响的类别在基础框架问题旁同时询问覆盖层问题，并在校准严重程度前揭示行业特定制度。一个排查了所有8个框但遗漏了行业制度的上线仍有漏洞。
 
-| Sector | Overlay regimes to surface |
+| 行业 | 需揭示的覆盖制度 |
 |---|---|
-| **Children / minors** | COPPA (US — operators of services directed to children under 13 or with actual knowledge), CA AADC / state age-appropriate design codes, platform age ratings (ESRB, PEGI), addictive-design scrutiny (NY Safe for Kids Act, CA SB 976 and analogs), FTC endorsement guides for kid-directed influencers |
-| **Gaming / loot boxes / in-game currency** | Loot-box odds disclosure (CA AB 2476-style, Chinese / Korean / Belgian / Dutch regimes), ESRB / PEGI descriptors (In-Game Purchases, Loot Boxes, Real Gambling), state gambling law (games-of-chance vs. games-of-skill lines, sweepstakes promotions law), FTC dark-patterns guidance, platform-store policies (Apple, Google, console) |
-| **Financial / fintech** | GLBA (NPI, Safeguards Rule, Reg P), state money transmission licensing (MTLs across ~50 states + DC), CFPB UDAAP, state UDAP, bank-partner sponsorship requirements and "true lender" exposure, Reg E / Reg Z where applicable, FINRA if brokerage |
-| **Health** | HIPAA (if CE or BA), FDA SaMD / clinical decision support / general wellness exemption, state health-privacy (WA MHMDA, NV SB 370, CT HIPAA-analog), FTC Health Breach Notification Rule for non-HIPAA entities |
-| **Education** | FERPA (if school or school-acting service provider), state student-privacy (NY Ed Law 2-d, IL SOPPA, CA SOPIPA + AB 1584), COPPA if K-12 data under 13 |
-| **Employment / HR tech** | Title VII, EEOC guidance on AI in hiring, ADA, state AI-hiring laws (IL AIVIA, NYC Local Law 144, CA / CO / UT / NJ analogs under consideration or enacted), state biometric laws (IL BIPA, TX / WA analogs) for video-interview and keystroke products, FCRA for background / verification products |
-| **Government / public sector** | FedRAMP (Low / Moderate / High), FAR / DFARS, CMMC where applicable, state-level equivalents (StateRAMP), CJIS for law-enforcement data, IRS Publication 1075 for tax data, StateRAMP and state procurement rules |
-| **Consumer / retail / marketing** | FTC Act § 5, Made-in-USA rule, Green Guides, CAN-SPAM, TCPA (with TCPA-Shaken/Stir for calls), state auto-renewal (ROSCA, CA ARL, NY GBL § 527-a [consumer] or GOL § 5-903 [B2B services] — verify which applies), state sweepstakes/promotions law |
+| **儿童/未成年人** | 未成年人保护法、个人信息保护法第31条（不满14周岁）、儿童个人信息网络保护规定、游戏防沉迷规定、广告法对未成年人的保护条款 |
+| **游戏/内购/虚拟币** | 游戏版号、防沉迷系统、适龄提示、虚拟货币管理规定、概率公示要求（原文化部/版署相关规定）、应用商店政策（Apple、华为、微信小程序） |
+| **金融/金融科技** | 中国人民银行/国家金融监管总局/证监会相关法规、金融信息服务管理规定、支付业务许可证、征信业务管理规定、个人信息保护法在金融领域的适用 |
+| **健康/医疗** | 互联网诊疗管理办法、健康医疗大数据标准/安全/服务管理办法、个人信息保护法第28条（敏感个人信息——医疗健康）、医疗器械软件（如适用）|
+| **教育** | 教育App备案、未成年人学校保护规定、在线教育个人信息保护、教育移动互联网应用程序备案管理办法 |
+| **就业/HR科技** | 劳动合同法、就业促进法、个人信息保护法在人力资源管理中的适用、AI招聘合规、生物特征识别信息保护 |
+| **政府/公共部门** | 网络安全等级保护、关键信息基础设施安全保护、政府采购法规、政务信息系统政府采购管理 |
+| **消费者/零售/营销** | 广告法、反不正当竞争法、消费者权益保护法、电子商务法、明码标价和禁止价格欺诈规定、自动续费规定 |
 
-If a sector hint fires and no dedicated category in the base framework covers it, insert it as a category (e.g., "6a. Sector overlay — children / COPPA + CA AADC"). Don't let it disappear into category 6 Regulatory as an afterthought; the sector regime often supplies the controlling floor, not a footnote.
+如果行业提示触发且基础框架中没有专门类别覆盖，将其作为新增类别插入（例如"6a. 行业覆盖——儿童/未成年人保护法 + 个人信息保护法第31条"）。不要让它消失在类别6"行业监管"中成为事后补充；行业制度通常提供的是控制性下限，而非脚注。
 
-### Step 4: Calibrate severity
+### 第4步：校准严重程度
 
-For each finding, check against the calibration table in ~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md:
+对每个发现，对照 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` 中的校准表检查：
 
-- If it matches a "usually FYI" pattern → note it, don't block
-- If it matches "usually requires work" → specify the work, estimate timeline from the table
-- If it matches "usually blocks" → flag prominently, route per escalation table
-- If it's **novel** (not in the table) → say so explicitly: "This doesn't match any pattern in the calibration — needs a human call"
+- 如果匹配"通常FYI告知"模式 → 注明，不阻断
+- 如果匹配"通常需付出工作量" → 指明具体工作，从表中预估时限
+- 如果匹配"通常阻断" → 显著标记，按上报表转交
+- 如果是**全新**（表中无）→ 明确说明："这在校准中不匹配任何模式——需人工判断"
 
-### Step 5: Assemble the review
+### 第5步：组装审查
 
-Format per `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → Launch review process → output format. Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` `## Outputs` (it differs by user role — see `## Who's using this`). If no house format is specified:
+格式依据 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → 产品上线审查流程 → 输出格式。冠以 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` `## 输出规范` 中的工作成果页眉（因用户角色而异——参见 `## 使用者`）。如无内部格式指定：
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
+[工作成果页眉 — 按插件配置 ## 输出规范]
 
-# Launch Review: [Feature name]
+# 上线审查：[功能名称]
 
-**Reviewed:** [date] | **Launch date:** [date] | **Reviewer:** [name]
-**PRD:** [link] | **Ticket:** [link if connected]
+**审查日期：**[日期] | **上线日期：**[日期] | **审查人：**[姓名]
+**PRD：**[链接] | **工单：**[链接，如已连接]
 
 ---
 
-## Bottom line
+## 底线
 
-[One paragraph: can this ship? What has to happen first?]
+[一段话：能否上线？必须首先完成什么？]
 
-**Call:** [Clear to ship | Ship with conditions | Blocked pending X | Needs escalation]
+**判断：**[可上线 | 有条件上线 | 因X而阻断 | 需上报]
 
-> **Before emitting a "Clear to ship" or "Ship with conditions" call:** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md`. If the Role is Non-lawyer:
+> **在对"可上线"或"有条件上线"判断输出前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` 中的 `## 使用者`。如果角色为非法务人员：
 >
-> > Clearing a launch is a legal act — once the product ships, the company is committed to the legal posture documented here. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> > 通过一项上线是一项法律行为——一旦产品上线，公司即承诺于此文件记录的法律立场。您是否已与律师审查？如已审查，继续。如未审查，以下是带给律师的简要说明：
 > >
-> > [Generate a 1-page summary: the launch, the findings by category, any open questions, the residual risk after conditions, and the three things to ask the attorney before the launch goes out.]
+> > [生成1页摘要：上线内容、按类别分列发现、未决问题、条件履行后的剩余风险，以及上线前向律师提出的三个问题。]
 > >
-> > If you need to find a lawyer: your professional regulator's referral service is the fastest starting point (state bar in the US; SRA/Bar Standards Board in England & Wales; Law Society in Scotland/NI/Ireland/Canada/Australia; or your jurisdiction's equivalent).
+> > 如需要寻找律师：中华全国律师协会或所在地地方律师协会的推荐服务是最快的起点。
 >
-> Do not proceed past this gate to a "Clear to ship" or "Ship with conditions" call without an explicit yes. "Blocked pending X" and "Needs escalation" do not require the gate — those are review calls, not clearances.
+> 在未获得明确同意前，不越过此准入口输出"可上线"或"有条件上线"判断。"因X阻断"和"需上报"不需要准入——这些是审查判断，不是放行。
 
 ---
 
-## Findings by category
+## 按类别分列发现
 
-[All the category blocks from Step 3 — skip-noted categories at the bottom]
+[所有第3步的类别块——跳过的类别放在底部]
 
 ---
 
-## Action items
+## 行动事项
 
-| # | Item | Owner | Due | Blocking? |
+| # | 事项 | 负责人 | 截止日 | 是否阻断？ |
 |---|---|---|---|---|
-| 1 | [specific] | [PM/eng/legal] | [date] | Yes/No |
+| 1 | [具体] | [产品经理/开发/法务] | [日期] | 是/否 |
 
 ---
 
-## Escalations
+## 上报事项
 
-[If any — who, why, drafted per escalation skill]
-
----
-
-## Notes for next time
-
-[If this launch surfaced a pattern that should update the calibration table]
+[如有——谁、为什么、按上报技能起草]
 
 ---
 
-## Citation check
+## 下次注意事项
 
-Any cases, statutes, regulations, or enforcement actions referenced in this review were generated by an AI model and have not been verified against a primary source. Before relying on a citation in a launch decision, verify it against a legal research tool (Westlaw, CourtListener, or your firm's research platform) for accuracy, good law status, and current enforcement posture. Fabricated or misquoted citations in launch reviews can steer the business wrong. Source tags on each citation (e.g., `[Westlaw]`, `[web search — verify]`) show where it came from; `verify` tags carry higher fabrication risk and should be checked first.
+[如果本次上线揭示了一个应更新校准表的模式]
+
+---
+
+## 引用检查
+
+本审查中引用的任何案例、法律、法规或执法行动均由AI模型生成且未经原始来源验证。在依赖引用于上线决策之前，对照法律研究工具（北大法宝、威科先行、法信或您的律所研究平台）核实其准确性、有效性和当前执法态势。上线审查中被编造或错误引用的引用可能将业务引向错误方向。每条引用上的来源标签（如 `[北大法宝]`、`[联网检索 — 需复核]`）显示其来源；`需验证` 标签具有较高的编造风险，应首先检查。
 ```
 
-### Step 6: Produce BOTH outputs — the privileged memo AND the redacted ticket comment
+### 第6步：产出两份输出——保密备忘录和经净化的工单评论
 
-⚠️ **Privilege warning:** Posting the full privileged memo to a Jira/Linear ticket that is widely shared with engineering, PM, and other non-legal roles may waive privilege. Don't paste the full memo into a broadly-shared ticket.
+⚠️ **保密警告：** 将完整保密备忘录发布到广泛与开发、产品经理及其他非法律角色共享的飞书多维表格/钉钉/Teambition工单上可能导致保密特权丧失。不要将完整备忘录粘贴到广泛共享的工单中。
 
-**Both of the following are REQUIRED outputs of this skill.** Neither is optional. Print them in the order below, with a clear divider between them so the user cannot miss the redacted block.
+**以下两项均为本技能的必需输出。** 两者都不是可选的。按下述顺序打印，两者之间有清晰分隔线，以便用户不会遗漏净化后的内容块。
 
-**Output 1 — Privileged launch review memo.** The full analysis assembled in Step 5: work-product header, bottom line, findings by category with risk rationale, action items, escalations, notes for next time, citation check. This is internal legal work product. Keep it in your matter file (Drive, DMS, or wherever `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` says review docs go). Distribute only to people inside the privilege circle.
+**输出1——保密上线审查备忘录。** 第5步组装的完整分析：工作成果页眉、底线、按类别分列发现（含风险理由）、行动事项、上报事项、下次注意事项、引用检查。这是内部法务工作成果。保存在您的事项文件中（飞书云文档、DMS或 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` 规定的审查文件存放位置）。仅分发给保密范围内的人员。
 
-**Output 2 — Redacted ticket-comment block — SAFE TO POST TO TRACKER.** After the memo, with a clear `---` divider and the header `## SAFE TO POST TO TRACKER (non-privileged)`, produce a short comment block containing ONLY:
+**输出2——净化后工单评论块——安全发布至追踪器。** 在备忘录后，以清晰 `---` 分隔线和标题 `## 安全发布至追踪器（非保密）`，产出一个简短评论块，仅包含：
 
-- **Launch status:** green / yellow / red (i.e., Clear to ship / Ship with conditions / Blocked pending X / Needs escalation)
-- **Conditions as action items:** each condition is a bullet, written as an instruction to the PM/eng ("add PIA link to ticket before ship", "remove 'most accurate' language from homepage copy"). No legal reasoning.
-- **Deadline per condition.**
-- **Owner per condition.**
+- **上线状态：** 绿色/黄色/红色（即可上线/有条件上线/因X阻断/需上报）
+- **条件作为行动事项：** 每个条件是一条，写成对产品经理/开发的指示（"上线前将个人信息保护影响评估链接附至工单""从首页文案中删除'最准确'用语"）。无法律推理。
+- **每个条件的截止日。**
+- **每个条件的负责人。**
 
-The redacted block contains NO work-product / privilege header, NO risk rationale, NO internal legal discussion, NO regulatory citations, NO escalation notes. If a condition's phrasing would leak the underlying legal theory ("retaliation risk"), rewrite it as the action ("route to GC before term date").
+净化块不包含工作成果/保密页眉、风险理由、内部法务讨论、法规引用、上报备注。如果某条件的措辞会泄漏底层法律理论（"行政处罚风险"），改写为行动（"请法务负责人确认后再上线"）。
 
-Example divider and block:
+分隔线和块示例：
 
 ```markdown
 ---
 
-## SAFE TO POST TO TRACKER (non-privileged)
+## 安全发布至追踪器（非保密）
 
-**Launch status:** Blocked pending conditions below.
+**上线状态：** 因以下条件阻断。
 
-**Conditions:**
-- [ ] Attach completed PIA to ticket — Owner: [PM] — Due: [date]
-- [ ] Remove "most accurate on the market" copy from homepage draft — Owner: [Marketing] — Due: [date]
-- [ ] Confirm with GC before changing retention window — Owner: [PM] — Due: [date]
+**条件：**
+- [ ] 将完成的个人信息保护影响评估附至工单——负责人：[产品经理]——截止：[日期]
+- [ ] 从首页草稿中删除"市场最准确"文案——负责人：[市场部]——截止：[日期]
+- [ ] 在更改数据留存窗口前与法务负责人确认——负责人：[产品经理]——截止：[日期]
 ```
 
-Paste Output 2 (and only Output 2) to the tracker. Link Output 1 only to the people inside the privilege circle who need to read the full analysis.
+将输出2（且仅输出2）粘贴至追踪器。仅将输出1链接发送给需要阅读完整分析的保密圈内人员。
 
-## Handoffs
+## 交接
 
-- **To marketing-claims-review:** If there's a substantial marketing component, hand off the claims section.
-- **To feature-risk-assessment:** If a finding is complex enough to need its own doc (e.g., novel AI feature, children's product), spawn a deeper assessment.
-- **To privacy:** If the launch touches personal data, run `/privacy-legal:use-case-triage [feature]`. If triage returns PIA REQUIRED or DPIA MANDATORY, run `/privacy-legal:pia-generation [feature]`. Don't just note "PIA needed" — trigger it.
-- **To AI governance:** If an AI component was detected in Step 2, run `/ai-governance-legal:use-case-triage [feature]`. If triage returns CONDITIONAL, run `/ai-governance-legal:aia-generation [feature]`. If a new AI vendor is involved, run `/ai-governance-legal:vendor-ai-review [vendor agreement]`.
+- **转营销宣传审查：** 如有大量营销组件，交接宣传部分。
+- **转功能风险评估：** 如果某发现足够复杂需要独立文件（例如新型AI功能、儿童产品），生成更深入的评估。
+- **转个人信息保护：** 如果上线涉及个人数据，运行 `/privacy-legal:use-case-triage [功能]`。如果分流返回"需个人信息保护影响评估"或"需数据保护影响评估"，运行 `/privacy-legal:pia-generation [功能]`。不要仅注明"需PIA"——直接触发。
+- **转AI治理：** 如果第2步检测到AI组件，运行 `/ai-governance-legal:use-case-triage [功能]`。如果分流返回"条件性"，运行 `/ai-governance-legal:aia-generation [功能]`。如果涉及新的AI供应商，运行 `/ai-governance-legal:vendor-ai-review [供应商协议]`。
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出规范` 中的下一步决策树收尾。将选项定制为本技能刚刚产出的内容——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁死。决策树是输出；律师做选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- It doesn't replace a conversation with the PM. Often the PRD is wrong or out of date — the review surfaces questions, a human asks them.
-- It doesn't approve the launch. It informs the approval.
-- It doesn't retroactively calibrate. If this launch turns out fine (or badly) in a way that should update the calibration table, a human updates ~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md.
+- 它不替代与产品经理的对话。通常PRD是错误的或过时的——审查揭示问题，人提问。
+- 它不批准上线。它为批准提供信息。
+- 它不追溯校准。如果本次上线结果良好（或糟糕）且应以某种方式更新校准表，由人工更新 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md`。

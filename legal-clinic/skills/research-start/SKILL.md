@@ -1,203 +1,192 @@
 ---
 name: research-start
 description: >
-  Research roadmap for a legal issue — statutes to check, case law areas to
-  investigate, regulatory frameworks, Westlaw search terms. Leads and
-  frameworks, NOT authoritative citations; students verify and develop
-  everything. Use when a student asks where to start researching, wants a
-  research roadmap for an issue, or needs gaps identified in existing research.
-argument-hint: "[legal issue]"
+  法律问题的检索路线图——需查阅的法条、需调查的案例法领域、行政监管框架、
+  北大法宝/法信/元典检索关键词。提供线索和框架，非权威引注；学生核实并
+  发展所有内容。当学生询问从哪里开始检索、需要某个问题的检索路线图、
+  或需要识别已有检索中的缺口时使用。
+argument-hint: "[法律问题]"
 ---
 
 # /research-start
 
-1. Load `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → jurisdiction, practice area.
-2. Use the workflow below.
-3. Frame the issue specifically. Build roadmap: statutory starting points (unverified), case law areas (not cases), secondary sources, search terms.
-4. If student has existing research uploaded: synthesize and identify gaps.
-5. Output with prominent "leads not authorities" header. Everything is a starting point the student verifies.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 管辖地、实践领域。
+2. 使用以下工作流。
+3. 具体界定问题。构建路线图：法条起手点（未核实）、案例法领域（非具体案例）、二次文献来源、检索关键词。
+4. 如学生已上传已有检索成果：综合并识别缺口。
+5. 输出前置显著的"线索非权威"标题。一切都是学生核实的起手点。
 
 ```
-/legal-clinic:research-start "habitability defense to nonpayment eviction in [State]"
+/legal-clinic:research-start "[省份]房屋租赁中以丧失居住条件为由的抗辩"
 ```
 
 ---
 
-# Research Start: Roadmap, Not Research
+# 检索起手：路线图，非具体检索结论
 
-## Purpose
+## 目的
 
-Legal research is essential to clinical education. But the initial phase — figuring out *what* to research, finding the right statute, understanding the framework — is often the most time-consuming and least educational part. Students spend hours finding the starting point before they can do the actual research.
+法律检索是诊所教育的核心组成部分。但初始阶段——弄清楚*要检索什么*、找到正确的法条、理解框架——往往是最耗时且教育价值最低的部分。学生花数小时找到起手点，然后才能做实际的检索工作。
 
-This skill produces the starting point: statutes to check, case law areas to investigate, search terms for Westlaw and CourtListener. **None of it is verified. None of it is authoritative. All of it is a lead for the student to run down.**
+本技能产出起手点：需查阅的法条、需调查的案例法领域、北大法宝和法信的检索关键词。**这些全部未经核实。全部非权威。全部是学生去深入追查的线索。**
 
-**This is a pedagogical safeguard, not just an ethical one.** Students still learn to research. They just start from a better place.
+**这既是教学保障，也是伦理保障。** 学生仍然学习检索。他们只是从一个更好的地方开始。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → jurisdiction (state), practice areas.
+`~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 管辖地（省份）、实践领域。
 
-## Workflow
+## 工作流
 
-### Step 0: Seed documents first
+### 第0步：优先种子文件
 
-**Before building the roadmap, read the clinic's own seed documents.** The supervising attorney uploaded them at cold-start (handbook, filing guides, local court rules, intake forms, example case files, prior memos) — they are pre-vetted, jurisdiction-specific, and will beat any Westlaw query on the first 20 minutes of a student's research.
+**在构建路线图之前，阅读诊所自己的种子文件。** 指导老师在冷启动时上传（手册、提交指南、本地法院规则、接待表格、示例案件文件、既往备忘录）——它们是预先经过审查的、管辖地特定的，在学生检索的前20分钟比任何数据库查询都更有价值。
 
-1. Read `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → `## Seed documents`. Identify any item whose purpose or filename matches the research area (e.g., "Alameda UD filing guide" for a UD habitability question; a redacted sample case file in the same practice area; a prior memo on the same issue).
-2. For each match, surface it as a **Seed documents to read first** block at the top of the roadmap output. Name the file, say why it matters for this specific question, and say what it likely covers vs. where outside research will still be needed.
-3. If no seed documents match the issue, say so plainly ("No clinic seed documents match this issue — proceeding straight to primary sources"). Don't fabricate a match.
-4. If the clinic has the `LIMITED DATA` flag set in `## Seed documents`, add a one-line note: "Clinic has fewer than 10 seed docs; your professor's precedent bank is thin — lean harder on primary sources and flag what's missing for your supervisor."
+1. 读取 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → `## 种子文件`。识别任何目的或文件名与检索领域匹配的项目。
+2. 对每个匹配项，将其呈现为路线图输出顶部的**优先阅读的种子文件**块。命名文件，说明它为什么与这个具体问题相关，并说明它可能涵盖什么 vs. 仍需外部检索的地方。
+3. 如果没有种子文件匹配该问题，直说（"无诊所种子文件匹配本问题——直接进入一手来源"）。不要编造匹配。
+4. 如果诊所有 `LIMITED DATA` 标记，添加一行说明。
 
-The roadmap still covers statutes, case law areas, secondary sources, and search terms — seed docs are the first lead, not a replacement for the rest. But surface them above everything else so the student starts where their supervisor's precedent starts.
+路线图仍涵盖法条、案例法领域、二次文献来源和检索关键词——种子文件是第一线索，而非替换其余部分。但先呈现它们，让学生从指导老师的先例起点出发。
 
-### Step 1: Frame the issue
+### 第1步：界定问题
 
-What's the research question? Be specific. Not "eviction defenses" — "habitability defense to nonpayment eviction in [State], specifically whether a broken heater qualifies and whether the tenant had to give written notice."
+检索问题是什么？要具体。不是"房屋租赁抗辩"——而是"[省份]以丧失居住条件为由对欠租驱逐的抗辩，具体而言，暖气坏了是否构成，以及承租人是否需要提前书面通知出租人。"
 
-If the question is too broad, narrow it with the student: "That's three research questions. Let's take them one at a time. Which first?"
+如果问题太宽泛，与学生一起缩小："那是三个检索问题。我们一个一个来。先处理哪个？"
 
-### Step 2: Build the roadmap
+### 第2步：构建路线图
 
-**Statutory starting points:**
-List statutes *likely* relevant. State explicitly these are likely, not confirmed.
+**法条起手点：**
+列出*可能*相关的法条。明确说明这些是可能的，非已确认。
 
-> **Likely relevant statutes** (UNVERIFIED — confirm currency and applicability):
-> - [State] Landlord-Tenant Act, likely at [State Code Title X] — look for "warranty of habitability" or "repair and deduct"
-> - Local housing code for [City/County] — may define specific conditions (heat, water) as required
-> - `[VERIFY each citation is current and correct — codes get renumbered]`
+> **可能相关的法条**（未核实——确认现行效力和适用性）：
+> - 《民法典》合同编/物权编相关条款——查找"租赁合同""维修义务"
+> - [省份/城市]房屋租赁管理条例——可能界定具体条件（供暖、供水）
+> - `[核实每条引注的现行效力和准确性——法条可能已被修订]`
 
-**Case law areas to investigate:**
-Not cases — *areas*. The student finds the cases.
+**案例法领域待调查：**
+不是具体案例——是*领域*。学生找到案例。
 
-> **Case law areas:**
-> - [State] Supreme Court or appellate decisions on implied warranty of habitability — look for the leading case establishing the doctrine
-> - Cases on what conditions qualify — heat specifically, if any
-> - Cases on procedural prerequisites — did tenant have to give notice? withhold rent? escrow?
-> - Cases on the remedy — offset against rent owed, or a separate damages claim?
+> **案例法领域：**
+> - [省份]高级人民法院或中级人民法院关于租赁合同纠纷的判决——查找确立裁判规则的典型案例
+> - 什么条件构成丧失居住条件的案例——具体而言关于供暖的案例
+> - 程序性先决条件的案例——承租人是否需要提前通知？是否需要将租金提存？
+> - 救济措施的案例——抵扣欠租，还是另行主张损害赔偿？
 
-**Regulatory / administrative sources:**
-If applicable (immigration especially).
+**行政监管来源：**
+如适用（行政纠纷尤其）：
 
-> **Administrative sources:**
-> - [Agency] regulations at [CFR cite area]
-> - Agency guidance or policy manuals — often more current than regs
-> - For immigration: USCIS Policy Manual, BIA precedent decisions
+> **行政来源：**
+> - [行政机关]规章
+> - 行政指导意见或政策手册——通常比法规更及时
 
-**Secondary sources to orient:**
-Where to get the framework before diving into primary.
+**用于建立框架的二次文献来源：**
+在深入一级文献之前获得框架的地方。
 
-> **Secondary sources (for framework, not to cite):**
-> - [State] practice guide on landlord-tenant (check clinic library)
-> - Relevant CLE materials
-> - Law review notes on the specific issue if it's contested
+> **二次文献来源（用于建立框架，非引用）：**
+> - [省份]房地产法律实务手册（查阅诊所图书室）
+> - 相关继续教育培训材料（CLE）
+> - 如该具体问题存在争议，查阅法学核心期刊文章
 
-**Search terms:**
-For Westlaw, or whatever the clinic uses.
+**检索关键词：**
+用于北大法宝、法信或诊所使用的其他检索系统。
 
-> **Search terms to try:**
-> - Westlaw: `"warranty of habitability" /s heat! & [State]`
-> - CourtListener: `implied warranty of habitability AND (heat OR heater) AND [State]`
-> - Refine based on what comes back — these are starting queries
+> **建议尝试的检索词：**
+> - 北大法宝：`"居住条件" /s "供暖" & [省份]`
+> - 中国裁判文书网：`居住条件 AND 供暖 AND [省份]`
+> - 法信：`租赁合同 解除 居住条件`
+> - 根据返回结果细化——这些是起手查询
 
-### Step 3: Flag what's uncertain
+### 第3步：标注不确定性
 
-If the skill is unsure whether a source is relevant or current:
+如果技能不确定某个来源是否相关或现行有效：
 
-> `[UNCERTAIN: whether [State] has a specific statute on this vs. common-law
-> doctrine only — the search will tell you]`
+> `[不确定：[省份]对此是否有具体的省级法规vs.仅系司法实践中形成的裁判规则——检索会告诉你]`
 
-Uncertainty is stated, not hidden.
+不确定性被明确陈述，不隐藏。
 
-> **No silent supplement.** This skill produces leads, not authoritative citations — by design, students run the citations down themselves. But if a query to a configured research tool (Westlaw, CourtListener) returns few or no results for a specific rule or case, say so and stop. Do NOT manufacture citations from web search or model knowledge to fill a thin result set without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [rule]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against a primary source before relying, or (4) stop here and flag the gap for your supervisor. Which would you like?" The supervising attorney decides whether to accept lower-confidence sources.
+> **无沉默补充。** 本技能产出线索，非权威引注——按设计，学生自行追查引注。但如果对配置的检索工具（北大法宝）的查询返回某个具体规则或案例的结果稀少或没有，说明并停止。不要从网络搜索或模型知识编造引注来填充稀薄的结果集而不询问。说："[工具]的检索返回了[N]条结果。[规则]的覆盖似乎稀薄。选项：(1)扩大检索词，(2)尝试不同的检索工具，(3)搜索网页——结果将标注 `[网页搜索 — 需核实]` 并应依赖前对照一手来源核实，或(4)停在这里并将缺口标记给你的指导老师。你选哪个？"指导律师决定是否接受较低置信度的来源。
 >
-> **Source attribution.** Tag every suggested citation with where it came from: `[Westlaw]`, `[CourtListener]`, or the MCP tool name for citations retrieved from a legal research connector; `[web search — verify]` for web-search citations; `[model knowledge — verify]` for citations recalled from training data; `[user provided]` for citations supplied by the supervising attorney or case file. Citations tagged `verify` carry higher fabrication risk and should be checked first. Never strip or collapse the tags — they tell the student which leads are raw research and which are model guesses to verify against a primary source.
+> **来源归属。** 对每条建议的引注标注它来自哪里：`[北大法宝]`、`[元典]`、`[中国裁判文书网]`，或从法律检索连接器获取的引注使用 MCP 工具名称；网页搜索引注标注 `[网页搜索 — 需核实]`；训练数据回忆的引注标注 `[模型知识 — 需验证]`；指导律师或案件文件提供的引注标注 `[用户提供]`。标注 `需核实的引注携带更高的捏造风险，应首先检查。绝不剥离或合并标签——它们告诉学生哪些线索是原始检索、哪些是AI模型的猜测需要对照一手来源核实。
 
-### Step 4: Synthesize uploaded research (if any)
+### 第4步：综合已上传的检索成果（如有）
 
-If the student has already done some research and uploads it: read it, identify what's covered and what's missing.
+如果学生已经做了部分检索并上传：阅读，识别已覆盖内容和缺失内容。
 
-> **From your research so far:**
-> - You have: [summary of what's covered]
-> - Gap: [what the roadmap above suggests that you haven't found yet]
-> - `[VERIFY: the case you cited — [name] — run through a citator (verify it is good law) it, it may have been distinguished or limited]`
+> **根据你已有的检索成果：**
+> - 你已有：[已覆盖内容的摘要]
+> - 缺口：[上述路线图建议但你尚未找到的内容]
+> - `[需核实：你引用的案例——[名称]——通过北大法宝/法信核实其是否未被后续判决推翻或限缩]`
 
-## Output
+## 输出
 
 ```markdown
 ═══════════════════════════════════════════════════════════════════════
-  RESEARCH ROADMAP — LEADS, NOT AUTHORITIES
-  Nothing below is a verified citation. Every statute, every case area,
-  every search term is a starting point for YOUR research. You verify
-  currency, applicability, and accuracy. You find the actual cases.
-  If something below turns out to be wrong or outdated, that's expected —
-  this is a map of where to look, not a substitute for looking.
+  检索路线图 — 线索，非权威
+  以下无任何内容为经核实的引注。每条法条、每个案例领域、
+  每个检索关键词都是你检索工作的起手点。你核实现行效力、
+  适用性和准确性。你找到实际案例。
+  如果以下某条最终被证明是错误的或过时的，这是预期之内 —
+  这是一张在哪里找的地图，不是检索的替代品。
 ═══════════════════════════════════════════════════════════════════════
 
-# Research Roadmap: [Issue]
+# 检索路线图：[问题]
 
-**Jurisdiction:** [State] | **Practice area:** [area]
+**管辖地：** [省份] | **实践领域：** [领域]
 
-## Seed documents to read first
+## 优先阅读的种子文件
 
-[Per Step 0. List any clinic seed docs that match the issue with a one-line
-"what this likely covers" note. If none matched: "No clinic seed documents
-match this issue — proceeding to primary sources."]
+[按第0步。列出任何与该问题匹配的诊所种子文件，附一行"本文件可能涵盖什么"的说明。如无匹配："无诊所种子文件匹配本问题——直接进入一手来源。"]
 
-## Statutory starting points (UNVERIFIED)
+## 法条起手点（未核实）
 
-[list with VERIFY flags]
+[列表附核实标记]
 
-## Case law areas to investigate
+## 案例法领域待调查
 
-[areas, not cases]
+[领域，非具体案例]
 
-## Administrative / regulatory sources
+## 行政 / 监管来源
 
-[if applicable]
+[如适用]
 
-## Secondary sources (for framework, not citation)
+## 二次文献来源（用于建立框架，非引用）
 
-[list]
+[列表]
 
-## Search terms
+## 检索关键词
 
-**Westlaw:** [queries]
+**北大法宝：** [查询]
+**中国裁判文书网：** [查询]
 
-## Uncertainty flags
+## 不确定性标记
 
-[Everywhere the roadmap is genuinely unsure]
-
----
-
-## What to do with this
-
-1. Start with a secondary source to get the framework
-2. Find and read the primary statutes — confirm the citations above are current
-3. Run the searches, find the leading cases
-4. run through a citator (verify it is good law) everything before relying on it
-5. Come back and run `/memo` to scaffold your analysis once you have the rule
-
-## What this roadmap does NOT do
-
-- **It does not give you citations you can use.** Every cite above is a lead
-  to verify, not an authority to rely on.
-- **It does not do the research.** You do the research. This gets you to the
-  starting line faster.
-- **It does not replace Westlaw.** Those have the actual cases. This
-  tells you where to point them.
+[路线图确实不确定的所有地方]
 
 ---
 
-**Cite verification — required before use.** Citations above were generated by an AI model and have not been verified. Before relying on any case, statute, or rule — or including it in client work — run it through Westlaw, CourtListener, or your clinic's research platform for accuracy and current good-law status. Flag unverified citations to your supervisor.
+## 如何使用这份路线图
+
+1. 从一个二次文献来源开始以获取框架
+2. 找到并阅读一手法条——确认上述引注是现行有效的
+3. 运行检索，找到典型案例
+4. 依赖前通过北大法宝/法信核实所有内容
+5. 一旦你掌握了规则，回来运行 `/memo` 来搭建你的分析框架
+
+## 本路线图不做什么
+
+- **不给你可以直接使用的引注。** 上述每条引注都是待核实的线索，不是可依赖的权威。
+- **不替你做检索。** 你做检索。这份路线图让你更快到达起跑线。
+- **不替代北大法宝。** 那些工具里有实际案例。这告诉你该往哪里指。
+
+---
+
+**引注核实——使用前必须完成。** 以上引注由 AI 模型生成，未经核实。在依赖任何案例、法条或规则——或将其纳入当事人工作——之前，请通过北大法宝、法信、中国裁判文书网或你诊所的检索平台核实准确性和现行有效状态。将未经核实的引注标记给你的指导老师。
 ```
 
-## What this skill does NOT do
+## 本技能不做什么
 
-- **Provide authoritative citations.** Explicitly, by design. The student verifies every cite before using it.
-- **Replace legal research.** Accelerates the "where do I start" phase; the research itself is still the student's.
-- **Guarantee the roadmap is complete.** It's a starting set of leads. The research may reveal sources the roadmap missed — that's fine, that's research.
-
-## Close with the next-steps decision tree
-
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
-
+- **提供权威引注。** 明确，按设计。学生在使用前核实每条引注。
+- **替代法律检索。** 加速"从哪里开始"阶段；检索本身仍是学生的工作。
+- **保证路线图完整。** 这是一套起手线索。检索可能发现路线图遗漏的来源——这没问题，这是检索。

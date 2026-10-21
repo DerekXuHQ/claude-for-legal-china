@@ -1,42 +1,42 @@
 {
   "mcpServers": {
+    "yuandian": {
+      "type": "http",
+      "url": "https://open.chineselaw.com/mcp",
+      "title": "华宇元典法律数据",
+      "description": "法规、案例、企业与证券合规检索；连接与认证须在宿主完成，结果仍需原始法源核验。"
+    },
     "Slack": {
       "type": "http",
       "url": "https://mcp.slack.com/mcp",
       "title": "Slack",
-      "description": "Search messages, read channels, find discussions across your workspace."
+      "description": "搜索消息、阅读频道、查找讨论。"
     },
     "Google Drive": {
       "type": "http",
       "url": "https://drivemcp.googleapis.com/mcp/v1",
       "title": "Google Drive",
-      "description": "Search, read, and fetch documents from Google Drive."
+      "description": "搜索、读取、获取文档。"
     },
     "Linear": {
       "type": "http",
       "url": "https://mcp.linear.app/mcp",
       "title": "Linear",
-      "description": "Issue tracking and project management."
+      "description": "任务追踪与项目管理（国际团队）。"
     },
     "Atlassian": {
       "type": "http",
       "url": "https://mcp.atlassian.com/v1/sse",
       "title": "Atlassian",
-      "description": "Jira issues and Confluence pages."
-    },
-    "Asana": {
-      "type": "http",
-      "url": "https://mcp.asana.com/sse",
-      "title": "Asana",
-      "description": "Tasks and project tracking."
+      "description": "Jira任务与Confluence文档（国际团队）。"
     }
   },
   "recommendedCategories": [
+    "legal-research-cn",
     "project-management",
     "issue-tracking",
     "documents",
     "chat",
-    "email",
-    "outside-counsel-network"
+    "email"
   ]
 }

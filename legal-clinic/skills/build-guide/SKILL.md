@@ -1,251 +1,249 @@
 ---
 name: build-guide
 description: >
-  Help a clinic supervisor author a practice-area guide that configures how
-  student-facing skills behave — intake questions, pedagogy posture (assist /
-  guide / teach), review gates, cross-plugin checks, and local rules. Use when
-  a supervising attorney wants to build or revise a per-practice-area guide,
-  tune how the clinic skills behave for their clinic type, or set their
-  teaching philosophy as plugin configuration.
-argument-hint: "[optional: practice area — e.g., 'immigration', 'housing']"
+  帮助诊所指导老师撰写实践领域指南，配置面向学生技能的行为——接待问题、
+  教学姿态（assist / guide / teach）、审查门控、跨插件检查、本地规则。
+  当指导律师需要撰写或修订按实践领域的指南、调整诊所技能在其诊所类型
+  下的行为或将其教学理念设定为插件配置时使用。
+argument-hint: "[可选：实践领域 — 如 '劳动争议', '婚姻家庭']"
 ---
 
 # /build-guide
 
-1. Load `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → role (must be Supervising attorney), practice areas, jurisdiction.
-2. Use the workflow below.
-3. If the user is not the supervising attorney, stop and redirect (students run `/legal-clinic:ramp`).
-4. Walk through: practice area → intake questions → pedagogy posture → review gates → cross-plugin checks → local rules.
-5. Write `~/.claude/plugins/config/claude-for-legal/legal-clinic/guides/<practice-area>.md`. Create the `guides/` directory if needed.
-6. Offer a test run — run `/legal-clinic:draft` under the configured posture so the supervisor sees what a student sees.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 身份（必须为指导老师）、实践领域、管辖地。
+2. 使用以下工作流。
+3. 如果用户不是指导老师，停止并重定向（学生运行 `/legal-clinic:ramp`）。
+4. 逐步推进：实践领域 → 接待问题 → 教学姿态 → 审查门控 → 跨插件检查 → 本地规则。
+5. 写入 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/guides/<实践领域>.md`。如需要，创建 `guides/` 目录。
+6. 提供测试运行——在已配置的姿态下运行 `/legal-clinic:draft`，让指导老师看到学生视角。
 
 ```
 /legal-clinic:build-guide
 ```
 
-Multiple guides are fine — one per practice area. Re-run this command to revise. Edit the guide file directly for quick changes.
+可有多份指南——每个实践领域一份。重新运行此命令以修订。直接编辑指南文件以快速更改。
 
 ---
 
-# Build Guide: Supervisor-Authored Practice-Area Guide
+# 撰写指南：指导老师撰写的实践领域指南
 
-## Purpose
+## 目的
 
-The supervisor guide is the dial that turns student-facing skills from "get the work done" into "teach the student to do the work." Every student-facing skill in this plugin reads the guide before producing output: intake asks the questions the supervisor wants asked, drafting skills pick a pedagogy posture (assist / guide / teach), review gates route to the supervisor on the items the supervisor cares about, and cross-plugin checks wrap other-plugin skills in a supervision layer.
+指导老师指南是一个旋钮，将面向学生技能从"完成工作"转向"教学生完成工作"。本插件中每个面向学生的技能在产出前都会读取该指南：接待按指导老师要求提问，起草技能选取教学姿态（assist / guide / teach），审查门控将指导老师关心的事项路由给指导老师，跨插件检查将其他插件的技能包裹在指导层中。
 
-This skill helps a supervisor author that guide in 5-10 minutes per practice area. The guide is plain markdown at a well-known path — edit it by hand anytime.
+本技能帮助指导老师在每个实践领域 5-10 分钟内撰写该指南。指南是纯 markdown 文件，位于已知路径——可随时手工编辑。
 
-**Audience: the supervising attorney.** Not students. Students run `/legal-clinic:ramp` and then the student-facing skills; they don't author guides.
+**受众：指导老师。** 不是学生。学生运行 `/legal-clinic:ramp` 然后使用面向学生的技能；他们不撰写指南。
 
-## Work-product header
+## 工作成果头
 
-Every output from this skill is a supervisor-facing configuration artifact, not student work product. Do NOT prepend `[AI-ASSISTED DRAFT — requires student analysis and attorney review]` to the output of this skill — that label is for student outputs. The guide file this skill writes is a supervisor configuration document; it sits next to CLAUDE.md in the plugin config directory, not in a matter workspace.
+本技能的每项输出是面向指导老师的配置产物，不是学生工作成果。**不要**在本技能输出前加 `[AI辅助草稿 —— 需学生分析和指导律师审查]`——该标签是给学生输出的。本技能写入的指南文件是指导老师配置文档；它位于插件配置目录中 CLAUDE.md 旁边，不在事项工作区中。
 
-## Key things your guide should address
+## 你的指南应处理的关键事项
 
-Offer this as a checklist the supervisor can skip through or use as the table of contents for the interview:
+提供一份核查清单，指导老师可以快速浏览或用作访谈目录：
 
-- What does a student need to know before they touch a case? (Ethics rules, confidentiality, their scope of authority)
-- What are the 3-5 most common mistakes students make in this practice area, and how should the skill catch them?
-- When must the student stop and get your sign-off? (Filing, sending to a client, making a representation, advising on strategy)
-- What's the reading level for client communications? (6th grade is the usual target for legal aid)
-- What local rules, forms, or deadlines should every student know?
-- When should the skill teach vs. do? (Per document type — you can set a default and override per type)
+- 学生在接触案件前需要知道什么？（职业道德规则、保密、其权限范围）
+- 学生在该实践领域最常犯的 3-5 个错误是什么？技能应如何捕捉它们？
+- 学生何时必须停止并获取你的签字批准？（提交、发送给当事人、做出陈述、就策略提供建议）
+- 客户沟通的阅读水平目标是什么？（法律援助通常目标为初中水平）
+- 每个学生应知道的本地规则、表格或截止日期是什么？
+- 技能何时应教 vs. 做？（按文件类型——可设置默认值并按类型覆盖）
 
-Walk through the checklist at the start of the interview so the supervisor knows what's coming and can flag which items they already have strong views on versus which they want to think through. Skip any item the supervisor waves off; note it in the guide as "not specified — skill uses defaults."
+在访谈开始时展示核查清单，让指导老师知道接下来谈什么，并能标记哪些项目已有明确看法、哪些需要思考。指导老师表示可跳过的项目直接跳过；在指南中标注为"未指定——技能使用默认值"。
 
-## Workflow
+## 工作流
 
-### Step 1: Check role
+### 第1步：检查身份
 
-This is a supervisor skill. Read `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → `## Who's using this` → Role. If the role is not "Supervising attorney," say:
+这是指导老师技能。读取 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → `## 谁在使用这个插件` → 身份。如果身份不是"指导老师"，说：
 
-> This skill is for supervisors — it configures how the student-facing skills behave. If you're the supervisor, make sure your practice profile role is set to "Supervising attorney" in `/legal-clinic:cold-start-interview`. If you're a student, this isn't the right skill for you — run `/legal-clinic:ramp` to onboard, or ask your supervisor to author a guide for your clinic.
+> 本技能面向指导老师——它配置面向学生技能的行为。如果你是指导老师，请确保你的实践画像身份在 `/legal-clinic:cold-start-interview` 中设为"指导老师"。如果你是学生，这不是适合你的技能——运行 `/legal-clinic:ramp` 进行导入，或请你的指导老师为你的诊所撰写指南。
 
-Stop if the role is not supervising attorney.
+如果身份非指导老师则停止。
 
-### Step 2: Which practice area?
+### 第2步：哪个实践领域？
 
-> What clinic is this guide for? (Immigration / Housing / Family / Transactional / Criminal defense / Consumer / Other)
+> 这份指南针对哪个诊所类型？（劳动争议 / 婚姻家庭 / 消费者权益 / 行政纠纷 / 刑事辩护 / 其他）
 
-If the answer is "Other," ask for a short name — that name becomes the filename (lowercase, hyphenated: `immigration-removal-defense.md`, `transactional-nonprofit.md`, etc.).
+如果答案是"其他"，要求提供一个简短名称——该名称成为文件名（小写，连字符连接）。
 
-Check the practice areas listed in `CLAUDE.md` → `## Clinic profile` → Practice areas. If the chosen practice area is not listed there, note it: "I'll write this guide, but your practice profile doesn't list [area] as one of your clinic's practice areas. That's fine — you can add it later with `/legal-clinic:cold-start-interview --redo` — but the student-facing skills won't route intakes to this area until the profile lists it."
+检查 `CLAUDE.md` → `## 诊所画像` → 实践领域中列出的实践领域。如果选择的实践领域未在其中列出，注明："我将撰写这份指南，但你的实践画像未将[领域]列为你的诊所实践领域之一。没问题——你可以稍后通过 `/legal-clinic:cold-start-interview --redo` 添加——但在画像列出之前，面向学生技能不会将接待路由到该领域。"
 
-If a guide already exists at `~/.claude/plugins/config/claude-for-legal/legal-clinic/guides/<practice-area>.md`, offer: "A guide for [area] already exists at [path]. Do you want to (a) revise it section-by-section, (b) start fresh and overwrite, or (c) see what's there first?"
+如果 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/guides/<实践领域>.md` 已存在指南，提供选项："[领域]的指南已存在于[路径]。你想(a)逐节修订，(b)重新开始并覆盖，还是(c)先看看现有内容？"
 
-### Step 3: Intake questions
+### 第3步：接待问题
 
-> What should students ask a new client for this clinic type? I'll start with a generic intake for [practice area] — tell me what to add, remove, or change. What red flags should students look for? What makes a case a good fit for your clinic vs. a referral out?
+> 学生对这类诊所的新当事人应问什么？我将从[实践领域]的通用接待开始——告诉我哪些要添加、删除或更改。学生应注意哪些红旗信号？什么使一个案件适合你们诊所 vs. 应转介出去？
 
-Show the generic intake defaults for the practice area — use the same defaults that `client-intake` uses (Immigration: status, entry, prior applications, country conditions, family, criminal history, timeline urgency; Housing: housing type, what happened, lease, habitability, timeline; Family: relationship, issue, children, safety, orders, hearings; Consumer: debt type, contacts, documentation, filings, deadlines). For practice areas outside those four, ask the supervisor to describe the intake from scratch.
+展示该实践领域的通用接待默认问题——使用 `client-intake` 使用的相同默认值（劳动争议：用人单位、岗位、入职时间、合同签订、争议类型、仲裁情况、证据、时效；婚姻家庭：关系及争议焦点、子女、安全、现有裁定、时效；消费者权益：争议类型、金额、沟通记录、文件、已有投诉、时效；行政纠纷：行政机关、行为类型、复议情况、关键文件、时效）。对于这四种之外的实践领域，请指导老师从零描述接待。
 
-Capture: questions to add, questions to remove, questions to rephrase, red flags (a list), good-fit criteria (what makes this a case the clinic takes vs. refers out).
+记录：需添加的问题、需删除的问题、需重新措辞的问题、红旗信号（列表）、适合标准（什么使案件被诊所受理 vs. 转介出去）。
 
-### Step 4: Pedagogy posture
+### 第4步：教学姿态
 
-> How much should the skills do vs. how much should the student do?
+> 技能做多少 vs. 学生做多少？
 >
-> - **Guide (default):** The skill produces structure; students fill in substance; the skill gives feedback. Balanced — most clinics start here.
-> - **Assist:** The skill produces work product; students review and learn by editing. Fastest, least pedagogical. Good for high-volume clinics or when deadlines are tight.
-> - **Teach:** The skill doesn't produce work product — students draft, the skill gives Socratic feedback and only shows models after two attempts. Slowest, most pedagogical. Good for seminar-style clinics or when learning is the primary goal.
+> - **Guide（默认）：** 技能产出结构；学生填入实质内容；技能给予反馈。平衡——大多数诊所从这里开始。
+> - **Assist：** 技能产出工作成果；学生审查并通过编辑学习。最快，教学性最低。适合高案件量诊所或截止日期紧张时。
+> - **Teach：** 技能不产出工作成果——学生起草，技能给出追问式反馈，仅在两次尝试后才展示示范。最慢，教学性最高。适合研讨式诊所或学习为首要目标时。
 >
-> You can set this per document type (e.g., teach for client letters, assist for file memos).
+> 你可以按文件类型设置（如客户信函用 teach，文件备忘录用 assist）。
 
-Capture the default posture for the practice area, and any per-document overrides. Per-document settings the skills read:
+记录该实践领域的默认姿态，以及任何按文件类型的覆盖。技能读取的按文件类型设置：
 
 - `pedagogy_posture_default: assist | guide | teach`
-- `pedagogy_posture_client_letter: [override]`
-- `pedagogy_posture_memo: [override]`
-- `pedagogy_posture_draft: [override]`
+- `pedagogy_posture_client_letter: [覆盖]`
+- `pedagogy_posture_memo: [覆盖]`
+- `pedagogy_posture_draft: [覆盖]`
 
-If the supervisor names a document type the skills don't currently have, record the intended posture in a `pedagogy_posture_other:` block with a note — future skills can read it.
+如果指导老师提到技能目前没有的文件类型，在 `pedagogy_posture_other:` 块中记录预期姿态并注明——未来技能可读取。
 
-### Step 5: Review gates
+### 第5步：审查门控
 
-> Which work product needs your review before it goes to a client? Which can students send directly? Default: everything client-facing needs review.
+> 哪些工作成果在发给当事人之前需要你审查？哪些学生可以直接发送？默认：所有面向当事人的内容需要审查。
 
-Present the options as a table the supervisor fills in:
+将选项以表格形式呈现供指导老师填写：
 
-| Work product | Gate |
+| 工作成果 | 门控 |
 |---|---|
-| Intake summary | [student writes; supervisor reviews at case rounds / supervisor reviews before client sees / student keeps] |
-| Memo (internal) | [supervisor reviews / student keeps] |
-| Client letter (appointment / doc request / brief status) | [supervisor reviews / student sends directly] |
-| Client letter (substantive advice / bad news) | [always supervisor — cannot override] |
-| Draft filing (court / agency) | [always supervisor — cannot override] |
-| Status update to court | [always supervisor — cannot override] |
-| Research-start roadmap | [student works from it directly] |
+| 接待摘要 | [学生撰写；指导老师在案件讨论会上审查 / 指导老师在当事人看到前审查 / 学生保留] |
+| 备忘录（内部） | [指导老师审查 / 学生保留] |
+| 当事人信函（预约 / 文件索取 / 简要状态） | [指导老师审查 / 学生直接发送] |
+| 当事人信函（实质性建议 / 坏消息） | [始终指导老师——不可覆盖] |
+| 草稿提交（法院 / 机构） | [始终指导老师——不可覆盖] |
+| 给法院的状态更新 | [始终指导老师——不可覆盖] |
+| 检索起手路线图 | [学生直接使用] |
 
-Some gates are non-negotiable: client letters that give substantive advice, court filings, and status to courts always route through the supervisor per the clinic's supervision structure. Flag those as fixed; the configurable gates are the routine ones.
+部分门控不可协商：给予实质性建议的当事人信函、法院提交和给法院的状态始终按诊所指导结构路由给指导老师。将这些标记为固定项；可配置的门控是常规项目。
 
-### Step 6: Cross-plugin checks
+### 第6步：跨插件检查
 
-> Do you want students to use skills from other plugins (defined-terms checks, doc consistency, section references, research verification)? I can wrap them in supervision — the student runs the check, the output flags uncertainty for your review, nothing goes out without your sign-off.
+> 你希望学生使用其他插件的技能吗？我可以将它们包裹在指导层中——学生运行检查，输出标注不确定性供你审查，未经你签字不得发出。
 
-Offer concrete examples tied to practice area:
+提供与实践领域相关的具体示例：
 
-- **Transactional clinic:** `commercial-legal:review` (NDA triage, vendor review) wrapped so the student runs the review, the output is flagged for supervisor review before going to the client.
-- **Immigration clinic:** `litigation-legal:chronology` for building a timeline from client documents, flagged for supervisor review before it feeds a filing.
-- **Housing clinic:** `litigation-legal:subpoena-triage` when the client brings in a subpoena, wrapped so the student drafts the response plan but the supervisor signs off.
-- **Any clinic:** `privacy-legal:triage` if the student is handling any matter where personal data is shared outside the clinic.
+- **合同/交易型诊所：** `commercial-legal:review`（保密协议分流、供应商审查），包裹后学生运行审查，输出在发给当事人前标记需指导老师审查。
+- **劳动争议诊所：** `litigation-legal:chronology` 用于从当事人文件中构建时间线，在送入提交文件前标记需指导老师审查。
+- **消费者权益诊所：** `litigation-legal:subpoena-triage` 当当事人收到调查令时，包裹后学生起草应对方案但指导老师签字。
+- **任何诊所：** `privacy-legal:triage` 如果学生处理任何涉及个人数据在诊所外共享的事项。
 
-If the supervisor names a cross-plugin skill they want, record: skill name, when students should use it, what supervision wrapper applies (always reviewer, only when flagged, never without supervisor).
+如果指导老师提了想要的跨插件技能，记录：技能名称、学生何时使用、适用何种指导包裹（始终审查者、仅标记时、无指导老师不得使用）。
 
-### Step 7: Local rules and jurisdiction
+### 第7步：本地规则和管辖地
 
-> What court(s) does your clinic practice in? Any local rules or forms students need to use?
+> 你的诊所在哪些法院执业？学生需要使用哪些本地规则或表格？
 
-Check `CLAUDE.md` → `## Jurisdiction` — the state and primary court are already set at cold-start. This step is for practice-area-specific local rules and forms (e.g., "Housing Court standing order on summary process answers," "USCIS filing address for the local field office," "Family Court self-help center forms and where to find them"). Offer to capture a short list of pointers the student-facing skills should use when drafting or advising.
+检查 `CLAUDE.md` → `## 管辖地`——省份和主要法院已在冷启动时设定。这一步是针对实践领域特定的本地规则和表格。提供记录一份简短指引清单，面向学生技能在起草或建议时应使用。
 
-### Step 8: Write the guide
+### 第8步：撰写指南
 
-Write to `~/.claude/plugins/config/claude-for-legal/legal-clinic/guides/<practice-area>.md`. Create the `guides/` directory if it doesn't exist. Use this structure:
+写入 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/guides/<实践领域>.md`。如需要，创建 `guides/` 目录。使用以下结构：
 
 ```markdown
-# Practice-area guide: [Practice area]
+# 实践领域指南：[实践领域]
 
-*Authored by the supervising attorney via `/legal-clinic:build-guide`. Student-facing skills read this before producing output. Edit directly anytime.*
+*由指导老师通过 `/legal-clinic:build-guide` 撰写。面向学生技能在产出前读取此文件。可随时直接编辑。*
 
-**Last updated:** [date]
-**Authored by:** [supervising attorney name from CLAUDE.md]
+**最后更新：** [日期]
+**撰写人：** [来自 CLAUDE.md 的指导老师姓名]
 
 ---
 
-## Intake
+## 接待
 
-**Questions to ask** (supplement/replace the generic defaults):
-- [question 1]
-- [question 2]
+**需提问的问题**（补充/替代通用默认值）：
+- [问题1]
+- [问题2]
 - ...
 
-**Red flags** (surface these in the intake summary if present):
-- [flag 1]
-- [flag 2]
+**红旗信号**（如存在，在接待摘要中浮现）：
+- [信号1]
+- [信号2]
 
-**Good-fit criteria** (cases this clinic takes):
-- [criterion 1]
-- [criterion 2]
+**适合标准**（本诊所受理的案件）：
+- [标准1]
+- [标准2]
 
-**Refer-out criteria** (cases this clinic does not take):
-- [criterion 1]
-- [criterion 2]
+**转介标准**（本诊所不受理的案件）：
+- [标准1]
+- [标准2]
 
 ---
 
-## Pedagogy posture
+## 教学姿态
 
 `pedagogy_posture_default: [assist | guide | teach]`
 
-Per-document overrides (optional):
+按文件类型的覆盖（可选）：
 - `pedagogy_posture_client_letter: [assist | guide | teach]`
 - `pedagogy_posture_memo: [assist | guide | teach]`
 - `pedagogy_posture_draft: [assist | guide | teach]`
 
-**Rationale:** [one or two sentences from the supervisor on why this posture — helps next semester's supervising attorney understand the choice]
+**理由：** [指导老师就此姿态的一两句话——帮助下学期指导老师理解选择原因]
 
 ---
 
-## Review gates
+## 审查门控
 
-| Work product | Gate |
+| 工作成果 | 门控 |
 |---|---|
-| Intake summary | [gate] |
-| Memo (internal) | [gate] |
-| Client letter — routine | [gate] |
-| Client letter — substantive | supervisor (fixed) |
-| Draft filing | supervisor (fixed) |
-| Court-facing status | supervisor (fixed) |
-| Research roadmap | [gate] |
+| 接待摘要 | [门控] |
+| 备忘录（内部） | [门控] |
+| 当事人信函 — 常规 | [门控] |
+| 当事人信函 — 实质性 | 指导老师（固定） |
+| 草稿提交 | 指导老师（固定） |
+| 面向法院的状态 | 指导老师（固定） |
+| 检索路线图 | [门控] |
 
 ---
 
-## Cross-plugin checks
+## 跨插件检查
 
-| Skill | When students use it | Supervision wrapper |
+| 技能 | 学生何时使用 | 指导包裹 |
 |---|---|---|
-| [plugin:skill] | [situation] | [wrapper] |
+| [插件:技能] | [情形] | [包裹] |
 
 ---
 
-## Local rules and jurisdiction
+## 本地规则和管辖地
 
-**Court(s):** [from CLAUDE.md or additional courts for this practice area]
-**Practice-area-specific local rules and forms:**
-- [pointer 1]
-- [pointer 2]
+**法院：** [来自 CLAUDE.md 或该实践领域的其他法院]
+**实践领域特定的本地规则和表格：**
+- [指引1]
+- [指引2]
 ```
 
-Fill every section from the supervisor's answers. Leave a section empty only if the supervisor said so — do not invent content.
+根据指导老师的回答填充每节。仅当指导老师表示可跳过时才留空——不编造内容。
 
-Then tell the supervisor:
+然后告诉指导老师：
 
-> Your guide is at `~/.claude/plugins/config/claude-for-legal/legal-clinic/guides/<practice-area>.md`. Every student who uses the clinic plugin for [practice area] will have skills that follow it. Edit the file directly to change anything, or re-run `/legal-clinic:build-guide` to revise a section. You can have multiple guides — one per practice area.
+> 你的指南位于 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/guides/<实践领域>.md`。每个使用诊所插件进行[实践领域]工作的学生，其技能将遵循它。直接编辑文件以更改任何内容，或重新运行 `/legal-clinic:build-guide` 修订某节。你可以有多份指南——每个实践领域一份。
 
-### Step 9: Offer a test run
+### 第9步：提供测试运行
 
-> Want to see how the pedagogy posture changes the experience? I'll run `/legal-clinic:draft` with a sample client letter under [posture] — you'll see what the student sees.
+> 想看看教学姿态如何改变体验吗？我将在[姿态]下以一份示例当事人信函运行 `/legal-clinic:draft`——你将看到学生视角。
 
-If the supervisor says yes, simulate the drafting skill reading the guide they just wrote and producing output under the configured posture. Walk through one full cycle so the supervisor sees exactly what a student would see.
+如果指导老师同意，模拟起草技能读取刚写的指南并在配置姿态下产出输出。完成一个完整周期，让指导老师准确看到学生会看到的。
 
-## Output
+## 输出
 
-The skill's "output" is the file written at `~/.claude/plugins/config/claude-for-legal/legal-clinic/guides/<practice-area>.md`. The conversation with the supervisor is the interview; the written guide is the artifact.
+本技能的"输出"是写入 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/guides/<实践领域>.md` 的文件。与指导老师的对话是访谈；写成的指南是产物。
 
-After writing, show a brief confirmation:
+写入后，展示简要确认：
 
-> **Guide written.** `[practice-area]` is now configured:
+> **指南已写入。** `[实践领域]` 现在已配置：
 >
-> - Intake: [N] custom questions, [N] red flags, [N] refer-out criteria
-> - Pedagogy: [posture default], with overrides for [list if any]
-> - Review gates: [summary of what routes to supervisor vs. student]
-> - Cross-plugin: [N] skills wired in
+> - 接待：[N]个自定义问题，[N]个红旗信号，[N]个转介标准
+> - 教学：[默认姿态]，覆盖：[如有列表]
+> - 审查门控：[路由给指导老师 vs. 学生的摘要]
+> - 跨插件：[N]个技能已接入
 >
-> Students will see these changes the next time they run a clinic command for this practice area. Edit `[path]` anytime to change anything, or re-run `/legal-clinic:build-guide` to revise.
+> 学生下次为此实践领域运行诊所命令时将看到这些变更。随时编辑 `[路径]` 以更改任何内容，或重新运行 `/legal-clinic:build-guide` 修订。
 
-## What this skill does NOT do
+## 本技能不做什么
 
-- **Configure the plugin globally.** The guide is per-practice-area. For plugin-wide config (supervision style, jurisdiction, practice areas), that's `/legal-clinic:cold-start-interview`.
-- **Author student work product.** This is supervisor-facing configuration, not a draft for a client.
-- **Override the supervision style from cold-start.** The supervision model (formal queue / configurable flags / lighter-touch) is set at setup. Review gates in the guide refine that model for this practice area; they don't replace it.
-- **Make a student skill skip the AI-assisted header, the confidence flags, or the verification prompts.** Those are shared-guardrail baselines. The guide changes posture, not guardrails.
+- **全局配置插件。** 指南是按实践领域的。插件全局配置（指导风格、管辖地、实践领域）在 `/legal-clinic:cold-start-interview` 中。
+- **撰写学生工作成果。** 这是面向指导老师的配置，不是给当事人的草稿。
+- **覆盖冷启动中的指导风格。** 指导模式（正式队列 / 可配置标记 / 较轻触）在设置时决定。指南中的审查门控对该实践领域细化该模式；不替换它。
+- **使某学生技能跳过 AI 辅助头、置信度标记或核实提示。** 那些是共享保障基线。指南改变姿态，不改变保障。

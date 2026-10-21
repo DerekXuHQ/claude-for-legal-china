@@ -1,25 +1,23 @@
 ---
 name: tabular-review
 description: >
-  Tabular review — one row per document, one column per data point, every cell
-  cited to source. Built for M&A diligence ("review these 200 target contracts
-  for change-of-control, assignment, and MAC clauses") but works for any batch
-  review that needs a spreadsheet out the other end. Use when user says "tabular
-  review", "review grid", "build a grid", "extract these fields from these
-  contracts", "review these documents for X, Y, Z", "give me a spreadsheet of",
-  "batch review", or points at a folder of documents and asks to compare them.
+  表格审查——一行一文件，一列一数据点，每个单元格标注来源。为并购尽调而构建
+  （"审查这200份目标公司合同中的控制权变更、合同转让和重大不利变化条款"），
+  但适用于任何需要产出电子表格的批量审查。当用户说"表格审查""审查网格""建一个网格"
+  "从这些合同中提取这些字段""审查这些文件中的X、Y、Z""给我一个关于……的电子表格"
+  "批量审查"或指向文件夹并要求比较时使用。
 ---
 
 # /tabular-review
 
-1. Load `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` → diligence structure, thresholds, house format.
-2. Confirm: what documents, what columns, where does the output go.
-3. Build the typed schema. Write `.review-schema.yaml`. Confirm with the user.
-4. Sample run (3–5 docs). Adjust schema. Confirm.
-5. Fan out — one sub-agent per document, parallel. Each cell: value + state + verbatim quote + location.
-6. Normalization pass. Flag outliers and inconsistencies.
-7. Output: `.xlsx` or Google Sheets (ask which), plus `.csv` + `_sources.csv` + markdown always. Work-product header.
-8. Summary: verification workload (counts of not_present / unclear / needs_review per column), flagged columns, where the files are, reminder that every cell is a lead not a finding.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` → 尽调结构、阈值、内部格式。
+2. 确认：什么文件、什么列、输出到哪里。
+3. 构建类型化模式。写入 `.review-schema.yaml`。与用户确认。
+4. 样本运行（3-5份文件）。调整模式。确认。
+5. 展开——每份文件一个子代理，并行。每格：值 + 状态 + 逐字引文 + 位置。
+6. 归一化遍。标记异常和不一致。
+7. 输出：`.xlsx` 或在线表格（询问），外加 `.csv` + `_sources.csv` + markdown 始终输出。工作成果页眉。
+8. 摘要：核实工作量（每列 not_present / unclear / needs_review 的计数）、标记的列、文件位置、提醒每个单元格是线索而非发现。
 
 ```
 /corporate-legal:tabular-review
@@ -27,209 +25,209 @@ description: >
 /corporate-legal:tabular-review --template ma-diligence
 ```
 
-**`--schema <path>`:** Use an existing schema file instead of building one. Useful for re-runs and incremental additions.
+**`--schema <路径>`:** 使用已有的模式文件而非新建。用于重新运行和增量添加。
 
-**`--template <name>`:** Start from a template in `references/`. Currently: `ma-diligence`.
+**`--template <名称>`:** 从 `references/` 中的模板开始。目前有：`ma-diligence`。
 
-**`--docs <path>`:** Document source. A local folder, a Drive folder ID, or a VDR path. If omitted, asks.
+**`--docs <路径>`:** 文件来源。本地文件夹、云文档文件夹ID或数据室路径。如省略，询问。
 
-**`--output <xlsx|gsheets|csv>`:** Output format. If omitted, asks.
+**`--output <xlsx|在线表格|csv>`:** 输出格式。如省略，询问。
 
-**`--sample <n>`:** Sample size for the schema check. Default 5.
-
----
-
-## Matter context
-
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/corporate-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/corporate-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**`--sample <n>`:** 模式检查的样本量。默认5。
 
 ---
 
-## Purpose
+## 事项上下文
 
-You have a pile of documents and a list of questions you need answered consistently across every one. A diligence request list. A vendor contract audit. A lease portfolio review. The output is a table: document rows, data-point columns, and every cell traceable to the exact words in the source.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作区`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `/corporate-legal:matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
-This is not issue spotting. `diligence-issue-extraction` finds the 30 problems hiding in 2,000 documents. This skill answers the same 15 questions about all 2,000 documents. Both are legitimate; they answer different questions.
+---
 
-This is also not a replacement for a human reading the document. Every cell this skill produces is a **lead that needs verification**, not a finding. The output is designed to make verification fast, not to skip it.
+## 目的
 
-## Load context
+你有一摞文件和一个需要跨每份文件一致回答的问题清单。一份尽调需求清单。一次供应商合同审计。一次租赁组合审查。产出是一张表：文件为行、数据点为列，每个单元格可追溯到来源中的确切文字。
 
-- `~/.claude/plugins/config/claude-for-legal/corporate-legal/CLAUDE.md` → diligence structure, materiality thresholds, house format preferences
-- `~/.claude/plugins/config/claude-for-legal/corporate-legal/deals/[code]/deal-context.md` if working a specific deal
-- An existing schema file if the user has one (`.review-schema.yaml`)
+这不是问题识别。`diligence-issue-extraction` 找到藏在2,000份文件中的30个问题。本技能对全部2,000份文件回答同样的15个问题。两者都是合法的；它们回答不同的问题。
 
-## The column type system
+这也不是替代人工阅读文件。本技能产出的每个单元格是一个**需要核实的线索**，不是发现。输出设计为使核实更快速，而非跳过核实。
 
-The thing that makes a tabular review useful is that Column C means the same thing in row 1 as in row 200. Free text drifts. Types hold.
+## 加载上下文
 
-Every column has a **type** that constrains the answer format:
+- `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` → 尽调结构、重要性阈值、内部格式偏好
+- `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[代码]/deal-context.md`（如处理特定交易）
+- 用户已有的模式文件（`.review-schema.yaml`）
 
-| Type | What it returns | Use for |
+## 列类型系统
+
+使表格审查有用的是：C列在第1行和第200行中含义相同。自由文本会产生漂移。类型保持不变。
+
+每列有一个**类型**来约束答案格式：
+
+| 类型 | 返回什么 | 用于 |
 |---|---|---|
-| `verbatim` | Exact quote from the document, character-for-character | Defined terms, operative clause language, anything where the words matter |
-| `classify` | One value from a fixed list you define | Yes/No, present/absent, clause variants (e.g., "sole consent" / "consent not unreasonably withheld" / "silent") |
-| `date` | ISO date | Effective date, expiration, termination notice deadline |
-| `duration` | Number + unit | Term length, notice period, survival period |
-| `currency` | Number + currency code | Caps, thresholds, fees, purchase price references |
-| `number` | Bare number | Counts, percentages, page references |
-| `free` | Short free text summary | Use sparingly — this is the type that drifts. Only when the others genuinely don't fit. |
+| `verbatim` | 文件中的确切引文，逐字逐符 | 定义术语、操作性条款语言、任何文字本身重要的地方 |
+| `classify` | 来自你定义的固定列表中的一个值 | 是/否、存在/不存在、条款变体（如"须经同意"/"不得无理拒绝同意"/"未提及"） |
+| `date` | ISO 格式日期 | 生效日期、到期日、解除通知截止日 |
+| `duration` | 数字 + 单位 | 期限长度、通知期、存续期 |
+| `currency` | 数字 + 货币代码 | 上限、阈值、费用、购买价格引用 |
+| `number` | 裸数字 | 计数、百分比、页码 |
+| `free` | 简短自由文本摘要 | 少量使用——这是会漂移的类型。仅在其他类型确实不适合时使用。 |
 
-**The verbatim rule:** Every non-`verbatim` column also captures the exact source quote that supports the answer, as a companion field. The answer in the cell is the interpretation; the quote is the evidence. A `classify` cell that says "consent not unreasonably withheld" is useless without the sentence it came from, because the reviewer's job is to check whether that's the right read.
+**逐字规则：** 每个非 `verbatim` 列也捕获支持答案的确切来源引文，作为伴随字段。单元格中的答案是解读；引文是证据。一个说"不得无理拒绝同意"的 `classify` 单元格如果没有来源句子就是无用的，因为审查者的工作是检查该解读是否正确。
 
-## The three states of "not found"
+## "未找到"的三种状态
 
-A blank cell hides information. Force one of three explicit states whenever you can't produce a positive answer:
+空白单元格隐藏信息。当无法产出肯定答案时，强制使用三种明确状态之一：
 
-| State | Meaning | When to use |
+| 状态 | 含义 | 何时使用 |
 |---|---|---|
-| `not_present` | The document was read and the clause is not there | You are confident the subject matter isn't addressed |
-| `unclear` | Something is there but you can't classify it confidently | Ambiguous drafting, partial clause, conflicting provisions |
-| `needs_review` | You found something but a human must make the call | Edge case, unusual drafting, the answer depends on a judgment the schema doesn't capture |
+| `not_present` | 已读文件，该条款不存在 | 确信该主题未被涉及 |
+| `unclear` | 有内容但无法自信分类 | 模糊起草、部分条款、冲突规定 |
+| `needs_review` | 找到了内容但需要人工判断 | 边界情形、异常起草、答案取决于模式未捕捉的判断 |
 
-These are three different pieces of information. A deal team handles "the contract is silent on assignment" very differently from "the assignment clause is ambiguous." Collapsing them into one blank cell loses the distinction.
+这是三种不同的信息。交易团队处理"合同对合同转让保持沉默"的方式与"合同转让条款模糊"截然不同。将它们压缩成一个空白单元格丢失了这一区分。
 
-## Workflow
+## 工作流
 
-### Step 0: What and where
+### 第0步：什么和哪里
 
-Confirm:
-1. **Documents.** Where are they? VDR MCP (Box, Datasite, iManage), local folder, Google Drive folder, or a list of files. How many? If >200, warn that this will take a while and offer to start with a materiality-filtered subset.
-2. **Schema.** What columns? Two paths:
-   - User picks a template from `references/` (M&A diligence standard is the default)
-   - User describes columns in natural language and you structure them into the typed schema
-3. **Output.** Excel (`.xlsx`) or Google Sheets — ask which the team works in. CSV and markdown always written as fallbacks. Output goes to the deal folder, Drive, or wherever the user says.
+确认：
+1. **文件。** 它们在哪里？数据室MCP（数据室/飞书/坚果云）、本地文件夹、云文档文件夹或文件列表。数量？如果 >200，警告这将花费一些时间并提供从经重要性过滤的子集开始。
+2. **模式。** 哪些列？两条路径：
+   - 用户从 `references/` 中选择模板（并购尽调标准是默认）
+   - 用户用自然语言描述列，你将其结构化为类型化模式
+3. **输出。** Excel（`.xlsx`）或在线表格——询问团队用哪个。CSV 和 markdown 始终作为备份写入。输出到交易文件夹、云文档或用户指定的位置。
 
-### Step 1: Build and confirm the schema
+### 第1步：构建并确认模式
 
-Turn the user's column list into a structured schema. For each column: a stable `id`, a human `label`, a `type`, a `prompt` (the question a reviewer reading the document would ask), and for `classify` columns an `options` list.
+将用户的列清单转化为结构化模式。每列：一个稳定的 `id`、一个人读的 `label`、一个 `type`、一个 `prompt`（审查者阅读文件时会问的问题），以及对 `classify` 列一个 `options` 列表。
 
-Write it to `.review-schema.yaml` next to the output. This file is the reusable artifact — the user can edit it, add a column, re-run against new documents. Show it to the user and confirm before fanning out.
+将其写入输出旁边的 `.review-schema.yaml`。此文件是可重复使用的工件——用户可以编辑、添加列、对新文件重新运行。在展开前向用户展示并确认。
 
 ```yaml
 schema:
-  name: "M&A Diligence — Project [Code]"
+  name: "并购尽调 — 项目 [代码]"
   created: 2026-05-07
   columns:
     - id: counterparty
-      label: "Counterparty"
+      label: "对方当事人"
       type: verbatim
-      prompt: "Who is the contracting party other than the target?"
+      prompt: "目标公司以外的合同相对方是谁？"
     - id: effective_date
-      label: "Effective Date"
+      label: "生效日期"
       type: date
-      prompt: "When did the agreement become effective?"
+      prompt: "协议何时生效？"
     - id: change_of_control
-      label: "Change of Control"
+      label: "控制权变更"
       type: classify
-      options: [silent, consent_required, consent_not_unreasonably_withheld, automatic_termination, notice_only]
-      prompt: "Does the agreement address a change of control of the target? What does it require?"
+      options: [未提及, 须经同意, 不得无理拒绝同意, 自动终止, 仅通知]
+      prompt: "协议是否涉及目标公司的控制权变更？要求什么？"
     - id: assignment
-      label: "Assignment Restrictions"
+      label: "合同转让限制"
       type: classify
-      options: [silent, consent_required, consent_not_unreasonably_withheld, freely_assignable, assignable_to_affiliates]
-      prompt: "Can the target assign this agreement? What restrictions apply?"
-    # ... more columns
+      options: [未提及, 须经同意, 不得无理拒绝同意, 可自由转让, 可转让给关联方]
+      prompt: "目标公司能否转让本协议？有哪些限制？"
+    # ... 更多列
 ```
 
-### Step 2: Sample run
+### 第2步：样本运行
 
-Do not fan out to 200 documents on an untested schema. Run 3–5 documents first. Show the user the rows. Look for:
-- Columns where most answers are `unclear` — the prompt is ambiguous, rewrite it
-- `classify` columns where answers don't fit the options — add options or change to `free`
-- `verbatim` columns returning paraphrases — reinforce that it must be character-for-character
+不要在未测试的模式上对200份文件展开。先对3-5份文件运行。向用户展示行。寻找：
+- 大多数答案为 `unclear` 的列——提示语模糊，重写
+- 答案不符合选项的 `classify` 列——增加选项或改为 `free`
+- 返回释义而非逐字文本的 `verbatim` 列——强调必须逐字逐符
 
-Adjust the schema, re-run the sample, confirm. This saves the user from a full run that has to be thrown out.
+调整模式，重新运行样本，确认。这避免了用户做一个会被丢弃的完整运行。
 
-### Step 3: Fan out
+### 第3步：展开
 
-One sub-agent per document, in parallel. Each sub-agent:
+每份文件一个子代理，并行。每个子代理：
 
-1. Reads the entire document (not a RAG chunk — the whole thing).
-2. For each column, finds the relevant provision.
-3. Returns a structured row: for each column, `{value, state, quote, location}`.
-   - `value` is the typed answer (or null if `state` is not `answered`)
-   - `state` is `answered | not_present | unclear | needs_review`
-   - `quote` is the verbatim supporting text (exact, no paraphrase, no ellipsis inside a sentence — if you cut, cut at sentence boundaries and mark it)
-   - `location` is where the quote lives (section number, heading, page — whatever the document gives you)
+1. 阅读完整文件（不是RAG分块——是整个文件）。
+2. 对每列，找到相关联条款。
+3. 返回结构化行：每列 `{value, state, quote, location}`。
+   - `value` 是类型化答案（如果 `state` 不是 `answered` 则为 null）
+   - `state` 是 `answered | not_present | unclear | needs_review`
+   - `quote` 是逐字的支持文本（精确，不释义，句内不使用省略号——如果截断，在句边界处截断并标注）
+   - `location` 是引文所在位置（条款编号、标题、页码——文件提供什么就用什么）
 
-**The quote is not optional, and the verbatim rule is mechanical, not exhortation.** Each sub-agent must comply with all of the following before returning a cell with `state: answered`:
+**引文不是可选的，逐字规则是机械性的，而非劝告。** 每个子代理在返回 `state: answered` 的单元格前必须满足以下全部要求：
 
-- The `quote` MUST be a character-for-character copy of contiguous text from the source document, retrievable at the `location` the sub-agent cites. Do NOT compose a quote from a section heading plus standard boilerplate you expect to be there. Do NOT paraphrase and call it verbatim. Do NOT reconstruct a quote from memory of how such clauses "usually" read. Do NOT fill gaps in the source with ellipsis-stitching across non-contiguous text.
-- The `location` must be specific enough for the normalization pass to re-open the document and re-read the same span — a section number, heading, or page reference the reviewer can navigate to.
-- If the sub-agent cannot locate and copy the exact text (source truncated, OCR garbage, provision implied but not written, section heading visible but body not loaded), the cell state is `needs_review`, the `value` is null, and `notes` MUST contain `quote_unavailable: <reason>`. It is NEVER acceptable to set `state: answered` with a composed or reconstructed quote.
-- The same rule applies to `verbatim`-typed columns AND to the companion source quotes attached to `classify` / `date` / `duration` / `currency` / `number` / `free` cells. The supporting quote carries the same verbatim obligation as the cell value.
+- `quote` 必须是从来源文件逐字逐符复制的连续文本，可在子代理引用的 `location` 处检索到。不得从条款标题加上你预期会存在于此处的标准模板文本拼凑引文。不得释义并称其为逐字原文。不得凭记忆以"此类条款通常"如何重构引文。不得用省略号拼接非连续文本以填充来源的缺口。
+- `location` 必须足够具体，使归一化遍能重新打开文件并重读相同片段——审查者可以导航到的条款编号、标题或页码。
+- 如果子代理无法定位和复制确切文本（来源被截断、OCR乱码、条款隐含但未写明、条款标题可见但正文未加载），单元格状态为 `needs_review`，`value` 为 null，`notes` 必须包含 `quote_unavailable: <原因>`。绝不得以合成或重构的引文设置 `state: answered`。
+- 同一规则适用于 `verbatim`-类型列以及附在 `classify` / `date` / `duration` / `currency` / `number` / `free` 单元格上的伴随来源引文。支持性引文承担与单元格值同样的逐字义务。
 
-The normalization pass in Step 4 spot-checks this by re-reading the source at the cited `location` and comparing the stored `quote` character-for-character against the source text. A mismatch downgrades the cell to `needs_review`, notes `quote_mismatch`, and flags the whole column for a wider spot-check — if one sub-agent composed a quote, others in the same run may have too.
+第4步的归一化遍通过在引用 `location` 处重读来源并将存储的 `quote` 逐字逐符与来源文本对比来抽查这一点。不匹配将单元格降级为 `needs_review`，备注 `quote_mismatch`，并标记整列扩大抽查——如果一个子代理拼凑了引文，同次运行中的其他子代理可能也如此。
 
-### Step 4: Normalize
+### 第4步：归一化
 
-After the fan-out, read the whole table column by column. This is the pass that catches the failure mode of every tabular review tool: the same clause interpreted inconsistently across documents.
+展开完成后，逐列阅读整张表。这是捕捉每个表格审查工具失败模式的遍：同一条款在不同文件间被不一致解读。
 
-For each `classify` column:
-- Check that every `answered` value is in the options list. Outliers get re-classified or bumped to `needs_review`.
-- Check for clusters: if 180 documents say `consent_required` and 20 say `consent_not_unreasonably_withheld`, that's probably real. If 195 say `consent_required` and 5 say `freely_assignable`, look at the 5 — they're either genuinely different or misclassified.
+对每个 `classify` 列：
+- 检查每个 `answered` 值是否在选项列表中。异常值重新分类或提升为 `needs_review`。
+- 检查聚类：如果180份文件说 `须经同意` 而20份说 `不得无理拒绝同意`，这可能是真实的。如果195份说 `须经同意` 而5份说 `可自由转让`，看这5份——它们要么确实不同，要么被错误分类。
 
-For each `date` / `duration` / `currency` column:
-- Check format consistency. Normalize.
-- Flag implausible values (a 99-year term, a $1 cap) as `needs_review`.
+对每个 `date` / `duration` / `currency` 列：
+- 检查格式一致性。归一化。
+- 将不合理的值（99年期限、¥1的上限）标记为 `needs_review`。
 
-For each `verbatim` column AND for the companion source quotes on every other column:
-- Spot-check by re-opening the source document at the cited `location` for a random sample (at least 3–5 rows per column, or 10% of rows, whichever is larger) and comparing the stored `quote` character-for-character against the source.
-- If any quote is composed, paraphrased, reconstructed, or cannot be located at the cited span: downgrade that cell to `needs_review` with `quote_mismatch` in notes, and flag the whole column — expand the spot-check to the rest of the column rather than assuming the other rows are clean. One fabricated quote is enough to justify widening the check.
-- A cell with `state: answered` and a mismatched quote is a higher-severity failure than an `unclear` or `needs_review` cell — it misrepresents the evidence trail. Downgrade aggressively.
+对每个 `verbatim` 列以及每个其他列上的伴随来源引文：
+- 对随机样本（每列至少3-5行，或行的10%，取较大者）通过重新打开来源文件在引用的 `location` 处将存储的 `quote` 逐字逐符与来源对比进行抽查。
+- 如果任何引文是拼凑、释义、重构或无法在引用片段处定位：将该单元格降级为 `needs_review` 并在备注中注明 `quote_mismatch`，标记整列——将抽查扩展到该列的其余行而非假定其他行干净。一条编造的引文就足以触发扩大检查。
+- `state: answered` 且引文不匹配的单元格是比 `unclear` 或 `needs_review` 单元格更高严重程度的失败——它曲解了证据线索。积极降级。
 
-### Step 5: Output
+### 第5步：输出
 
-Write the table in three formats:
+以三种格式写入表格：
 
-**Markdown** (always, for in-session review):
+**Markdown**（始终，用于会话内审查）：
 ```markdown
-| Document | Counterparty | Effective Date | Change of Control | Assignment | ⚠️ Flags |
+| 文件 | 对方当事人 | 生效日期 | 控制权变更 | 合同转让 | ⚠️ 标记 |
 |---|---|---|---|---|---|
-| Vendor MSA — Acme | Acme Corp | 2023-04-01 | consent_required | consent_required | — |
-| Supply Agmt — Beta | Beta LLC | 2021-11-15 | ⚠️ unclear | silent | CoC ambiguous §14.2 |
+| 供应商主协议 — Acme | Acme Corp | 2023-04-01 | 须经同意 | 须经同意 | — |
+| 供应协议 — Beta | Beta LLC | 2021-11-15 | ⚠️ unclear | 未提及 | CoC模糊 §14.2 |
 ```
 
-**CSV** (`.csv`, always):
-One file for the values, one companion file for the quotes and locations (`_sources.csv`). Keeps the main file clean and the evidence trail complete.
+**CSV**（`.csv`，始终）：
+一个文件存值，一个伴随文件存引文和位置（`_sources.csv`）。保持主文件干净、证据线索完整。
 
-**Excel** (`.xlsx`) or **Google Sheets** — whichever the user works in. Ask; don't guess. Both follow the same workbook structure (see `references/excel-output.md` and `references/gsheets-output.md`). For Excel: Claude in Excel (Office agent) if available, `openpyxl` fallback. For Sheets: Sheets MCP if available, Sheets API via ADC, CSV-import fallback. In the spreadsheet output:
-- Each data column is paired with a hidden source column containing the quote and location. Cell comments (Excel) or notes (Sheets) on the visible column surface the quote on hover.
-- Color code by state: white = answered, yellow = unclear or needs_review, gray = not_present.
-- A `Verified` column per data column, blank by default. The reviewer marks it. This is the verify/flag pattern that makes the table auditable — the deal team can see at a glance what a human has actually checked.
-- A `_schema` sheet with the column definitions, so the file is self-documenting.
+**Excel**（`.xlsx`）或**在线表格**——取决于用户的工作环境。询问；不猜测。两者遵循相同的工作簿结构（见 `references/excel-output.md` 和 `references/gsheets-output.md`）。对 Excel：如可用则用 Claude in Excel（Office 代理），`openpyxl` 为备选。对 Sheets：如可用则用 Sheets MCP，通过 ADC 使用 Sheets API，CSV 导入为备选。在电子表格输出中：
+- 每个数据列与包含引文和位置的隐藏来源列配对。可见列上的单元格评论（Excel）或备注（Sheets）在悬停时显示引文。
+- 按状态颜色编码：白色 = answered，黄色 = unclear 或 needs_review，灰色 = not_present。
+- 每个数据列一个 `Verified` 列，默认为空白。审查者标记。这是使表格可审计的核实/标记模式——交易团队可一眼看出人工已实际检查了什么。
+- 一个 `_schema` 表包含列定义，使文件自我记录。
 
-Prepend the work-product header from the plugin config `## Outputs` as a top row. Alongside it, include a distribution note:
+将工作成果页眉从插件配置 `## 输出规范` 作为顶行加入。其旁加入分发说明：
 
-> This review is derived from source documents that may be privileged, confidential, or both. It inherits the sources' privilege and confidentiality status — distribution beyond the privilege circle can waive privilege. Store with the matter's privileged files and make distribution decisions deliberately.
+> 本审查来源于可能具有特权、保密或两者兼有的来源文件。它继承来源的特权和保密状态——向特权保护圈之外分发可能放弃特权。存放于事项的特权文件中并慎重作出分发决定。
 
-### Step 6: Summary
+### 第6步：摘要
 
-After the table is written, give the user a one-screen readout:
-- Document count, column count, rows completed
-- Count of `not_present`, `unclear`, `needs_review` per column — this is the verification workload
-- Any columns where the normalization pass flagged >10% of rows
-- Where the output files are
-- A reminder: every cell is a lead, not a finding. Verification required before this informs a rep, a schedule, or a memo.
+表格写入后，给用户一屏读览：
+- 文件计数、列计数、完成的行数
+- 每列 `not_present`、`unclear`、`needs_review` 的计数——这是核实工作量
+- 归一化遍中 >10% 行被标记的任何列
+- 产出文件的位置
+- 提醒：每个单元格是线索而非发现。在据此形成陈述与保证、清单或备忘录前必须核实。
 
-## Close with the next-steps decision tree
+## 以下一步行动决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出规范` 中的下一步行动决策树收尾。根据本技能刚产出的内容定制选项——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁定。决策树本身就是产出；律师选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- **It does not replace reading the documents.** It tells you where to look.
-- **It does not produce confidence scores.** A 0.73 is not information. The `unclear` / `needs_review` states and the verbatim quotes are the confidence signal — if the quote doesn't support the value, flag it.
-- **It does not silently skip documents.** Every document the user pointed at gets a row. A document that couldn't be read gets a row of `needs_review` with a note.
-- **It does not pretend a paraphrase is a quote.** The evidence trail is the whole point.
+- **不替代阅读文件。** 它告诉你在哪里看。
+- **不产出置信度分数。** 0.73不是信息。`unclear` / `needs_review` 状态和逐字引文是置信信号——如果引文不支持值，标记。
+- **不无声地跳过文件。** 用户指向的每份文件都得到一行。无法读取的文件得到一行 `needs_review` 附说明。
+- **不假装释义是引文。** 证据线索是全部意义所在。
 
-## Relationship to other skills
+## 与其他技能的关系
 
-- `diligence-issue-extraction` finds issues; this extracts data points. If an extraction reveals an issue (a MAC clause that references a specific earnings target, a poison pill), note it and suggest running diligence-issue-extraction on that document.
-- `material-contract-schedule` builds one specific table (the disclosure schedule). It can consume this skill's output directly — the schedule is a filtered, reformatted view of a tabular review.
-- `ai-tool-handoff` hands bulk review to Luminance/Kira when the corpus is too large or the team prefers a dedicated platform. This skill is the in-house option for anything it can handle — run it first, hand off the residue.
+- `diligence-issue-extraction` 发现问题；本技能提取数据点。如果提取中发现一个问题（一条引用特定盈利目标的重大不利变化条款、一项毒丸条款），记录并建议对该文件运行 diligence-issue-extraction。
+- `material-contract-schedule` 构建一张特定表（披露清单）。它可以直接消费本技能的产出——清单是表格审查经过滤、重新格式化的视图。
+- `ai-tool-handoff` 在语料过于庞大或团队偏好专用平台时将批量审查交接给 AI 工具。本技能是在其能处理的任何内容上的内部选项——先运行它，把剩余交接出去。
 
-## Output safeguards
+## 输出安全措施
 
-Every output gets the work-product header. Every cell gets a source citation or a flagged state. The summary explicitly says verification is required. The Excel `Verified` column makes the verification state auditable. This is not a tool that lets you skip reading; it's a tool that makes reading faster.
+每个输出都带工作成果页眉。每个单元格都有来源引用或标记状态。摘要明确说需要核实。Excel 的 `Verified` 列使核实状态可审计。这不是一个让你跳过阅读的工具；它是一个让阅读更快的工具。

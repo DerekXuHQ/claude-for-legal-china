@@ -1,20 +1,18 @@
 ---
 name: supervisor-review-queue
 description: >
-  Professor's review queue — student output waits here for professor approval
-  before going to clients or courts. Only active if "formal review queue"
-  supervision style was chosen at setup; otherwise dormant. Use when the
-  professor wants to see what's waiting for review, approve, edit-then-approve,
-  or return an item.
-argument-hint: "[--approve ID | --return ID 'note' | --edit ID]"
+  指导老师审查队列——学生输出在此等待指导老师批准后才能发给当事人或法院。
+  仅在冷启动设置时选择"正式审查队列"指导风格时活跃；否则休眠。
+  当指导老师想查看等待审查的内容、批准、编辑后批准或退回某项时使用。
+argument-hint: "[--approve ID | --return ID '备注' | --edit ID]"
 ---
 
 # /supervisor-review-queue
 
-1. Check `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → supervision style. If NOT "formal review queue": explain the clinic is set up for [flags/lighter-touch], no formal queue exists, and how to switch.
-2. Use the workflow below.
-3. Default: show what's waiting, by urgency, by student.
-4. Actions: approve / edit-then-approve / return with note. All logged.
+1. 检查 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 指导风格。如果不是"正式审查队列"：说明诊所设置为[标记/较轻触]，不存在正式队列，以及如何切换。
+2. 使用以下工作流。
+3. 默认：按紧急程度、按学生显示等待审查的内容。
+4. 操作：批准 / 编辑后批准 / 附备注退回。全部记录。
 
 ```
 /legal-clinic:supervisor-review-queue
@@ -25,84 +23,84 @@ argument-hint: "[--approve ID | --return ID 'note' | --edit ID]"
 ```
 
 ```
-/legal-clinic:supervisor-review-queue --return Q-004 "Check the service requirement — local rules changed"
+/legal-clinic:supervisor-review-queue --return Q-004 "检查送达要求——本地规则已变更"
 ```
 
 ---
 
-# Supervisor Review Queue (Optional)
+# 指导老师审查队列（可选）
 
-## Purpose
+## 目的
 
-Some clinics want a formal gate: student drafts, professor reviews, output releases. Others find that too prescriptive — they supervise through case rounds and one-on-ones, not through a queue.
+部分诊所想要一个正式门控：学生起草，指导老师审查，输出发布。其他诊所认为这过于规定性——他们通过案件讨论会和一对一指导，而非通过队列。
 
-**This skill is only active if `~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → Supervision style is "formal review queue."** Otherwise it's dormant — the cold-start interview asks the professor which model they want, and this is one of three options.
+**本技能仅在 `~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 指导风格为"正式审查队列"时活跃。** 否则它休眠——冷启动访谈询问指导老师选择哪种模式，这是三个选项之一。
 
-Whether to use a formal review workflow is genuinely an open question for clinic adoption. It depends on student experience level, caseload, and how the professor already runs supervision. The professor decides at setup and can change it later.
+是否使用正式审查工作流对于诊所采纳而言是一个真正的开放问题。它取决于学生经验水平、案件量和指导老师已有的指导方式。指导老师在设置时决定，并可在之后更改。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/legal-clinic/CLAUDE.md` → supervision style. If NOT "formal review queue": respond with "The clinic is set up for [flags/lighter-touch] supervision — there's no formal queue. [Professor] reviews through [the clinic's existing structure]. To switch to a formal queue, edit CLAUDE.md → Supervision style."
+`~/.claude/plugins/config/claude-for-legal-zh/legal-clinic/CLAUDE.md` → 指导风格。如果不是"正式审查队列"：回应"诊所设置为[标记/较轻触]指导——没有正式队列。[指导老师]通过[诊所现有结构]审查。要切换到正式队列，编辑 CLAUDE.md → 指导风格。"
 
-If formal queue IS enabled → read flag triggers and proceed.
+如果正式队列已启用 → 读取标记触发条件并继续。
 
-## The queue
+## 队列
 
-Lives at `references/review-queue.yaml`. Each entry:
+保存于 `references/review-queue.yaml`。每个条目：
 
 ```yaml
 - id: Q-001
   type: "draft"  # intake | draft | memo | status | client-letter
-  client: "[name or ID]"
-  student: "[name]"
-  submitted: [timestamp]
+  client: "[姓名或编号]"
+  student: "[姓名]"
+  submitted: [时间戳]
   flags:
-    - rule: "Court filing"
-      detail: "Eviction answer — always queued"
-  content_path: "[path to the document]"
+    - rule: "法院提交"
+      detail: "驱逐答辩状 — 始终排队"
+  content_path: "[文件路径]"
   status: "pending"  # pending | approved | edited-approved | returned
 ```
 
-## Modes
+## 模式
 
-### What's waiting
+### 等待审查
 
 ```markdown
-## Review Queue — [date]
+## 审查队列 — [日期]
 
-**Pending:** [N] | **Oldest:** [N] hours
+**待审查：** [N]件 | **最久等待：** [N]小时
 
-### 🔴 Deadline-sensitive
-| ID | Type | Client | Student | Why flagged | Waiting |
+### 🔴 截止日期敏感
+| ID | 类型 | 当事人 | 学生 | 为何标记 | 等待时间 |
 |---|---|---|---|---|---|
 
-### Standard
-[same table]
+### 标准
+[相同表格]
 
-### By student
-[Breakdown — spot patterns: who's queueing a lot, who might need a check-in]
+### 按学生
+[分类——发现模式：谁排队很多，谁可能需要关注]
 ```
 
-### Review an item
+### 审查某项
 
-Show full content + why it was flagged + student notes.
+展示完整内容 + 为何标记 + 学生备注。
 
-### Approve / edit-then-approve / return
+### 批准 / 编辑后批准 / 退回
 
-- **Approve:** Status → approved, student notified, logged.
-- **Edit then approve:** Professor edits inline, approved version is the edited one, original preserved in log so student sees the diff (teaching moment).
-- **Return:** With a note. Student revises and resubmits.
+- **批准：** 状态 → approved，通知学生，记录。
+- **编辑后批准：** 指导老师内联编辑，批准版本为编辑后的版本，原始记录保留在日志中以便学生查看差异（教学时刻）。
+- **退回：** 附备注。学生修改并重新提交。
 
-## Logging
+## 记录
 
-Every action logged. Approval logs are clinic records — they document that a licensed attorney, solicitor, barrister, or other authorised legal professional in the clinic's jurisdiction reviewed student work before it went to a client or court. That matters for the clinic's own compliance and for student evaluation.
+每项操作均有日志。批准日志是诊所记录——它们证明诊所管辖地的持证律师在学生工作发给当事人或法院前进行了审查。这对诊所自身的合规性和学生评估有重要意义。
 
-## Teaching signal
+## 教学信号
 
-The queue is also data. Pattern in returns ("Student X keeps missing the service requirement") is a coaching conversation. Pattern in edits ("Everyone's demand letters are too long") is a `/ramp` update for next semester.
+队列也是数据。退回的模式（"学生X总是遗漏送达要求"）是一个辅导对话。编辑的模式（"每个人的律师函都太长"）是下学期 `/ramp` 的更新。
 
-## What this skill does NOT do
+## 本技能不做什么
 
-- **Run unless the professor chose it.** It's one of three supervision models, not the only one.
-- **Auto-approve.** The professor approves.
-- **Replace the clinic's existing supervision structure.** It's a gate for work product, not a substitute for case rounds, one-on-ones, or watching students in action.
+- **仅在指导老师选择后才运行。** 它是三种指导模式之一，不是唯一。
+- **自动批准。** 由指导老师批准。
+- **替代诊所现有的指导结构。** 它是工作成果的门控，不是案件讨论会、一对一或观察学生实际操作的替代。

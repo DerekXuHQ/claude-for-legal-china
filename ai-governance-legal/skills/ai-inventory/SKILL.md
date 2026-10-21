@@ -1,253 +1,176 @@
 ---
 name: ai-inventory
 description: >
-  EU AI Act per-system inventory — track each AI system's role (provider,
-  deployer, importer, distributor, authorized representative, product
-  manufacturer) and risk tier (prohibited, high-risk, limited, minimal,
-  GPAI, GPAI+systemic). Role and tier are assessed per system, not per
-  company. Use when the user says "ai inventory", "add an ai system",
-  "what systems do we have", "classify this ai system", "eu ai act
-  register", or "ai system registry".
-argument-hint: "[list | add | edit <id> | classify <id> | show <id>]"
+  按系统逐一定义AI角色、风险等级和监管义务——判定每个系统是
+  AI服务提供者还是使用者，分配风险层级，并映射至中国AI法规
+  的义务要求。适用于建立AI系统清单、进行年度AI审计、或新法
+  规要求重新分类时。
+argument-hint: "[系统名称或'--full'进行全量审查]"
 ---
 
 # /ai-inventory
 
-## When this runs
+1. 读取 `~/.claude/plugins/config/claude-for-legal-zh/ai-governance-legal/CLAUDE.md` → 既有AI系统清单（如有）、监管注册表。
+2. 运行以下工作流。
+3. 对每个系统：描述功能 → 判定提供者/使用者角色 → 分配风险等级 → 映射监管义务。
+4. 输出系统级条目 + 汇总表。
 
-The user wants to manage their AI system inventory under the EU AI Act. The
-core idea the skill exists to enforce: **role and tier are per-system, not
-per-company.** A single organization can be a *provider* of System A, a
-*deployer* of System B, and an *importer* of System C. Each combination
-triggers a different set of obligations under the AI Act. The inventory
-exists so those assessments are tracked where you can find them — the
-obligations themselves are derived in conversation, not from a table.
-
-## What to do
-
-1. **Read the config.** Read
-   `~/.claude/plugins/config/claude-for-legal/ai-governance-legal/CLAUDE.md`.
-   If it doesn't exist or still has `[PLACEHOLDER]` markers, direct the user
-   to `/ai-governance-legal:cold-start-interview` first.
-
-2. **Read the inventory.** Inventory lives at
-   `~/.claude/plugins/config/claude-for-legal/ai-governance-legal/ai-systems.yaml`.
-   If it doesn't exist, create it with an empty `systems:` list when the
-   first `add` runs.
-
-3. **Dispatch on the argument:**
-
-   - No argument, or `list` → show the inventory table (see **List** below).
-   - `add` → run the **Add** flow.
-   - `edit <id>` → show the current record, ask what to change, update one
-     field, confirm, write.
-   - `classify <id>` → run the **Classification walk-through** on an
-     existing record, updating role, tier, role_basis, and tier_basis.
-   - `show <id>` → show the full record.
-
-4. **On list, offer the dashboard:**
-   "Want the full dashboard? Filter by status / tier / EU nexus / owner.
-   Say the word."
-
-5. **Close every action with a hook into the lawyer's work.**
-   After any write, say:
-   > Recorded. When you're ready to walk through obligations for this
-   > system, just ask — I'll do it in-conversation and flag where the AI
-   > Act article mapping needs your verification. I don't derive
-   > obligations from a table because the mapping is complex and changing.
-
-## List format
-
-Render as a compact table:
-
-| ID | Name | Owner | Status | EU nexus | Role | Tier | Next review |
-|----|------|-------|--------|----------|------|------|-------------|
-| sys-001 | Resume screening | HR / Jamie | in_production | yes | deployer | high_risk | 2026-08-01 |
-| sys-002 | Email drafting assistant | IT / Priya | in_production | no | deployer | limited | 2026-12-01 |
-
-Under the table, show counts by tier and a line: "N systems flagged for
-review within 30 days."
-
-## Add flow (interview)
-
-Ask, one field at a time (or accept a paste). The required fields are
-`name`, `owner`, `description`, `status`, `eu_nexus`. The rest can be
-deferred — say so explicitly: "you can come back to classification with
-`/ai-governance-legal:ai-inventory classify <id>`."
-
-1. **Name.** Short label for the system.
-2. **Owner.** Person or team accountable for it day-to-day.
-3. **Description.** One or two sentences. What does it do, and against
-   what data?
-4. **Status.** `planned | in_development | in_production | deprecated`.
-5. **EU nexus.** Is the system deployed in the EU/EEA, offered to users in
-   the EU/EEA, or used to produce outputs that affect people in the
-   EU/EEA? If any of these are true, EU AI Act analysis applies.
-6. **Proceed to classification?** Offer to run the walk-through now, or
-   skip and come back later.
-
-Assign an ID: `sys-NNN` where NNN is the next integer in the file.
-
-## Classification walk-through
-
-The walk-through produces `role`, `role_basis`, `tier`, `tier_basis`. Both
-bases are tagged `[verify against current AI Act text]` — not because the
-skill is hedging, but because the article mapping is complex and the AI
-Act is still phasing in. The lawyer owns verification.
-
-### Step 1: Role
-
-> **Who does what to this system?**
-
-Options, with the distinguishing test:
-
-- **Provider** — you develop it (or have it developed) and place it on the
-  EU market or put it into service under your own name or trademark.
-- **Deployer** — you use it under your own authority, not for personal
-  non-professional use. (Most common inside companies.)
-- **Importer** — you bring an AI system into the EU from a provider
-  established outside the EU.
-- **Distributor** — you make an AI system available on the EU market
-  without being the provider or importer.
-- **Authorized representative** — you act on behalf of a non-EU provider
-  and are established in the EU.
-- **Product manufacturer** — you put a general-purpose AI system (or
-  another AI system) into a product under your own name/trademark. Treated
-  as provider for the product.
-
-**Dual-role flag.** If the user substantially modifies a vendor system
-(fine-tunes on their own data, changes the intended purpose, rebrands),
-they may become a **provider** of the modified system even if they started
-as a deployer. Call this out when they describe any modification beyond
-configuration. `[verify against current AI Act text — Article 25, provider
-obligations and substantial modification]`
-
-Write the role. Write `role_basis` in one sentence.
-
-### Step 2: Tier
-
-> **What does the system do, and does the use case fall into a regulated
-> category?**
-
-Check in order:
-
-**A. Article 5 prohibited practices.** `[verify against current AI Act
-text — Article 5]`
-
-Summaries, not definitive text:
-- Subliminal or deceptive techniques materially distorting behavior
-- Exploiting vulnerabilities (age, disability, socio-economic status) to
-  materially distort behavior
-- Social scoring by public authorities leading to detrimental treatment
-- Real-time remote biometric ID in publicly accessible spaces for law
-  enforcement (narrow exceptions)
-- Biometric categorization inferring race, political opinions, union
-  membership, religious or philosophical beliefs, sex life, or sexual
-  orientation
-- Emotion recognition in the workplace or education (medical and safety
-  exceptions)
-- Facial image database scraping from the internet or CCTV
-- Predictive policing based solely on personality traits
-
-If matched → tier is `prohibited`. Flag the use case as stop and route to
-the governance team's prohibited-practice workflow.
-
-**B. Annex III high-risk areas.** `[verify against current AI Act text —
-Annex III]`
-
-Summaries:
-1. Biometric identification and categorization
-2. Critical infrastructure (digital infrastructure, road traffic, supply of
-   water / gas / heating / electricity)
-3. Education and vocational training (access, evaluation, proctoring,
-   monitoring prohibited behavior)
-4. Employment, worker management, self-employment access — recruitment,
-   selection, promotion, termination, task allocation, monitoring, performance
-5. Essential private and public services (public benefits, credit scoring
-   for individuals, risk assessment and pricing for life/health insurance,
-   emergency dispatch)
-6. Law enforcement (risk assessment, polygraphs, deepfake detection,
-   reliability of evidence, profiling)
-7. Migration, asylum, border control (risk assessment, travel document
-   verification, examination of applications)
-8. Administration of justice and democratic processes (research and
-   interpretation, influencing elections)
-
-If matched → tier is `high_risk`. Note the Annex III area and subsection.
-
-**C. GPAI.** `[verify against current AI Act text — Article 51 and
-surrounding]`
-
-- **GPAI:** model trained on broad data at scale, designed for generality,
-  capable of competently performing a wide range of distinct tasks.
-- **GPAI + systemic risk:** cumulative compute > 10^25 FLOPs, or designated
-  by the Commission.
-
-**D. Limited risk.** Chatbots interacting with natural persons, deepfakes,
-emotion recognition and biometric categorization systems outside Article 5
-scope — transparency obligations apply.
-
-**E. Minimal risk.** Everything else.
-
-Write the tier. Write `tier_basis` in one sentence, citing the article or
-Annex entry that matched, tagged `[verify against current AI Act text]`.
-
-### Step 3: Recommendations
-
-Offer three next steps:
-1. "Want me to walk through obligations for this system? I'll do it in
-   conversation — I don't derive them from a table."
-2. "Want to run `/ai-governance-legal:aia-generation` to produce a full
-   impact assessment?"
-3. "Want to set a next review date? I'll add it to the inventory."
-
-## Record format
-
-```yaml
-systems:
-  - id: sys-001
-    name: "Resume screening tool"
-    owner: "HR / Jamie"
-    description: "Filters inbound CVs against job criteria"
-    status: in_production          # planned | in_development | in_production | deprecated
-    eu_nexus: true                 # deployed, offered, or affects people in the EU/EEA
-    role: deployer                 # provider | deployer | importer | distributor | authorized_rep | product_manufacturer
-    role_basis: "We license from VendorX and deploy internally [verify against current AI Act text]"
-    tier: high_risk                # prohibited | high_risk | limited | minimal | gpai | gpai_systemic
-    tier_basis: "Annex III(4)(a) — employment, recruitment selection [verify against current AI Act text]"
-    obligations_assessed: false
-    obligations_note: "To assess: as deployer of a high-risk system — human oversight, input data quality, monitoring, record-keeping, informing workers, FRIA if public body/service — see Article 26 [verify against current AI Act text]"
-    next_review: "2026-08-01"
-    review_trigger: "on substantial modification or annually"
-    created: "2026-05-11"
-    updated: "2026-05-11"
+```
+/ai-governance-legal:ai-inventory "智能客服系统 v3"
+/ai-governance-legal:ai-inventory --full
 ```
 
-## Why this skill does NOT auto-derive obligations
+---
 
-The inventory stores role, tier, and the basis for each. It does NOT
-contain a hardcoded role × tier → obligations table.
+# AI系统清单编制
 
-When the user asks "what are my obligations for System X?", the skill
-does the analysis **in conversation**, tagged `[verify]`, and routes to
-`/ai-governance-legal:aia-generation` for the formal impact assessment
-if needed.
+## 目的
 
-This is deliberate:
-- Article mapping is complex and the AI Act is phasing in through 2027.
-- Confident-and-wrong on a compliance obligation ends up in a board memo.
-- The inventory is a registry for the lawyer. The lawyer owns the
-  obligation analysis.
+盘点你正在使用的每一件AI——作为提供者还是使用者，风险层级如何，受哪些法规约束。这是 `use-case-triage`（评估新事物）和 `aia-generation`（深度评估单个系统）的基础层。
 
-## Guardrails
+## 加载当前状态
 
-- **Never classify silently.** The classification walk-through must be
-  visible; do not auto-classify from a system description.
-- **`[verify]` tags stay.** They are not hedging — they are the point.
-  Do not strip them in outputs.
-- **Flag substantial modification.** Whenever a system is modified beyond
-  configuration, prompt the user to re-run `/ai-inventory classify` —
-  modification can change role.
-- **Don't declare obligations from a table.** If asked, do the analysis
-  in conversation and route to `/aia-generation` for anything that needs
-  a formal record.
+读取 `~/.claude/plugins/config/claude-for-legal-zh/ai-governance-legal/CLAUDE.md`：
+- `## AI系统清单` — 既有清单（如有）
+- `## 监管注册表` — 适用法规及义务
+- `## 红线` — 禁止的用例类别
+
+## 单系统录入
+
+当提供系统名称或描述时，运行单系统录入。
+
+### 工作流
+
+#### 第1步：收集基本信息
+
+如果用户提供的信息不足以填充以下字段，逐项询问：
+
+| 字段 | 说明 |
+|------|------|
+| 系统名称 | 唯一标识符 |
+| 功能描述 | 一段话——系统做什么 |
+| AI技术类型 | 机器学习/深度学习/规则系统/大语言模型/计算机视觉/其他 |
+| 模型来源 | 自主研发/基于开源模型微调/第三方API/采购的商业产品 |
+| 部署方式 | 本地部署/私有云/公有云API/SaaS |
+| 数据处理 | 涉及的数据类别——是否包含个人信息、敏感个人信息、商业数据、公开数据 |
+| 受影响人群 | 内部员工/商业客户/公众用户/未成年人 |
+| 使用场景 | 内部辅助工具/面向客户的功能/面向公众的服务 |
+| 决策类型 | 非实质性（推荐、排序）/实质性（影响权利义务）/安全关键 |
+
+#### 第2步：判定角色
+
+| 角色 | 判定标准 |
+|------|----------|
+| **提供者** | 自主研发并向他人（包括公司内部其他部门）提供AI服务 |
+| **使用者** | 使用第三方AI服务，不对外提供AI服务本身 |
+| **双重** | 基于第三方模型训练/微调后向外部提供服务 |
+
+如果系统仅在公司内部使用且不向外部提供，则通常归为使用者（即使使用了内部数据）。但如果公司开发自己的模型/系统并向外部客户提供该系统的访问权限，则归为提供者。
+
+**灰色地带**：使用LLM API构建的面向用户的功能——技术上使用了第三方模型，但你构建了应用层并向用户提供服务。此类情况通常归为"双重"角色：对用户来说你是提供者，同时你是底层模型的使用者。
+
+#### 第3步：分配风险等级
+
+| 等级 | 定义 | 触发特征 |
+|------|------|----------|
+| **高风险** | 对权利和利益有实质性影响，或面向弱势群体，或安全关键 | 自动化决策影响信贷/就业/教育/保险；涉及敏感个人信息；面向未成年人；医疗/交通/基础设施安全场景 |
+| **中风险** | 面向公众但对权利无实质性影响 | 内容推荐/个性化；使用个人信息但非敏感；生成合成内容 |
+| **低风险** | 内部使用，不涉及个人信息，无外部影响 | 内部数据分析；非个人信息处理；生产力和效率工具 |
+| **不适用** | 系统中没有AI组件 | 纯确定性的自动化、传统软件 |
+
+#### 第4步：映射监管义务
+
+基于角色和风险等级，确定义务：
+
+| 法规 | 高风险 + 提供者 | 中风险 + 提供者 | 高风险 + 使用者 | 中/低风险 + 使用者 |
+|------|----------------|----------------|----------------|-------------------|
+| 生成式AI安全评估（《管理办法》第17条 `[法条原文]`） | ✅ 必须 | ✅ 必须 | ❌ 不直接 | ❌ 不直接 |
+| 算法备案（《算法推荐管理规定》第24条 `[法条原文]`） | ✅ 必须（如适用） | ✅ 必须（如适用） | ❌ | ❌ |
+| 科技伦理审查（《伦理审查办法》`[法条原文]`） | ✅ 必须 | ⚠️ 视具体场景 | ⚠️ 视具体场景 | ❌ |
+| 个人信息保护影响评估（《个保法》第55条 `[法条原文]`） | ✅ 必须 | ✅ 必须 | ✅ 必须 | ⚠️ 视数据 |
+| 算法推荐透明度（《算法推荐管理规定》第16条 `[法条原文]`） | ✅ 必须 | ✅ 必须 | ❌ | ❌ |
+| 深度合成标识（《深度合成管理规定》第16条 `[法条原文]`） | ✅ 必须（如适用） | ✅ 必须（如适用） | ❌ | ❌ |
+| 投诉举报机制（《管理办法》第15条 `[法条原文]`） | ✅ 必须 | ✅ 必须 | ❌ | ❌ |
+
+#### 第5步：输出单系统条目
+
+```markdown
+### [系统名称]
+
+**角色：** [提供者 / 使用者 / 双重]
+**风险等级：** [高风险 / 中风险 / 低风险 / 不适用]
+**状态：** [已部署 / 在评估 / 开发中 / 已退役]
+
+| 属性 | 值 |
+|------|---|
+| 功能描述 | [一段话] |
+| AI技术类型 | [类型] |
+| 模型来源 | [来源] |
+| 部署方式 | [方式] |
+| 数据类别 | [类别列表] |
+| 受影响人群 | [人群] |
+| 面向对象 | [内部/客户/公众] |
+| 决策类型 | [类型] |
+
+**监管义务：**
+
+| 义务 | 适用 | 状态 | 截止日期/完成日期 | 证据 |
+|------|------|------|-------------------|------|
+| [义务] | ✅/❌ | ✅已完成/⚠️进行中/❌未开始 | [日期] | [文档引用] |
+```
+
+## 全量审查 `--full`
+
+当使用 `--full` 时，对 `## AI系统清单` 中的每个系统运行单系统录入流程，此外：
+
+1. **交叉检查一致性**：确保类似系统获得类似分类。当一个系统获得了与其他类似系统不同的风险等级时，标记并解释。
+2. **识别清单缺口**：检查 `## AI系统清单` 是否遗漏了实践中存在的AI系统（例如供应商审查中已批准但未列入清单的供应商系统）。
+3. **监管覆盖缺口**：哪些法规适用于你的业务但你没有任何被分类为需要遵守该法规的系统？这是否合理？
+
+### 全量审查汇总表
+
+```markdown
+## AI系统清单汇总
+
+**审查日期：** [日期]
+**系统总数：** [N] | 提供者：[N] | 使用者：[N] | 双重：[N]
+**按风险等级：** 高风险：[N] | 中风险：[N] | 低风险：[N]
+
+| 系统 | 角色 | 风险等级 | 适用法规数 | 备案状态 | 上次评估 | 差距数 |
+|------|------|----------|-----------|----------|----------|--------|
+| [名称] | [角色] | [等级] | [N] | [状态] | [日期] | [N] |
+
+## 监管覆盖缺口
+
+| 法规 | 适用系统数 | 是否有覆盖缺口？ | 说明 |
+|------|-----------|----------------|------|
+| [法规] | [N] | 是/否 | [说明] |
+
+## 不一致标记
+
+[标记任何类似系统获得不同分类的情况，附说明]
+```
+
+## 输出
+
+保存到 `~/.claude/plugins/config/claude-for-legal-zh/ai-governance-legal/outputs/ai-inventory-[日期].md`。同时更新 `## AI系统清单` 中的条目。
+
+```markdown
+[工作成果头 — 按照插件配置 ## 输出]
+```
+
+## 与 `use-case-triage` 的衔接
+
+`use-case-triage` 在系统进入开发之前评估新提议。`ai-inventory` 是为已存在（或即将部署）的系统创建记录。一个已通过分类的系统在部署前通常需要完成清单编制。当 triage 给出"附条件-高"分类时，应自动触发清单编制。
+
+## 收尾
+
+以 CLAUDE.md `## 输出` 规定的下一步决策树收尾。定制选项：完成缺失系统的录入、处理不一致标记、填补监管覆盖缺口、升级至法律顾问。
+
+---
+
+## 本技能不做的事
+
+- 不执行深度评估——那是 `aia-generation` 的职责。此技能是对系统进行分类和分配义务，不做逐项条款的合规分析。
+- 不做出"这个风险等级是正确的"的法律判断。分类基于当前法规和技术理解；当法规发生变化时，重新分类。
+- 不替代网信办的官方分类——监管机构可能不同意你的风险等级判定。

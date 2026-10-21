@@ -1,39 +1,52 @@
 ---
 name: investigation-add
 description: >
-  Add data to an open investigation — documents, interview notes, or
-  observations. Processes batches against the documented pull criteria,
-  surfaces significant items, and logs everything reviewed for coverage
-  verification. Use when new evidence, interview notes, or document
-  productions come in for an open investigation.
-argument-hint: "[matter name or slug, then paste or attach data]"
+  向进行中的调查添加数据——文件、访谈记录或观察意见。
+  按已记录的筛选标准批量处理，浮现重要事项，记录所有已审查内容
+  以供覆盖验证。当新的证据、访谈记录或文件材料进入进行中的调查时使用。
+argument-hint: "[调查事项名称，然后粘贴或附上数据]"
 ---
 
 # /investigation-add
 
-Adds data to an open investigation log. Processes document batches using
-documented pull criteria, surfaces significant items, logs everything
-reviewed for coverage verification.
+向进行中的调查日志添加数据。使用已记录的筛选标准处理文件批次，浮现重要事项，记录所有已审查内容以供覆盖验证。
 
-## Instructions
+## 指令
 
-1. Load `~/.claude/plugins/config/claude-for-legal/employment-legal/CLAUDE.md`.
-2. Load the `internal-investigation` reference skill and run Mode 2 (Add data).
-3. After processing, show the surface ratio and list of surfaced items.
-4. Prompt to update the sources checklist if the data covers a checklist item.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md`。
+2. 运行添加数据模式：
+   - 将新数据追加到调查日志
+   - 按筛选标准评估：是否与调查要点相关？是否重要？
+   - 输出浮现比例和已浮现事项列表
+3. 处理完成后，显示浮现比例和已浮现事项列表。
+4. 如果数据覆盖了证据来源清单中的某项，提示更新清单。
 
-## Examples
+## 证据筛选标准
+
+添加数据时，按以下维度评估：
+
+| 维度 | 检查 |
+|---|---|
+| 相关性 | 该证据是否与待证事实相关？ |
+| 真实性 | 该证据是否可核验来源和真实性？ |
+| 合法性 | 该证据的获取方式是否合法？（《劳动争议司法解释（一）》关于证据合法性） |
+| 重要性 | 该证据是否会影响调查结论？ |
+
+## 保密要求
+
+所有添加的数据受《律师法》第38条保密义务保护。`[法条原文]` 注意区分：
+- 原始材料（投诉信、聊天记录、邮件等）——保持原样，不修改
+- 调查分析意见——属于律师工作成果，标注保密
+- 日志条目——记录处理过程，不替代调查分析
+
+## 示例
 
 ```
-/employment-legal:investigation-add [matter name]
-[paste interview notes]
+/employment-legal:investigation-add [调查事项名称]
+[粘贴访谈记录]
 ```
 
 ```
-/employment-legal:investigation-add [matter name]
-[attach email export]
+/employment-legal:investigation-add [调查事项名称]
+[附上邮件导出文件]
 ```
-
-> Detailed needle-finding process, log entry format, surface-ratio rules, and
-> sources-checklist tracking live in the `internal-investigation` reference
-> skill — load it before doing substantive work.

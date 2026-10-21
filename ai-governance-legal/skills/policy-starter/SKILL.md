@@ -1,262 +1,238 @@
 ---
 name: policy-starter
 description: >
-  Draft a firm AI usage policy from published model policies, adapted to your
-  practice profile — a research-and-synthesis tool whose output is a draft for
-  attorney review and adoption, not a finished policy. Use when user says "draft
-  an AI policy", "we need an AI policy", "build an AI usage policy", "our firm
-  needs a GenAI policy", or similar requests to generate a first-cut internal
-  AI policy.
-argument-hint: "[optional — scope hint, e.g. 'firm-wide', 'legal team only', 'update existing']"
+  根据监管注册表和公司已有的实践位置，起草AI使用政策。
+  适用于团队从未有过AI使用政策、需要快速生成初稿供法律审阅、
+  或现有政策需要根据新法规全面重写时。
+argument-hint: "[面向的受众 — 内部员工 / 外部客户 / 两者皆需]"
 ---
 
 # /policy-starter
 
-1. Read `~/.claude/plugins/config/claude-for-legal/ai-governance-legal/CLAUDE.md`. If the practice profile is unpopulated, stop and direct to `/ai-governance-legal:cold-start-interview`.
-2. Use the framework below.
-3. Run the scope interview — which sections does the policy need to cover, who's the audience, what's the deployment context. Do not skip to drafting.
-4. Web search for the current published model policies and guidance relevant to the deployment context (ABA, state bars, ILTA, CLOC, NIST, peer-firm / peer-company policies, current state AI laws, EU AI Act, sector regulators as applicable).
-5. Draft the selected sections, sourced from the model policies, with `[review]` flags on every choice point and `[review]` open questions at the bottom of each section.
-6. Output with the draft header ("DRAFT FOR INTERNAL LEGAL REVIEW — NOT FOR DISTRIBUTION"), the sources block, the reviewer note, and the adoption checklist.
-7. Close with the next-steps decision tree.
+1. 读取 `~/.claude/plugins/config/claude-for-legal-zh/ai-governance-legal/CLAUDE.md` → 监管注册表（适用法规）、AI系统清单（已在使用的AI）、公司的实践位置（风险偏好、透明度承诺）。
+2. 运行以下工作流。
+3. 确定受众 → 选择模板 → 填充公司的具体内容 → 输出草案。
+4. 附一份"仍需决定"清单——政策初稿解决不了的问题，需要由人来拍板。
 
 ```
+/ai-governance-legal:policy-starter "内部员工AI使用政策"
+/ai-governance-legal:policy-starter "面向用户"
 /ai-governance-legal:policy-starter
-/ai-governance-legal:policy-starter "we need an AI policy for our 30-lawyer firm"
-/ai-governance-legal:policy-starter "update our existing policy for the 2026 state AI laws"
+[省略参数以获取受众选择提示]
 ```
 
 ---
 
-## Matter context
+# AI使用政策起草
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/ai-governance-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/ai-governance-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+## 目的
+
+没有AI使用政策的AI实践是在裸奔。监管机构、客户和用户都想知道：你用AI吗？用在哪里？怎么用？哪些数据被用于训练？这项技能基于你的实际实践和监管义务起草一份AI使用政策初稿。
+
+## 加载当前状态
+
+读取 `~/.claude/plugins/config/claude-for-legal-zh/ai-governance-legal/CLAUDE.md`：
+- `## 监管注册表` — 适用的法规，决定了政策的合规底线
+- `## AI系统清单` — 已经在使用或计划使用的AI——政策不能比实际做得多或做得少
+- `## 红线` — 绝对不做的——政策应反映这些红线
+- `## 实践位置` — 公司的风险偏好、透明度立场、AI使用原则
+
+## 工作流
+
+### 第1步：确定受众和范围
+
+| 受众 | 目的 | 典型内容 |
+|------|------|----------|
+| **面向用户/公众** | 告知用户公司如何使用AI处理其数据或提供服务 | AI系统的存在、AI决策的性质、用户如何获取人工介入、数据如何使用 |
+| **内部员工** | 规范员工对公司AI工具的使用行为 | 可用的工具、禁止的行为、数据安全要求、审批流程 |
+| **合作伙伴/客户（B2B）** | 告知商业客户AI在其服务中的应用 | AI功能的可用性、数据保护、责任承诺 |
+
+如果用户未指定，询问："这项政策是面向谁的？(1) 面向用户/公众，(2) 内部员工，(3) 二者兼有。"
+
+### 第2步：从清单和注册表中提取内容
+
+必须纳入政策的具体内容来源于已存在的配置：
+
+- 从 `## AI系统清单` 中提取：
+  - 已部署AI系统列表（按风险等级和功能分类）
+  - 哪些涉及个人信息处理
+  - 哪些面向公众，哪些是内部的
+- 从 `## 监管注册表` 中提取：
+  - 法规要求的披露义务（例如《生成式人工智能服务管理办法》第15条要求标识AI生成内容 `[法条原文]`）
+  - 法规要求的用户权利（投诉举报机制、拒绝自动化决策的权利等）
+  - 行业特定要求
+- 从 `## 红线` 中提取：
+  - 绝对禁止的AI用例类型
+  - 需要在政策中公开声明的底线原则
+
+### 第3步：起草政策
+
+#### 面向用户/公众的AI使用政策模板
+
+```markdown
+# AI使用说明
+
+最后更新：[日期]
+
+## 我们使用的AI技术
+
+[公司名称]在以下服务和功能中使用了人工智能（AI）技术：
+
+| AI功能 | 用途 | 涉及的个人信息 | 是否有自动化决策 |
+|--------|------|---------------|-----------------|
+| [功能] | [用途] | [数据类别] | 是/否 |
+| [功能] | [用途] | [数据类别] | 是/否 |
+
+## AI如何影响你
+
+### 内容推荐
+[如果使用算法推荐：说明推荐逻辑的基本原则，如何关闭个性化推荐]
+
+### AI生成内容
+[如果提供生成式AI服务：说明生成内容的标识方式，不构成专业建议的声明]
+
+### 自动化决策
+[如果使用自动化决策：说明决策的逻辑，用户获得人工介入和拒绝仅通过自动化决策的方式]
+
+## 我们不会用AI做的事
+
+[基于红线清单列出底线原则，例如：]
+- 我们不使用AI进行社会信用评分
+- 我们不基于种族、民族、性别等因素在交易条件上实行差别待遇
+- 我们不会在未取得你同意的情况下，将你的个人信息用于AI模型训练
+
+## 你的权利
+
+[根据适用的法规（《个人信息保护法》《生成式人工智能服务管理办法》等），你享有以下权利：]
+- [权利及行使方式]
+- 如果你对我们的AI使用有任何问题或投诉，请通过[联系方式]联系我们。我们会在[时间]内回复。
+
+## 我们如何管理AI风险
+
+- 我们在部署新的AI功能前进行安全评估
+- 我们对AI生成内容进行内容管理和人工审核
+- [其他措施]
+```
+
+#### 内部员工AI使用政策模板
+
+```markdown
+# 内部AI使用政策
+
+最后更新：[日期]
+适用范围：全体员工、外包人员、实习生
+
+## 可使用AI的场景
+
+[列出允许使用AI的工作场景——可参考方案：正面清单方式（明确列出允许的场景）或负面清单方式（列出禁止的场景，其余默许）]
+
+## 必须遵守的规则
+
+### 数据安全（红线）
+
+1. **禁止向公共AI工具输入敏感信息**：严禁将通过公共网络访问的AI工具（包括但不限于公共版本的大语言模型对话界面）输入以下信息：
+   - 客户个人信息
+   - 公司商业秘密或未公开的商业信息
+   - 涉及国家秘密和安全的信息
+   - 未公开发布的产品或财务数据
+
+2. **API集成需审批**：通过API将AI工具集成到公司系统的，必须事先获得技术部门和法务部门的审批。
+
+3. **输出审核**：AI生成的内容在对外使用（发送给客户、发布到网上、用于合同或法律文件）之前，必须经过人工审核。
+
+### 知识产权
+
+- 使用公共AI工具生成的代码、文本、设计等，可能涉及知识产权侵权风险——不得直接用于对外交付物，除非经过充分的权属和原创性审核。
+- 员工使用AI工具辅助完成的智力成果，权利归属按照公司知识产权管理制度执行。
+
+### 准确性
+
+- AI工具可能产生不准确、过时或有偏见的信息。不得将AI输出作为唯一决策依据。
+- 涉及法律、财务、医疗等专业判断时，AI输出仅供参考，最终判断应由具备相应资质的专业人员作出。
+
+### 透明度
+
+- 在适当情况下，向同事或客户披露你使用了AI工具辅助工作。不得假装AI生成的内容完全是人写的。
+
+## 审批的AI工具清单
+
+| 工具名称 | 用途 | 批准日期 | 使用条件 |
+|----------|------|----------|----------|
+| [工具] | [用途] | [日期] | [条件] |
+
+使用不在清单上的AI工具前，必须得到[审批人/部门]的批准。
+
+## 违规后果
+
+违反本政策的，将按照公司《员工手册》及信息安全管理制度处理，情节严重者可能面临纪律处分直至解除劳动合同。
+```
+
+### 第4步：补充"仍需决定"清单
+
+政策初稿解决不了所有问题。随着政策一起输出一份仍需决定的清单：
+
+```markdown
+## 随政策初稿附：仍需人工决定的事项
+
+以下事项需要公司决策层拍板，不应由AI代为决定：
+
+| # | 问题 | 为什么需要人决定 | 建议 |
+|---|------|-----------------|------|
+| 1 | [例如：是否允许员工使用公共免费的AI工具处理非敏感业务数据？] | [涉及效率与安全的权衡] | [倾向建议] |
+| 2 | [例如：AI使用政策是单独成文还是融入现有隐私政策？] | [涉及法律文书结构和受众] | [倾向建议] |
+```
+
+### 第5步：监管合规对标检查
+
+在交付政策草案前，对照适用法规的关键要求进行自查：
+
+| 法规要求 | 政策是否覆盖？ | 条款位置 |
+|----------|---------------|----------|
+| 《生成式人工智能服务管理办法》第15条：生成内容标识 | ✅/⚠️/❌ | [章节] |
+| 《生成式人工智能服务管理办法》第11条：用户信息保护 | ✅/⚠️/❌ | [章节] |
+| 《生成式人工智能服务管理办法》第15条：投诉举报机制 | ✅/⚠️/❌ | [章节] |
+| 《互联网信息服务算法推荐管理规定》第16条：算法推荐告知+关闭选项 | ✅/⚠️/❌ | [章节] |
+| 《个人信息保护法》第17条：个人信息处理告知 | ✅/⚠️/❌ | [章节] |
+| 《个人信息保护法》第24条：自动化决策透明度+拒绝权 | ✅/⚠️/❌ | [章节] |
+
+### 第6步：输出
+
+将草案保存为注明日期的markdown文档。附合规对标检查和仍需决定清单。
+
+```markdown
+[工作成果头 — 按照插件配置 ## 输出]
+
+# AI使用政策草案 — [内部/面向用户/两者兼有]
+
+**日期：** [日期]
+**状态：** 初稿，待法律审阅
+**基于：** [AI系统清单中的N个系统] | [N项适用法规]
 
 ---
 
-## Purpose
+[以上政策正文]
 
-A lot of firms and in-house teams don't have a written AI usage policy yet, or
-are running on a 2024-vintage one that doesn't mention the state AI laws, the EU
-AI Act implementing acts, the 2025 COPPA amendments, or what they actually ended
-up doing with Copilot and Claude for Work. This skill produces a **draft** policy
-to bring to the decision-maker — GC, managing partner, executive committee,
-board, head of IT, head of HR — not a finished policy to circulate.
+---
 
-The discipline of this skill:
+## 监管合规对标检查
 
-1. **Source from published model policies, not from invention.** Search for and
-   read the ABA AI Toolkit, state bar guidance, ILTA's model policy, CLOC's
-   templates, and peer-firm / peer-company policies that are public. Cite what
-   each source says and adapt it — don't generate policy language out of thin
-   air.
-2. **Decision-tree the scope before drafting.** A policy that tries to cover
-   everything covers nothing. Ask the user what sections the policy needs. Let
-   them pick. Then build each picked section with `[review]` flags on every
-   choice point.
-3. **Flag every judgment call.** The output is a draft the attorney reviews and
-   adopts; every threshold, every named tool, every disclosure trigger, every
-   enforcement consequence is a `[review]` line.
-4. **Header signals the scope of the audience.** This output may be read beyond
-   legal — by HR, IT, all staff. The header is adapted accordingly.
+[以上表格]
 
-This skill does NOT finalize, distribute, publish, or even recommend a specific
-position on the hard calls. It produces a draft and surfaces the choices.
+---
 
-## Read `~/.claude/plugins/config/claude-for-legal/ai-governance-legal/CLAUDE.md` first
+## 仍需人工决定的事项
 
-Before drafting, always read the practice profile. The sections that drive the
-draft:
-
-- `## Company profile` — AI role (Builder / Deployer / Both), regulatory footprint,
-  external commitments, practice setting
-- `## Use case registry` — what's already approved, conditional, or a red line
-- `## AI policy commitments` — what a prior or current policy already says
-- `## Vendor AI governance` — what the team already requires from vendors
-- `## Governance team and escalation` — who approves, who escalates
-- `## Who's using this` — Role (lawyer / non-lawyer) governs the header and the
-  "adopt this" framing
-
-If `## AI policy commitments` is populated, this is an UPDATE, not a new draft —
-treat the existing policy as the base and propose changes. If it's empty, this
-is a first-cut draft.
-
-## Scope interview (do this BEFORE drafting)
-
-Ask the user which sections the policy should cover. Present as a checklist —
-the user picks, you build. Do not pre-decide.
-
-> **What should the AI policy cover? Pick the sections you want in the draft:**
-> 1. **Scope** — who the policy applies to (all staff, certain roles, contractors), what tools it covers (GenAI only, all AI, specific vendors), what data is in/out of scope.
-> 2. **Permitted and prohibited uses** — the approved categories, the red lines, the "ask first" cases.
-> 3. **Approval and review** — who approves a new tool, who approves a new use case, how the review request is filed, what the SLA is.
-> 4. **Disclosure** — to clients (for firms), to courts, to counterparties, to employees, to end users of an AI feature.
-> 5. **Data handling** — what confidential/client/privileged data can go where, data residency, vendor retention terms, training-on-data posture.
-> 6. **Training and certification** — who has to take training, on what cadence, consequences for non-completion.
-> 7. **Incidents and reporting** — what counts as an AI incident, how to report, who handles.
-> 8. **Enforcement** — what happens when the policy is violated, link to disciplinary framework.
-> 9. **Review cadence and ownership** — how often the policy gets updated, who owns updates, how changes are communicated.
-> 10. **Glossary** — defined terms (GenAI, approved tool, high-risk use, consequential decision, confidential data, etc.).
->
-> Default starter pack for a firm / in-house legal team that's never had a policy: 1, 2, 3, 4, 5, 9. Skip the rest for v1.
-
-After the user picks, ask the second question:
-
-> **Two more inputs before I draft:**
-> - **Audience** — who's reading this? (All staff / legal team only / attorneys plus staff / client-facing version also needed) This drives tone and the glossary.
-> - **Deployment context** — (a) law firm, (b) in-house legal at a company (policy covers legal or company-wide?), (c) legal aid / clinic, (d) government. This drives which model policies I search.
-
-## Source the model policies
-
-Before drafting, run web searches for the most recent published model AI
-policies and guidance.
-
-**Derive the model policy sources from the practice profile's `## Regulatory footprint`.** Don't hardcode US sources for a global user.
-
-| Jurisdiction | Model policy sources |
-|---|---|
-| US | ABA Formal Opinion 512, state bar guidance (CA, FL, NY, TX all have published AI guidance), ILTA model policy, CLOC templates, peer firm published AI policies |
-| UK | Solicitors Regulation Authority risk outlook, Law Society AI principles, ICO AI guidance, Bar Council guidance |
-| EU | EU AI Act compliance framework (Article 4 AI literacy, Article 17 quality management), national DPA AI guidance (CNIL, DSB, Garante, AEPD), EDPB guidelines, EU institutions' AI policies |
-| Australia | Law Council of Australia AI guidelines, OAIC AI guidance, state law society guidance, Australian AI Ethics Framework |
-| Singapore | PDPC Model AI Governance Framework, MinLaw guidance, MAS AI fairness principles (for financial services) |
-| Canada | Law Society of Ontario/BC/Alberta AI guidance, OPC AI guidance, TBS Directive on Automated Decision-Making |
-| Multi-jurisdiction | Use all applicable, and note where they diverge (e.g., EU requires human oversight documentation US doesn't; Australia focuses on voluntary ethics frameworks; Singapore focuses on sectoral regulation) |
-
-If the practice profile's footprint is empty or `[PLACEHOLDER]`, ask: "What jurisdiction(s) does your organization operate in? I'll draft from the model policies that match your regulatory environment and professional responsibility framework, not a US-centric template."
-
-For each source the draft uses, **record it in a "Sources" block at the top of
-the output** with: name, URL, date accessed, and what the draft took from it.
-
-If a web search can't be run, note in the reviewer note: "Could not run web
-search — draft sourced from training knowledge alone, verify against current
-versions of the cited sources before adopting." The verification log applies.
-
-## The draft
-
-Output follows a consistent structure. **Every choice point gets a `[review]`
-flag.** The user has to decide; the skill presents options.
-
-### Header
-
-```
-DRAFT FOR INTERNAL LEGAL REVIEW — NOT FOR DISTRIBUTION
-Prepared for: [firm / company name from practice profile]
-Date: [today's date]
-Prepared by: ai-governance-legal policy-starter skill, adapted from published model policies
-Not for adoption, distribution, posting, or reliance until reviewed, adapted, and approved by [attorney / GC / managing partner / executive committee per the governance team section of the practice profile].
+[以上表格]
 ```
 
-When the Role in `## Who's using this` is Non-lawyer: add a second line under
-the header — "If you are not a licensed attorney, solicitor, barrister, or other
-authorised legal professional in your jurisdiction, bring this draft to your
-attorney contact ([name from practice profile]) before using any of it. This is
-a starting draft for their review, not a policy you can adopt."
+## 收尾
 
-### Sources block (at the top, under the header)
+以 CLAUDE.md `## 输出` 规定的下一步决策树收尾。定制选项：审阅和批准政策语言、处理"仍需决定"清单中的开放事项、与隐私政策协调一致性、升级法律顾问审阅。
 
-A table of the model policies / guidance / regulations the draft drew from:
+---
 
-| Source | URL | Accessed | What the draft took from it |
-|---|---|---|---|
-| ABA Formal Op. 512 | [url] | [date] | Disclosure and competence framing |
-| ILTA Model AI Policy v.[X] | [url] | [date] | Approval workflow, data handling |
-| [State] Bar Op. [X] | [url] | [date] | Disclosure to clients |
-| [peer firm] published AI policy | [url] | [date] | Scope language |
-| Colorado SB 24-205 | [url] | [date] | High-risk AI definition |
-| EU AI Act, Art. [X] | [url] | [date] | Vendor flow-down |
+## 本技能不做的事
 
-### Executive summary
-
-Three paragraphs max. What the policy does, who it binds, what the reader has
-to do before it takes effect.
-
-### The sections
-
-Only the sections the user picked, in the order above. For each:
-
-- A **header and scope** sentence.
-- The **substantive rules**, adapted from the cited model policies. Every
-  specific threshold, number, named tool, named vendor, or escalation contact
-  is `[review]`. Example: "Confidential client data may not be entered into
-  [general-purpose consumer AI tools] `[review — list tools, or reference the
-  approved-tools list]`. Use of such data in [approved firm-licensed tools]
-  `[review — list tools]` is permitted subject to the data handling section."
-- **Source attribution** inline where a rule is adapted from a specific source.
-  Example: "Attorneys must verify the accuracy of all AI-generated work product
-  before using it in representation of a client `[ABA Formal Op. 512]`."
-- **Open questions** at the bottom of each section — 2-3 decisions the attorney
-  needs to make before the section is ready. These are distinct from inline
-  `[review]` flags — these are the "we don't have a position here yet" items,
-  not the "fill in the specifics" items.
-
-### Adoption checklist
-
-At the end of the draft, a checklist of the things that have to happen before
-the policy is adopted. Don't invent these — pull from the practice profile's
-governance team and escalation section. Typical items:
-
-- [ ] Review by GC / managing partner `[review — name]`
-- [ ] Review by IT / security `[review — name]`
-- [ ] Review by HR (for enforcement / training sections) `[review — name]`
-- [ ] Board / executive committee approval (if required) `[review — confirm whether required]`
-- [ ] Training materials drafted
-- [ ] Announcement drafted
-- [ ] Effective date set `[review]`
-- [ ] Review cadence calendared `[review — annual is typical]`
-- [ ] Add policy to the `## AI policy commitments` section of the practice
-      profile once adopted
-
-### Reviewer note
-
-The standard reviewer note above the header, per the `## Outputs` section of
-the practice profile. Use the block format:
-
-> **⚠️ Reviewer note**
-> - **Sources:** web search ✓ / not connected — cites from training knowledge
-> - **Read:** practice profile · [N] published model policies
-> - **Flagged for your judgment:** [N] `[review]` items inline · [N] open questions per section
-> - **Currency:** searched for developments since [date]
-> - **Before relying:** this is a DRAFT — bring to [approver from practice profile], don't distribute until adopted
-
-## Don'ts
-
-- **Don't invent policy language.** Every substantive rule in the draft must be
-  traceable to a cited source or flagged `[review — adapted, no direct source]`.
-- **Don't pick the hard calls for the attorney.** "Should paralegals be
-  permitted to use AI for first-draft work?" is a `[review]`, not a recommended
-  position.
-- **Don't produce a finished-looking policy.** The header, the reviewer note,
-  and the `[review]` flags throughout are the signal that this is a draft. Do
-  not soften them.
-- **Don't skip the scope interview.** If the user says "just draft a full
-  policy," push back: "A policy that tries to cover everything covers nothing.
-  Which sections do you want? Here's the checklist." One round of negotiation
-  is fine — two is also fine. Drafting without scope is the failure mode.
-- **Don't generate section content the user didn't ask for.** If they picked 1,
-  2, 3, 4, 5, 9, do those. Don't add section 6 because "a real policy needs
-  training."
-- **Don't recommend a specific vendor, tool, or consequence.** Flag those
-  `[review]` with context on what a typical decision would be, not what the
-  user's should be.
-- **Don't promise legal sufficiency.** The draft is a starting point for
-  attorney review, not a tested policy.
-
-## Handoffs
-
-After the draft is produced, close with the decision tree from the practice
-profile. The most common next steps:
-
-1. **Tune the draft** — the user walks through the `[review]` flags and resolves
-   them with the attorney; the skill re-runs with the decisions baked in.
-2. **Stakeholder summary** — produce a one-page version for the board or
-   executive committee explaining what the policy does and doesn't do.
-3. **Training materials** — once the policy is adopted, `/ai-governance-legal:aia-generation` can be used to produce per-use-case training notes.
-4. **Vendor sweep** — once the policy is adopted, `/ai-governance-legal:vendor-ai-review` should be run against the vendors the policy references to check conformance.
-5. **Gap check against new regulation** — pair with `/ai-governance-legal:reg-gap-analysis` to test the draft against a specific regulation or guidance before adoption.
-
-## Output scope reminder
-
-The document this skill produces reaches HR, IT, and the broader business — not
-just legal. Keep the language plain enough for non-lawyers to follow. The legal
-precision is in the `[review]` flags and the sources, not in jargon.
+- 不做出法律判断——政策草案中存在模糊地带时，标记"仍需决定"而不是代为拍板。
+- 不替代外部法律意见——如果是高风险场景或政策面向公众发布，应由律师最终审定。
+- 不覆盖非AI相关的隐私政策内容——仅覆盖AI部分。如果需要完整的隐私政策，参见 privacy-legal 插件中的 `policy-starter`。

@@ -1,278 +1,269 @@
 ---
 name: subpoena-triage
-description: Triage a subpoena served on the company — classify it, analyze scope/burden/privilege, cross-check the portfolio, and produce an objections framework, compliance plan, and deadline calendar. Use when the user says "we got a subpoena", "served with a subpoena", or shares a subpoena, CID, or third-party document request to evaluate.
-argument-hint: "[path-to-subpoena] [--slug=custom-slug]"
+description: >
+  处理送达公司的法院调查令、行政机关协查通知或证人出庭通知——
+  分类、分析范围/负担/保密、交叉检索案件组合，
+  生成异议框架、合规方案和期限日历。当用户说"收到了调查令"、
+  "被送达协查通知"或附上调查令/协查通知要求评估时使用。
+argument-hint: "[调查令/协查通知文件路径] [--slug=自定义代号]"
 ---
 
 # /subpoena-triage
 
-1. Read the subpoena from provided path.
-2. Classify (third-party-docs / third-party-depo / party / CID / grand-jury).
-3. If grand jury → stop, escalate per `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`. Otherwise continue.
-4. Load `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml` for cross-check. Load `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` → landscape, privilege conventions, escalation norms.
-5. Follow the workflow and reference below.
-6. Extract key fields, analyze scope/burden/privilege, produce objections framework + compliance plan + deadline calendar.
-7. Write `~/.claude/plugins/config/claude-for-legal/litigation-legal/inbound/[slug]/triage.md`. Copy or link subpoena to `~/.claude/plugins/config/claude-for-legal/litigation-legal/inbound/[slug]/incoming.[ext]`.
-8. Hand off: `/legal-hold --issue` if hold not in place; `/matter-intake` if materiality warrants; `/matter-briefing [slug]` if party subpoena in existing matter.
+1. 读取提供的调查令/协查通知文件。
+2. 分类（法院调查令 / 律师调查令 / 行政机关协查通知 / 证人出庭通知 / 监察委/刑事侦查）。
+3. 如为监察委/刑事侦查 → 停止，按 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 上报。否则继续。
+4. 加载 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml` 用于交叉检索。加载 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` → 执业背景、保密惯例、上报规则。
+5. 按以下工作流操作。
+6. 提取关键字段，分析范围/负担/保密，生成异议框架 + 合规方案 + 期限日历。
+7. 写入 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/inbound/[slug]/triage.md`。将调查令复制或链接至 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/inbound/[slug]/incoming.[ext]`。
+8. 转交：如保全通知未到位 → `/legal-hold --issue`；如重要性足够 → `/matter-intake`；如系既有案件中的当事人调查令 → `/matter-briefing [slug]`。
 
 ---
 
-# Subpoena Triage
+# 调查令/协查通知分流
 
-## Purpose
+## 目的
 
-Subpoenas arrive with deadlines. The failure modes: missing the deadline, over-producing (privilege waiver, burden we should have objected to), under-producing (contempt exposure), or missing a motion-to-quash window. This skill classifies, analyzes, and produces a compliance plan with objections framework.
+调查令和协查通知伴随期限而来。常见失败模式：错过期限、过度提供（保密特权放弃、本应提出异议的负担）、提供不足（拒不配合风险），或错过申请撤销的窗口期。本技能分类、分析，并生成合规方案和异议框架。
 
-## Jurisdiction assumption
+## 管辖地假设
 
-The rule cited in Step 0 is the operative one for this subpoena in this forum. Subpoena practice varies materially: federal (FRCP 45) vs. state equivalents, state-to-state variants, local rules, court-specific standing orders, and the subpoena type (trial, deposition, document production) all change objection deadlines, place-of-compliance limits, privilege-log requirements, and cost-shifting. Every rule output here is a starting-point heuristic — confirm currency and the local variant before asserting in writing.
+调查令和协查通知的法律适用因类型和管辖地而异：
+- **法院调查令**：依据《民事诉讼法》第67条及《民事诉讼法司法解释》第94-96条。`[法条原文]`
+- **律师调查令**：各省/直辖市高级法院制定的律师调查令实施办法，规则因省/直辖市而异。
+- **行政机关协查通知**：依据各专门行政法规（如市场监管、税务、证券监管等）。
+- **监察委/刑事侦查**：依据《监察法》《刑事诉讼法》——应立即咨询刑事律师。
 
-## Side context
+本技能中的每条规则引用均为起点式启发——在书面提出异议或配合前应确认现行有效性和地方变体。
 
-This skill is inherently defensive — a subpoena has been served on the recipient and the posture is respond/object/comply. Read `## Side` in the practice profile. If the user's default side is **plaintiff**, note that receiving a subpoena is common for plaintiffs too (witness subpoenas, third-party requests directed at the plaintiff's own records) but the framing here is always "subpoena served on us, how do we respond." If the user is **defense** (typical), the framing aligns with the default. If the matter has a different posture than the default (e.g., defense practitioner receiving a subpoena in a matter where they're pro se for a family member), prompt the user to confirm posture before proceeding.
+## 加载上下文
 
-## Load context
+- 调查令/协查通知文件（用户提供路径或在会话中发送）
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml` —— 用于关联案件检索和证据保全状态
+- `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` → 执业背景（常打交道的监管机构）、事务所保密惯例、上报规则
 
-- The subpoena document (user provides path or drops it in-session)
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/matters/_log.yaml` — for related matter lookup and legal hold status
-- `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md` → landscape (regulators we deal with), house privilege conventions, escalation norms
+## 工作流
 
-## Workflow
+### 步骤0：研究适用规则
 
-### Step 0: Research the applicable rule
+**在分析本调查令/协查通知之前，研究适用的程序规则。** 对于法院调查令，核对《民事诉讼法》第67条及司法解释第94-96条；对于律师调查令，核对所在省/直辖市高级法院的实施办法；对于行政机关协查通知，核对相关行政法规。确定：地域管辖限制、异议期限（自收到后起算）、保密审查要求、以及费用承担。引用精确定位。核实时效——规则和地方变体可能变化。
 
-**Before analyzing this subpoena, research the applicable rule of civil procedure for the forum (FRCP 45 for federal, the state equivalent otherwise) and the subpoena type (trial, deposition, document production). Identify: place-of-compliance limits, objection deadlines (these often run from the EARLIER of the compliance date or a fixed number of days after service), privilege-log requirements, and who bears costs. Cite with pinpoint references. Verify currency — rules and local variants change. Flag grand-jury subpoenas for immediate criminal-counsel escalation.**
+**不沉默补充。** 如对配置的法律研究工具的查询返回零条或极少结果，报告已找到的内容并停止。不要不询问就从联网搜索或模型知识填补空白。说："搜索从[工具]返回了[N]条结果。[规则/管辖地/变体]的覆盖范围似乎很薄。选项：(1)扩大搜索查询，(2)尝试其他研究工具，(3)搜索网络——结果将标注`[联网检索——需复核]`，依赖前应核实，(4)在此停止。您希望选哪个？"由律师决定是否接受较低可信度的来源。
 
-**No silent supplement.** If a research query to the configured legal research tool (Westlaw, CourtListener, Trellis, Descrybe, or firm platform) returns few or no results for the forum's rule, variant, or pinpoint, report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [rule / forum / variant]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against a primary source before relying, or (4) stop here. Which would you like?" A lawyer decides whether to accept lower-confidence sources; the skill does not decide for them.
+**来源标注。** 为分流输出中的每条规则引用、案例、法条和规章标注来源：`[yuandian检索]`用于通过检索连接器获取的引用；`[联网检索——需复核]`用于联网搜索引用；`[模型知识——需验证]`用于模型知识回忆的引用；`[用户提供]`用于用户提供（如调查令中或此前案件工作中）的引用。标注`需验证`的引用具有较高的编造风险，应首先核验。不得删除或压缩标签。
 
-**Source attribution.** Tag every rule reference, case, statute, and regulation in the triage output with where it came from: `[Westlaw]`, `[CourtListener]`, `[Trellis]`, `[Descrybe]`, or the MCP tool name for citations retrieved from a legal research connector; `[web search — verify]` for citations from web search; `[model knowledge — verify]` for citations recalled from training data; `[user provided]` for citations the user supplied (e.g., from the subpoena or prior matter work). Citations tagged `verify` carry higher fabrication risk and should be checked first. Never strip or collapse the tags — they are counsel's fastest signal about which citations to verify before asserting in objections or filings.
+### 步骤1：分类
 
-### Step 1: Classify
+调查令和协查通知类型不同，规则不同；对照刚研究的规则确认具体内容：
 
-Subpoenas come in flavors with different rules; confirm the specifics against the rule you just researched:
+- **法院调查令（民事诉讼）** —— 我方并非诉讼当事人；法院或对方律师申请调取我方文件。常见异议类别：关联性、负担、保密、地域管辖。
+- **律师调查令** —— 对方律师持法院签发的调查令调取证据。审查：调查令签发是否合法、调查范围是否超出必要限度、涉及商业秘密或个人隐私的保护。
+- **行政机关协查通知** —— 市监局、税务局、证监会、银保监会等。不同机关有不同规则；姿态通常更配合但后果也更大。
+- **证人出庭通知** —— 法院通知我方员工作为证人出庭。涉及证人准备、范围、关联性。
+- **监察委/刑事侦查通知** —— 刑事程序。立即上报刑事律师；超出本技能范围——标注上报。
 
-- **Third-party document subpoena (civil)** — we're not a party to the litigation; someone wants our documents. Usual objection categories: relevance, burden, privilege, place-of-compliance / geographic reach.
-- **Third-party deposition subpoena** — someone wants an employee to testify. Scope, relevance, burden; possible motion to quash; witness prep required.
-- **Party subpoena** — we ARE a party; this is discovery in a litigation we're tracking. Treat as discovery, not inbound — it should map to an existing matter.
-- **Regulatory civil investigative demand (CID)** — FTC, SEC, DOJ, state AG. Different rules, different posture; often more deferential but also more consequential.
-- **Grand jury subpoena** — criminal. Escalate immediately to criminal counsel; different skill path (outside this skill's scope — flag for escalation).
+### 步骤2：提取关键字段
 
-### Step 2: Extract key fields
+- **签发机关** —— 哪个法院（具体名称）、哪个行政机关
+- **申请方** —— 谁申请了（如为民事诉讼）
+- **案号/案件名称** —— 涉及的是哪个案件
+- **所需文件类别** —— 编号列表
+- **出庭/询问主题**（如涉及证人）
+- **答复/异议期限** —— 送达日期 + 按适用规则计算答复窗口
+- **提供日期** —— 文件须在何时之前提供
+- **地域范围** —— 涉及的文件保管人、地点、系统
+- **联系人/回函对象** —— 公司内部谁是文件保管人/签收人
 
-- **Issuing authority** — court (which), agency (which), counsel (if civil)
-- **Issuing party** — who requested (if civil)
-- **Case / matter caption** — the litigation we're being asked about
-- **Document categories sought** — numbered list
-- **Testimony topics** (if depo) — Rule 30(b)(6) designations
-- **Deadline for response/objection** — date served + computing the response window per applicable rule
-- **Production date** — date by which documents must be produced
-- **Geographic scope** — custodians, locations, systems implicated
-- **Custodian of record designation** — who at the company is the witness/signatory
+### 步骤3：案件组合交叉检索
 
-### Step 3: Portfolio cross-check
+- **当事人调查令 → 是否关联既有案件：** 核实案号是否与 `_log.yaml` 中某案件匹配。如匹配，路由至该案件的工作流；本次分流属于信息性质。
+- **第三方调查令 → 案号我方未识别：** 记录当事人信息；作为独立收件归档。
+- **同一案件多份调查令：** 标注协同签发；可能适用统一回复策略。
 
-- **Party subpoena → related to existing matter:** verify the caption matches a matter in `_log.yaml`. If yes, route to that matter's workflow; this triage is informational.
-- **Third-party subpoena → caption we don't recognize:** capture the parties; log as standalone inbound.
-- **Multiple subpoenas from same case:** flag coordinated issuance; a single response strategy may apply.
+### 步骤4：分析范围、负担、保密
 
-### Step 4: Analyze scope, burden, privilege
+**范围/关联性**
+- 所需文件类别是否对应我方实际可能拥有的文件？
+- 是否有类别属于过度广泛、与案件争议焦点无关的"钓鱼式取证"？
+- 地域管辖——适用研究的规则；不同类型（法院调查令 vs. 律师调查令）限制不同。
 
-**Scope / relevance**
-- Do the categories map to actual documents we plausibly have?
-- Is any category a fishing expedition (overbroad, untethered to claims/defenses of the underlying case)?
-- Place of compliance / geographic reach — apply the researched rule; limits differ by subpoena type (trial vs. document vs. deposition).
+**负担**
+- 涉及的文件保管人、需要检索的系统、时间跨度
+- 预估体量（粗略：小/中/大/极大）
+- 成本——第三方回复人可能有费用分担机制。
 
-**Burden**
-- Custodians implicated, systems searched, time period
-- Estimated volume (rough: small / medium / large / extreme)
-- Cost — third-party responders may have cost-shifting available; check the researched rule.
+**保密**
+- 是否可能涉及律师-客户保密内容？（几乎所有涉及法务的事项都是；涉及内部法务或外部律师的沟通往来尤其需要关注。）
+- 是否涉及商业秘密？（《反不正当竞争法》第9条）`[法条原文]`
+- 是否涉及个人信息？（《个人信息保护法》——提供前需评估合法性基础）`[法条原文]`
 
-**Privilege**
-- Attorney-client or work product likely implicated? (Almost always yes for anything legal-related; often yes for communications involving in-house or outside counsel.)
-- Other privileges — trade secret, HIPAA (if applicable), state privilege, common interest
-- Privilege log will be required — flag the format per `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`
+**其他异议理由**
+- 保密性——是否需要保护令？
+- 重复——对方是否已从其他当事人处获得？
+- 不持有——我方没有对方要求的东西（具体说明）
+- 送达不当——是否符合适用规则的送达要求
 
-**Other objection grounds**
-- Confidentiality — protective order needed?
-- Duplicative — do they already have this from another party?
-- Not possessed — we don't have what they're asking for (document with specificity)
-- Improperly served — check the researched rule's service requirements
+### 步骤5：异议框架
 
-### Step 5: Objections framework
+起草结构化异议大纲——不是最终异议书，而是哪些异议适用及其理由的纲要。用户（通常与外聘律师一起）最终确定。
 
-Draft a structured objections outline — not the final objections letter, but the outline of what objections apply and why. The user (often with outside counsel) finalizes.
+每项异议：
+- 法律依据——引用步骤0研究的规则中的精确定位
+- 具体适用于本调查令（哪些类别、哪些文件保管人）
+- 强度（有力 / 合理 / 较弱）
 
-Each objection:
-- Legal basis — cite the pinpoint from the rule researched in Step 0
-- Specific application to this subpoena (which categories, which custodians)
-- Strength (strong / reasonable / weak)
+### 步骤6：合规方案
 
-### Step 6: Compliance plan
+即使提出异议，通常仍会提供部分要求的内容。方案：
 
-Even when objecting, we often produce some of what's requested. Plan:
+- **预计提供范围** —— 异议后仍将提供的内容
+- **需检索的文件保管人** —— 姓名和系统
+- **日期范围**
+- **审查方案** —— 谁负责保密审查（我方、外聘律师、合同审查人员）
+- **提供格式** —— 按调查令要求或协商确定的格式
+- **保密文件清单要求** —— 格式、字段
 
-- **Scope of likely production** — after objections, what we'd produce
-- **Custodians to search** — names and systems
-- **Date range**
-- **Review protocol** — who reviews for privilege (us, outside counsel, contract reviewers)
-- **Production format** — per the subpoena or per negotiated protocol (TIFF+load file, native, PDF)
-- **Privilege log requirements** — format, fields
+### 步骤7：期限
 
-### Step 7: Deadlines
+使用步骤0研究中确定的期限。注意不同程序下的异议期限计算方式不同——不要默认单一数字。
 
-Use the deadlines identified in the Step 0 research. Note that objection deadlines often run from the EARLIER of the compliance date or a fixed number of days after service — do not default to a single number without checking the applicable rule and local variant.
+- **答复期限** —— 按研究确定的规则
+- **异议期限** —— 按研究确定的规则（可能为收到后一定天数内）
+- **提供日期** —— 如异议不成立
+- **申请撤销的窗口期** —— 如走此路径，时机至关重要
 
-- **Response deadline** — per researched rule; note if user needs more time (meet-and-confer to extend is standard)
-- **Objection deadline** — per researched rule (federal / state rule + any local variant)
-- **Production date** — if no objections succeed
-- **Motion to quash window** — if pursuing that path, timing is critical
+全部列入日程。即时行动项。
 
-Calendar all of them. Immediate action item.
+### 步骤8：撰写分流意见
 
-### Step 8: Write triage
-
-Output: `~/.claude/plugins/config/claude-for-legal/litigation-legal/inbound/[slug]/triage.md`.
+输出：`~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/inbound/[slug]/triage.md`。
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果标头——根据插件配置 ## 输出——因角色不同；见 `## 使用者`]
 
-# Subpoena Triage
+# 调查令/协查通知分流
 
-> **NOT A SUBSTITUTE FOR OUTSIDE COUNSEL.** This is a structured classification and scoping read to support fast decisions on deadlines, holds, and engagement. Every rule reference is a starting-point heuristic; jurisdiction-specific analysis, objections finalization, motions practice, and merit calls on privilege require licensed counsel familiar with the forum. Engage outside counsel for any subpoena above routine third-party document scope.
+> **不替代外聘律师。** 这是支持快速决策的结构化分类和范围判断——关于期限、保全和委托。每条规则引用均为起点式启发；管辖地特定分析、异议定稿、程序动议和保密实质判断需由熟悉该管辖地的执业律师完成。对超出常规第三方文件调取范围的任何调查令，应委托外聘律师处理。
 
-**Slug:** [slug]
-**Served:** [YYYY-MM-DD]
-**Served on:** [entity / registered agent]
-**Incoming file:** [path]
-**Classification:** [third-party-docs / third-party-depo / party / CID / grand-jury]
-
----
-
-## Key fields
-
-- **Issuing authority:** [court/agency]
-- **Issuing party:** [name]
-- **Case caption:** [caption]
-- **Response deadline:** [date]
-- **Production date:** [date]
-- **Motion-to-quash window:** [date range]
-
-## Categories sought (summary)
-
-[numbered list, concise]
-
-## Custodians / systems likely implicated
-
-[list]
+**代号：** [slug]
+**送达日期：** [YYYY-MM-DD]
+**送达对象：** [实体/收件人]
+**收件文件：** [路径]
+**分类：** [法院调查令 / 律师调查令 / 行政机关协查通知 / 证人出庭通知 / 监察委/刑事侦查]
 
 ---
 
-## Portfolio cross-check
+## 关键字段
 
-**Related matter:** [slug or "none"]
-**If party subpoena:** [routed to existing matter or new matter?]
-**If third-party:** [standalone inbound]
+- **签发机关：** [法院/行政机关]
+- **申请方：** [名称]
+- **案号：** [案号]
+- **答复期限：** [日期]
+- **提供日期：** [日期]
 
----
+## 所需文件类别（摘要）
 
-## Scope & burden analysis
+[编号列表，简洁]
 
-**Scope:** [relevance assessment by category]
-**Burden estimate:** [small / medium / large / extreme — with reasoning]
-**Geographic reach issues:** [any]
+## 可能涉及的文件保管人/系统
 
-## Privilege analysis
-
-*Privilege scoping is a first-pass read; final call is counsel's, not this skill's.*
-
-**Attorney-client / work product likely implicated:** [yes/no + which categories] `[SME VERIFY]`
-**Other privileges:** [trade secret, HIPAA, state, common interest] `[SME VERIFY]`
-**Privilege log format required:** [per `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`]
+[列表]
 
 ---
 
-## Objections framework
+## 案件组合交叉检索
 
-*Every row below requires `[SME VERIFY]` before asserting in writing — jurisdiction, rule currency, waiver risk.*
+**关联案件：** [代号或"无"]
+**如为当事人调查令：** [已路由至既有案件或新案？]
+**如为第三方：** [独立归档]
 
-| Objection | Legal basis | Applies to | Strength | SME verified? |
+---
+
+## 范围与负担分析
+
+**范围：** [按类别的关联性评估]
+**负担预估：** [小 / 中 / 大 / 极大 —— 附理由]
+**地域管辖问题：** [如有]
+
+## 保密分析
+
+*保密审查为初步判断；最终决定属于律师，不属于本技能。*
+
+**律师-客户保密内容是否可能涉及：** [是/否 + 哪些类别] `[需审查]`
+**商业秘密：** [是否涉及] `[需审查]`
+**个人信息：** [是否涉及——需评估《个人信息保护法》合法性基础] `[需审查]`
+
+---
+
+## 异议框架
+
+*以下每行在书面提出前均需 `[需审查]` ——管辖地、规则时效、弃权风险。*
+
+| 异议 | 法律依据 | 适用于 | 强度 | 已审查？ |
 |---|---|---|---|---|
-| Relevance | [rule] | [categories] | [strong/reasonable/weak] | [ ] |
-| Burden | [rule] | [categories] | | [ ] |
-| Privilege | A/C, WP | [all producing docs] | strong (always) | [ ] |
-| Duplicative | [rule/doctrine] | [if applicable] | | [ ] |
-| [other] | | | | [ ] |
+| 关联性 | [规则] | [类别] | [有力/合理/较弱] | [ ] |
+| 负担 | [规则] | [类别] | | [ ] |
+| 保密 | 律师法第38条/商业秘密 | [保密文件] | 有力（始终） | [ ] |
+| 重复 | [规则/法理] | [如适用] | | [ ] |
+| [其他] | | | | [ ] |
 
 ---
 
-## Compliance plan (if responding)
+## 合规方案（如需提供）
 
-- **Scope of likely production:** [after objections]
-- **Custodians / systems:** [list]
-- **Date range:** [range]
-- **Review protocol:** [who, how]
-- **Production format:** [format]
-- **Privilege log:** [format, est. entries]
-
----
-
-## Deadlines (calendar these)
-
-*All deadlines below come from the Step 0 rule research. `[SME VERIFY]` confirms the rule, variant, and computation for this forum and this subpoena type — state variants and local rules differ.*
-
-- **Response deadline:** [date] `[SME VERIFY]`
-- **Objection deadline:** [date] — cite: [rule + pinpoint] `[SME VERIFY]`
-- **Meet-and-confer by:** [date] (typically before objection deadline) `[SME VERIFY]`
-- **Production date:** [date]
+- **预计提供范围：** [异议后]
+- **文件保管人/系统：** [列表]
+- **日期范围：** [范围]
+- **审查方案：** [谁、如何]
+- **提供格式：** [格式]
+- **保密文件清单：** [格式、预估条目]
 
 ---
 
-## Immediate actions
+## 期限（列入日程）
 
-- [ ] Legal hold issued — [yes/no] — if no, run `/legal-hold [slug] --issue` with subpoena scope
-- [ ] Outside counsel engaged — [yes/who/TBD]
-- [ ] Meet-and-confer scheduled — [date]
-- [ ] Matter created in log — [yes/no/TBD — usually yes for anything above the smallest third-party docs subpoena]
-- [ ] Insurance / cost-shifting analysis — [if burden is large]
-- [ ] Internal escalation — [who]
+*以下所有期限来自步骤0的规则研究。`[需审查]` 确认规则、变体和适用于本调查令类型及管辖地的计算方式——各省/直辖市差异较大。*
 
----
-
-## Recommendation
-
-[Two paragraphs: what to do. Objection posture. Production posture. Whether outside counsel handles objections or we do. Whether to move to quash.]
+- **答复期限：** [日期] `[需审查]`
+- **异议期限：** [日期] —— 引用：[规则+精确定位] `[需审查]`
+- **协商延期：** [日期]（通常在异议期限前） `[需审查]`
+- **提供日期：** [日期]
 
 ---
 
-## Citation verification
+## 即时行动
 
-Every rule reference, case, statute, and regulation in this triage — including the Step 0 research citations, objection bases, and the privilege-log format pointer — is AI-generated and unverified. Before relying on any cite (especially in objections, a motion to quash, or correspondence with the issuing party), run a verification pass against a legal research tool (Westlaw, CourtListener, Trellis, Descrybe, or your firm's platform) for accuracy, good law status, and local variants. Fabricated or misquoted citations in filed documents have resulted in sanctions. Source tags on each citation (e.g., `[Westlaw]`, `[web search — verify]`) show where it came from; `verify` tags carry higher fabrication risk and should be checked first.
+- [ ] 证据保全通知是否已发出——[是/否]——如否，运行 `/legal-hold [slug] --issue`，范围按调查令确定
+- [ ] 外聘律师是否已委托——[是/谁是/待定]
+- [ ] 协商延期是否已安排——[日期]
+- [ ] 案件是否已在日志中创建——[是/否/待定——通常在法院调查令或重大协查通知时创建]
+- [ ] 内部上报——[谁]
 ```
 
-### Step 9: Hand off
+### 步骤9：转交
 
-**Before responding to the subpoena (serving objections, producing documents, appearing for deposition, or filing a motion to quash — any substantive response to the issuing party or court):** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`. If the Role is Non-lawyer:
+**在答复调查令/协查通知（提出异议、提供文件、出庭作证或申请撤销——向签发机关或法院的任何实质性回应）之前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 中的 `## 使用者`。如果角色是**非律师**：
 
-> Responding to a subpoena has legal consequences — missing a deadline risks contempt, over-producing waives privilege, under-producing risks sanctions. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> 答复调查令/协查通知具有法律后果——错过期限面临拒不配合风险，过度提供放弃保密保护，提供不足面临处罚风险。您是否已与律师审查过此事？如已审查，继续。如未审查，以下是带去给律师的简要材料：
 >
-> [Generate a 1-page summary: the subpoena type, issuing authority, deadlines, scope of what's sought, objections framework and strength, privilege and burden issues, proposed response posture, what could go wrong, what to ask the attorney.]
+> [生成一页摘要：调查令/通知类型、签发机关、期限、所需文件范围、异议框架及强度、保密和负担问题、拟议回复姿态、可能出错的事项、需要问律师的问题。]
 >
-> If you need to find a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction: your professional regulator's referral service is the fastest starting point (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent).
+> 如果您需要寻找律师：请联系当地律师协会或拨打 12348 法律援助热线获取推荐。
 
-Do not proceed past this gate without an explicit yes. Triage, scoping, and internal calendaring do not require the gate — the response to the issuing authority does.
+未收到明确确认之前，不越此门槛。分流、范围判断和内部日程安排不需要此门槛——向签发机关的答复需要。
 
-- If classified as **grand jury subpoena** → stop, flag for escalation per `~/.claude/plugins/config/claude-for-legal/litigation-legal/CLAUDE.md`, do not proceed with standard triage.
-- If classified as **CID**: flag that regulator-specific norms apply; recommend outside regulatory counsel.
-- Otherwise: offer to create a matter (usually yes — subpoenas are almost always material enough to track).
-- If a legal hold isn't issued with subpoena scope, hand off to `/legal-hold --issue` immediately.
+- 如分类为**监察委/刑事侦查** → 停止，按 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` 标注上报，不进行标准分流。
+- 如分类为**行政机关协查通知**：标注适用特定监管机构惯例；建议委托熟悉该监管领域的外部律师。
+- 其他情况：提供创建案件（通常建议创建——调查令往往重要到值得追踪）。
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出` 中的下一步决策树收尾。根据本技能刚产生的内容自定义选项——五个默认分支（起草X、上报、获取更多事实、观察等待、其他选择）是起点而非锁定项。决策树本身就是输出；由律师选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- **Draft the final objections letter.** Produces the framework; the letter is drafted by user + outside counsel (future: a dedicated objections-draft skill).
-- **Move to quash.** Surfaces the option; the motion is legal work that requires jurisdiction-specific analysis.
-- **Validate rules across jurisdictions.** The Step 0 research produces the operative rule for this subpoena; the skill doesn't independently confirm currency or local variants. Flag for counsel verification before acting.
-- **Handle grand jury subpoenas.** Escalates. This is outside the triage scope.
+- **起草最终异议书。** 生成框架；异议书由用户 + 外聘律师起草。
+- **申请撤销调查令。** 呈现选项；撤销申请是需要管辖地特定分析的诉讼法律工作。
+- **自行验证跨管辖地的规则。** 步骤0研究生成适用规则；本技能不独立确认时效或地方变体。标注供律师核实后方可行动。
+- **处理刑事程序调查。** 上报。超出本分流范围。

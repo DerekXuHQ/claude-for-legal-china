@@ -1,220 +1,220 @@
 ---
 name: marketing-claims-review
 description: >
-  Review marketing copy for claims that need substantiation, reframing, or cutting.
-  Use when the user says "review this marketing copy", "check these claims",
-  "can we say this", "is this puffery or a problem", or pastes marketing content
-  (landing pages, emails, ads, taglines).
-argument-hint: "[paste copy, or file path]"
+  审查营销文案中的宣传主张，识别哪些需要证实、改写或删除。
+  当用户说"审查这份营销文案""检查这些宣传""我们能这么说吗"
+  "这是夸大还是有问题"或粘贴了营销内容（落地页、邮件、广告、标语）时使用。
+argument-hint: "[粘贴文案，或文件路径]"
 ---
 
 # /marketing-claims-review
 
-1. Load `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → Marketing claims standards.
-2. Apply the claim taxonomy and review workflow below.
-3. Extract every claim. Classify: puffery / factual / comparative / implied / absolute.
-4. For each non-puffery claim: substantiation check, suggested fix.
-5. Output: claim-by-claim with calls, suggested revision if short enough.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → 营销宣传标准。
+2. 应用下述宣传分类法和审查工作流。
+3. 提取每一条宣传主张。分类：夸大/事实性/比较性/暗示性/绝对性。
+4. 对每条非夸大宣传：证实性检查、建议修改。
+5. 输出：逐条分析附判断，如果足够短附建议修改文本。
 
 ```
 /product-legal:marketing-claims-review
-[paste landing page copy]
+[粘贴落地页文案]
 ```
 
 ---
 
-## Matter context
+## 事项上下文
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/product-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal/product-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+**事项上下文。** 检查实务级 CLAUDE.md 中的 `## 事项工作空间`。如果 `Enabled` 为 `✗`（企业法务用户的默认值），跳过本段其余内容——技能使用实务级上下文，事项机制不可见。如果已启用且无活跃事项，询问："这是哪个事项？运行 `/product-legal:matter-workspace switch <事项简称>` 或说 `实务级`。"加载活跃事项的 `matter.md` 获取事项特定上下文和覆盖规则。输出写入事项文件夹 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/matters/<事项简称>/`。除非 `跨事项上下文` 为 `开`，否则绝不读取其他事项的文件。
 
 ---
 
-## Purpose
+## 目的
 
-Marketing wants to say the product is the best. Legal needs it to be true, or at least not provably false. This skill finds the claims that will get a demand letter from a competitor or an inquiry from a regulator, and suggests how to keep the energy while fixing the exposure.
+市场部想说产品是最好的。法务部需要它说真话，或者至少不是可被证明的假话。本技能找出那些会招来竞争对手律师函或监管机构调查函的宣传主张，并建议在保留力度同时修复曝光的方式。
 
-## Load standards
+## 加载标准
 
-Read `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` → `## Marketing claims`:
-- Comparative claims policy (allowed with substantiation / discouraged / never)
-- Substantiation standard (what's required before a claim ships)
-- Common rejected claims (learn from history)
+读取 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` → `## 营销宣传`：
+- 比较性宣传政策（允许附证实/不鼓励/绝不）
+- 证实标准（宣传发布前需要什么）
+- 常见被驳回的宣传主张（从历史中学习）
 
-## Research the applicable standards before clearing copy
+## 在通过文案前检索适用标准
 
-Research the currently operative advertising and substantiation standards for the applicable jurisdictions and media (for example, FTC, NAD, state UDAP regimes, sector regulators for healthcare / financial / children's products, and platform-specific policies). Identify what substantiation the *specific claim* requires — who measured it, when, sample size, apples-to-apples basis — not just whether *some* substantiation exists on file. Flag implied claims and comparative claims for heightened scrutiny. Verify currency: endorsement and review guides have been updated recently and continue to evolve. Cite primary sources with pinpoint references. If you cannot verify the current standard, flag for attorney verification — do not state a rule you haven't confirmed.
+检索适用法域和媒介（例如《广告法》、《反不正当竞争法》、地方消费者保护制度、行业监管机构规则以及平台特定政策）的现行广告和证实标准。识别*具体宣传主张*需要的证实——由谁测量、何时、样本量、可比基础——不仅仅是文件上是否有*某种*证实。标记暗示性宣传和比较性宣传需要加强审查。核实时效性：广告执法指南和审查指引会更新，且继续演变。以精准定位引用原始来源。如果无法确认现行标准，标记供律师核实——不要陈述您未确认的规则。
 
-> **Only cite the standards that apply to the specific claims under review.** A blanket list of every FTC guideline, NAD practice note, or sector rule makes the load-bearing ones invisible. Do not cite the Endorsement Guides (16 CFR Part 255) unless the copy contains an endorsement, testimonial, or influencer content. Do not cite disclosure-overlay rules unless a claim in the asset triggers the overlay. Do not cite a sector regulator unless the copy targets or implicates that sector. A standard earns its place in the output by mapping to a specific quoted claim; otherwise drop it.
+> **仅引用适用于所审查具体宣传的标准。** 一份涵盖每条市场监管总局指引、行业规则或执法案例的笼统清单会使承重的标准变得不可见。除非文案包含推荐、证言或网红内容，否则不要引用推荐/证言相关规则。除非素材中的某一宣传触发了覆盖披露规则，否则不要引用披露覆盖规则。除非文案针对或涉及某一行业，否则不要引用行业监管机构。一个标准之所以能出现在输出中，是因为它映射到一条被引用的具体宣传主张；否则删掉。
 
-> **No silent supplement.** If a research query to the configured legal research tool returns few or no results for the applicable standard (FTC rule, NAD decision, state UDAP, sector rule, platform policy), report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The search returned [N] results from [tool]. Coverage appears thin for [standard / jurisdiction]. Options: (1) broaden the search query, (2) try a different research tool, (3) search the web — results will be tagged `[web search — verify]` and should be checked against the issuing authority before relying, or (4) flag as unverified and stop. Which would you like?" A lawyer decides whether to accept lower-confidence sources.
+> **禁止静默补充。** 如果对已配置的法律研究工具的检索查询返回的结果很少或无结果（市场监管总局规则、广告违法案例、地方消费者保护法规、行业规则、平台政策），报告检索到的情况并停止。不要未经询问从联网搜索或模型知识中填补。说："[工具]搜索返回[N]条结果。关于[标准/法域]的覆盖似乎有限。选项：(1) 扩大检索查询，(2) 尝试不同的研究工具，(3) 搜索网络——结果将标记 `[联网检索 — 需复核]`，依赖前应比照发布机关核实，或 (4) 标记为未核实并停止。您选哪个？"由律师决定是否接受较低置信度的来源。
 >
-> **Source attribution tiering.** Tag every citation with its source. For model-knowledge citations, use one of three tiers rather than a single blanket "verify" tag:
+> **来源归属分层。** 将每个引用标记其来源。对于模型知识引用，使用三个层级而非单一笼统的"需验证"标签：
 >
-> - `[settled]` — stable, well-known statutory and regulatory references unlikely to have changed (e.g., FTC Act § 5, Lanham Act § 43(a) as a concept). Still verify before approving copy, but lower priority.
-> - `[verify]` — model-knowledge citations that are real but should be verified: specific FTC enforcement actions, NAD decisions, state UDAP statutes, sector-specific rules, platform policies, case holdings, thresholds, effective dates, recent updates (the Endorsement Guides and disclosure rules update frequently).
-> - `[verify-pinpoint]` — pinpoint citations (specific subsection letters, CFR subpart references, case paragraph numbers) carry the highest fabrication risk and should ALWAYS be verified against a primary source.
+> - `[已确认]` —— 稳定、众所周知的法条和法规引用，不太可能已变化（如《广告法》第9条禁用词、第28条虚假广告、《反不正当竞争法》第8条作为概念）。通过在通过文案前仍需核实，但优先级较低。
+> - `[需验证]` —— 模型知识引用是真实的但应被核实：具体的市场监管总局执法行动、广告违法案例、地方消费者保护法规、行业特定规则、平台政策、案件判决、阈值、生效日期、近期更新（广告执法指南和推荐/证言披露规则频繁更新）。
+> - `[需精准核实]` —— 精准引用（具体条款项、司法解释编号、案件案号）具有最高的编造风险，应始终对照原始来源核实。
 >
-> Tool-retrieved citations keep their source tag (`[Westlaw]`, `[CourtListener]`, `[FTC site]`, `[NAD]`, `[platform policy]`, or the MCP tool name); web-search citations remain `[web search — verify]`; user-supplied citations (from substantiation files) remain `[user provided]`. The tiering surfaces the real verification work — a reader who verifies everything verifies nothing. Never strip or collapse the tags.
+> 工具获取的引用保留其来源标签（`[北大法宝]`、`[威科先行]`、`[市场监管总局网站]`、`[平台政策]`或MCP工具名称）；联网搜索引用保留 `[联网检索 — 需复核]`；用户提供的引用（来自证实文件）保留 `[用户提供]`。分层使真实的核实工作凸显——一个什么都核实的人等于什么都没核实。绝不剥离或折叠标签。
 
-## Claim taxonomy
+## 宣传分类法
 
-The categories below are structural patterns the reviewer should be able to recognize. Whether a given phrase is actionable depends on the currently operative rule in the applicable jurisdiction, the specific substantiation available, and the audience — research that before concluding.
+以下类别是审查者应能识别的结构模式。某一具体措辞是否可操作取决于适用法域的现行规则、可用的具体证实以及受众——在得出结论前检索核实。
 
-### Vague / subjective claims
+### 模糊/主观宣传
 
-Subjective assertions with no measurable content. Whether they are actionable depends on jurisdiction, context, and audience — research before concluding.
+无可衡量内容的主观断言。是否可操作取决于法域、语境和受众——在得出结论前检索。
 
-| Example |
+| 示例 |
 |---|
-| "The best way to manage your projects" |
-| "You'll love it" |
-| "Revolutionary" |
+| "管理项目的最佳方式" |
+| "您会爱上它" |
+| "革命性" |
 
-### Specific factual claims
+### 具体事实性宣传
 
-Measurable, specific, a reasonable person might rely on it.
+可衡量、具体，一个理性人可能依赖。
 
-| Example | Substantiation to look for |
+| 示例 | 需寻找的证实 |
 |---|---|
-| "50% faster than [competitor]" | Benchmark data, disclosed methodology, date |
-| "Trusted by 10,000 companies" | Actual count (not cumulative signups — *currently* trusted) |
-| "Saves 5 hours per week" | Study or customer data, disclosed sample |
-| "Enterprise-grade security" | What does that mean? SOC 2? Spell it out or it's a promise |
-| "HIPAA compliant" | BAA available, actually configured for it — this is a contractual promise |
+| "比[竞争对手]快50%" | 基准数据、披露方法、日期 |
+| "10,000家企业信赖" | 实际数量（非累计注册——*当前*信赖） |
+| "每周节省5小时" | 研究或客户数据，披露样本 |
+| "企业级安全" | 这意味着什么？等保级别？说清楚，否则就是一个承诺 |
+| "个人信息保护合规" | 已完成个人信息保护影响评估，实际配置——这是一个合同性承诺 |
 
-### Comparative claims (heightened scrutiny)
+### 比较性宣传（加强审查）
 
-Naming a competitor or implying one. Research the applicable rules for comparative advertising in the relevant jurisdictions and media before clearing.
+点名竞争对手或暗示竞争对手。在通过前检索适用法域和媒介对比较广告的适用规则。
 
-| Example | Fix pattern |
+| 示例 | 修改模式 |
 |---|---|
-| "Faster than Slack" | Either name Slack with head-to-head data you can defend, or abstract to "faster than legacy chat tools" with substantiation |
-| "The only platform that does X" | False if anyone else does X — "The first platform to..." (if true) or drop "only" |
-| "[Competitor] can't do this" | Show your feature. Let the viewer compare. |
+| "比钉钉快" | 要么点名钉钉并附可辩护的头对头数据，要么抽象为"比传统聊天工具更快"并附证实 |
+| "唯一能做X的平台" | 如果任何人也能做X则为虚假——"第一个做X的平台……"（如果真实）或删除"唯一" |
+| "[竞争对手]做不到这个" | 展示您的功能。让观众比较。 |
 
-Per `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` — if comparative claims are "never," flag all of them. If "allowed with substantiation," check for the substantiation.
+根据 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md`——如果比较性宣传为"绝不"，标记全部。如果"允许附证实"，检查证实。
 
-### Implied claims
+### 暗示性宣传
 
-Not stated outright but a reasonable reader infers it. Research the treatment of implied claims under the applicable advertising regime — implied claims often carry the same substantiation burden as express ones.
+未明确陈述但理性读者会推断。检索适用广告制度对暗示性宣传的处理——暗示性宣传通常承担与明示宣传相同的证实负担。
 
-| Example | Implication | Fix |
+| 示例 | 暗示 | 修改 |
 |---|---|---|
-| "Finally, a secure alternative" | Competitors are insecure | "Finally, security you can verify" |
-| Customer logos without context | These companies endorse us | "Customers include..." is fine; "Trusted by..." implies more |
-| "Built for healthcare" | HIPAA compliant | Clarify or qualify |
+| "终于，一个安全的替代方案" | 竞争对手不安全 | "终于，安全可验证" |
+| 无上下文的客户logo | 这些公司为我们背书 | "客户包括……"没问题；"受到……信赖"暗示更多 |
+| "面向医疗行业打造" | 符合个人信息保护相关要求 | 澄清或限定 |
+| "银行级安全" | 获得金融监管机构认可 | 要么获得认证，要么删除 |
 
-### Absolute claims
+### 绝对性宣传
 
-No room for error. One counter-example makes them false. Research whether qualifications cure the issue in the applicable jurisdiction.
+不允许任何差错。一个反例就能使它们虚假。检索在适用法域下限定表述是否能弥补问题。
 
-| Example | Fix pattern |
+| 示例 | 修改模式 |
 |---|---|
-| "Never goes down" | "99.9% uptime" (with SLA that defines it) |
-| "100% accurate" | A specific, substantiated percentage tied to a benchmark |
-| "Guaranteed" | Only if you actually offer a guarantee with terms — this creates warranty exposure |
-| "Always" / "Every" | "Typically" / "Most" |
+| "永不宕机" | "99.9%正常运行时间"（附定义该指标的SLA） |
+| "100%准确" | 一个具体的、附证实的百分比，绑定到一项基准 |
+| "保证" | 仅当您确实提供附条款的保证——这会创设担保责任 |
+| "始终"/"每个" | "通常"/"大部分" |
 
-## The review
+## 审查
 
-### Step 1: Extract every claim
+### 第1步：提取每一条宣传
 
-Read the copy. List every sentence or phrase that asserts a fact, makes a comparison, or promises something. Ignore pure puffery in the list.
+阅读文案。列出每一句或每一个陈述事实、作出比较或作出承诺的短语。忽略清单中的纯粹夸大。
 
-### Step 2: Classify and check
+### 第2步：分类并检查
 
-For each claim:
+对每条宣传：
 
 ```markdown
-**Claim:** "[exact quote]"
-**Type:** [Specific factual | Comparative | Implied | Absolute]
-**Substantiation on file:** [Yes — link | No | Unknown]
-**Call:** [✅ Fine | ⚠️ Needs substantiation | ⚠️ Needs rewording | 🔴 Cut]
-**Suggested fix:** "[alternative phrasing that keeps the energy]"
-**Why:** [one line]
+**宣传：**"[精确引用]"
+**类型：**[具体事实性 | 比较性 | 暗示性 | 绝对性]
+**文件上的证实：**[是 — 链接 | 否 | 未知]
+**判断：**[✅ 没问题 | ⚠️ 需要证实 | ⚠️ 需要改写 | 🔴 删除]
+**建议修改：**"[在保持力度的同时替代措辞]"
+**理由：**[一句话]
 ```
 
-### Step 3: Check against the product
+### 第3步：对照产品检验
 
-Does the product actually do what the copy says? Not a philosophical question — check the PRD or ask the PM.
+产品真的能做到文案所说的吗？不是哲学问题——检查PRD或询问产品经理。
 
-Common drift: marketing copy written from an early spec, product changed, nobody updated the copy.
+常见偏差：营销文案基于早期规格编写，产品已变更，没人更新文案。
 
-### Step 4: Output
+### 第4步：输出
 
-Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md` `## Outputs` (it differs by user role — see `## Who's using this`).
+冠以 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` `## 输出规范` 中的工作成果页眉（因用户角色而异——参见 `## 使用者`）。
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
+[工作成果页眉 — 按插件配置 ## 输出规范]
 
-# Marketing Review: [Campaign/Asset name]
+# 营销审查：[活动/素材名称]
 
-**Reviewed:** [date]
-**Asset:** [landing page / email / ad / etc.]
+**审查日期：**[日期]
+**素材：**[落地页/邮件/广告/等]
 
 ---
 
-## Summary
+## 摘要
 
-[N] claims reviewed. [N]✅ [N]⚠️ [N]🔴
+[N]条宣传已审查。[N]✅ [N]⚠️ [N]🔴
 
-**Ready to ship:** [Yes | With changes below | No — rewrite needed]
+**可发布：**[是 | 经以下修改后 | 否——需重写]
 
-> **Before emitting "Ready to ship: Yes" (i.e., approving a claim for external use / publication):** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal/product-legal/CLAUDE.md`. If the Role is Non-lawyer:
+> **在对"可发布：是"（即批准某宣传用于外部发布）输出前：** 读取 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` 中的 `## 使用者`。如果角色为非法务人员：
 >
-> > Approving a marketing claim for publication is a legal act — once published, substantiation gaps and comparative-claim exposure become enforcement or competitor-challenge risk. Have you reviewed this with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> > 批准一项营销宣传对外发布是一项法律行为——一旦发布，证实缺口和比较性宣传曝光即成为执法或竞争对手挑战风险。您是否已与律师审查？如已审查，继续。如未审查，以下是带给律师的简要说明：
 > >
-> > [Generate a 1-page summary: asset, claims approved, claim types (specific factual / comparative / implied / absolute), substantiation on file for each, any implied claims flagged, and the three things to ask the attorney before the copy goes live.]
+> > [生成1页摘要：素材、已批准宣传、宣传类型（具体事实性/比较性/暗示性/绝对性）、每条的文件证实、任何标记的暗示性宣传，以及文案上线前向律师提出的三个问题。]
 > >
-> > If you need to find a lawyer: your professional regulator's referral service is the fastest starting point (state bar in the US; SRA/Bar Standards Board in England & Wales; Law Society in Scotland/NI/Ireland/Canada/Australia; or your jurisdiction's equivalent).
+> > 如需要寻找律师：中华全国律师协会或所在地地方律师协会的推荐服务是最快的起点。
 >
-> Do not proceed past this gate to "Ready to ship: Yes" without an explicit yes. "With changes below" and "No — rewrite needed" do not require the gate — those are review calls, not approvals.
+> 在未获得明确同意前，不越过此准入口输出"可发布：是"。"经以下修改后"和"否——需重写"不需要准入——这些是审查判断，不是批准。
 
 ---
 
-## Claim-by-claim
+## 逐条分析
 
-[All the claim blocks from Step 2, grouped: 🔴 first, then ⚠️, then ✅]
-
----
-
-## Suggested revision
-
-[For short assets — under 50 words, or a tweet, headline, one-liner, tagline, short ad — the output in this block is the actual revised copy with the fixes applied inline, not a description of what changed. The reader should be able to copy-paste this block into the asset.
-For longer assets (>50 words but <300 words), show the revised copy with fixes applied inline.
-For longer assets (300+ words), summarize the changes as a bulleted diff ("Strip Claim 1. Rewrite Claim 3 to drop 'any.' Soften Claim 4 for regulated-domain risk.") rather than pasting the whole asset.
-A meta-description of changes is never an acceptable output for a short asset — when the asset is one line, the output should BE the revised one line.]
+[所有第2步的宣传块，按以下分组：🔴 在最前，然后是 ⚠️，然后是 ✅]
 
 ---
 
-## Substantiation needed before ship
+## 建议修改稿
 
-| Claim | Need | From whom |
+[对于短素材——50字以内，或一条推文、标题、一句话、标语、短广告——本节输出为实际修改后的文案，修改已内联应用，而非描述改了什么。读者应能复制粘贴本节到素材中。
+对于较长素材（>50字但<300字），展示修改后的文案，修改已内联应用。
+对于更长素材（300字以上），以分项差异摘要方式总结修改（"删除宣传1。将宣传3改写为删除'任何'。为受监管领域风险将宣传4弱化。"），而非粘贴整个素材。
+对短素材，修改的元描述永远不是可接受的输出——当素材是一行时，输出应就是修改后的一行。]
+
+---
+
+## 发布前需要的证实
+
+| 宣传 | 需要 | 从谁 |
 |---|---|---|
-| [claim] | [data type] | [PM / data team / eng] |
+| [宣传] | [数据类型] | [产品经理/数据团队/开发] |
 
 ---
 
-## Citation check
+## 引用检查
 
-Any FTC rules, NAD decisions, state UDAP statutes, sector regulations, or platform policies cited in this review were generated by an AI model and have not been verified against a primary source. Before relying on a specific rule to clear or reject copy, verify it against a legal research tool (Westlaw, CourtListener, or your firm's research platform) for accuracy and current effective date — endorsement guides, platform rules, and state UDAP regimes all update frequently. Source tags on each citation (e.g., `[FTC site]`, `[web search — verify]`) show where it came from; `verify` tags carry higher fabrication risk and should be checked first.
+本审查中引用的任何市场监管总局规则、广告违法案例、地方消费者保护法规、行业法规或平台政策均由AI模型生成且未经原始来源验证。在依赖特定规则来通过或拒绝文案之前，对照法律研究工具（北大法宝、威科先行、法信或您的律所研究平台）核实其准确性和当前生效日期——广告执法指南、平台规则和地方消费者保护制度均频繁更新。每条引用上的来源标签（如 `[市场监管总局网站]`、`[联网检索 — 需复核]`）显示其来源；`需验证` 标签具有较高的编造风险，应首先检查。
 ```
 
-## Disclosure overlays
+## 披露覆盖
 
-Copy that involves any of the fact patterns below sits inside an additional disclosure regime. Research the currently operative disclosure requirements in the applicable jurisdictions (including any platform policies and sector-specific rules) and verify currency — these regimes are updated frequently.
+涉及以下任何事实模式的文案处于额外披露制度之下。检索适用法域（包括任何平台政策和行业特定规则）的现行披露要求并核实时效性——这些制度频繁更新。
 
-- **Testimonials / reviews** — material connections between the speaker and the advertiser are typically disclosable; research the current form and placement rules
-- **Influencer content** — research the current tagging, clarity, and conspicuousness requirements for the channel and audience
-- **"Results may vary" / atypical results** — research whether a disclosure (and what form) is required when shown results aren't representative
-- **Free trial / auto-renewal / negative option** — research the current conspicuousness and consent requirements for auto-conversion terms
+- **推荐/评价**——发言者与广告主之间的实质性联系通常需要披露；检索当前的形式和位置规则
+- **网红内容**——检索针对该渠道和受众的当前标签、清晰度和显著性要求
+- **"效果因人而异"/非典型效果**——当展示效果不具有代表性时，检索是否需要披露（及何种形式）
+- **免费试用/自动续费/消极选择**——检索对自动转化条款的当前显著性和同意要求。在中国法下，关注《消费者权益保护法》及《电子商务法》对自动续费的要求
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+以 CLAUDE.md `## 输出规范` 中的下一步决策树收尾。将选项定制为本技能刚刚产出的内容——五个默认分支（起草X、上报、补充事实、监控等待、其他）是起点，不是锁死。决策树是输出；律师做选择。
 
-## What this skill does not do
+## 本技能不做什么
 
-- It doesn't write the marketing. It fixes what's wrong with it. The suggested rewrites keep the energy, but the marketer owns the voice.
-- It doesn't substantiate claims. It identifies which ones need it and who has the data.
-- It doesn't review design or imagery — words only. If an image implies a claim (competitor logo with a red X through it), flag it, but visual review is a human judgment.
+- 它不撰写营销文案。它修复文案中错误的部分。建议的修改保持力度，但市场人员拥有语感。
+- 它不证实宣传。它识别哪些需要证实以及谁有数据。
+- 它不审查设计或图像——仅审查文字。如果图像暗示某一宣传（竞争对手logo上打红色叉），标记，但视觉审查是人工判断。

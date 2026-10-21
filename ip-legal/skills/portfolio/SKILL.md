@@ -1,56 +1,45 @@
 ---
 name: portfolio
 description: >
-  Track the IP portfolio — registrations, renewals, maintenance fees, and use
-  declarations. Use when checking what's renewing, adding or updating an
-  asset, recording a maintenance filing, or auditing the register for gaps,
-  lapses, and use-in-commerce questions. Receives handoffs from prosecution
-  and clearance work.
+  追踪知识产权组合——注册、续展、维持费和商标使用声明。
+  用于检查到期续展事项、添加或更新资产、记录维持费缴纳，
+  或审计登记簿中的空白、失效及商业使用问题。
 argument-hint: "[--report [--days N] | --add | --update | --audit]"
 ---
 
 # /portfolio
 
-Surfaces what's renewing, adds assets, records filings, and audits the register.
+显示到期续展事项、添加资产、记录缴费、审计登记簿。
 
-## Instructions
+## 使用说明
 
-1. **Follow the workflow below** and read
-   `~/.claude/plugins/config/claude-for-legal/ip-legal/portfolio.yaml`.
+1. **按以下工作流执行** 并读取
+   `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/portfolio.yaml`。
 
-2. **Default (no args):** equivalent to `--report` — show deadlines in the
-   next 90 days grouped by urgency (🔴 lapsed/grace, ⏰ due within window,
-   🟡 upcoming, 🌐 agent-managed, ❓ unknown).
+2. **默认（无参数）：** 相当于 `--report` — 显示未来90天内到期事项，
+   按紧迫性分组（🔴 已失效/宽限期、⏰ 窗口内到期、
+   🟡 即将到期、🌐 代理管理、❓ 未知）。
 
-3. **`--report [--days N]`:** Mode 2. Change the window with `--days`
-   (30 / 60 / 90 / 180 typical). Always prepend the work-product header
-   per CLAUDE.md → Outputs. Always close with the verification caveat.
+3. **`--report [--days N]`：** 模式2。使用 `--days`（30/60/90/180）更改窗口。
+   始终在输出前附加工作成果页眉并按 CLAUDE.md → 输出 的规定以备查证提示收尾。
 
-4. **`--add`:** Mode 3. Walk through a new asset interactively — type,
-   jurisdiction, number, dates, owner, business owner. Capture a custom
-   rule if the jurisdiction isn't built in.
+4. **`--add`：** 模式3。交互式添加新资产 — 类型、管辖、编号、日期、权利人、业务负责人。如管辖不在内置规则中，记录自定义规则。
 
-5. **`--update`:** Mode 4. Record that a maintenance filing or fee payment
-   was made, sync with the IP management system, or change an asset's
-   status. Enforce the consequential-action gate before setting any
-   deadline to `filed`.
+5. **`--update`：** 模式4。记录维持费缴纳或年费支付已完成、与知识产权管理系统同步或更改资产状态。在将任何到期日设置为 `已缴纳` 前执行相应行动门槛。
 
-6. **`--audit`:** Mode 5. Broader health check — deadline hygiene,
-   registration gaps, use-in-commerce questions on §8-approaching marks,
-   owner inconsistencies, expiration horizon, unwatched marks.
+6. **`--audit`：** 模式5。更广泛的健康检查 — 到期日卫生、
+   注册空白、即将满足商标法第49条商标使用要求的商标的商业使用问题、
+   权利人不一致、到期展望、未被监视的商标。
 
-7. **If the register is empty and an IP management system is connected:**
-   Offer Mode 1 — pull the portfolio from the system of record and
-   initialise the register.
+7. **如登记簿为空且知识产权管理系统已连接：**
+   选择模式1 — 从系统记录中拉取组合并初始化登记簿。
 
-8. **Guardrail reminder:** Computed deadlines are reference only. Every
-   output closes with a line directing verification against the USPTO
-   TSDR, WIPO, or relevant registry before filing or paying. A
-   docketed-but-wrong deadline creates false confidence; do not let the
-   user treat this as the system of record unless the IP management
-   system is sync-integrated.
+8. **安全护栏提醒：** 计算的到期日仅供参考。每次输出均以一行提示收尾，
+   要求在提交或缴费前与国家知识产权局商标查询系统、中国专利公布公告系统、
+   WIPO或相关注册机构核实。记录但错误的到期日产生虚假信心；
+   除非知识产权管理系统已同步集成，不得让用户将此视为系统记录。
 
-## Examples
+## 示例
 
 ```
 /ip-legal:portfolio
@@ -74,466 +63,349 @@ Surfaces what's renewing, adds assets, records filings, and audits the register.
 
 ---
 
-## Works better connected
+## 目的
 
-This skill tracks deadlines from what you tell it. It works much better
-connected to:
+未按时续展的商标注册可能被注销。未缴纳年费的专利失效。到期的域名可能在一小时内被抢注。所有这些均可避免，且一切都取决于一件事：正确的到期日在某人的日历上，关联正确的注册号，在正确的管辖地。
 
-- **An IP management system (IPMS) via MCP** — Anaqua, Clarivate IPfolio,
-  AppColl, Patrix, Alt Legal, FoundationIP. A connected IPMS gives you the
-  full docket, maintenance fee schedules, and incoming correspondence in one
-  place, instead of the register being whatever the lawyer remembers to
-  paste. Ask your IPMS vendor if they have an MCP connector, or see
-  `CONNECTORS.md` at the repo root for how to get one added.
-- **USPTO directly via customer number** — pulls status, deadlines, and
-  correspondence for your whole portfolio rather than one application at a
-  time. Not currently available as an MCP; on the wish list in
-  `CONNECTORS.md`.
+本技能维护该日历。
 
-Without either, paste your docket or upload a spreadsheet and I'll track from
-there.
+## 重要：到期日参考提示
 
-## Purpose
-
-A trademark registration that isn't renewed on time can be cancelled. A patent
-without its maintenance fee paid lapses. A domain that expires can be sniped
-within the hour. All of this is avoidable, and all of it depends on one thing:
-the right deadline is on someone's calendar, tied to the right registration
-number, in the right jurisdiction.
-
-This skill maintains that calendar.
-
-## Important: deadline reference caveat
-
-> The deadline rules this skill applies reflect publicly available requirements
-> as of the skill's build date. IP office requirements, grace periods, fee
-> structures, and maintenance schedules change. **Always confirm computed
-> deadlines against the USPTO TSDR / Patent Center, WIPO Madrid Monitor /
-> Patentscope, EUIPO eSearch, UKIPO online records, or the relevant national
-> registry before acting.** If you use Anaqua, CPA Global, Clarivate, Alt Legal,
-> or another IP management system, their docket is authoritative for your
-> assets — use this tracker to organize and surface their data, not to replace
-> it.
+> 本技能适用的到期日规则反映截至本技能构建日的公开要求。知识产权局要求、宽限期、费用结构和维持费标准会变化。**始终在行动前与国家知识产权局商标查询系统/专利公布公告系统、WIPO马德里监控/专利查询、EUIPO eSearch或相关国家注册机构确认计算的到期日。**
 >
-> A docketed-but-wrong deadline is worse than an undocketed one: it creates
-> false confidence. "No deadline soon" outputs especially deserve a second
-> look before you rely on them.
+> 记录但错误的到期日比未记录的更糟：它产生虚假信心。"无即将到期日"的输出更值得二次确认。
 
-## Jurisdiction and type assumptions
+## 管辖和类型假设
 
-Maintenance mechanics vary by jurisdiction and asset type:
+维持机制因管辖和资产类型而异：
 
-- **US trademarks:** §8 Declaration of Use between 5th and 6th anniversary of
-  registration (or §71 for Madrid designations), then combined §8/§9 renewal
-  at 10 years and every 10 years thereafter. §15 Incontestability available
-  after 5 years of continuous use. 6-month grace period with surcharge for §8
-  and §9; no grace for the underlying use itself.
-- **Madrid International trademarks:** 10-year registration term renewable at
-  WIPO; individual designated countries may have local use or declaration
-  requirements (e.g., US §71).
-- **EUIPO trademarks:** 10-year renewal; 6-month grace with surcharge.
-- **US utility patents:** Maintenance fees due at 3.5, 7.5, and 11.5 years
-  from grant. 6-month grace window with surcharge; after that, potential
-  revival by petition if lapse was unintentional.
-- **US design patents:** No maintenance fees — 15-year term from grant for
-  applications filed on or after May 13, 2015 (14 years if earlier). No action
-  required mid-term.
-- **EPO / national patents:** Annuities typically due annually from filing or
-  from national phase entry. National rules vary — confirm per jurisdiction.
-- **US copyright:** No maintenance for works created 1978 or later.
-  Pre-1978 works may have had renewal obligations; flag for attorney review
-  if the asset pre-dates 1964 (rarely in scope for modern portfolios).
-- **Domains:** Annual or multi-year renewal per registrar; typical 30-day
-  grace then redemption period (~30 days at high fee) then drop.
+- **中国商标：** 注册商标有效期十年，自核准注册之日起计算（《商标法》第39条 `[法条原文]`）。续展注册应在期满前十二个月内办理，宽展期为六个月（《商标法》第40条 `[法条原文]`）。宽展期内续展需缴纳迟延费。
+  - **商标使用义务：** 注册商标连续三年不使用，任何单位或个人可向国家知识产权局申请撤销（《商标法》第49条 `[法条原文]`，俗称"撤三"）。不同于美国§8使用声明制度——中国没有定期使用声明制度，而是被动撤三制度。保留使用证据对于防御撤三至关重要。
+- **马德里国际商标：** 十年注册期，可在WIPO续展；个别指定国可能有本地使用或声明要求（如美国§71）。
+- **EUIPO商标：** 十年续展；六个月宽限期含附加费。
+- **中国发明专利：** 专利权自申请日起二十年（《专利法》第42条 `[法条原文]`）。年费应自被授予专利权当年开始缴纳（《专利法》第43条 `[法条原文]`）。
+  - **年费：** 每年缴纳。超过期限有六个月宽限期（含滞纳金）。宽限期后可办理恢复手续。
+- **中国实用新型专利：** 有效期十年，自申请日起算。年费同发明。
+- **中国外观设计专利：** 有效期十五年，自申请日起算。年费缴纳同上。
+- **EPO / 国家专利：** 年费通常自申请或国家阶段进入起每年缴纳。各国规则不同——按管辖确认。
+- **中国著作权：** 无需续展。自然人作品保护期为作者终生加五十年；法人作品为首次发表后五十年（《著作权法》第23条 `[法条原文]`）。
+- **域名：** 按年或多年续展（由注册商决定）；典型30天宽限期后赎回期（约30天费用较高）然后注销。
 
-If the portfolio includes assets in jurisdictions not listed above, capture
-the maintenance mechanic in the register's `custom_rules` block and the
-report will surface them as `agent_managed` — confirm status with the
-foreign associate rather than computing a date this skill doesn't understand.
+如组合包含以上未列管辖的资产，在登记簿的 `custom_rules` 块中捕获维持机制，报告将其显示为 `agent_managed`——与外国代理人确认状态，而非计算本技能不了解的日期。
 
 ---
 
-## The register
+## 登记簿
 
-Lives at `~/.claude/plugins/config/claude-for-legal/ip-legal/portfolio.yaml`.
-Structure:
+位于 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/portfolio.yaml`。
+结构：
 
 ```yaml
-# IP Portfolio Register
-# Generated: [date]
-# Last updated: [date]
-# Disclaimer: computed deadlines are reference only — confirm with USPTO/WIPO/
-# relevant registry or the IP management system of record before acting.
+# 知识产权组合登记簿
+# 生成日期：[日期]
+# 最后更新：[日期]
+# 免责声明：计算的到期日仅供参考——在行动前与国家知识产权局/WIPO/
+# 相关注册机构或知识产权管理记录系统核实。
 
 metadata:
-  company: "[Company Name]"
-  generated: "[date]"
-  last_updated: "[date]"
-  last_audit: "[date or null]"
-  source_system: "[Anaqua / CPA Global / manual / none]"
+  company: "[公司名称]"
+  generated: "[日期]"
+  last_updated: "[日期]"
+  last_audit: "[日期或null]"
+  source_system: "[IP管理系统 / 手动 / 无]"
 
-custom_rules:   # non-built-in jurisdictions captured manually
+custom_rules:   # 手动记录的非内置管辖规则
   []
 
 assets:
-  - id: "TM-US-001"
-    type: "trademark"                          # trademark / patent / copyright / design / domain
-    jurisdiction: "US"
-    mark_or_title: "[Mark or title]"
-    owner: "[Record owner — registered entity name]"
+  - id: "TM-CN-001"
+    type: "trademark"                          # 商标 / 专利 / 著作权 / 外观设计 / 域名
+    jurisdiction: "CN"
+    mark_or_title: "[商标或名称]"
+    owner: "[登记权利人 — 注册实体名称]"
     status: "registered"                       # pending / registered / lapsed / abandoned / cancelled
-    application_number: "[number or null]"
-    registration_number: "[number or null]"
-    classes: ["9", "42"]                       # Nice classes for TM; CPC/IPC for patents; null otherwise
-    filing_date: "[YYYY-MM-DD or null]"
-    registration_date: "[YYYY-MM-DD or null]"
-    priority_date: "[YYYY-MM-DD or null]"
-    grant_date: "[YYYY-MM-DD or null]"         # patents
-    next_deadlines:                            # computed; refreshed on --report and --audit
-      - type: "§8 Declaration of Use"
+    application_number: "[申请号或null]"
+    registration_number: "[注册号或null]"
+    classes: ["9", "42"]                       # 商标国际分类；专利IPC/CPC；其他为null
+    filing_date: "[YYYY-MM-DD或null]"
+    registration_date: "[YYYY-MM-DD或null]"
+    priority_date: "[YYYY-MM-DD或null]"
+    grant_date: "[YYYY-MM-DD或null]"           # 专利
+    next_deadlines:                            # 计算的到期日；--report和--audit时刷新
+      - type: "续展注册"
         due_date: "[YYYY-MM-DD]"
-        grace_end: "[YYYY-MM-DD or null]"
-        basis: "5th-6th anniversary of registration"
-        action: "File §8 Declaration of Use (or excusable nonuse)"
+        grace_end: "[YYYY-MM-DD或null]"
+        basis: "注册日起十年"
+        action: "提交续展注册申请"
         status: "upcoming"                     # upcoming / due_soon / overdue / grace / filed
-    use_in_commerce: true                      # TM only — drives §8 analysis
-    agent_managed: false                       # true for foreign associate / outside counsel managed
+    use_in_commerce: true                      # 仅商标 — 驱动使用监控
+    agent_managed: false                       # true 表示由外国代理/外部律师管理
     local_agent: null
-    docket_id: "[IP-mgmt-system ID or null]"
-    outside_counsel: "[firm or null]"
-    business_owner: "[email or team]"
+    docket_id: "[IP管理系统ID或null]"
+    outside_counsel: "[律所或null]"
+    business_owner: "[邮箱或团队]"
     notes: ""
 
-  - id: "PAT-US-001"
+  - id: "PAT-CN-001"
     type: "patent"
-    jurisdiction: "US"
-    mark_or_title: "[Invention title]"
-    owner: "[Owner]"
+    jurisdiction: "CN"
+    mark_or_title: "[发明名称]"
+    owner: "[权利人]"
     status: "granted"
-    application_number: "[number]"
-    registration_number: "[patent number]"
+    application_number: "[申请号]"
+    registration_number: "[专利号]"
     filing_date: "[YYYY-MM-DD]"
     grant_date: "[YYYY-MM-DD]"
-    priority_date: "[YYYY-MM-DD or null]"
-    expiration_date: "[YYYY-MM-DD]"            # 20 years from earliest non-provisional filing
+    priority_date: "[YYYY-MM-DD或null]"
+    expiration_date: "[YYYY-MM-DD]"            # 发明：申请日起20年；实用新型：10年
     next_deadlines:
-      - type: "3.5-year maintenance fee"
+      - type: "年度专利年费"
         due_date: "[YYYY-MM-DD]"
         grace_end: "[YYYY-MM-DD]"
-        basis: "3.5 years from grant"
-        action: "Pay maintenance fee (small/micro entity if applicable)"
+        basis: "每年申请日前"
+        action: "缴纳专利年费"
         status: "upcoming"
     claims_count: 20
-    entity_size: "large"                       # large / small / micro (drives USPTO fees)
+    entity_size: "standard"                    # 标准 / 费减资格
     docket_id: null
     outside_counsel: null
     business_owner: null
     notes: ""
 ```
 
-Status values for `next_deadlines`:
-- `upcoming` — more than 90 days out
-- `due_soon` — due within 90 days, not yet filed
-- `overdue` — past the primary due date, within grace window (if any)
-- `grace` — in the grace period (explicit flag — carries surcharge)
-- `lapsed` — past grace with no action; asset effectively lost unless revivable
-- `filed` — action completed this cycle
+`next_deadlines` 状态值：
+- `upcoming` — 距到期90天以上
+- `due_soon` — 90天内到期，未缴纳
+- `overdue` — 超过主到期日，在宽限期内（如有）
+- `grace` — 在宽限期内（显式标注 — 含附加费）
+- `lapsed` — 超过宽限期未行动；资产有效丧失（除非可恢复）
+- `filed` — 本周期已缴纳
 
 ---
 
-## Mode 1: Initialise
+## 模式1：初始化
 
-Run when no register exists, or with `--rebuild`.
+在无登记簿时运行，或使用 `--rebuild`。
 
-### Step 1: Determine the source
+### 第一步：确定来源
 
-Read `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`:
-- **IP management system connected** (Anaqua, CPA Global, etc.): pull the portfolio via its integration. The IP system is the authoritative source; this register mirrors it and adds no deadlines the system doesn't already have.
-- **No IP management system, but spreadsheet / export available:** ask the user to share the export. Import what's present; flag any asset missing a registration or grant date as `unknown` for deadline computation.
-- **Nothing at hand:** walk through assets interactively — type, jurisdiction, number, key dates, owner.
+读取 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md`：
+- **知识产权管理系统已连接：** 通过集成拉取组合。IP系统为权威来源；本登记簿镜像它并不添加系统已具备的到期日。
+- **无知识产权管理系统，但电子表格/导出可用：** 要求用户分享导出。导入现有内容；将缺失注册日或授权日的资产标注为到期日计算`unknown`。
+- **无任何来源：** 交互式逐一录入资产 — 类型、管辖、编号、关键日期、权利人。
 
-### Step 2: For each asset, compute deadlines
+### 第二步：逐资产计算到期日
 
-Apply the rules at the top of this file. Populate `next_deadlines` with the
-two or three closest upcoming items — further-out deadlines (10-year renewals
-decades away) are computed on demand during reports rather than stored
-speculatively.
+应用本文件顶部的规则。填充 `next_deadlines` 为最近两到三个即将到期的项目——更远的到期日（几十年后的续展）在报告中按需计算，而非预先存储。
 
-**For assets the skill cannot confidently schedule:**
-- Unknown jurisdiction rules → add a stub under `custom_rules` and flag the
-  asset `agent_managed: true` with a TODO to confirm with the foreign associate.
-- Missing dates needed for computation (no grant date for a patent, no
-  registration date for a TM) → set `next_deadlines` empty with a note in
-  `notes`, and list the asset as `unknown` in the initialisation summary.
+### 第三步：写入登记簿
 
-### Step 3: Write the register
-
-Generate `portfolio.yaml` at the config path. Show a summary:
+在配置路径生成 `portfolio.yaml`。显示摘要：
 
 ```
-Portfolio register initialised.
+知识产权组合登记簿已初始化。
 
-Assets: [N]
-  Trademarks: [N]   ([N registered] / [N pending])
-  Patents:    [N]   ([N granted] / [N pending])
-  Copyrights: [N]
-  Designs:    [N]
-  Domains:    [N]
+资产： [N]
+  商标：    [N]   （[N] 已注册 / [N] 申请中）
+  专利：    [N]   （[N] 已授权 / [N] 申请中）
+  著作权： [N]
+  外观设计：[N]
+  域名：    [N]
 
-Deadlines computed: [N]
-Agent-managed / jurisdiction TBC: [N] — confirm with foreign associates
-Unknown (missing key dates): [N] — fill in before relying on reports
+已计算到期日： [N]
+代理管理 / 管辖待确认： [N] — 与外国代理人确认
+未知（缺失关键日期）： [N] — 依赖报告前补充完整
 
-Run /ip-legal:portfolio --report to see what's due.
+运行 /ip-legal:portfolio --report 查看到期事项。
 ```
 
 ---
 
-## Mode 2: Report
+## 模式2：报告
 
 ```
 /ip-legal:portfolio --report [--days 30|60|90|180]
 ```
 
-Default window: 90 days. Refresh computed deadlines for every asset before
-producing the report — don't rely on stored dates alone.
+默认窗口：90天。生成报告前刷新每项资产的计算到期日——不依赖仅存储的日期。
 
-Output (prepend work-product header per `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md` → Outputs):
+输出（附加工作成果页眉，按 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md` → 输出）：
 
 ```
-IP PORTFOLIO DEADLINE REPORT — [date]
-[Company Name] — window: next [N] days
+知识产权组合到期报告 — [日期]
+[公司名称] — 窗口：未来[N]天
 
-🔴 LAPSED / IN GRACE ([N])
-  [Asset ID] / [Jurisdiction] / [Type] / [Mark or title]
-    [Action] — original due [date], grace ends [date]
-    Status: [grace / lapsed]
+🔴 已失效 / 宽限期内 ([N])
+  [资产ID] / [管辖] / [类型] / [商标或名称]
+    [行动] — 原到期[日期]，宽限期至[日期]
+    状态：[宽限期 / 已失效]
 
-⏰ DUE WITHIN [N] DAYS ([N])
-  [Asset ID] / [Jurisdiction] / [Type] / [Mark or title]
-    [Action] — due [date]
-    Basis: [e.g., "5th-6th anniversary of registration"]
-    [Agent: firm / docket: id — if present]
+⏰ [N]天内到期 ([N])
+  [资产ID] / [管辖] / [类型] / [商标或名称]
+    [行动] — 到期日 [日期]
+    依据：[如"注册日起十年"]
+    [代理：律所 / docket：ID — 如有]
 
-🟡 UPCOMING (next window beyond 30 days, within [N] days)
-  [list]
+🟡 即将到期（后续窗口，超出30天但在[N]天内）
+  [列表]
 
-🌐 AGENT-MANAGED ([N])
-  [Asset ID] / [Jurisdiction] — managed by [local agent]; confirm directly
-  [Asset ID] / [Jurisdiction] — no local agent recorded; add with --update
+🌐 代理管理 ([N])
+  [资产ID] / [管辖] — 由[本地代理]管理；直接确认
+  [资产ID] / [管辖] — 无本地代理记录；使用--update添加
 
-❓ UNKNOWN ([N])
-  [Asset ID] — missing [field]; cannot compute deadline
-  Confirm with [IP management system / USPTO TSDR / relevant registry] before relying on this report.
+❓ 未知 ([N])
+  [资产ID] — 缺少[字段]；无法计算到期日
+  依赖本报告前与[知识产权管理系统 / 国家知识产权局查询系统 / 相关注册机构]确认。
 
-SUMMARY
-  Total assets tracked: [N]
-  Deadlines in window: [N]
-  Last audit: [date]
+摘要
+  追踪资产总数：[N]
+  窗口内到期数：[N]
+  最近审计：[日期]
 ```
 
-Close the report with the caveat line: *"Computed from portfolio register. Verify each deadline against the USPTO/WIPO/registry of record before filing or paying."*
+以提示行收尾报告：*"基于知识产权组合登记簿计算。在提交或缴费前，与国家知识产权局/WIPO/注册记录机构核实每个到期日。"*
 
-If the report lists more than ~10 assets, or any time the user asks: offer the dashboard (see CLAUDE.md `## Outputs → Dashboard offer for data-heavy outputs`). Shape the offer for this output — counts by registration status (live / in grace / lapsed / pending), a deadline timeline, and a sortable portfolio table with jurisdiction, type, and next-action date.
+如报告列出超过约10项资产，或在用户需要时：提供数据仪表板。呈现样式为：按注册状态（有效 / 宽限期 / 已失效 / 申请中）计数、到期日时间线和可排序组合表（含管辖、类型和下一行动日期）。
 
 ---
 
-## Mode 3: Add
+## 模式3：添加
 
 ```
 /ip-legal:portfolio --add
 ```
 
-Interactive add of a single asset. Ask for:
-1. Type (trademark / patent / copyright / design / domain)
-2. Jurisdiction
-3. Mark or title / invention name
-4. Owner (record owner — matters for §8 filings and assignments)
-5. Key dates (per type: filing, registration, grant, priority, expiration)
-6. Number(s)
-7. Classes / claims count
-8. Source — is this being tracked in the IP management system under a docket ID?
-9. Outside counsel / foreign associate, if any
-10. Business owner (who does this matter to — product line, brand manager)
+交互式添加单项资产。询问：
+1. 类型（商标 / 专利 / 著作权 / 外观设计 / 域名）
+2. 管辖
+3. 商标或名称 / 发明名称
+4. 权利人（登记权利人 — 影响撤三抗辩和转让）
+5. 关键日期（按类型：申请日、注册日、授权日、优先权日、到期日）
+6. 编号
+7. 类别 / 权利要求数
+8. 来源 — 是否在IP管理系统中以docket ID追踪？
+9. 外部律师 / 外国代理人（如有）
+10. 业务负责人（该资产对谁重要 — 产品线、品牌经理）
 
-After capture:
-- Compute next deadlines per the rules at the top of this file.
-- If jurisdiction rules aren't built in, walk through the `custom_rules` capture flow (see below).
-- Append to `assets:` in `portfolio.yaml`.
+采集后：
+- 按本文件顶部的规则计算下一个到期日。
+- 如管辖规则不在内置列表中，走 `custom_rules` 采集流程（见下文）。
+- 追加至 `portfolio.yaml` 的 `assets:`。
 
-### Custom rules capture
+### 自定义规则采集
 
-When a jurisdiction isn't in the built-in list:
+当管辖不在内置列表中：
 
-> I don't have maintenance rules for [Jurisdiction] / [Asset type] built in.
-> Let me capture them so we can track this going forward.
+> 我没有 [管辖] / [资产类型] 的内置维持规则。
+> 让我采集这些规则以便后续跟踪。
 >
-> 1. What maintenance events apply? (Renewal every N years? Annuities annually?
->    Declarations of use? Something else?)
-> 2. What triggers the due date — filing date, registration date, grant date,
->    national phase entry, anniversary of something else?
-> 3. Is there a grace period? At what cost?
-> 4. Is there a foreign associate or local agent managing this?
+> 1. 适用何种维持事件？（每N年续展一次？每年年费？使用声明？其他？）
+> 2. 什么触发到期日 — 申请日、注册日、授权日、国家阶段进入、某周年日？
+> 3. 是否存在宽限期？费率如何？
+> 4. 是否有管理此事的外国代理人或本地代理？
 
-Store under `custom_rules:` and apply to future assets in that jurisdiction.
+存储至 `custom_rules:` 并对该管辖的未来资产适用。
 
 ---
 
-## Mode 4: Update
+## 模式4：更新
 
 ```
 /ip-legal:portfolio --update
 ```
 
-### Consequential-action gate
+### 相应行动门槛
 
-**Before recording that a maintenance filing or fee payment was made:** Read
-`## Who's using this` in `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`. If the Role is **Non-lawyer**:
+**在记录维持费缴纳或年费支付完成之前：** 读取
+`~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md` 中的 `## 使用者`。如角色为**非律师**：
 
-> Recording a §8 declaration, a §9 renewal, a patent maintenance fee payment,
-> or an international annuity as "filed" has consequences. If the record is
-> wrong — missed due date, wrong entity size, wrong specimen of use — the
-> deadline doesn't move, and the asset can still lapse. Have you confirmed
-> this with the attorney or foreign associate who actually made the filing
-> (or with the USPTO TSDR / WIPO Madrid Monitor / relevant registry)? If yes,
-> proceed. If no:
+> 将续展注册、年费缴纳或国际年费记录为"已缴纳"产生后果。如记录错误——错的到期日、错的费减资格——到期日不会改变，资产仍可能失效。你是否已与实际办理该事务的律师或外国代理人（或与国家知识产权局查询系统/WIPO马德里监控/相关注册机构）核实？如是，继续。如否：
 >
-> - Do not record as filed yet.
-> - Here is what to bring to the attorney: asset ID, jurisdiction, deadline
->   type, what the IP management system shows, what you believe was filed and
->   when, and the source of that belief.
+> - 暂不记录为已缴纳。
+> - 以下是应带给律师的信息：资产ID、管辖、到期日类型、IP管理系统显示的内容、你相信已办理的内容及何时、以及该认知的来源。
 >
-> If you need to find a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction: your professional regulator's referral service
-> is the fastest starting point (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent).
+> 如你需要寻找执业律师：当地律师协会的推荐服务是最快的起点。
 
-Do not set a deadline's `status` to `filed` past this gate without an
-explicit yes. Status refresh, report generation, and upcoming-deadline
-surfacing do not require the gate.
+未经此门槛获得明确同意，不得将到期日 `status` 设置为 `filed`。状态刷新、报告生成和即将到期日显示不需要此门槛。
 
-### Sub-modes
+### 子模式
 
-**Manual update:** "We filed the §8 for TM-US-001 on March 4, specimen
-attached." Update the matching deadline: `status: filed`, `filed_date`,
-and compute the next deadline in its lifecycle (for §8 that's the §9
-renewal 10 years out).
+**手动更新：** "我们于3月4日为TM-CN-001缴纳了续展费"。更新匹配的到期日：`status: filed`、`filed_date`，并计算其生命周期中的下一到期日。
 
-**From IP management system sync:** If Anaqua / CPA Global / similar is
-connected, pull the latest docket and reconcile. Flag mismatches between
-the register and the system of record — the system of record wins; update
-the register to match and surface anything the register had that the
-system doesn't.
+**从IP管理系统同步：** 如已连接IP管理系统，拉取最新docket并对账。标注登记簿与记录系统之间的不匹配——记录系统优先；更新登记簿以匹配并显示登记簿有而系统没有的任何内容。
 
-**Status change:** "Mark TM-US-004 as abandoned." Update `status`, clear
-`next_deadlines`, note the date abandoned.
+**状态变更：** "将TM-CN-004标记为放弃。"更新 `status`，清空 `next_deadlines`，记录放弃日期。
 
 ---
 
-## Mode 5: Audit
+## 模式5：审计
 
 ```
 /ip-legal:portfolio --audit
 ```
 
-Broader health check beyond this month's deadlines:
+超出本月到期日的更广泛健康检查：
 
-**Deadline hygiene**
-- Any deadlines in `grace` status right now? (In progress but surcharge-costing.)
-- Any `lapsed` assets that aren't marked `abandoned` or `cancelled`? Either
-  revive or update status.
-- Any assets with no `next_deadlines` computed? Either missing data or a
-  jurisdiction the skill doesn't know.
+**到期日卫生**
+- 是否有任何当前处于 `grace` 状态的到期日？（进行中但产生附加费。）
+- 是否有任何 `lapsed` 资产未标记 `abandoned` 或 `cancelled`？恢复或更新状态。
+- 是否有任何资产未计算 `next_deadlines`？缺失数据或本技能不了解的管辖。
 
-**Registration gaps**
-- Trademark applications filed more than 18 months ago still `pending`?
-  Flag for status check at the office — may need response to an action.
-- Patents filed more than 4 years ago still `pending`? Flag for prosecution
-  check.
+**注册空白**
+- 商标申请递交超过两年仍为 `pending`？标注需在商标局查询状态——可能需要实质审查或驳回复审。
+- 专利申请递交超过四年仍为 `pending`？标注需审查状态检查。
 
-**Use-in-commerce (TM only)**
-- §8 approaching on a mark flagged `use_in_commerce: false` or uncertain?
-  The §8 requires use; mark needs a use audit before filing or an excusable
-  nonuse declaration.
+**商业使用 / 撤三风险（仅商标）**
+- 《商标法》第49条 `[法条原文]` 规定任何人在注册商标连续三年不使用时可申请撤销。标注距注册日已超过三年且使用状态不确定的商标——应在收到撤三通知前整理使用证据。
 
-**Ownership hygiene**
-- Any assets where the `owner` is not a currently active entity per the
-  entity register (if available)? Flag — may need recordal of assignment.
-- Owner name inconsistencies across assets (same entity, different name
-  strings)? Surface for cleanup.
+**权利归属卫生**
+- 是否有资产的 `owner` 非当前有效实体？标注——可能需要办理转让登记。
+- 权利人名称为同一实体但表述不一致？显示以供清理。
 
-**Expiration horizon**
-- Any patents expiring in the next 24 months? Even without a maintenance
-  deadline, the business may want to know — product planning, continuation
-  strategy, licensing window.
+**到期展望**
+- 是否有专利在未来24个月内到期？即使无维持到期日，业务也可能关心——产品规划、接续申请策略、许可窗口。
 
-**Unwatched assets**
-- Any registered marks not on the watch list in CLAUDE.md → Brand protection?
-  Flag as a gap for the attorney to decide whether to add.
+**未被监视资产**
+- 是否有已注册商标未在 CLAUDE.md → 品牌保护监视列表中？标注为空缺供律师决定是否添加。
 
-Output format:
+输出格式：
 
 ```
-IP PORTFOLIO AUDIT — [date]
+知识产权组合审计 — [日期]
 
-DEADLINE HYGIENE
-  In grace: [N] — acting now avoids lapse
-  Lapsed (not marked abandoned): [N] — confirm status
-  Missing next-deadline computation: [N] — fill data or mark agent-managed
+到期日卫生
+  宽限期内：[N] — 现在行动避免失效
+  已失效（未标记放弃）：[N] — 确认状态
+  缺失下一到期日计算：[N] — 补充数据或标记为代理管理
 
-REGISTRATION GAPS
-  TM applications pending >18 months: [list]
-  Patent applications pending >4 years: [list]
+注册空白
+  商标申请超过2年仍待审：[列表]
+  专利申请超过4年仍待审：[列表]
 
-USE IN COMMERCE (TM)
-  §8 approaching on uncertain-use marks: [list]
+商业使用 / 撤三风险（商标）
+  使用状态不确定的商标：[列表]
 
-OWNERSHIP
-  Assets with unrecognised owner strings: [N]
-  Owner name inconsistencies: [list]
+权利归属
+  权利人字符串不可识别资产：[N]
+  权利人名不一致：[列表]
 
-EXPIRATION HORIZON (24 months)
-  Patents expiring: [list]
+到期展望（24个月）
+  即将到期专利：[列表]
 
-BRAND WATCH
-  Registered marks not on watch list: [list]
+品牌监视
+  已注册但不在监视列表中的商标：[列表]
 
-RECOMMENDED ACTIONS
-  1. [highest priority]
-  2. [etc.]
+建议行动
+  1. [最高优先级]
+  2. [等等]
 ```
 
 ---
 
-## Integration: ip-renewal-watcher agent
+## 本技能不做什么
 
-The `ip-renewal-watcher` agent in this plugin runs this skill on a schedule
-(weekly by default) and posts the Mode 2 report to the channel named in
-CLAUDE.md → Renewal alerts. If 🔴 items appear (grace / lapsed), the agent
-posts them immediately regardless of schedule.
-
-## Handoffs
-
-- Receives: new asset records from prosecution skills (when an application
-  is filed or a mark clears), from clearance skills (when a mark is adopted
-  and a filing is queued), and from assignment recordals.
-- Sends: "file §8 now" triggers to the attorney — this skill doesn't file
-  anything; it tells the attorney the deadline and what to bring.
-
-## What this skill does not do
-
-- It does not file anything. Every action it surfaces is for the attorney
-  or foreign associate to execute.
-- It does not verify deadlines against the USPTO TSDR, WIPO, or any other
-  registry. It computes them from the dates you give it. The register is
-  a working copy; the registry is the source of truth.
-- It does not decide whether to renew. Renewal is a business call — is the
-  mark still in use, is the patent still valuable, does the domain still
-  matter. This skill surfaces the deadline and the cost; the business and
-  the attorney decide.
-- It does not replace an IP management system for multi-hundred-asset
-  portfolios. Anaqua, CPA Global, Clarivate, Alt Legal, and similar systems
-  have direct registry feeds, deadline automation, and annuity payment
-  services. This skill is best suited for smaller portfolios, or as a
-  lightweight layer that surfaces what the system of record shows.
-- It does not read office records to verify status. A §8 shown as "filed"
-  here means someone told it so — not that the USPTO accepted it. Confirm
-  acceptance through TSDR or the IP management system.
+- **不提交任何东西。** 它显示的每个行动均需律师或外国代理人执行。
+- **不向国家知识产权局查询系统、WIPO或任何其他注册机构核实到期日。** 它根据你提供的日期计算。登记簿是工作副本；注册机构是真实来源。
+- **不决定是否续展。** 续展是商业决策——商标是否仍在用、专利是否仍有价值、域名是否仍然重要。本技能显示到期日和成本；业务和律师做决定。
+- **不替代数百项资产规模组合的知识产权管理系统。** 专业IP管理系统具有直接注册机构查询、到期日自动化和年费缴纳服务。本技能最适合中等以下规模的组合，或作为显示记录系统内容的轻量层。
+- **不读取官方记录以核实状态。** 此处显示为"已缴纳"的续展意为有人告知它如此——并非国家知识产权局已受理。通过官方查询系统或知识产权管理系统确认受理。

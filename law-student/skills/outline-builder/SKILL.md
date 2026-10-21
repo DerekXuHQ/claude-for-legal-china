@@ -1,152 +1,151 @@
 ---
 name: outline-builder
 description: >
-  Build or extend a course outline in your format, from class notes and
-  casebook. Scaffolds — it does not write the outline for you. Use when the
-  user says "outline [subject]", "add to my outline", "build an outline
-  from", or points at class materials.
-argument-hint: "[subject, or point at class notes/casebook section]"
+  按你的格式从课堂笔记和教材构建或扩展课程知识大纲。搭建框架——不替你
+  写大纲。当用户说"大纲[科目]""添加到我的大纲""从[材料]构建大纲"
+  或指向课堂材料时使用。
+argument-hint: "[科目, 或指向课堂笔记/教材章节]"
 ---
 
 # /outline-builder
 
-1. Load `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → outline preferences, existing outlines.
-2. Apply the workflow below.
-3. Build in student's format. If extending an existing outline, match its structure exactly.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 大纲偏好、现有大纲。
+2. 应用以下工作流。
+3. 按学生格式构建。如果扩展已有大纲，精确匹配其结构。
 
 ---
 
-## Purpose
+## 目的
 
-The outline is the thing you study from. **Building it is half the studying** — that's a literal claim, not a throwaway. An outline you didn't build is an outline you won't know on the exam. This skill helps you build — it does not build for you.
+大纲是你用来复习的材料。**构建大纲本身就是一半的学习过程**——这不是一句空话，而是字面事实。不是你亲手构建的大纲，是你在考场上不知道的大纲。本技能帮助你构建——不替你构建。
 
-## The "don't write it for me" rule (hard rule)
+## "不要替我写"规则（硬性规则）
 
-This is a learning-mode skill. Other tools will cheerfully generate a full outline from a casebook or syllabus and hand it over. This one refuses.
+这是一个学习模式技能。其他工具会愉快地从教材或教学大纲生成一份完整大纲并交给你。本技能拒绝。
 
-**What this skill will do:**
-- Read your syllabus, casebook excerpts, class notes, or existing outline and match your format precisely.
-- Build the **scaffold** — the topic structure, sub-topic headings, case-slot placeholders, where exceptions should go.
-- Ask you Socratic questions on each topic as you build: "what's the rule here?", "which case did the professor use?", "what's the exception the casebook hinted at?"
-- Point out gaps: places where your notes are thin, where a topic on the syllabus isn't in the outline yet, where an exception is mentioned but not explained.
-- When you paste in rules from your own notes or from a source, integrate them verbatim into the scaffold.
-- Flag thin or confused spots and ask you to go back to your notes or casebook.
+**本技能会做的事：**
+- 阅读你的教学大纲、教材节选、课堂笔记或已有大纲，精确匹配你的格式。
+- 构建**框架**——主题结构、子主题标题、案例槽占位符、例外应去何处。
+- 在每个主题上问你苏格拉底式问题："这里的规则是什么？""老师用了哪个案例？""教材暗示的例外是什么？"
+- 指出缺口：你笔记薄弱的地方、教学大纲上的主题但大纲中还没有的地方、提到但未解释的例外。
+- 当你从自己的笔记或来源中粘贴规则时，将其逐字整合到框架中。
+- 标记薄弱或混乱的地方，让你回到笔记或教材。
 
-**What this skill will not do, even if asked:**
-- Fill in the rule statement, case holding, or analysis from AI knowledge just because you asked it to. If you say "just write this section for me," the answer is no — the skill explains why and offers to scaffold that section with questions instead.
-- Build an entire outline from "the syllabus" without your notes or casebook inputs. A scaffolded topic tree, yes. Populated rules and cases, no — that's the learning work.
-- Invent rules to avoid leaving a gap. A `[GAP — fill from class notes]` marker is the correct answer when source material is missing.
+**本技能不做的事，即使被要求也不做：**
+- 仅因为你要求就从 AI 知识中填充规则陈述、案例裁判要旨或分析。如果你说"帮我把这部分写了"，答案是不——技能解释原因并提议改为用问题搭建该节的框架。
+- 仅凭"教学大纲"构建一份完整大纲，没有你的笔记或教材输入。主题树的框架可以。填充的规则和案例不行——那是学习的核心工作。
+- 为避免留下缺口而编造规则。当来源材料缺失时，`[缺口 — 从课堂笔记填充]` 标记是正确的答案。
 
-**Exception** (the only one): if the student is **extending** an existing outline and pastes casebook text or their own notes, the skill extracts rules and cases from that source text. That is not writing-for-you; that is formatting what you provided.
+**唯一例外：** 如果学生正在**扩展**已有大纲并粘贴了教材文本或自己的笔记，技能从该来源文本中提取规则和案例。这不是替你写；这是格式化你提供的内容。
 
-If the student asks the skill to cross the line, respond:
+如果学生要求技能越线，回应：
 
-> I'm not going to fill in [topic] from my own knowledge — that defeats the point of building the outline. Two options:
+> 我不会从自己的知识填充 [主题]——那违背了构建大纲的意义。两个选项：
 >
-> 1. **Scaffold mode** (default): I'll put the headings, sub-headings, and case slots in place, and ask you Socratic questions as we build. You write the rules.
-> 2. **Source-extract mode:** paste your class notes, the casebook section, or a case brief. I'll extract the rule from that text and slot it in.
+> 1. **框架模式**（默认）：我将放入标题、子标题和案例槽，并在我们构建时问你苏格拉底式问题。你写规则。
+> 2. **来源提取模式：** 粘贴你的课堂笔记、教材章节或案例摘要。我将从该文本中提取规则并将其放入。
 >
-> Which one?
+> 你选哪个？
 
-## Confidence discipline
+## 置信纪律
 
-An outline is a rule library. Wrong rules are worse than missing rules because you study from them without re-checking. The rule for this skill:
+大纲是一个规则库。错误的规则比缺失的规则更糟糕，因为你基于它复习而不再核实。本技能的规则：
 
-- **If building from the student's class notes, casebook sections, or case briefs they paste:** I extract from what's in front of me. Confident. Rules stated in the source are the rules I write.
-- **If the student asks me to fill in a topic without source material:** the default is no — I leave a `[GAP — fill from class notes]` marker and ask Socratic questions to help them fill it from their own notes. The student learns nothing from reading a rule I wrote; they learn from writing it themselves. Only if the student explicitly overrides ("I know, I just want a reference, write it anyway") do I state a majority rule, and every line I'm not fully confident on gets `[UNCERTAIN]` or `[VERIFY]`. Default to the gap.
-- **Every rule statement in the outline carries a provenance cue:** from the student's notes (no marker); from casebook they uploaded (no marker); from my knowledge with confidence (no marker); from my knowledge with uncertainty (`[VERIFY]` or `[UNCERTAIN]`).
+- **如果从学生粘贴的课堂笔记、教材章节或案例摘要构建：** 我从面前的材料中提取。有把握。来源中陈述的规则就是我写的规则。
+- **如果学生要求我在没有来源材料的情况下填充一个主题：** 默认是不——我留下一个 `[缺口 — 从课堂笔记填充]` 标记并问苏格拉底式问题帮助他们从自己的笔记中填充。学生从阅读我写的规则中学不到任何东西；他们从自己写规则中学习。仅当学生明确覆盖（"我知道，我只是想要一个参考，写吧"）时，我才陈述通说规则，并且我不完全确定的每一行都标注 `[不确定]` 或 `[需核实]`。默认留缺口。
+- **大纲中的每条规则陈述都带有来源线索：** 来自学生笔记（无标记）；来自他们上传的教材（无标记）；来自我的知识且有把握（无标记）；来自我的知识但不确定（`[需核实]` 或 `[不确定]`）。
 
-The outline is only as trustworthy as what's in it. Err toward gaps over guesses.
+大纲只和其中内容的可信度一样可信。宁可留缺口也不要靠猜测。
 
-**Narrow carve-out — rule contradiction within the student's own materials.** The "don't write it for me" rule has one exception: when the student states a rule (in-session, or in an outline entry they're extending) that **contradicts their own uploaded notes, case brief, casebook excerpt, or earlier outline section**, surface the conflict without filling in the answer. Say:
+**有限例外——规则在学生自己的材料内部相矛盾。** "不要替我写"规则有一个例外：当学生（在对话中，或在他们正在扩展的大纲条目中）陈述了一条规则，该规则**与他们自己上传的笔记、案例摘要、教材节选或先前的大纲章节相矛盾**时，指出冲突但不填充答案。说：
 
-> "That doesn't match what you wrote at [file / outline section / case brief]. Your earlier note says [exact quote]. Which is right?"
+> "这跟你自己在 [文件/大纲章节/案例摘要] 中写的对不上。你早先的笔记说 [原文引用]。到底哪个是对的？"
 
-This is not writing for the student — it is pointing the student at two things they already have and asking them to reconcile. A 1L who puts a wrong rule into an outline and studies from it is the failure mode this skill exists to prevent. Apply this only when:
+这不是替学生写——这是将学生指向他们已有的两件事并请他们协调。一个大一法学新生把一条错误规则写进大纲并据此复习，正是本技能存在要防止的失败模式。仅在以下条件同时满足时适用：
 
-1. The student has actually uploaded or written materials the skill can cite (seed materials in `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → Seed materials, or an earlier section of the outline being extended), and
-2. The stated rule and the student's own material disagree on a specific substantive point — not phrasing, not level of detail.
+1. 学生确实上传或撰写了技能可以引用的材料（`~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 种子材料，或正在被扩展的大纲的前面章节），且
+2. 学生陈述的规则与他们自己材料中的内容存在具体的实质性分歧——不是措辞差异，不是详细程度差异。
 
-Do not volunteer the correction from your own knowledge. Do not cite the casebook unless the student uploaded it. Only quote the student's own materials back to them. The goal is to train the student to trust and verify their own work, not to deliver the right answer.
+不要从你自己的知识中主动提供纠正。不要引用教材除非学生上传了。只把学生自己的材料引用回给他们。目标是训练学生信任并核实自己的作品，而非直接交付正确答案。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → outline preferences (format, depth, existing outlines location).
+`~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 大纲偏好（格式、深度、现有大纲位置）。
 
-If existing outlines exist: read one. Match its structure exactly. Headings, depth, how cases are integrated, whether there are hypos.
+如果存在现有大纲：读一份。精确匹配其结构。标题、深度、案例如何整合、是否有假设题目。
 
-## Workflow
+## 工作流
 
-### Step 1: Inputs
+### 第1步：输入
 
-What are we building from?
-- Class notes
-- Casebook sections
-- Case briefs (from case-brief skill or the student's own)
-- Syllabus (for structure)
-- Existing partial outline (extending, not starting fresh)
+我们从什么材料构建？
+- 课堂笔记
+- 教材章节
+- 案例摘要（来自 case-brief 技能或学生自己的）
+- 教学大纲（用于结构）
+- 已有不完整的大纲（扩展，而非从零开始）
 
-### Step 2: Structure
+### 第2步：结构
 
-Syllabus gives the structure. Major topics → subtopics → rules → cases illustrating rules.
+教学大纲给出结构。主要主题 → 子主题 → 规则 → 说明规则的案例。
 
-If extending: match the existing outline's structure precisely. Don't impose a different organization.
+如果扩展：精确匹配已有大纲的结构。不要强加不同的组织方式。
 
-### Step 3: Build — scaffold first, content from sources
+### 第3步：构建——先搭框架，内容来自来源
 
-**The scaffold gets built from the syllabus and any existing outline.** The scaffold is topics, sub-topics, case slots, exception placeholders — the skeleton without the rules.
+**框架从教学大纲和任何现有大纲构建。** 框架是主题、子主题、案例槽、例外占位符——没有规则的骨架。
 
-**The content gets filled by the student from their notes, casebook, or briefs — or extracted verbatim from source text the student pastes.** If the student has no source for a topic, the skill does not invent; it asks Socratic questions ("What did the professor say about X?", "Which case illustrates this rule?") and leaves a `[GAP]` marker.
+**内容由学生从笔记、教材或摘要中填充——或从学生粘贴的来源文本逐字提取。** 如果学生对一个主题没有来源，技能不编造；它问苏格拉底式问题（"老师关于 X 说了什么？""哪个案例说明了这条规则？"）并留下 `[缺口]` 标记。
 
-Never skip the scaffold step and just generate a populated outline. That is the failure mode this skill exists to prevent.
+绝不跳过框架步骤直接生成填充好的大纲。那是本技能存在要防止的失败模式。
 
-Per the student's format. Common formats:
+按学生格式。常见格式：
 
-**Traditional outline:**
+**传统大纲：**
 ```
-I. [Major topic]
-   A. [Subtopic]
-      1. Rule: [statement]
-         a. [Case name]: [how it illustrates the rule]
-         b. [Exception or limitation]
-      2. [Next rule]
-```
-
-**Rules-only (bar prep style):**
-```
-## [Topic]
-- [Rule]. [Case cite].
-- Exception: [rule]. [Case cite].
+一、[主要主题]
+   （一）[子主题]
+       1. 规则：[陈述]
+          a. [案例名称]：[如何说明该规则]
+          b. [例外或限制]
+       2. [下一条规则]
 ```
 
-**Flowchart-adjacent:**
+**仅规则式（法考备考风格）：**
 ```
-[Topic] → Is [element 1] met?
-  YES → Is [element 2] met?
-    YES → [Result]
-    NO → [Different result]
-  NO → [No claim]
+## [主题]
+- [规则]。[案例引用]。
+- 例外：[规则]。[案例引用]。
 ```
 
-Match theirs.
+**流程图式：**
+```
+[主题] → 是否满足 [构成要件1]？
+  是 → 是否满足 [构成要件2]？
+    是 → [结果]
+    否 → [不同结果]
+  否 → [无请求权]
+```
 
-### Step 4: Gaps
+匹配学生的。
 
-Mark where the outline is thin:
-- `[NEEDS CASES — rule stated but no illustrating case]`
-- `[CHECK CLASS NOTES — professor may have emphasized something here]`
-- `[EXCEPTION UNCLEAR — casebook mentions an exception, find the rule]`
+### 第4步：缺口
 
-## Citation check
+标记大纲薄弱之处：
+- `[需要案例 — 已陈述规则但无说明性案例]`
+- `[检查课堂笔记 — 老师可能在此强调过什么]`
+- `[例外不明确 — 教材提到一个例外，找到规则]`
 
-Any case cites, statutory cites, or rule statements I add to the outline from my own knowledge (rather than from source material you pasted) were generated by an AI model and have not been verified. Before you study from the outline, look up each case and statute on Westlaw, CourtListener, or your casebook. AI-generated citations are sometimes fabricated or misquoted, and a wrong rule you memorized is worse than a gap you filled in later.
+## 引用核验
 
-## Drill-me integration
+我从自身知识（而非你粘贴的来源材料）添加到大纲中的任何案例引用、法条引用或规则陈述由 AI 模型生成且未经核实。在依据大纲复习之前，请在北大法宝、法信、中国裁判文书网或你的教材中查询每个案例和法条。AI 生成的引用有时是虚构或引用错误的，而你记住了的错误规则比后来填补的缺口更糟糕。
 
-In drill-me mode, after building a section: "Okay, close the outline. [Subject] question: [hypo]." Test whether the outline got into their head or just onto paper.
+## 追问训练集成
 
-## What this skill does not do
+在追问训练模式下，构建完一个章节后："好了，关闭大纲。[科目] 问题：[假设]。"测试大纲是否进入了脑子而不仅仅是写在了纸上。
 
-- Replace the student's own synthesis. An outline you didn't build is an outline you won't know. This skill *helps* build — the student should be driving.
-- Guarantee exam coverage. Outline the whole syllabus; the professor will test whatever they want.
-- **Invent rules to fill gaps.** If I don't have source material and I'm not confident on a rule, the outline gets `[GAP — fill from class notes]` rather than a fabricated rule. Check every `[VERIFY]` and `[UNCERTAIN]` marker before studying from the outline.
+## 本技能不做什么
+
+- 替代学生自己的综合。不是你亲手构建的大纲，是你不认识的大纲。本技能*帮助*构建——学生应该主导。
+- 保证考试覆盖。按教学大纲全面做大纲；老师会考他们想考的任何内容。
+- **为避免缺口而编造规则。** 如果我没有来源材料且对规则不确定，大纲得到 `[缺口 — 从课堂笔记填充]` 而非捏造的规则。在依据大纲复习之前检查每个 `[需核实]` 和 `[不确定]` 标记。

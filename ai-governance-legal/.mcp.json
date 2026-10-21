@@ -1,21 +1,22 @@
 {
   "mcpServers": {
-    "Slack": {
+    "yuandian": {
       "type": "http",
-      "url": "https://mcp.slack.com/mcp",
-      "title": "Slack",
-      "description": "Search messages, read channels, find discussions across your workspace."
+      "url": "https://open.chineselaw.com/mcp",
+      "title": "华宇元典法律数据",
+      "description": "法规、案例、企业与证券合规检索；连接与认证须在宿主完成，结果仍需原始法源核验。"
     },
     "Google Drive": {
       "type": "http",
       "url": "https://drivemcp.googleapis.com/mcp/v1",
       "title": "Google Drive",
-      "description": "Search, read, and fetch documents from Google Drive."
+      "description": "搜索、读取和获取文档。"
     }
   },
   "recommendedCategories": [
     "documents",
     "chat",
-    "email"
+    "email",
+    "legal-research"
   ]
 }

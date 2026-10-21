@@ -1,227 +1,187 @@
 ---
 name: reg-feed-watcher
-description: Check regulatory feeds now and report what's new since the last check, filtered by your materiality threshold. Use when the user says "check the feeds", "what's new", "regulatory update", when running from the scheduled agent, or when manually pasting a regulatory development for classification and diff.
-argument-hint: "[optional: --since DATE]"
+description: 检查法规动态源，报告自上次检查以来的新事项，按重要度阈值过滤。适用于用户说"检查法规动态"、"有什么新规定"、"法规更新"、从定时任务触发执行，或手动粘贴法规动态进行分类和差异分析时。
+argument-hint: "[可选: --since DATE]"
 ---
 
 # /reg-feed-watcher
 
-1. Load `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md` → watchlist, materiality threshold, feed config.
-2. Use the workflow below.
-3. Pull each feed. Filter by materiality.
-4. Output: what's new, categorized by materiality tier.
+1. 读取 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` → 监测清单、重要度阈值、动态源配置。
+2. 使用以下工作流。
+3. 拉取每个动态源。按重要度过滤。
+4. 输出：新事项，按重要度层级分类。
 
 ---
 
-## Purpose
+## 目的
 
-Pull the feeds. Filter by materiality. Output what's left. The filter is the
-value — unfiltered feeds are noise.
+拉取动态源。按重要度过滤。输出剩下的内容。过滤器是价值所在——未经过滤的动态源是噪音。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md` → watchlist, materiality threshold, feed configuration, digest output path (if set).
+`~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` → 监测清单、重要度阈值、动态源配置、摘要输出路径（如已设置）。
 
-`references/source-catalog.md` (in this skill's directory) → curated catalog of RSS/JSON/HTML sources across US federal, US state, EU/UK, international, and secondary/aggregator categories. Use when configuring new sources or when the user's watchlist has coverage gaps (see Step 0).
+## 工作流
 
-## Workflow
+### 第0步：覆盖范围检查（拉取前）
 
-### Step 0: Coverage check (before pulling)
+在拉取动态源之前，将监测清单和动态源配置与需要覆盖的监管机构类别进行对比：
 
-Before running the pull, compare the watchlist + feed configuration in CLAUDE.md against `references/source-catalog.md`:
+- 用户根据监测清单关注哪些类别的监管机构（国务院部委/直属机构/省级）
+- 哪些类别零个或极少数源已配置
 
-- Which categories (US federal / US state / EU-UK / international) does the user care about per their watchlist?
-- Which of those categories have zero or very few sources configured?
+如果存在明显缺口——例如用户监测清单包含"金融监管"类别但动态源中仅有"中国人民银行"，缺少"国家金融监督管理总局""中国证监会"——在摘要顶部提示一次：
 
-If there's an obvious gap — e.g., user watches "EU regulators" in the watchlist but has only `edpb.europa.eu` configured in feeds, missing ICO, CNIL, DPC Ireland — surface it once at the top of the digest:
+> **覆盖缺口提示：** 你的监测清单包含[类别]，但仅配置了[N]个动态源。建议添加[机构名称]的动态源。是否需要建议补充？运行 `/regulatory-legal:cold-start-interview --redo` 更新，或直接编辑 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md`。
 
-> **Coverage gap noticed:** Your watchlist includes [category], but only [N] feeds are configured. The source catalog lists [X] options in this category (e.g., [top 2-3 names]). Want me to suggest additions? Run `/regulatory-legal:cold-start-interview --redo` to update, or edit `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md` directly.
+不要反复提示同一缺口——如果用户已明确说"暂时不关注某监管机构"，尊重该决定并在 CLAUDE.md 中记录，以便持续有效。
 
-Don't nag the same gap repeatedly — if the user has explicitly said "skip state AGs for now," respect that. Note state in CLAUDE.md so it sticks.
+### 第1步：拉取
 
-### Step 1: Pull
+从所有已配置的动态源层级拉取。每个安装都有第1层。第2层和第3层是附加的——如已配置则使用，未配置则跳过。
 
-Pull from all configured feed tiers. Every installation has Tier 1. Tiers 2
-and 3 are additive — use them if configured, skip if not.
+**第1层——免费动态源（始终活跃）**
 
-**Tier 1 — Free feeds (always active)**
+对监测清单中的每个监管机构：
 
-For each regulator in the watchlist:
+- **中国政府网API/公告页**（http://www.gov.cn/）——查询国务院公报、行政法规、部门规章等结构化公告。
+- **各部委官方网站**——获取并解析监管机构官方网站上的公告、规章征求意见稿、政策解读等。
+  - 国家互联网信息办公室（http://www.cac.gov.cn/）
+  - 国家市场监督管理总局（https://www.samr.gov.cn/）
+  - 工业和信息化部（https://www.miit.gov.cn/）
+  - 科学技术部（https://www.most.gov.cn/）
+  - 国家数据局
+  - 最高人民法院（https://www.court.gov.cn/）
+  - 最高人民检察院（https://www.spp.gov.cn/）
+  - 其他行业监管机构
 
-- **Federal Register API** (`https://www.federalregister.gov/api/v1/documents`)
-  — query by agency slug, date range (since last check), document type. Returns
-  structured data: document type, title, abstract, effective date, comment
-  deadline (for NPRMs), and citation. Covers all US federal agencies.
-- **Direct regulator RSS** — fetch and parse any RSS URLs in ~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md feed
-  configuration (SEC, FTC, CFPB, state agencies, EU DPAs, etc.).
+监管机构监测参考：
 
-Agency slug reference for common watchlist regulators:
-| Regulator | API slug |
-|---|---|
-| FTC | federal-trade-commission |
-| SEC | securities-and-exchange-commission |
-| CFPB | consumer-financial-protection-bureau |
-| CPPA (CA) | RSS only — cppa.ca.gov/feed |
-| DOL | labor-department |
-| HHS | health-and-human-services-department |
-| FCC | federal-communications-commission |
+| 监管机构 | 监测内容 | 来源 |
+|----------|----------|------|
+| 国家互联网信息办公室（网信办） | 个人信息保护、数据安全、算法治理、内容管理 | cac.gov.cn |
+| 国家市场监督管理总局 | 反垄断、反不正当竞争、广告、消费者保护 | samr.gov.cn |
+| 工业和信息化部 | 电信、互联网信息服务、数据安全 | miit.gov.cn |
+| 科学技术部 | 科技伦理、人工智能 | most.gov.cn |
+| 国家数据局 | 数据要素、数据流通、数据基础设施 | 政府网站 |
+| 最高人民法院 | 司法解释、指导性案例 | court.gov.cn |
 
-For any regulator not in this list: check federalregister.gov/agencies for the
-correct slug, or fall back to direct RSS.
+**第2层——付费动态源（如已配置）**
 
-**Tier 2 — Paid feeds (if configured)**
+- **法律数据库MCP（如元典等）：** 查询自上次检查日期以来的更新，按监测清单中的监管机构过滤。
+- **其他专业法律研究工具MCP：** 同上。
 
-- **Paid regulatory feed MCP:** Query for updates since last check date,
-  filtered to watchlist regulators.
-- **CourtListener MCP:** Same.
+跨层级去重——同一文件可能出现在多个来源中。取信息最丰富的来源用于充实输出。
 
-De-duplicate across tiers — the same document may appear in multiple sources.
-Prefer the richest source for the enriched output.
+> **不得静默填补。** 如果动态源拉取对监测清单中的某个监管机构返回很少或没有结果，报告已发现的内容并停止。不要在不询问的情况下用联网搜索或模型知识填补空白。说明："动态源检查从[被命中的监管机构]返回[N]条事项。[监管机构/主题]的覆盖似乎较薄弱。选项：(1) 扩大日期窗口，(2) 尝试不同的动态源或MCP，(3) 搜索网络——结果将标记 `[联网检索 — 需复核]`，应在依赖前向发布机构核实，(4) 到此为止。你希望选择哪一个？" 由律师决定是否接受可信度较低的信息来源。
+>
+> **来源溯源。** 标记每条引注和法规事项的来源：`[中国政府网]`、`[<监管机构>官网]`、`[元典MCP]`、`[法律数据库]`，或具体MCP工具名称（对于通过连接器获取的事项）；`[联网检索 — 需复核]`（对于通过联网搜索获取的事项）；`[模型知识 — 需验证]`（对于从模型训练数据中浮现的事项）；`[用户提供]`（对于手动粘贴的事项）。标记为 `需验证` 的事项具有比工具获取事项更高的编造风险，应首先检查。绝不要剥离或折叠标签。
 
-**No silent supplement.** If the feed pull returns few or no results for a regulator in the watchlist, report what was found and stop. Do NOT fill the gap from web search or model knowledge without asking. Say: "The feed check returned [N] items from [regulators hit]. Coverage appears thin for [regulator / topic]. Options: (1) broaden the date window, (2) try a different feed or MCP, (3) search the web — results will be tagged `[web search — verify]` and should be checked against the issuing authority's website before relying, or (4) stop here. Which would you like?" A lawyer decides whether to accept lower-confidence sources; Claude does not decide for them.
+**次级来源。** 一些来源（法律科技媒体、律所评论、行业协会简报、学术机构报告等）报道主要的监管行动但不是主要来源。从此类源中拉取的任何事项应标记 `[次级来源]` 以及来源名称标签。在摘要中，当次级来源的事项描述监管机构行动时，添加注释："→ 追溯至一手来源：[如已知监管机构链接，否则'在<监管机构>.gov.cn上查找后再依赖']。" 不要仅凭次级来源的强度将事项分类为"始终重要"——在找到一手来源之前降低一个层级。
 
-**Source attribution.** Tag every citation and regulatory item with where it came from: `[Federal Register]`, `[<regulator> RSS]`, `[CourtListener]`, or the specific MCP tool name for items retrieved via connector; `[web search — verify]` for items from web search; `[model knowledge — verify]` for items surfaced from the model's training data; `[user provided]` for manually-pasted items. Items tagged `verify` carry higher fabrication risk than tool-retrieved items and should be checked first. Never strip or collapse the tags — they are the user's fastest signal about which citations to verify.
+**第3层——手动录入**
 
-**Secondary sources.** Some catalog entries (IAPP, FPF, Hogan Lovells, Covington, Lexology, JD Supra, Artificial Lawyer, LawSites, and similar commentators/aggregators) report on primary regulatory action but are not the primary source. Tag any item pulled from these feeds with `[secondary source]` in addition to the feed-name tag — e.g., `[IAPP Daily Dashboard] [secondary source]`. In the digest, when a secondary-source item describes a regulator action, add a note: "→ Trace to primary: [link to regulator site if known, otherwise 'find on <regulator>.gov before relying']." Do not classify a secondary-source item as "Always material" on its own strength — bump it down a tier until the primary source is located.
+如果用户粘贴了法规文本或摘要而非从定时动态源检查触发：将粘贴的内容视为单一事项，跳到第2步进行分类，并将来源记录为"手动录入"。无需动态源拉取。此路径无论订阅状态如何均可使用。
 
-**Tier 3 — Manual entry**
+拉取后记录检查时间戳。下次定时运行从此时间点开始。
 
-If the user has pasted regulatory text or a summary rather than invoking from
-a scheduled feed check: treat the pasted content as a single item, skip to
-Step 2 for classification, and record source as "manual entry." No feed pull
-required. This path works regardless of subscription status.
+### 第2步：分类
 
-Record the check timestamp after pulling. Next scheduled run pulls from here
-forward.
+每个事项根据 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` 分配重要度层级：
 
-### Step 2: Classify
+| 事项类型 | 与阈值匹配 |
+|----------|-----------|
+| 正式发布的行政法规/部门规章 | 通常为"始终重要" |
+| 征求意见稿 | 通常为"值得审阅"——并始终记录征求意见截止日期 |
+| 预征求意见/调研通知 | 值得审阅——用于**策略**而非合规——尚未施加具体要求，但标志着方向，具有实在的反馈截止日期。记录截止日期。仅作为预案分析传送至 `/regulatory-legal:policy-diff`，不作为差距消除的差异分析 |
+| 监管执法行动/行政处罚 | 行业匹配→重要；相关实践匹配→值得审阅；两者均不匹配→仅供参考或跳过 |
+| 监管指引/指导意见 | 值得审阅 |
+| 领导讲话/政策吹风 | 仅供参考或根据阈值跳过 |
+| 和解/整改 | 视情况——新颖理论或大量案例→值得审阅；常规→跳过 |
 
-Each item gets a materiality tier per `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`:
+### 第3步：充实
 
-| Item type | Match against threshold |
-|---|---|
-| Final rule | Usually "always material" |
-| Proposed rule / NPRM | Usually "review-worthy" — and always log comment deadline |
-| ANPR (Advance Notice of Proposed Rulemaking) | Review-worthy for **strategy**, not compliance — no imposed requirements yet, but signals direction and carries a real comment deadline. Log the comment deadline. Route to `/regulatory-legal:policy-diff` only as a pre-positioning analysis, not as a gap-closure diff. |
-| RFI (Request for Information) | Same as ANPR — pre-rule, no compliance obligation, but comment deadline is real and direction-signaling is the value. |
-| Enforcement action | Sector match → material; related-practice match → review-worthy; neither → FYI or skip |
-| Guidance | Review-worthy |
-| Speech / blog / statement | FYI or skip per threshold |
-| Settlement | Depends — novel theory or big number → review-worthy; routine → skip |
+对高于"仅供参考"层级的每个事项：
 
-**ANPR / RFI handling — specific.** Pre-rule items are distinct from NPRMs in one important way: they don't change the law, but they do carry comment deadlines and they signal the regulator's direction. Treat them as a separate branch:
+- 一行摘要（什么变了）
+- 为什么可能与此处相关（关联性钩子——"这涉及你正在做的[实践]"）
+- 来源链接
+- 生效日期或征求意见截止日期（如适用）
 
-- **Do not** classify an ANPR / RFI as "always material" — the compliance impact is zero until a rule issues.
-- **Do** classify as review-worthy if any of the issue areas in the notice touch the watchlist's always-material categories (e.g., an ANPR on open banking in a fintech watchlist).
-- **Do** log the comment deadline to `~/.claude/plugins/config/claude-for-legal/regulatory-legal/comment-tracker.yaml` with `item_type: ANPR` or `item_type: RFI` so the downstream tracker can distinguish these from compliance gaps.
-- **Do** include in the digest entry a line that says explicitly: "Pre-rule. Comment deadline [date]. Route to `/regulatory-legal:policy-diff` only as a pre-positioning analysis (no compliance gap yet)." This primes the policy-diff skill to use its compressed pre-positioning branch rather than a full gap-closure diff.
-- **Route to the comment-tracker, not the gap-tracker.** Comment-decision items are not compliance gaps; they belong in the comment tracker, and `gap-surfacer` uses the `comment-decision` `gap_type` (or declines to ingest, if the team routes these separately).
+不要对"仅供参考"事项逐一摘要——仅计数即可。
 
-**NPRM comment deadline handling:**
+## 输出
 
-For every NPRM classified at any tier above "skip":
-- Extract comment deadline (Federal Register API returns this as structured data)
-- If comment tracking is enabled in ~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md: append to `~/.claude/plugins/config/claude-for-legal/regulatory-legal/comment-tracker.yaml`
-  with status "undecided" and the default comment decision owner from ~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md
-- Include comment deadline in the output entry
-
-### Step 3: Enrich
-
-For each item above FYI tier:
-
-- One-line summary (what changed)
-- Why it might matter here (the relevance hook — "this is about [practice you do]")
-- Link to source
-- Effective date or comment deadline if applicable
-
-Don't summarize FYI items individually — just count them.
-
-## Output
-
-The digest goes into the chat by default. **Also write it to a shareable file** whenever the output contains one or more items above FYI, unless the user's CLAUDE.md explicitly sets `Digest output → chat only`.
-
-**File output behavior:**
-
-1. Look for `Digest output path` in `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`. If set, write there. Default if unset: `~/regulatory-legal-digests/reg-digest-YYYY-MM-DD.md`.
-2. Create parent directories if needed.
-3. Write the full digest as Markdown (same content as the chat output, including the work-product header, source tags, and the verify-citations footer).
-4. If a file already exists at the path for today, append a new section with a timestamped subheader rather than overwriting — the same day may see multiple runs (morning digest, ad-hoc check).
-5. After writing, tell the user: "Digest written to `<path>`. Share as-is, or convert to .docx with Pandoc: `pandoc <path> -o <path>.docx`."
-6. If the write fails (permission, missing directory the user didn't authorize creating, disk), fall back to chat-only output and say so — don't silently drop the file request.
-
-Format on disk matches the chat format exactly (below). Markdown renders well in GitHub, Notion, Obsidian, Google Docs (via "Import as Markdown" or Pandoc), and most email clients.
+摘要默认在对话中输出。**当输出包含一个或多个高于"仅供参考"的事项时，同时也写入可共享文件**，除非用户的 CLAUDE.md 明确设置了 `摘要输出 → 仅对话`。
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果头 — 按照插件配置 ## 输出 — 根据角色有所不同；见 `## 谁在使用此工具`]
 
-## Regulatory Feed Check — [date]
+## 法规动态检查 — [日期]
 
-**Period:** [last check] to [now]
-**Feeds checked:** [list active tiers — e.g., "Federal Register API, FTC RSS, TR"]
-**Items found:** [N] total
+**期间：** [上次检查] 至 [现在]
+**已检查的动态源：** [列出活跃的层级——如"中国政府网、网信办官网、元典MCP"]
+**发现事项：** [N] 总计
 
-### Bottom line
+### 要点
 
-[N gaps need action by [date] — top 3: X, Y, Z]
+[N个差距需要在[日期]前采取行动 — 前3项：X、Y、Z]
 
-### 🔴 Always material
+### 🔴 始终重要
 
-**[Regulator] — [Title]**
-[One-line summary]. [Relevance hook]. Effective [date].
-[Link]
-→ Recommend: run policy-diff against [likely affected policy]
+**[监管机构] — [标题]**
+[一行摘要]。[关联性钩子]。于[日期]生效。
+[链接]
+→ 建议：对[可能受影响政策]运行政策差异分析
 
-[repeat for each]
+[对每项重复]
 
-### 🟡 Review-worthy
+### 🟡 值得审阅
 
-**[Regulator] — [Title]**
-[One-line]. [Relevance]. [Deadline if any].
-[Link]
+**[监管机构] — [标题]**
+[一行]。[关联性]。[如有截止日期]。
+[链接]
 
-[NPRMs: include "💬 Comment deadline: [date] — decision pending" if comment tracking enabled]
+[征求意见稿：如意见征集跟踪已启用，包含"💬 征求意见截止日期：[日期] — 决策待定"]
 
-[repeat]
+[重复]
 
-### 📝 FYI
+### 📝 仅供参考
 
-[N] items — [expandable list of titles + links, no summaries]
-
----
-
-**Last check updated to:** [timestamp]
-**Comment tracker:** [N] NPRMs with open comment decisions — run /regulatory-legal:comments to review
+[N] 项 — [可展开的标题+链接列表，无摘要]
 
 ---
 
-**Verify citations before relying on them.** Regulatory citations here were AI-generated and have not been checked against a primary source. Before acting on any rule, guidance, or enforcement action above, confirm it against Westlaw, your firm's research platform, or the issuing authority's website — check accuracy, effective date, and current status. AI-generated regulatory citations are sometimes fabricated, misquoted, or stale. Source tags on each item (e.g., `[Federal Register]`, `[web search — verify]`) show where the citation came from; `verify` tags carry higher fabrication risk and should be checked first.
+**上次检查更新至：** [时间戳]
+**意见征集中：** [N] 个征求意见稿有待决定——运行 /regulatory-legal:comments 审阅
+
+---
+
+**依赖前核实引注。** 此处的法规引注由AI生成，未经对照一手来源核实。在对上述任何法规、规章、指导意见或执法行动采取行动之前，通过法律研究工具（元典MCP、你的律所研究平台或发布机构的官方网站）确认其准确性、生效日期和当前状态。AI生成的法规引注有时是虚构、引用错误或过时的。每个事项上的来源标签（例如 `[中国政府网]`、`[联网检索 — 需复核]`）标明其出处；`需验证` 标签具有更高的编造风险，应首先检查。
 ```
 
-## Config-dependent fallbacks
+## 配置相关的降级方案
 
-This skill reads the watchlist, materiality threshold, and feed configuration from `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`. When a required value is still `[PLACEHOLDER]` or empty, say so in the output — specifically, not generically:
+- **监测清单为空：** 停止并说明"你的配置中的监测清单为空。在不知道要监测哪些监管机构的情况下，我无法拉取动态源。运行 `/regulatory-legal:cold-start-interview --redo` 或编辑 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` 并添加至少一个监管机构。"
+- **重要度阈值为空：** 回退到默认层级并附加说明。
+- **动态源配置为空：** 仅运行中国政府网公告检查并附加说明。
 
-- **Watchlist empty:** stop and say "The watchlist in your configuration is empty. I can't pull feeds without knowing which regulators to watch. Run `/regulatory-legal:cold-start-interview --redo` or edit `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md` and add at least one regulator."
-- **Materiality threshold empty:** fall back to the default tiers and append: "This output used the default materiality tiers because your configuration doesn't have custom thresholds set. Tune them with `/regulatory-legal:cold-start-interview --redo` or by editing `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`."
-- **Feed configuration empty:** run Federal Register API only and append: "This output used only the free Federal Register API because your configuration doesn't list direct RSS or paid feeds. Add feeds with `/regulatory-legal:cold-start-interview --redo` or by editing `~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md`."
+如果没有什么高于"仅供参考"的内容："一切平静。[N]项仅供参考，无需关注。"
 
-Say nothing about config when the relevant values are populated.
+## 衔接
 
-If nothing above FYI: "All quiet. [N] FYI items, nothing needing attention."
+- **传递至政策差异分析：** 任何"始终重要"且可能影响政策的事项 → 提议运行差异分析。
+- **传递至差距呈现：** 如果差异分析发现差距 → 跟踪。
+- **传递至意见征集跟踪器：** 任何分类高于"跳过"的征求意见稿 → 如跟踪已启用，自动记录征求意见截止日期。
 
-## Handoff
+## 收尾
 
-- **To policy-diff:** Any "always material" item with a likely policy impact → offer to run the diff.
-- **To gap-surfacer:** If a diff finds a gap → tracked.
-- **To comment-tracker:** Any NPRM classified above "skip" → comment deadline logged automatically if tracking is enabled.
+以 CLAUDE.md `## 输出` 规定的下一步决策树收尾。
 
-## Close with the next-steps decision tree
+---
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
+## 本技能不做的事
 
-## What this skill does not do
-
-- Read every item in full. It classifies and enriches; deep reading is for the
-  items that survive the filter.
-- Change the materiality threshold. If the filter is wrong, edit ~/.claude/plugins/config/claude-for-legal/regulatory-legal/CLAUDE.md.
-- Require TR or CourtListener. Free feeds are the baseline; paid feeds add depth.
+- 不逐项通读每项。它进行分类和充实；深度阅读是针对通过过滤器筛选后的事项。
+- 不更改重要度阈值。如果过滤器不对，编辑 CLAUDE.md。
+- 不要求付费订阅。免费动态源是基线；付费动态源增加深度。

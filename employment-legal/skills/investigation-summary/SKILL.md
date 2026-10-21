@@ -1,40 +1,43 @@
 ---
 name: investigation-summary
 description: >
-  Draft an audience-specific summary from the privileged investigation memo —
-  HR, leadership, or outside counsel versions. Use when an investigation memo
-  needs to be communicated to an audience that should not see the full
-  privileged work product.
-argument-hint: "[matter name] [audience: hr / leadership / outside-counsel]"
+  从调查备忘录起草面向特定受众的摘要——HR版本、管理层版本或外部律师版本。
+  当调查备忘录需要传达给不应看到完整保密工作成果的受众时使用。
+argument-hint: "[调查事项名称] [受众：hr / 管理层 / 外部律师]"
 ---
 
 # /investigation-summary
 
-Drafts a stripped-down, audience-appropriate summary from the privileged
-investigation memo. HR summaries contain no privilege analysis. Leadership
-summaries are high-level. Outside counsel briefings include full context.
+从调查备忘录起草精简的、适合受众的摘要。HR摘要不包含保密分析和法律风险暴露评估。管理层摘要为高层次概述。外部律师简报包含完整上下文。
 
-## Instructions
+## 指令
 
-1. Load the `internal-investigation` reference skill and run Mode 5 (Audience summary).
-2. If no memo exists yet, offer to draft the memo first.
-3. HR summaries must not include attorney mental impressions, credibility
-   methodology, or legal exposure analysis.
+1. 加载调查备忘录并运行受众摘要模式。
+2. 如果尚无备忘录，提议先起草备忘录。
+3. 各受众版本的规则：
 
-## Examples
+| 受众 | 包含 | 排除 |
+|---|---|---|
+| **HR** | 事实发现、处理建议 | 法律分析、证据三性审查意见、法律风险评估 |
+| **管理层** | 结论性摘要、关键事实、建议方案 | 详细证据分析、调查方法、内部法律意见 |
+| **外部律师** | 完整事实背景、已有证据、缺口清单、需要外部意见的问题 | 仅排除与其他案件交叉的内容（除非有交叉引用授权） |
+
+4. HR摘要不得包含：律师主观分析意见、证据可信度评估方法论、法律风险暴露分析。
+
+## 保密说明
+
+对外发出的摘要（HR、管理层）应移除"律师工作成果"标头，但保留基本保密标注。对外部律师的简报如包含律师分析意见，应标注保密并明确受《律师法》第38条保护。`[法条原文]`
+
+## 示例
 
 ```
-/employment-legal:investigation-summary [matter name] hr
+/employment-legal:investigation-summary [调查事项名称] hr
 ```
 
 ```
-/employment-legal:investigation-summary [matter name] leadership
+/employment-legal:investigation-summary [调查事项名称] 管理层
 ```
 
 ```
-/employment-legal:investigation-summary [matter name] outside-counsel
+/employment-legal:investigation-summary [调查事项名称] 外部律师
 ```
-
-> Detailed audience-stripping rules and summary templates live in the
-> `internal-investigation` reference skill — load it before doing substantive
-> work.

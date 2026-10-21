@@ -1,447 +1,205 @@
 ---
 name: takedown
 description: >
-  Draft a DMCA takedown notice, triage one you received, or draft a §512(g)
-  counter-notice. Use when asserting copyright through a §512(c)(3) takedown
-  with the fair-use and perjury gates, when an incoming takedown needs triage
-  into comply / counter / engage / ignore options, or when drafting a
-  §512(g)(3) counter-notice with the consent-to-federal-jurisdiction gate.
-argument-hint: "<--send | --respond | --counter> [context or path to incoming notice]"
+  起草"通知-删除"通知（依信息网络传播权保护条例）、对收到的通知进行分诊或起草反通知。
+  当通过著作权通知主张权利并需核验法定合理使用情形与通知真实性，当收到通知需要分诊为接受/
+  反通知/协商/暂不行动选项，或需起草符合中国法要求的反通知时使用。
+argument-hint: "<--send | --respond | --counter> [上下文或收件路径]"
 ---
 
 # /takedown
 
-Three modes. Pick one:
+三种模式。选一：
 
-- `/ip-legal:takedown --send` — draft a §512(c)(3) takedown notice. Fair-use gate (*Lenz*) + loud perjury / §512(f) gate before delivery.
-- `/ip-legal:takedown --respond` — triage a takedown someone sent you. Options: comply / counter / engage / ignore.
-- `/ip-legal:takedown --counter` — draft a §512(g)(3) counter-notice. Loud gate for the federal-jurisdiction admission and the perjury statement.
+- `/ip-legal:takedown --send` — 起草通知-删除通知（信息网络传播权保护条例第14条 `[法条原文]`）。合理使用关口+响亮的权利声明关口。
+- `/ip-legal:takedown --respond` — 对收到的通知做分诊。选项：接受 / 反通知 / 协商 / 暂不行动。
+- `/ip-legal:takedown --counter` — 起草反通知（信息网络传播权保护条例第16条 `[法条原文]`）。核对不侵权初步证据、声明真实性和适用程序。
 
-## Instructions
+## 指令
 
-1. **Read the practice profile.** Load `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md`. If it contains `[PLACEHOLDER]` markers or does not exist, stop and say: "This plugin needs setup before it can give you useful output. Run `/ip-legal:cold-start-interview` — the takedown skill depends on your approval matrix and practice profile."
+1. **读取实践档案。** 如果含占位符，停止。
+2. **检查事项工作区。**
+3. **根据参数分发。**
+4. **尊重关口。** 发送和反通知模式中关口每次运行。
+5. **法域说明。** 信息网络传播权保护条例系中国行政法规。如果服务提供者、内容或侵权人
+   位于中国法域之外，在起草前标注——可能需要根据当地法律选择适当工具。
 
-2. **Check matter workspaces.** Per `## Matter workspaces`: if `Enabled` is `✗`, skip. If enabled and there is no active matter, ask: "Which matter is this for? Run `/ip-legal:matter-workspace switch <slug>` or say `practice-level`."
-
-3. **Dispatch on `$ARGUMENTS`:**
-   - `--send` → run send mode (below). Walk identify-the-work, identify-the-infringing-material, fair-use gate (*Lenz*), good-faith belief, accuracy/authority, draft the §512(c)(3) notice, run the loud gate, write output.
-   - `--respond` → run respond mode (below). Read the incoming notice, assess (license, fair use, defects, host §512(g) compliance, sender credibility), present the four options, recommend, write the triage memo.
-   - `--counter` → run counter mode (below). Confirm the predicate (taken down in response to a §512 notice, good-faith belief of mistake/misidentification, ready for federal-jurisdiction admission, attorney in the loop), draft the §512(g)(3) counter-notice, run the loud gate, write output.
-   - No flag → ask once: "Are we sending a DMCA takedown, triaging one we received, or drafting a counter-notice?"
-
-4. **Respect the gates.** In `--send` and `--counter`, the loud gate runs before any final output is written. The fair-use gate in `--send` is separate and runs earlier; "debatable" or "likely" fair use stops the draft and routes to attorney review.
-
-5. **Jurisdiction note.** DMCA §512 is US federal law. If the service provider, content, or infringer sits outside US jurisdiction, flag before drafting — you may need an EU DSA notice, UK OSA notice, or local-regime instrument instead of (or in addition to) a DMCA notice.
-
-6. **Hand off where appropriate.** `--respond` with a counter-notice recommendation chains into `/ip-legal:takedown --counter` — but only after the triage memo has been reviewed and the decision to counter has been made deliberately.
-
-## Examples
+## 示例
 
 ```
 /ip-legal:takedown --send
-/ip-legal:takedown --respond ~/Downloads/youtube-takedown-notice.pdf
+/ip-legal:takedown --respond ~/Downloads/平台通知.pdf
 /ip-legal:takedown --counter
-/ip-legal:takedown
 ```
-
-## Notes
-
-- The outgoing notice and counter-notice do not carry the work-product header. Internal drafts, fair-use analyses, and triage memos do.
-- §512(c)(3) and §512(g)(3) are element-by-element statutes — every required element must be present or the notice is defective.
-- Counter-notices consent to federal court jurisdiction in the claimant's district (or a designated district for non-US subscribers). This is not a formality.
-- Non-lawyer users get a one-page brief for the attorney conversation before the gate clears — particularly important for counter-notices, which are the step before litigation.
 
 ---
 
-## Purpose
+## 目的
 
-The DMCA §512 notice-and-takedown system is fast, cheap, and consequential in equal measure. A takedown is a sworn statement under penalty of perjury that gets content pulled with no judicial review. A counter-notice is another sworn statement that consents to federal jurisdiction and puts the content back. Both decisions can become litigation. This skill handles all three moves with the guardrails each warrants.
+中国的"通知-删除"制度依据《信息网络传播权保护条例》（2006年颁布，2013年修订）
+第14-17条 `[法条原文]`建立。这是一套快速、低成本且法律后果重大的系统。通知是
+一项真实的法律声明，导致内容被移除而没有司法审查。反通知是另一项法律声明，使内容
+进入恢复程序。两个决定都可能进入诉讼。
 
-Three modes:
+对于电子商务平台，同时适用《电子商务法》第42-43条 `[法条原文]`的"通知-删除-反通知"
+机制，该机制适用于平台内经营者。
 
-- `--send` — draft a §512(c)(3) takedown notice
-- `--respond` — triage a takedown someone sent you; produce options
-- `--counter` — draft a §512(g)(3) counter-notice
+三种模式：
+- `--send` — 起草通知（条例第14条 / 电子商务法第42条）
+- `--respond` — 对收到的通知做分诊；产出选项
+- `--counter` — 起草反通知（条例第16条 / 电子商务法第43条）
 
-If the user does not pass a flag, ask once: "Are we sending a DMCA takedown, triaging one we received, or drafting a counter-notice?"
+> **对外发送文件（发送和反通知模式）：** 通知/反通知发送给网络服务提供者。对外文件上
+> **勿**包含工作成果抬头。通知本身不受保密特权保护——它是在法定程序中的声明。内部草稿、
+> 发送前摘要、合理使用分析和分诊备忘录保留该抬头。
 
-> **External deliverables (send and counter modes):** the outgoing notice/counter-notice goes to the service provider's designated agent. Do NOT include the `PRIVILEGED & CONFIDENTIAL — ATTORNEY WORK PRODUCT` header on the outgoing document. The notice itself is not privileged — it's a statement made in a statutory process. Internal drafts, pre-send briefs, fair-use analyses, and triage memos keep the header per plugin config `## Outputs`.
+## 法域假设
 
-## Jurisdiction assumption
+《信息网络传播权保护条例》系中国行政法规，第14-17条适用于受中国法管辖的网络服务
+提供者。《电子商务法》第42-43条适用于电子商务平台经营者。其他法域有各自的
+通知-行动制度。著作权的存续基于伯尔尼公约具有多边性，但执法机制是法域特定的。
 
-DMCA §512 is **US federal law**. It runs against service providers subject to US jurisdiction. Other jurisdictions have their own notice-and-action regimes — EU Digital Services Act Art. 16, UK Online Safety Act, India IT Rules 2021, etc. — that differ materially in required elements, counter-notice mechanics, and liability for misuse. If the service provider, content, or infringer sits outside US jurisdiction, flag it — a US DMCA notice may be the wrong instrument, or may need to be paired with a local regime's notice. Copyright subsistence itself is Berne-multilateral, but enforcement mechanics are jurisdiction-specific.
+## 加载上下文
 
-## Load context
+- 实践档案 → `## IP实践档案`、`## 执法姿态`、`## 输出`、`## 谁在使用`
+- 事项上下文
 
-- `~/.claude/plugins/config/claude-for-legal/ip-legal/CLAUDE.md` → `## IP practice profile` (copyright registrations if any), `## Enforcement posture` → `Approval matrix → DMCA takedown (ordinary)` row, `## Outputs` (work-product header, role), `## Who's using this` (role — lawyer vs. non-lawyer)
-- **Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (in-house default), skip matter machinery. If enabled and no active matter, ask: "Which matter? Run `/ip-legal:matter-workspace switch <slug>` or say `practice-level`." Write outputs to the active matter's folder at `~/.claude/plugins/config/claude-for-legal/ip-legal/matters/<matter-slug>/takedown/<slug>/` (or `takedown/<slug>/` at practice level). Never read another matter's files unless `Cross-matter context` is `on`.
+---
 
-## Send mode — drafting a §512(c)(3) takedown notice
+## 发送模式 — 起草通知（条例第14条/电子商务法第42条）
 
-### Step 1: Identify the copyrighted work
+### 第1步：识别著作权作品
 
-> What is the copyrighted work?
+> 受著作权保护的作品是什么？
 >
-> - **Title / description** — what is the work (software, image, text, video, audio)?
-> - **Registration status** — US Copyright Office registration number and date (if any). Registration is NOT required to send a takedown, but it is required to file suit on a US work and its pre-infringement timing controls statutory damages and fees.
-> - **Ownership** — do we own it outright, or hold an exclusive license with takedown authority? (Non-exclusive licensees typically cannot send takedowns on the licensor's work.)
-> - **Prior licensing** — have we ever licensed this use, or a broader use that might cover it?
+> - **作品名称/描述** — 作品是什么（软件、图片、文字、视频、音频）？
+> - **登记情况** — 著作权登记号（如有）。中国著作权登记为自愿，但可作为权利归属的初步证据（《最高人民法院关于审理著作权民事纠纷案件适用法律若干问题的解释》第7条 `[法条原文]`）。
+> - **权属** — 我们是否完全拥有，还是持有可发送通知的独占许可？
+> - **在先许可** — 我们是否曾许可过此使用，或一个可能涵盖此使用的更广泛许可？
 
-Ownership and authority are the first things §512(f) cases look at. Get them clearly on the record before drafting.
+### 第2步：识别侵权材料及其位置
 
-### Step 2: Identify the infringing material and its location
-
-> Where is the infringing material?
+> 侵权材料在哪里？
 >
-> - **Platform / service provider** — YouTube, Twitter/X, GitHub, Reddit, Amazon, a web host, etc.
-> - **URL(s)** — specific permalinks to the infringing material. One notice can cover multiple URLs if they're all from the same service.
-> - **Description** — what is the infringing material and how does it infringe (verbatim copy, substantially similar, derivative)?
-> - **Screenshots / evidence** — preserved with timestamp and URL visible
-
-§512(c)(3) requires "information reasonably sufficient to permit the service provider to locate the material." URLs alone are usually enough; be precise.
-
-### Step 3: Fair-use gate
-
-Under *Lenz v. Universal Music Corp.*, 801 F.3d 1126 (9th Cir. 2015), a copyright holder must consider fair use before sending a takedown. This is not a judgment about fair use — it is a consideration step that the sender must take and can prove they took.
-
-Ask:
-
-> Before we draft the notice, walk through fair use. Under *Lenz*, you have to consider it before sending — even if the conclusion is "not fair use." The four factors:
->
-> 1. **Purpose and character** — commercial? transformative? criticism, comment, news reporting, teaching, scholarship, research?
-> 2. **Nature of the copyrighted work** — factual or creative? published or not?
-> 3. **Amount and substantiality** — how much of the work is used? is it the heart of the work?
-> 4. **Effect on the market** — does the use substitute for the original or harm a derivative market?
->
-> Your read on each? And your conclusion — fair use unlikely, debatable, likely?
-
-Record the answer in the notice file. If "debatable" or "likely," do not draft. Stop and route to attorney review: "Fair use is debatable/likely on these facts. Sending a takedown on a use that is protected by fair use is the exact §512(f) exposure the statute creates. Route this to counsel before any notice goes out."
-
-### Step 4: Good-faith belief
-
-§512(c)(3)(A)(v) requires "a statement that the complaining party has a good faith belief that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law."
-
-The sender forms this belief on the record. Have they:
-
-- Confirmed the work is theirs (or they have takedown authority via exclusive license)?
-- Confirmed the use is not licensed (no prior deal, no implied license, no Creative Commons grant that would cover it)?
-- Considered fair use (Step 3)?
-- Reviewed the accused content directly (not just a report about it)?
-
-If yes on all four, the good-faith belief is colorable. If no on any, pause.
+> - **平台/服务提供者** — 哪个平台？
+> - **具体URL** — 侵权材料的链接
+> - **描述** — 侵权材料是什么以及如何侵权
+> - **证据** — 截图和证据保存
 
-### Step 5: Accuracy and agent authority
+### 第3步：合理使用关口
 
-§512(c)(3)(A)(vi) requires "a statement that the information in the notification is accurate, and under penalty of perjury, that the complaining party is authorized to act on behalf of the owner of an exclusive right that is allegedly infringed."
+按[国家版权局公布的《著作权法》](https://www.ncac.gov.cn/xxfb/flfg/flfg_532/202103/t20210309_50530.html)第24条，先核对是否属于列举的可不经许可使用情形，再核对署名、作品正常使用及著作权人合法权益条件；网络传播另核对[《信息网络传播权保护条例》](https://xzfg.moj.gov.cn/law/download?LawID=1253&type=pdf)第6条的适用情形。记录作品、使用方式、适用情形和事实证据，按事项时点复核原文。美国法的四因素不能作为中国法第24条的当然检验标准。
 
-This is the perjury statement. It applies to the accuracy of the identification and the authority — not to the fair-use determination itself, though §512(f) liability reaches both.
+若可能构成法定合理使用或材料不足，不继续起草发送版，交律师审核。
 
-Confirm signer: who is sending this on behalf of whom, and do they have authority to do so?
+### 第4步：善意确信
 
-### Step 6: Draft the notice
+确信作品的权属和使用未经授权。
 
-§512(c)(3)(A) elements — every one must be present:
+### 第5步：准确性和授权
 
-1. **Signature** (physical or electronic) of the rights holder or authorized agent
-2. **Identification of the copyrighted work** — "Copyrighted work: [title, description, registration no. if any]"
-3. **Identification of the infringing material** with location information — "Infringing material: [URL(s), description, how it infringes]"
-4. **Contact information** — address, phone, email of the complaining party or agent
-5. **Good-faith belief statement** — verbatim, adapted: "I have a good faith belief that use of the copyrighted material described above is not authorized by the copyright owner, its agent, or the law."
-6. **Accuracy and authority statement under penalty of perjury** — verbatim, adapted: "I swear, under penalty of perjury, that the information in this notification is accurate and that I am the copyright owner, or am authorized to act on behalf of the owner, of an exclusive right that is allegedly infringed."
+确认签署人有权代表权利人行事的授权。
 
-Structure:
+### 第6步：起草通知
 
-- Sender address block / date
-- Recipient: designated DMCA agent at [service provider] (find via Copyright Office's DMCA Designated Agent Directory — `https://www.copyright.gov/dmca-directory/`)
-- Re: Notice of Copyright Infringement pursuant to 17 U.S.C. §512(c)
-- The six elements above, numbered or clearly set apart
-- Signature line
+《信息网络传播权保护条例》第14条要求的要素 `[法条原文]`：
+1. 权利人的姓名（名称）、联系方式和地址
+2. 要求删除或者断开链接的侵权作品、表演、录音录像制品的名称和网络地址
+3. 构成侵权的初步证明材料
 
-Most service providers publish a preferred form or a web intake (YouTube Content ID / Copyright webform, Twitter / X copyright report, GitHub DMCA repo, etc.). The skill produces the notice content; the user submits through the provider's path. Note in the output which intake path is expected for the named service provider.
+《电子商务法》第42条补充要求：通知应当包括构成侵权的初步证据 `[法条原文]`。
 
-### Step 7: The loud gate before delivery
+结构：发函人信息、收件人（服务提供者公示的接收渠道）、事由、三项法定要素、签署栏。
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  BEFORE THIS TAKEDOWN GOES ANYWHERE                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  A DMCA takedown is a statement under penalty of perjury.   │
-│  Signing and sending it is not a routine administrative     │
-│  step — it is a sworn declaration with specific legal       │
-│  consequences.                                              │
-│                                                             │
-│  • 17 U.S.C. §512(f) creates LIABILITY for knowing          │
-│    material misrepresentations. People have been sued,      │
-│    and have lost, for bad-faith takedowns — *Lenz v.        │
-│    Universal*, 801 F.3d 1126 (9th Cir. 2015); *Online       │
-│    Policy Group v. Diebold*, 337 F. Supp. 2d 1195 (N.D.     │
-│    Cal. 2004); *Stephens v. Clash*, 796 F.3d 281 (3d        │
-│    Cir. 2015).                                              │
-│                                                             │
-│  • The accuracy and authority statement is sworn under      │
-│    penalty of perjury. That is a real statement, not a      │
-│    formality.                                               │
-│                                                             │
-│  • Sending a takedown on material that is in fact           │
-│    licensed, owned by someone else, or fair use is the      │
-│    fact pattern §512(f) was written for.                    │
-│                                                             │
-│  Confirm before the notice leaves:                          │
-│                                                             │
-│    1. You own the copyright, or you hold an exclusive       │
-│       license with takedown authority.                      │
-│    2. The accused use is not authorized — you have          │
-│       checked licenses, grants, and any prior consents.     │
-│    3. You considered fair use per *Lenz* (see Step 3 of     │
-│       this draft); your conclusion is on the record.        │
-│    4. Whoever has authority to sign approves sending.       │
-│                                                             │
-│  Approver per your practice profile: [approver from         │
-│  Enforcement posture → Approval matrix → DMCA takedown      │
-│  (ordinary) row]                                            │
-│                                                             │
-│  Automatic escalations that apply here: [list any from      │
-│  the practice profile that this matter triggers]            │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+### 第7步：发送前响亮关口
 
-If the user is a non-lawyer (per `## Who's using this`), add:
+呈现类似于警告函的关口格式，包含：
+- 通知是真实的法定声明
+- 错误通知承担民事责任（条例第24条 `[法条原文]`：因错误通知造成服务对象损失的，应承担赔偿责任；
+  电子商务法第42条：恶意发出错误通知的，加倍承担赔偿责任 `[法条原文]`）
+- 确认权属、未授权、合理使用已考量、授权人已批准
 
-> A DMCA takedown is sworn under penalty of perjury and creates §512(f) exposure for bad-faith or overbroad use. Have you reviewed this with an attorney? If not, here's a brief to bring to them: [generate a short summary: work, ownership, accused use, licensing check, fair-use analysis, signer, service provider]. A few thousand dollars of attorney time now is materially cheaper than a §512(f) suit.
->
-> If you need to find a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction: your professional regulator's referral service (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent); ABA IP section referral roster (US); law school IP clinics for individual creators and small businesses.
+### 第8步：输出
 
-Do not write the final output without explicit engagement with the gate.
+写入事项文件夹。聊天中以纯文本展示供审核。
 
-### Step 8: Output
+---
 
-**Primary:** `<matter-folder>/takedown/<slug>/notice-v<N>.md` (or .docx if the service provider accepts it — most accept pasted text or web-form submission). The notice content, ready to paste into the service provider's DMCA intake form or send to its designated agent.
+## 接收模式 — 对收到的通知做分诊
 
-**In-chat:** show the notice as plain text for review before writing. Iterate before committing to disk.
+你的内容被拿下了。平台通知你收到了通知。你有选项。
 
-**Reviewer-facing closing note** (in the in-chat preview only):
+### 第1步：阅读收到的通知
 
-> This is a draft DMCA notice for attorney review, not a notice ready to send. Sending it is a sworn statement with §512(f) exposure. A licensed attorney reviews, edits, and takes professional responsibility before submission. Do not send this unreviewed.
+提取：发函人、平台、被主张的作品、被指控侵权的内容、通知日期、通知表面是否符合
+条例第14条要素。
 
-**Citation verification.** Any case or statutory citation included (for example, in internal memoranda around the notice) must be verified on a legal research tool. Source-tag each — `[Westlaw]`, `[CourtListener]`, `[user provided]`, `[model knowledge — verify]`, `[web search — verify]`. Citations tagged `verify` get checked first. No silent supplement from web or model knowledge if a configured research tool comes up thin — present options to the user.
+### 第2步：评估
 
-**Post-send record.** After submission, write `<matter-folder>/takedown/<slug>/submission.md`: service provider, designated agent used (address or web form URL), date submitted, confirmation ID if returned, URLs targeted, counter-notice watch date (generally 10–14 business days), legal hold refreshed.
+- **我们是否有许可？** 协商的、默示的、任何授权使用的安排。
+- **是否可能属于法定合理使用？** 核对著作权法第24条的情形与限制条件，以及条例第6条的适用范围。
+- **通知是否有缺陷？** 缺少条例第14条要素？缺陷通知非适格通知。
+- **平台是否正确遵守了条例第15条/第17条及电子商务法程序？** 我们是否被给予反通知机会？
+- **发函人是否可信？**
 
-## Respond mode — triaging a takedown you received
+### 第3步：选项
 
-Your content was taken down. A service provider has notified you of a §512(c)(3) notice. You have options.
+**A — 接受（让删除成立）** | 当他们是对的，或不值得争。
+**B — 发送反通知** | 当善意确信移除系错误或误认。若适用《电子商务法》第43条，
+平台转送声明到达权利人后十五日内，未收到权利人已经投诉或者起诉的通知，平台应及时
+终止所采取的措施；先核对到达时间与适用程序（[第43条原文](https://www.npc.gov.cn/zgrdw/npc/xinwen/2018-08/31/content_2060172.htm)）。
+**C — 直接与发函人协商** | 有商业解决空间。
+**D — 暂不行动并保留证据** | 记录不启动反通知的原因及可能后果，不能把沉默当作权利确认。
 
-### Step 1: Read the notice you received
+### 第4步：撰写分诊备忘录
 
-Extract:
+输出至事项文件夹。
 
-- **Sender** — entity, signer, address, email
-- **Service provider** — who notified you (the platform)
-- **Claimed work** — what they say is theirs
-- **Your content alleged to infringe** — URL(s) or identifiers as they named them
-- **Date of takedown / notice**
-- **Whether the notice appears to meet §512(c)(3) on its face** — flag missing elements; a defective notice is not a proper notice
+---
 
-### Step 2: Assess
+## 反通知模式 — 起草反通知（条例第16条/电子商务法第43条）
 
-- **Do we have a license?** Negotiated, implied, Creative Commons, prior settlement, assignment — anything that authorizes the use.
-- **Is it fair use?** Walk the *Lenz* four factors. Be honest; this is for us, not the response.
-- **Is the notice defective?** Missing any of the §512(c)(3)(A) elements, lacking the perjury statement, signed by someone without apparent authority? Defective notices are not properly compliant; the host may still act on them but the sender's §512(f) exposure rises and our leverage rises.
-- **Did the host comply properly with §512(g)?** Were we given notice and an opportunity to counter? If the host acted without giving us the chance, that is a separate issue with the host (not the sender).
-- **Is the sender a troll?** Repeat pattern of overbroad takedowns on this platform?
+### 第1步：确认前提
 
-### Step 3: Options
+- 内容因通知被移除（非平台自主的内容政策执行）
+- 善意确信移除系错误或误认
+- 已准备好提供不侵权的初步证明材料
+- 决定系深思熟虑——非反应性、非无律师参与
 
-Present 4 options with tradeoffs:
+### 第2步：依据条例第16条/电子商务法第43条起草
 
-**A — Comply (let the takedown stand)**
-- When: they're right, or the fight isn't worth it
-- Tradeoff: content stays down; may affect SEO, accounts with strikes policies, livelihood for creators
-- Next step: log the event, confirm no counter-notice deadline issues, move on
+条例第16条要求的要素 `[法条原文]`：
+1. 服务对象的姓名（名称）、联系方式和地址
+2. 要求恢复的作品、表演、录音录像制品的名称和网络地址
+3. 不构成侵权的初步证明材料
 
-**B — Send a counter-notice** (§512(g)(3))
-- When: we have a good-faith belief the material was misidentified or removed by mistake — often applies where the use is licensed, fair use, or the sender doesn't own the work
-- Tradeoff: sworn under penalty of perjury, consents to federal court jurisdiction in the sender's district (or our own if outside the US and we designate), puts the decision in the sender's hands for 10–14 business days — if they sue, content stays down; if they don't, content is restored
-- Next step: `/ip-legal:takedown --counter`
+电子商务法第43条补充：平台内经营者接到转送的通知后，可以向电子商务平台经营者
+提交不存在侵权行为的声明。声明应当包括不存在侵权行为的初步证据。
 
-**C — Engage the sender directly**
-- When: there's room for a business resolution (license, credit, takedown of a narrower portion)
-- Tradeoff: the content stays down during the conversation; settlement-communication hygiene matters (FRE 408 or equivalent; protection from substance and context, not labeling)
-- Next step: outreach letter to the sender; do not send the counter-notice while discussions are live
+### 第3步：发送前响亮关口
 
-**D — Ignore and let it stand; raise it elsewhere**
-- When: the harm is small, we don't want the federal-jurisdiction admission, and we'd rather deal with the sender separately
-- Tradeoff: content stays down; if the takedown itself was bad-faith, we may have §512(f) to assert on our own schedule — but that's its own fight
+反通知是真实的法律声明——反通知后，权利人可能起诉。关口强调：
+- 反通知的法律后果
+- 若适用《电子商务法》第43条，确认平台转送声明到达权利人的时间；此后十五日内是否收到
+  权利人已经投诉或者起诉的通知，决定平台是否应及时终止已采取的措施。不得写成工作日，
+  也不得与《信息网络传播权保护条例》的程序混同。
+- 我们准备好应诉了吗？
 
-Recommend one with two sentences of rationale.
+### 第4步：输出
 
-### Step 4: Write triage memo
+写入事项文件夹。
 
-Output: `<matter-folder>/takedown/inbound/<slug>/triage.md`.
+---
 
-```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs]
+## 决策立场
 
-> **Privilege inheritance.** This triage records our first-pass assessment of an adverse takedown. It is attorney-client and/or work-product material. Do not forward outside the privilege circle or attach to counter-notice submissions without scrubbing.
+当不确定使用是否合理、是否拥有权利、合理使用是否成立——不默认为安全。标注供律师审核。
 
-# DMCA Takedown Received — Triage
+## 本技能不做的事
 
-> **READ FOR TRIAGE, NOT OPINION.** Structured intake scan, not a legal merit opinion. Every authority flagged for SME verification; every merit call is counsel's.
-
-**Slug:** [slug]
-**Received:** [YYYY-MM-DD]
-**Service provider:** [platform]
-**Incoming file:** [path]
-
-## The notice
-
-**Sender:** [entity, signer, counsel if any]
-**Claimed work:** [title, description, reg no. if provided]
-**Our content targeted:** [URLs / identifiers]
-**Date of takedown:** [YYYY-MM-DD]
-**Notice meets §512(c)(3) on its face:** [yes / no — list any missing elements]
-
-## Assessment
-
-**License / authorization check:** [read]
-**Fair use walkthrough (Lenz factors):** [read — each factor + conclusion; `[SME VERIFY]`]
-**Notice defects:** [list or none]
-**Host compliance with §512(g):** [were we given notice and opportunity]
-**Sender credibility:** [troll / real claimant / repeat takedown pattern]
-
-## Options
-
-### A. Comply
-### B. Counter-notice (§512(g)(3))
-### C. Engage sender
-### D. Ignore
-
-**Recommendation:** [A/B/C/D] — [two sentences why] — `[SME VERIFY: counsel to confirm before executing]`
-
-## Deadlines
-
-- **Counter-notice watch window:** 10–14 business days after counter-notice is submitted — content stays down if sender files suit in that window
-- **Sender's suit filing timing:** typically on our counter-notice clock, if we counter
-- **Any contractual deadlines with the host:** [check]
-
-## Immediate actions
-
-- [ ] Legal hold issued on the accused work and our related content — [yes/no]
-- [ ] Business impact assessed (revenue, account strikes, SEO) — [yes/no]
-- [ ] Matter created in log — [yes/no/TBD]
-- [ ] Counsel assigned — [who]
-```
-
-Close the in-chat presentation with:
-
-> This is a triage memo, not advice. The assessments above are a first read from the four corners of the notice. An attorney evaluates before you counter-notice (which consents to federal jurisdiction) or decide not to respond.
-
-## Counter mode — drafting a §512(g)(3) counter-notice
-
-Counter-notices put content back up unless the original sender sues within 10–14 business days. They are the step before litigation.
-
-### Step 1: Confirm the predicate
-
-- The content was taken down in response to a §512 notice (not a terms-of-service action by the host).
-- You have a good-faith belief the material was removed by mistake or misidentification — the statutory test.
-- You are prepared to consent to federal court jurisdiction in the original sender's district (or designate if you are outside the US).
-- The decision has been made deliberately — not in reaction, not without attorney input.
-
-### Step 2: Draft per §512(g)(3)
-
-§512(g)(3) elements — every one must be present:
-
-1. **Signature** (physical or electronic) of the subscriber
-2. **Identification of the material removed** and its location before removal (the URL where the content was)
-3. **Statement under penalty of perjury that the subscriber has a good faith belief the material was removed or disabled as a result of mistake or misidentification** — verbatim, adapted
-4. **Subscriber's name, address, telephone number** — and, critically, **consent to the jurisdiction of the federal district court** for the district where the subscriber's address is located (or, if outside the US, any district in which the service provider may be found), and acceptance of service of process from the person who provided notification or that person's agent
-
-Structure:
-
-- Subscriber address block / date
-- Recipient: designated DMCA agent at the service provider (same agent that received the original takedown)
-- Re: Counter-Notification pursuant to 17 U.S.C. §512(g)
-- The four elements above, numbered or clearly set apart
-- Signature line
-
-### Step 3: The loud gate before delivery
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  BEFORE THIS COUNTER-NOTICE GOES ANYWHERE                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  A DMCA counter-notice is a statement under penalty of      │
-│  perjury AND consents to federal court jurisdiction. It     │
-│  is the step before litigation.                             │
-│                                                             │
-│  • If the original claimant files suit within 10–14         │
-│    business days after your counter-notice, the content     │
-│    stays down pending the suit. 17 U.S.C. §512(g)(2)(C).    │
-│                                                             │
-│  • If they do not sue within the window, the host must      │
-│    restore the content within 14 business days of your      │
-│    counter-notice.                                          │
-│                                                             │
-│  • You are consenting to be sued in federal court in the    │
-│    claimant's judicial district (or, if you are outside     │
-│    the US, designating a district). This is a jurisdiction  │
-│    admission you make by signing.                           │
-│                                                             │
-│  • The perjury statement is real. §512(f) liability runs    │
-│    in both directions — senders and counter-senders.        │
-│                                                             │
-│  Confirm before the counter-notice leaves:                  │
-│                                                             │
-│    1. The material was removed in response to a §512        │
-│       notice (not a TOS action).                            │
-│    2. You have a good-faith belief the removal was a        │
-│       mistake or misidentification — because the use is     │
-│       licensed, fair use, not actually infringing, or the   │
-│       sender doesn't own the work.                          │
-│    3. You are prepared to be sued in federal court in the   │
-│       claimant's district. Budget, counsel, and risk        │
-│       tolerance are all set.                                │
-│    4. An attorney has reviewed this before it is sent.      │
-│                                                             │
-│  Approver per your practice profile: [approver from         │
-│  Enforcement posture → Approval matrix — counter-notices    │
-│  generally route above the DMCA takedown (ordinary)         │
-│  approver because of the federal-jurisdiction admission]    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-If the user is a non-lawyer:
-
-> A counter-notice consents to federal court jurisdiction and is sworn under penalty of perjury. Have you reviewed with a licensed attorney, solicitor, barrister, or other authorised legal professional in your jurisdiction? This is not the Claude-review layer; this is the step where you need licensed professional judgment. Brief for the conversation: [generate a 1-page summary]. Referral resources: your professional regulator's referral service (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent); law school IP clinics; ABA IP section (US).
-
-Do not write the final output without explicit engagement.
-
-### Step 4: Output
-
-**Primary:** `<matter-folder>/takedown/<slug>/counter-notice-v<N>.md` — the counter-notice content, ready to submit via the service provider's counter-notice intake.
-
-**In-chat:** present as plain text for review before committing.
-
-**Reviewer-facing closing note** (in-chat only):
-
-> This is a draft counter-notice for attorney review, not a counter ready to send. Sending it is a sworn statement and consents to federal court jurisdiction in the claimant's district. A licensed attorney reviews before submission. Do not send this unreviewed.
-
-**Post-submission record.** After submission, write `<matter-folder>/takedown/<slug>/counter-submission.md`: service provider, date submitted, confirmation ID, 10–14 business-day watch window end date calendared, watch for suit filing in the claimant's district, plan if content is restored, plan if suit is filed.
-
-## Decision posture
-
-Per `## Decision posture on subjective legal calls` in the practice profile: when uncertain whether the use is fair, whether the rights holder is us, whether the work is actually ours, whether fair use defeats the claim on the receiving side — do not silently decide. Fair use is the paradigmatic uncertain call. Flag for attorney review; surface the factors. Sending a takedown or a counter-notice on an assumption is a one-way door.
-
-## What this skill does not do
-
-- **Submit the notice.** Drafting only. The user submits through the service provider's designated channel.
-- **Pick a service provider's intake form for the user.** Notes which path is expected; does not auto-submit.
-- **Decide fair use.** Walks the four factors; flags. An attorney decides whether to proceed.
-- **Validate the sender's claim on the receive side.** Structured read; every authority flagged for SME verification.
-- **Bypass the gate.** The gate runs every time in `--send` and `--counter` modes.
-- **Invent citations.** Any cites included are source-tagged and flagged for verification; no silent supplement.
-- **Handle non-US regimes.** DMCA is US-specific. For EU DSA, UK OSA, India IT Rules, and other regimes — flag and route.
+- **提交通知。** 仅起草。由用户通过平台指定渠道提交。
+- **决定合理使用。** 按中国法的法定情形与限制条件整理证据；律师决定是否继续。
+- **在接收侧验证发函人的主张。** 结构化阅读；每项依据均标注供专业人士验证。
+- **绕过关口。**
+- **编造引用。**
+- **处理非中国法域。** 信息网络传播权保护条例为中国法规。对其他法域，标注并路由。

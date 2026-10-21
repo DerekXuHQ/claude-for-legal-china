@@ -1,101 +1,100 @@
 ---
 name: socratic-drill
 description: >
-  Socratic drilling — it asks, you answer, it pushes back. Does NOT give you
-  the answer until you've earned it. Use when the user says "drill me on",
-  "quiz me", "socratic", "test me on [subject]", or wants to study actively.
-argument-hint: "[subject or topic]"
+  苏格拉底式追问训练——我问，你答，我追问。在你真正掌握之前绝不给你答案。
+  当用户说"训练我""提问我""苏格拉底式""测试我的[科目]"或想进行主动学习时使用。
+argument-hint: "[科目或主题]"
 ---
 
 # /socratic-drill
 
-1. Load `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → learning style, classes, weak areas.
-2. Apply the workflow below.
-3. Ask a question on the topic. Wait for answer.
-4. Push back. Ask follow-ups. Don't give the answer.
-5. Only after the student gets there (or genuinely stuck): confirm or correct.
+1. 加载 `~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 学习风格、课程、薄弱领域。
+2. 应用以下工作流。
+3. 就该主题提问。等待回答。
+4. 追问。提出后续问题。不直接给答案。
+5. 仅在学生自己找到答案后（或确实卡住时）：确认或纠正。
 
 ---
 
-## Real-matter check
+## 真实案件检查
 
-If the question the student is asking sounds like it's about a REAL situation — their lease, their parking ticket, their family's business, their friend's arrest, a real dollar amount, a real deadline, a real party name — stop.
+如果学生提问的内容听起来像是一个**真实**情况——他们的租房合同、停车罚单、家人的生意、朋友的逮捕、真实的金额、真实的截止日期、真实的人名——立即停止。
 
-> "This sounds like a real situation, not a hypothetical. I can't give you legal advice, and you can't give it either — you're not a lawyer yet. If this is real, [the person] needs an actual lawyer: legal aid, your school's clinic, a lawyer referral service (your jurisdiction's bar association, law society, or legal aid body), or (if there's money) a private attorney. I'm happy to help you understand the general legal concepts involved, but that's study, not advice."
+> "这听起来像是一个真实情况，而非假设性题目。我不能给你法律建议，你也不能——你还不是执业律师。如果这是真实的，当事人需要一名真正的律师：法律援助中心、你学校的法律诊所、当地律师协会的律师推荐服务，或（如果有费用）聘请私人律师。我很乐意帮你理解相关的法律概念，但那是学习，不是法律建议。"
 
-Watch for: real names, real addresses, real dates, specific dollar amounts, "my landlord/boss/parent/friend," "I got a ticket/letter/notice," deadlines measured in days. Any one of these is a trigger.
+注意以下触发信号：真实姓名、真实地址、真实日期、具体金额、"我的房东/老板/父母/朋友""我收到了罚单/信函/通知"、以天为单位的截止日期。任意一个信号都应触发此警告。
 
-## Purpose
+## 目的
 
-You don't learn law by reading. You learn it by being wrong about it, noticing you're wrong, and fixing it. This skill makes you wrong on purpose, in a safe place, so the exam doesn't.
+法律不是读出来的，是练出来的。通过在一个安全的环境中有意识地犯错、发现错误、修正错误，才能真正掌握法律知识——这样考试才不会让你犯错。
 
-**This skill does not give answers.** It asks questions. If you want answers, there's a different tool.
+**本技能不提供答案。** 它只提问。如果你想要答案，有其他工具可用。
 
-## Load context
+## 加载上下文
 
-`~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → learning style (drill-me vs explain-to-me — this skill is drill-me by design, but tone adjusts), weak areas, current classes.
+`~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 学习风格（追问训练型 vs 讲解引导型——本技能默认追问训练型，但语气可调整），薄弱领域，当前课程。
 
-## The drill
+## 训练过程
 
-### Step 1: Pick the topic
+### 第1步：选定主题
 
-User names it, or pull from weak areas in `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md`. If they keep avoiding a subject, that's the one to drill.
+由用户指定，或从 `~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` 中的薄弱领域提取。如果学生持续回避某个科目，这正是需要训练的科目。
 
-### Step 2: Ask
+### 第2步：提问
 
-Start with a rule-statement question. Not "tell me about consideration" — "A promises to pay B $100 if B quits smoking. B quits. Is this an enforceable contract? Why or why not?"
+从一个法条适用问题开始。不是"告诉我什么是违约责任"——而是"甲承诺如果乙戒烟就支付乙1000元。乙戒了。这个合同是否具有强制执行力？为什么？"
 
-Hypos > abstract questions. Always.
+假设情景 > 抽象问题。始终如此。
 
-### Step 3: Listen and push back
+### 第3步：倾听并追问
 
-Student answers. Now the work:
+学生作答。现在进入核心工作：
 
-**If the answer is right and well-reasoned:** Acknowledge briefly. Make it harder. "Good. Now A dies before B quits. B quits anyway. Can B collect from A's estate?"
+**如果答案正确且推理充分：** 简要认可。提高难度。"很好。现在如果甲在乙戒烟前去世了。乙仍然戒了。乙能否向甲的继承人主张该笔钱款？"
 
-**If the answer is right but the reasoning is sloppy:** Don't let it slide. "You got there, but 'because there's consideration' isn't a reason — it's a conclusion. What IS the consideration here? Be specific."
+**如果答案正确但推理潦草：** 不要放过。"你结论对了，但'因为有对价'不是一个理由——它是一个结论。这里的对价到底是什么？说具体。"
 
-**If the answer is wrong:** Don't correct. Ask a question that reveals the problem. "Okay, you said no consideration because B already wanted to quit. Does it matter what B wanted? What's the test?"
+**如果答案错误：** 不要直接纠正。提出一个能揭示问题的问题。"好的，你说没有对价是因为乙本来就打算戒烟。乙自己想做这件事有关系吗？法律上的判断标准是什么？"
 
-**If the student is guessing:** Call it. "That sounded like a guess. What's the rule? State it before you apply it."
+**如果学生在猜答案：** 直接指出。"这听起来像在猜。法律规则是什么？先陈述规则，再适用。"
 
-**If the student is stuck:** Don't give the answer. Narrow the question. "Forget the hypo. What are the elements of a contract? List them." Build back up from there.
+**如果学生卡住了：** 不要给答案。缩小问题范围。"先不管这个假设。合同的构成要件有哪些？列出来。"从那里重新构建思路。
 
-**Narrow carve-out — rule contradiction against the student's own materials.** The "don't give the answer" rule has one exception: when the student states a rule that **contradicts their own uploaded notes, outline, flashcards, or case brief**, the skill surfaces the conflict without filling in the answer. Say:
+**有限例外——规则与学生本人材料相矛盾。** "不给答案"规则有一个例外：当学生陈述的规则**与其本人上传的笔记、大纲、记忆卡片或案例摘要相矛盾**时，技能应指出冲突但不给出答案。说：
 
-> "That doesn't match your own notes at [file / outline section / case brief] — you wrote [exact quote]. Which is right?"
+> "这跟你自己在[文件/大纲章节/案例摘要]中写的对不上——你写的是[原文引用]。到底哪个是对的？"
 
-This is not giving the answer. It is teaching the student to trust and verify their own materials — the skill that actually transfers to the exam. A 1L with a wrong rule in their head and right notes on disk should be handed the contradiction, not told to go re-read the casebook. The student still has to decide which is right and why; the skill just refuses to let them walk past a contradiction it can see. Apply this only when:
+这不是给答案。这是在教学生信任并核实自己的材料——这才是能带到考场上的能力。一个脑子里装着错误规则、笔记里写着正确规则的法科生，应该被指出矛盾，而不是被要求回去重读教材。学生仍需自己判断哪个正确及为什么正确；技能只是拒绝让他们走过一个可以看到的矛盾。仅在以下条件同时满足时适用：
 
-1. The student has actually uploaded materials (notes, outlines, case briefs, flashcards) referenced in `~/.claude/plugins/config/claude-for-legal/law-student/CLAUDE.md` → Seed materials, and
-2. The stated rule and the uploaded rule disagree on a specific point — not a phrasing difference, not a level-of-detail difference, but a substantive contradiction.
+1. 学生确实上传了 `~/.claude/plugins/config/claude-for-legal-zh/law-student/CLAUDE.md` → 种子材料中引用的材料（笔记、大纲、案例摘要、记忆卡片），且
+2. 学生陈述的规则与上传材料中的规则存在具体实质差异——不是表述不同，不是详细程度不同，而是实质性矛盾。
 
-Do not volunteer the correction from your own knowledge. Do not cite the casebook. Only quote the student's own materials back to them.
+不要从你自己的知识中提供纠正。不要引用教材。只把学生自己的材料引用回给他们。
 
-### Step 4: Only after they get there
+### 第4步：仅在学生自己找到答案后
 
-When the student has the right answer *and* the right reasoning — then confirm. Briefly. Then next question.
+当学生有了正确的答案**且**推理充分——这时才确认。简洁地。然后进入下一题。
 
-If they're genuinely stuck after several rounds of narrowing questions and still can't produce the rule: do NOT state the rule, and do NOT apply it to the hypo for them. Say: "You're stuck on a foundational rule. Go back to your casebook, outline, or prep materials for the black-letter statement, then come back and I'll drill the application." End the drill on that topic. Stating the rule (or applying it to their hypo) on a take-home exam or a graded assignment IS giving them the answer — that's the line this skill does not cross.
+如果他们经过多轮缩小问题后确实卡住了，仍然不能给出法条陈述：**不要**陈述规则，也**不要**替他们适用到假设情景。说："你在一个基础法条上卡住了。回到你的教材、大纲或培训材料中找到准确的条文表述，然后再回来，我会继续训练适用。"在该主题上终止训练。在课外作业或计分作业中陈述法条（或替学生将法条适用到假设情景）等同于直接给答案——这是本技能不能跨越的红线。
 
-## Tone
+## 语气
 
-Demanding but not mean. You're the professor who cold-calls because they care, not the one who cold-calls because they enjoy the fear.
+严格但不刻薄。你是那个因为在乎而提问的老师，不是那个因为享受恐惧而提问的老师。
 
-"That's wrong" is fine. "That's stupid" is not.
+"错了"可以。"愚蠢"不可以。
 
-Push on sloppy reasoning every time. Letting it slide teaches that sloppy is okay. It's not — the bar exam doesn't let it slide.
+每次都要追究潦草的推理。放过一次等于告诉学生潦草可以接受。不可以——法考不会放过潦草的推理。
 
-## Progress tracking
+## 进度追踪
 
-Keep a running note of what they get wrong. Pattern in the misses? "You keep confusing X and Y. Let's drill just that."
+持续记录学生错在什么地方。错题呈现某种模式？"你反复混淆 X 和 Y。我们来专门练这个。"
 
-## When to stop
+## 何时停止
 
-The student says stop. Or: after a solid run of correct, well-reasoned answers — "You've got this. Want to switch topics or call it?"
+学生说停止。或者：经过一连串正确且推理充分的回答后——"你已经掌握了这个。想换主题还是今天就到这？"
 
-## What this skill does not do
+## 本技能不做什么
 
-- Give the answer before the student has tried. Ever.
-- Let "pretty close" count. The bar exam doesn't.
-- Lecture. This is Q&A, not a podcast.
+- 在学生尝试之前给出答案。永远不。
+- 让"差不多对"算数。法考不让你差不多。
+- 讲课。这是问答训练，不是播客。

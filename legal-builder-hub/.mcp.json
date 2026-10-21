@@ -12,11 +12,11 @@
       "title": "Google Drive",
       "description": "Search, read, and fetch documents from Google Drive."
     },
-    "Lawve AI": {
+    "yuandian": {
       "type": "http",
-      "url": "https://mcp.lawve.ai/mcp",
-      "title": "Lawve AI",
-      "description": "Curated library of legal AI skills written by practicing lawyers, in-house counsel, and legal technologists."
+      "url": "https://open.chineselaw.com/mcp",
+      "title": "华宇元典法律数据",
+      "description": "法规、案例、企业与证券合规检索；连接与认证须在宿主完成，结果仍需原始法源核验。"
     }
   },
   "recommendedCategories": [
