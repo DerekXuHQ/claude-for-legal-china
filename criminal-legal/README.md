@@ -19,6 +19,22 @@
 | 企业刑事合规不起诉审查 | `compliance-non-prosecution/` | 涉案企业合规整改草案评估，梳理盲点，比对合规评估标准 |
 | 辩护策略分析 | `defense-strategy/` | 针对脱敏案情进行罪与非罪、此罪与彼罪的法理分析，提取争议焦点 |
 
+### 全流程文书技能
+
+以下技能按办案阶段产出正式文书和工作底稿，输入一律为脱敏副本。改编自 [gcheng001/legal-skills](https://github.com/gcheng001/legal-skills)（MIT），来源说明见 `THIRD_PARTY_NOTICES.md`。
+
+| 技能 | 目录 | 适用场景 |
+| :--- | :--- | :--- |
+| 侦查阶段文书 | `investigation-stage-docs/` | 无卷会见提纲、取保候审申请书、不批准逮捕意见书等正式文书（只需快速梳理取保事由用 `bail-application`） |
+| 刑事阅卷笔录 | `case-file-notes/` | 法律援助类与委托类两套阅卷笔录，核对供述归属、讯问要素和页码（只需快速梳理证据链用 `case-analysis`） |
+| 会见准备 | `client-meeting-prep/` | 阅卷后会见的发问清单和会见笔录 |
+| 辩护方案 | `defense-plan/` | 有阅卷笔录后做辩点矩阵、评估强度、选主攻路径（法理分析用 `defense-strategy`） |
+| 不起诉意见书 | `non-prosecution-opinion/` | 法定、存疑、酌定三类不起诉意见书（企业合规不起诉用 `compliance-non-prosecution`） |
+| 认罪认罚协商 | `plea-negotiation/` | 认罪认罚利弊分析、协商策略和情景推演 |
+| 庭审发问与质证提纲 | `trial-examination-outline/` | 庭前会议、排非申请、庭审发问和逐份质证提纲 |
+| 辩护词 | `defense-statement/` | 辩护词、庭审辩论提纲和最后陈述辅导 |
+| 客户沟通 | `client-communication/` | 服务计划书、工作通报等对客户的沟通材料，不泄露辩护策略 |
+
 另有标准件：`cold-start-interview/`（首次设置）、`customize/`（画像微调）、`matter-workspace/`（多案件工作区隔离）。
 
 ## 📚 内置参考库
