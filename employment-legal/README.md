@@ -50,6 +50,16 @@
 | `/employment-legal:matter-workspace` | 管理事项工作区（仅多客户场景适用） |
 | **handbook-updates** | 对比劳动规章制度修改前后差异，标注省/直辖市补充条款影响 |
 
+### 起草与计算类技能
+
+改编自 [FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)（Apache 2.0），署名见仓库根目录 `NOTICE`。
+
+| 技能 | 用途 |
+|---|---|
+| **severance-calc** | 经济补偿 N、违法解除 2N、代通知金、二倍工资测算 |
+| **labor-arbitration** | 劳动仲裁应对：案情分析、答辩、举证质证、胜负评估 |
+| **labor-contract** | 按岗位类型定制劳动合同 |
+
 ## 交互式技能与定时代理人
 
 上述技能由你主动调用——用于处理具体事项。以下代理人按计划自动运行——用于持续监控：

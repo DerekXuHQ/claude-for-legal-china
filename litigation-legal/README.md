@@ -68,6 +68,21 @@ Cold-start 访谈编写*事务所/法务部*级别的实践画像——跨所有
 | **oc-status** | 周期性的外部律师案件进度询问函起草 |
 | **claim-chart** | 要件分析表——对任一请求权基础或抗辩事由进行构成要件逐项分析、逐项引用法条编号、证据缺口检测 |
 
+### 起草与计算类技能
+
+改编自 [FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)（Apache 2.0），署名见仓库根目录 `NOTICE`。
+
+| 技能 | 用途 |
+|---|---|
+| **civil-complaint-drafting** | 按法定结构撰写民事起诉状 |
+| **answer-drafting** | 撰写民事答辩状，逐项答辩 |
+| **appeal-petition** | 撰写民事上诉状或再审申请书 |
+| **agent-brief** | 撰写完整的代理词与辩论意见（单个章节用 brief-section-drafter） |
+| **settlement** | 起草和解协议与调解协议 |
+| **retrial-analysis** | 民事再审可行性分析 |
+| **judgment-analysis** | 判决书拆解、法律错误识别与上诉策略 |
+| **deadline-tracker** | 诉讼/仲裁期限台账：录入、核验、预警、归档 |
+
 ## 交互式命令与定时代理人
 
 上述命令由你主动调用——用于处理具体案件。以下代理人按计划自动运行——用于被动监控：

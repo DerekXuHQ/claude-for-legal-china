@@ -66,6 +66,16 @@
 
 *公众公司技能将在下一版本中推出。*
 
+### 起草与计算类技能
+
+改编自 [FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)（Apache 2.0），署名见仓库根目录 `NOTICE`。
+
+| 技能 | 用途 |
+|---|---|
+| **legal-opinion** | 出具法律意见书 |
+| **corporate-docs** | 公司章程、股东协议、出资/增资协议、股东会/董事会决议起草 |
+| **due-diligence-checklist** | 按行业、阶段和交易类型定制尽调清单 |
+
 ## 交互指令 vs 定时代理
 
 以上指令在您调用时运行——适用于您正在处理某事项时。以下代理按计划运行——适用于您未关注时的动态变化：

@@ -1,0 +1,92 @@
+claude-for-legal-china
+Copyright 2026 DerekXuHQ
+
+本仓库基于以下项目改编，均按其许可证保留署名。
+
+================================================================
+1. Anthropic claude-for-legal
+================================================================
+Copyright Anthropic, PBC
+Licensed under the Apache License, Version 2.0
+https://github.com/anthropics/claude-for-legal
+
+================================================================
+2. CSlawyer1985/claude-for-legal-ZH（中国法基础版本）
+================================================================
+Licensed under the Apache License, Version 2.0
+https://github.com/CSlawyer1985/claude-for-legal-ZH
+
+================================================================
+3. FAYANHUIYING/claude-for-legal-HoriZon
+================================================================
+Licensed under the Apache License, Version 2.0
+https://github.com/FAYANHUIYING/claude-for-legal-HoriZon （提交 3378b7b）
+
+以下技能改编自该项目：
+
+| 本仓库路径 | 原技能 |
+|---|---|
+| `commercial-legal/skills/contract-drafting` | `commercial-contract/contract-drafting` |
+| `litigation-legal/skills/civil-complaint-drafting` | `dispute-resolution/civil-complaint-drafting` |
+| `litigation-legal/skills/answer-drafting` | `dispute-resolution/defense-statement` |
+| `litigation-legal/skills/appeal-petition` | `dispute-resolution/appeal-petition` |
+| `litigation-legal/skills/agent-brief` | `dispute-resolution/agent-brief` |
+| `litigation-legal/skills/settlement` | `dispute-resolution/settlement` |
+| `litigation-legal/skills/retrial-analysis` | `dispute-resolution/retrial-analysis` |
+| `litigation-legal/skills/judgment-analysis` | `dispute-resolution/judgment-analysis` |
+| `litigation-legal/skills/deadline-tracker` | `dispute-resolution/deadline-tracker` |
+| `employment-legal/skills/severance-calc` | `employment-legal/severance-calc` |
+| `employment-legal/skills/labor-arbitration` | `employment-legal/labor-arbitration` |
+| `employment-legal/skills/labor-contract` | `employment-legal/labor-contract` |
+| `criminal-legal/skills/sentencing` | `criminal-legal/sentencing` |
+| `corporate-legal/skills/legal-opinion` | `corporate-investment/legal-opinion` |
+| `corporate-legal/skills/corporate-docs` | `corporate-investment/corporate-docs` |
+| `corporate-legal/skills/due-diligence-checklist` | `due-diligence/due-diligence-checklist` |
+| `privacy-legal/skills/privacy-policy` | `compliance/privacy-policy` |
+| `ip-legal/skills/trademark-filing` | `ip-legal/trademark` |
+| `law-practice-cn/skills/legal-terminology` | `hongzhi-core/legal-terminology` |
+
+改编内容：部分技能改名以避免与已有技能冲突；在描述中写明与已有技能的分工；
+deadline-tracker 的台账路径、交接技能和预警方式改为适配本仓库；sentencing 示例
+补充认罪认罚不重复评价的说明。
+
+该项目 NOTICE 原文如下：
+
+claude-for-legal (HoriZon) · 宏志法律智能体
+Copyright 2026 宏志律师事务所 (Hongzhi Law Firm)
+
+本项目由宏志律师事务所联合上海法演数据科技有限公司构建与维护。项目内容按来源分三类：
+
+1. 原创内容（本项目撰写）
+   "底座原子能力 + 八大业务领域"的四层架构（HoriZon 架构）及全部中国法实务表述；
+   各插件运营三件套（cold-start-interview / customize / matter-workspace，27 项）、
+   期限台账与期限监控代理（deadline-tracker / deadline-watcher）、要件分析表
+   （element-analysis）、在办案件组合视图（portfolio-status）、审查口径自学习闭环
+   （deal-debrief / playbook-monitor / review-proposals）等 30 余项技能与全部监控代理；
+   连接器接入指南（CONNECTORS.md）、各领域法条库与实务画像模板。
+
+2. 借鉴的开源组件
+   插件清单格式（marketplace / plugin manifest）、实务画像配置机制与共享护栏体系的
+   设计衍生自 Anthropic claude-for-legal：
+     Copyright Anthropic, PBC
+     Licensed under the Apache License, Version 2.0
+     https://github.com/anthropics/claude-for-legal
+   本项目已对上述机制做中国法语境的重写与扩展；其美国法实体内容未予采用。
+
+3. 编入的第三方技能
+   部分实务技能编入自多来源整理的中文技能文本，原始许可证逐项核验中；凡含
+   CC-BY-NC（禁商用）/ -ND（禁改）条款者，不直接商用打包，仅作内部参考或重写，
+   并保留原作者署名义务。
+
+商标声明：本项目非 Anthropic 官方产品，未获 Anthropic 背书，不代表 Anthropic 的法律
+立场。"Claude" 为 Anthropic, PBC 的商标，本项目仅在描述兼容性时使用，不主张任何商标
+权利。
+
+免责声明：本项目所有输出均为供执业律师审查的草稿，不构成法律意见，不替代律师的专业
+判断。法律引用须经权威数据库核实后方可依赖。
+
+================================================================
+4. gcheng001/legal-skills（MIT）
+================================================================
+criminal-legal 下 9 个技能改编自该项目，许可全文与改编说明见
+criminal-legal/THIRD_PARTY_NOTICES.md。

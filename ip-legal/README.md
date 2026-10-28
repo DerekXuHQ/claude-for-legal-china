@@ -59,6 +59,14 @@
 | **portfolio** | 注册登记、续展期限、状态仪表盘 |
 | **matter-workspace** | 创建、列表、切换和关闭多客户事项工作区；隔离各客户/事项，避免信息泄露 |
 
+### 起草与计算类技能
+
+改编自 [FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)（Apache 2.0），署名见仓库根目录 `NOTICE`。
+
+| 技能 | 用途 |
+|---|---|
+| **trademark-filing** | 商标申请：尼斯分类规划、可注册性初筛、申请材料 |
+
 ## 交互命令 vs 定时代理
 
 上述命令在你调用时运行——用于处理具体事项。下面的代理按计划运行——处理你不在时发生的变化：

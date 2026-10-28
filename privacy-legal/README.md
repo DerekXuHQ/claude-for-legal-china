@@ -49,6 +49,14 @@
 | **policy-monitor** | 扫描产出物中的实践偏差；起草政策语言更新 |
 | **matter-workspace** | 创建、列表、切换和关闭多客户事项工作区；隔离各客户/事项，避免信息泄露 |
 
+### 起草与计算类技能
+
+改编自 [FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)（Apache 2.0），署名见仓库根目录 `NOTICE`。
+
+| 技能 | 用途 |
+|---|---|
+| **privacy-policy** | 按产品事实生成隐私政策 |
+
 ## 快速开始
 
 ### 1. 设置

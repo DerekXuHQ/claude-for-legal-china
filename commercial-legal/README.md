@@ -51,6 +51,14 @@
 | **amendment-history** | 总结基础协议与其补充协议之间的变更，或追溯特定条款至当前有效表述 |
 | **matter-workspace** | 为多客户业务创建、列表、切换和关闭事项工作空间；隔离每个客户/事项，防止上下文泄露 |
 
+### 起草与计算类技能
+
+改编自 [FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)（Apache 2.0），署名见仓库根目录 `NOTICE`。
+
+| 技能 | 用途 |
+|---|---|
+| **contract-drafting** | 从零起草合同（六步法：需求确认→法律调研→框架→条款→风险扫描→成稿） |
+
 ## 交互指令 vs 定时代理
 
 以上指令在您调用时运行——适用于您正在处理某事项时。以下代理按计划运行——适用于您未关注时的动态变化：

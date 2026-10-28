@@ -37,6 +37,14 @@
 
 另有标准件：`cold-start-interview/`（首次设置）、`customize/`（画像微调）、`matter-workspace/`（多案件工作区隔离）。
 
+### 起草与计算类技能
+
+改编自 [FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)（Apache 2.0），署名见仓库根目录 `NOTICE`。
+
+| 技能 | 用途 |
+|---|---|
+| **sentencing** | 五步法量刑测算与量刑建议 |
+
 ## 📚 内置参考库
 
 `references/` 收录刑事诉讼法核心条文（取保候审、逮捕、羁押必要性审查、非法证据排除）、涉案企业合规评估基准，以及刑法修正案（一）至（十二）索引与从旧兼从轻时间效力规则，作为输出的防幻觉兜底依据。引用定罪量刑标准、入罪数额界限时仍须通过法律数据库复核时效。
