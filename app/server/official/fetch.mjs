@@ -2,7 +2,7 @@
 // 只访问 robots.txt 允许的公开栏目：中国人大网、司法部国家行政法规库、最高人民法院。
 // 国家法律法规数据库（flk.npc.gov.cn）的 robots.txt 禁止自动采集，这里不访问。
 
-const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36 ClaudeForLegalChina/1.0";
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36 AIForLegalChina/1.0";
 const lastHit = new Map();
 const MIN_GAP_MS = 2000;
 

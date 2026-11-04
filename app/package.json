@@ -1,6 +1,6 @@
 {
-  "name": "claude-for-legal-china",
-  "productName": "Claude for Legal China",
+  "name": "ai-for-legal-china",
+  "productName": "AI for Legal China",
   "version": "1.0.0",
   "description": "中国大陆法律法规本地检索与 AI 问答",
   "author": "DerekXuHQ",
@@ -25,9 +25,9 @@
     "electron-builder": "26.15.3"
   },
   "build": {
-    "appId": "com.derekxuhq.legalchina",
-    "productName": "Claude for Legal China",
-    "copyright": "Apache-2.0 · 非 Anthropic 官方产品",
+    "appId": "com.derekxuhq.aiforlegalchina",
+    "productName": "AI for Legal China",
+    "copyright": "Apache-2.0",
     "files": [
       "main.mjs",
       "server/**",
@@ -61,13 +61,13 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
-        "CFBundleDisplayName": "Claude for Legal China",
+        "CFBundleDisplayName": "AI for Legal China",
         "LSApplicationCategoryType": "public.app-category.reference"
       }
     },
     "dmg": {
-      "title": "Claude for Legal China ${version}",
-      "artifactName": "ClaudeForLegalChina-${version}-mac-${arch}.${ext}"
+      "title": "AI for Legal China ${version}",
+      "artifactName": "AIForLegalChina-${version}-mac-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -80,7 +80,7 @@
         }
       ],
       "icon": "build/icon.png",
-      "legalTrademarks": "非 Anthropic 官方产品"
+      "legalTrademarks": "AI for Legal China"
     },
     "nsis": {
       "oneClick": false,
@@ -88,8 +88,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Claude for Legal China",
-      "artifactName": "ClaudeForLegalChina-${version}-win-${arch}-setup.${ext}",
+      "shortcutName": "AI for Legal China",
+      "artifactName": "AIForLegalChina-${version}-win-${arch}-setup.${ext}",
       "installerLanguages": [
         "zh_CN"
       ],

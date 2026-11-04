@@ -1,4 +1,4 @@
-// Claude for Legal China：Electron 主进程。
+// AI for Legal China：Electron 主进程。
 // 启动本地检索服务（只监听 127.0.0.1），第一次运行时在后台准备资料库，定期检查官方网站的法规更新。
 import { app, BrowserWindow, Menu, shell, dialog } from "electron";
 import { Worker } from "node:worker_threads";
@@ -139,7 +139,7 @@ function afterReady() {
 async function createWindow(port, token) {
   win = new BrowserWindow({
     width: 1380, height: 900, minWidth: 980, minHeight: 640,
-    title: "Claude for Legal China", backgroundColor: "#f7f5f2", show: false,
+    title: "AI for Legal China", backgroundColor: "#f7f5f2", show: false,
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false },
   });
   win.once("ready-to-show", () => win.show());
@@ -164,7 +164,7 @@ function buildMenu() {
     ...(isMac ? [{
       label: app.name,
       submenu: [
-        { role: "about", label: "关于 Claude for Legal China" }, { type: "separator" },
+        { role: "about", label: "关于 AI for Legal China" }, { type: "separator" },
         { role: "hide", label: "隐藏" }, { role: "hideOthers", label: "隐藏其他" }, { role: "unhide", label: "全部显示" },
         { type: "separator" }, { role: "quit", label: "退出" },
       ],
@@ -198,9 +198,9 @@ function buildMenu() {
 }
 
 app.setAboutPanelOptions({
-  applicationName: "Claude for Legal China",
+  applicationName: "AI for Legal China",
   applicationVersion: app.getVersion(),
-  copyright: "Apache-2.0。仅供参考，不构成法律意见。非 Anthropic 官方产品；Claude 是 Anthropic, PBC 的商标。",
+  copyright: "Apache-2.0。仅供参考，不构成法律意见。",
 });
 
 app.whenReady().then(async () => {

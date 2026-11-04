@@ -1,17 +1,17 @@
-# Claude for Legal China
+# AI for Legal China
 
 中国大陆法律法规的桌面检索工具：法律、司法解释、行政法规、地方性法规和最高法指导性案例都装在本机，按层级、地区、领域检索到条，带一个会多轮检索的 AI 问答，常用的条文、案例和回答可以收藏。app 会定期到官方网站检查法规更新。
 
-> 仅供参考，不构成法律意见。本工具不是 Anthropic 官方产品；"Claude" 是 Anthropic, PBC 的商标，这里只用来说明它可以接 Claude 模型。
+> 仅供参考，不构成法律意见。AI 问答可以接入 Claude、DeepSeek 等模型；Claude 是 Anthropic, PBC 的商标。
 
 ## 安装
 
 | 系统 | 安装包 |
 |---|---|
-| Mac（Apple 芯片：M1 到 M5） | `ClaudeForLegalChina-<版本>-mac-arm64.dmg` |
-| Mac（Intel 芯片） | `ClaudeForLegalChina-<版本>-mac-x64.dmg` |
-| Windows（x64） | `ClaudeForLegalChina-<版本>-win-x64-setup.exe` |
-| Windows（ARM） | `ClaudeForLegalChina-<版本>-win-arm64-setup.exe` |
+| Mac（Apple 芯片：M1 到 M5） | `AIForLegalChina-<版本>-mac-arm64.dmg` |
+| Mac（Intel 芯片） | `AIForLegalChina-<版本>-mac-x64.dmg` |
+| Windows（x64） | `AIForLegalChina-<版本>-win-x64-setup.exe` |
+| Windows（ARM） | `AIForLegalChina-<版本>-win-arm64-setup.exe` |
 
 Mac：打开 DMG，把 app 拖进「应用程序」。安装包没有经过 Apple 公证时，第一次双击会提示「无法验证开发者」：点「完成」，然后到「系统设置 → 隐私与安全性」，在页面下方点「仍要打开」，输入开机密码确认。只需要这一次，之后正常双击即可。
 
@@ -19,8 +19,8 @@ Windows：双击安装程序。没有代码签名时会出现「Windows 已保�
 
 第一次打开时 app 会解压法规数据、建立全文索引，大约一两分钟，有进度条。之后打开是即时的。数据放在：
 
-- Mac：`~/Library/Application Support/Claude for Legal China/data/`
-- Windows：`%APPDATA%\Claude for Legal China\data\`
+- Mac：`~/Library/Application Support/AI for Legal China/data/`
+- Windows：`%APPDATA%\AI for Legal China\data\`
 
 ## 四个页面
 
