@@ -45,7 +45,7 @@ WorkBuddy 中已授权元典或北大法宝等法律检索服务时（见 `INSTA
 
 ## 可用原始技能
 
-`cold-start-interview`、`complaint-triage`、`consultation-analysis`、`legal-service-proposal`
+`cold-start-interview`、`complaint-triage`、`consultation-analysis`、`legal-service-proposal`、`legal-terminology`
 
 ## 法律输出规则
 

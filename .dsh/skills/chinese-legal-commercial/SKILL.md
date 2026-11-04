@@ -45,7 +45,7 @@ If the active dsh profile mounts an authenticated legal MCP such as `yuandian` o
 
 ## Available Original Skills
 
-`amendment-history`, `cold-start-interview`, `construction-contract-review`, `customize`, `escalation-flagger`, `matter-workspace`, `nda-review`, `renewal-tracker`, `review`, `review-proposals`, `saas-msa-review`, `stakeholder-summary`, `vendor-agreement-review`
+`amendment-history`, `cold-start-interview`, `construction-contract-review`, `contract-drafting`, `customize`, `escalation-flagger`, `matter-workspace`, `nda-review`, `renewal-tracker`, `review`, `review-proposals`, `saas-msa-review`, `stakeholder-summary`, `vendor-agreement-review`
 
 ## Legal Output Rules
 

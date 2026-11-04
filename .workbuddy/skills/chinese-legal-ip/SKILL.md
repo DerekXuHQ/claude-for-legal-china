@@ -45,7 +45,7 @@ WorkBuddy 中已授权元典或北大法宝等法律检索服务时（见 `INSTA
 
 ## 可用原始技能
 
-`cease-desist`、`clearance`、`cold-start-interview`、`customize`、`fto-triage`、`infringement-triage`、`invention-intake`、`ip-clause-review`、`matter-workspace`、`oss-review`、`portfolio`、`takedown`
+`cease-desist`、`clearance`、`cold-start-interview`、`customize`、`fto-triage`、`infringement-triage`、`invention-intake`、`ip-clause-review`、`matter-workspace`、`oss-review`、`portfolio`、`takedown`、`trademark-filing`
 
 ## 法律输出规则
 

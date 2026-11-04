@@ -34,7 +34,7 @@ When an original instruction says to run `/ip-legal:some-command`, interpret tha
 
 ## Available Original Skills
 
-`cease-desist`, `clearance`, `cold-start-interview`, `customize`, `fto-triage`, `infringement-triage`, `invention-intake`, `ip-clause-review`, `matter-workspace`, `oss-review`, `portfolio`, `takedown`
+`cease-desist`, `clearance`, `cold-start-interview`, `customize`, `fto-triage`, `infringement-triage`, `invention-intake`, `ip-clause-review`, `matter-workspace`, `oss-review`, `portfolio`, `takedown`, `trademark-filing`
 
 ## Legal Output Rules
 

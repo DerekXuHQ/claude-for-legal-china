@@ -45,7 +45,7 @@ If the active dsh profile mounts an authenticated legal MCP such as `yuandian` o
 
 ## Available Original Skills
 
-`cold-start-interview`, `customize`, `dpa-review`, `dsar-response`, `matter-workspace`, `pia-generation`, `policy-monitor`, `reg-gap-analysis`, `use-case-triage`
+`cold-start-interview`, `customize`, `dpa-review`, `dsar-response`, `matter-workspace`, `pia-generation`, `policy-monitor`, `privacy-policy`, `reg-gap-analysis`, `use-case-triage`
 
 ## Legal Output Rules
 

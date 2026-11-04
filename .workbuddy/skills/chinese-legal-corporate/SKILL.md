@@ -45,7 +45,7 @@ WorkBuddy 中已授权元典或北大法宝等法律检索服务时（见 `INSTA
 
 ## 可用原始技能
 
-`ai-tool-handoff`、`board-minutes`、`closing-checklist`、`cold-start-interview`、`customize`、`deal-team-summary`、`diligence-evidence-matrix`、`diligence-issue-extraction`、`entity-compliance`、`integration-management`、`material-contract-schedule`、`matter-workspace`、`tabular-review`、`written-consent`
+`ai-tool-handoff`、`board-minutes`、`closing-checklist`、`cold-start-interview`、`corporate-docs`、`customize`、`deal-team-summary`、`diligence-evidence-matrix`、`diligence-issue-extraction`、`due-diligence-checklist`、`entity-compliance`、`integration-management`、`legal-opinion`、`material-contract-schedule`、`matter-workspace`、`tabular-review`、`written-consent`
 
 ## 法律输出规则
 

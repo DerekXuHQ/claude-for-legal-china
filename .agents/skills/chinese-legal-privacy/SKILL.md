@@ -34,7 +34,7 @@ When an original instruction says to run `/privacy-legal:some-command`, interpre
 
 ## Available Original Skills
 
-`cold-start-interview`, `customize`, `dpa-review`, `dsar-response`, `matter-workspace`, `pia-generation`, `policy-monitor`, `reg-gap-analysis`, `use-case-triage`
+`cold-start-interview`, `customize`, `dpa-review`, `dsar-response`, `matter-workspace`, `pia-generation`, `policy-monitor`, `privacy-policy`, `reg-gap-analysis`, `use-case-triage`
 
 ## Legal Output Rules
 

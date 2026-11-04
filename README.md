@@ -1,10 +1,10 @@
 # Claude for Legal — 中国法版本
 
 <p align="center">
-  <a href="https://github.com/CSlawyer1985/claude-for-legal-ZH/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
-  <a href="https://github.com/CSlawyer1985/claude-for-legal-ZH"><img src="https://img.shields.io/badge/version-v1.1.0-brightgreen" alt="Version"></a>
-  <a href="https://github.com/CSlawyer1985/claude-for-legal-ZH/stargazers"><img src="https://img.shields.io/github/stars/CSlawyer1985/claude-for-legal-ZH?style=social" alt="Stars"></a>
-  <a href="https://github.com/CSlawyer1985/claude-for-legal-ZH"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
+  <a href="https://github.com/DerekXuHQ/claude-for-legal-china/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
+  <a href="https://github.com/DerekXuHQ/claude-for-legal-china"><img src="https://img.shields.io/badge/version-v1.2.0-brightgreen" alt="Version"></a>
+  <a href="https://github.com/DerekXuHQ/claude-for-legal-china/stargazers"><img src="https://img.shields.io/github/stars/DerekXuHQ/claude-for-legal-china?style=social" alt="Stars"></a>
+  <a href="https://github.com/DerekXuHQ/claude-for-legal-china"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
   <a href="INSTALL_DSH.md"><img src="https://img.shields.io/badge/DeepSeek%20Harness-已适配-4D6BFE" alt="DeepSeek Harness 适配"></a>
   <a href="INSTALL_WORKBUDDY.md"><img src="https://img.shields.io/badge/WorkBuddy-已适配-0052D9" alt="WorkBuddy 适配"></a>
   <a href="INSTALL_CODEX.md"><img src="https://img.shields.io/badge/Codex-已适配-000000" alt="Codex 适配"></a>
@@ -18,13 +18,22 @@
 
 ---
 
-> **新用户？** 先看[项目网页](https://cslawyer1985.github.io/claude-for-legal-ZH/)，再从 [QUICKSTART.md](QUICKSTART.md) 开始安装。本文是完整参考手册。
+> **新用户？** 从 [QUICKSTART.md](QUICKSTART.md) 开始安装。本文是完整参考手册。
+>
+> 本仓库 fork 自 [CSlawyer1985/claude-for-legal-ZH](https://github.com/CSlawyer1985/claude-for-legal-ZH)，并合并了其他开源项目的技能，来源见 [NOTICE](NOTICE)。
 
 <p align="center">
   <img src="docs/assets/hero.png" alt="Claude for Legal 中国法版本 — 着陆页 Hero" width="800">
 </p>
 
-本仓库是一套**面向中国法律实务的通用插件集**——以 16 个业务领域、174 个技能和 12 个领域 Agent 为主体，内嵌参考材料与数据连接器，并可按需接入外部法律检索服务。它不绑定单一 agent 环境：可安装为 [Claude Code](https://claude.com/product/claude-code) 插件，可通过一键脚本接入 [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness)、**Codex** 或 **WorkBuddy**（腾讯工作智能体），也可通过 [Claude Managed Agents API](https://docs.claude.com/en/api/managed-agents) 部署在你自己的工作流引擎后台。同一套 system prompt，同一套技能——你选择在哪里运行。
+本仓库是一套**面向中国法律实务的通用插件集**——以 16 个业务领域、202 个技能和 12 个领域 Agent 为主体，内嵌参考材料与数据连接器，并可按需接入外部法律检索服务。它不绑定单一 agent 环境：可安装为 [Claude Code](https://claude.com/product/claude-code) 插件，可通过一键脚本接入 [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness)、**Codex** 或 **WorkBuddy**（腾讯工作智能体），也可通过 [Claude Managed Agents API](https://docs.claude.com/en/api/managed-agents) 部署在你自己的工作流引擎后台。同一套 system prompt，同一套技能——你选择在哪里运行。
+
+### 2026 年 11 月：本 fork 的补充
+
+- **刑事**：新增 9 个全流程文书技能（侦查阶段文书、阅卷笔录、会见准备、辩护方案、不起诉意见书、认罪认罚协商、庭审发问与质证提纲、辩护词、客户沟通），改编自 [gcheng001/legal-skills](https://github.com/gcheng001/legal-skills)，另加量刑测算；每个技能都带脱敏前置检查。
+- **起草与计算**：新增合同起草、民事起诉状/答辩状/上诉状、代理词、和解协议、再审与判决分析、诉讼期限台账、经济补偿计算、劳动仲裁、劳动合同、法律意见书、公司章程与股东协议、尽调清单、隐私政策、商标申请、法律用语规范等 19 个技能，改编自 [HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)。
+- **法条核验**：新增[官方法条核验源](references/official-law-sources.md)与[刑法修正案索引](criminal-legal/references/criminal-law-amendments.md)。
+- **修正**：删除继承自 Anthropic 的 CLA 检查；删除诉讼、劳动插件中两条无效的连接器配置；三套适配层已重新生成。
 
 ### 2026 年 9 月升级
 
@@ -538,6 +547,7 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | `/law-practice-cn:consultation-analysis` | consultation-analysis | 可追溯的法律咨询分析 |
 | `/law-practice-cn:legal-service-proposal` | legal-service-proposal | 法律服务方案与报价草稿 |
 | `/law-practice-cn:complaint-triage` | complaint-triage | 一般投诉、举报及申诉程序分流 |
+| `/law-practice-cn:legal-terminology` | legal-terminology | 法律文书用语规范化 |
 
 ### procurement-legal
 
@@ -598,6 +608,7 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | scheduled | renewal-watcher (agent) | 每周扫描续签台账 |
 | scheduled | deal-debrief (agent) | 每周汇总含偏离项的已签署协议 |
 | scheduled | playbook-monitor (agent) | 当条款持续偏移时建议审查指引更新 |
+| `/commercial-legal:contract-drafting` | contract-drafting | 从零起草合同（六步法） |
 
 ### corporate-legal
 
@@ -617,6 +628,9 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | — | deal-team-summary | 将尽调发现汇总为交易简报 |
 | — | ai-tool-handoff | 检测 AI 尽调工具输出，进行质量检查 |
 | scheduled | dataroom-watcher (agent) | 监控数据室上传并推送清单状态 |
+| `/corporate-legal:legal-opinion` | legal-opinion | 法律意见书 |
+| `/corporate-legal:corporate-docs` | corporate-docs | 公司章程、股东协议、出资/增资协议起草 |
+| `/corporate-legal:due-diligence-checklist` | due-diligence-checklist | 按行业、阶段和交易类型定制尽调清单 |
 
 ### employment-legal
 
@@ -640,6 +654,9 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | `/employment-legal:matter-workspace` | matter-workspace | 管理事项工作空间 |
 | — | handbook-updates | 差异对比员工手册变更并标记地区影响 |
 | scheduled | leave-tracker (agent) | 每周监控在休假期（含硬截止日期） |
+| `/employment-legal:severance-calc` | severance-calc | 经济补偿 N、违法解除 2N、代通知金、二倍工资测算 |
+| `/employment-legal:labor-arbitration` | labor-arbitration | 劳动仲裁应对 |
+| `/employment-legal:labor-contract` | labor-contract | 按岗位类型定制劳动合同 |
 
 ### ip-legal
 
@@ -656,6 +673,7 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | `/ip-legal:portfolio` | portfolio | 追踪知识产权组合的截止日期和续展 |
 | `/ip-legal:matter-workspace` | matter-workspace | 管理事项工作空间 |
 | scheduled | ip-renewal-watcher (agent) | 每周知识产权组合截止日期报告 |
+| `/ip-legal:trademark-filing` | trademark-filing | 商标申请：尼斯分类规划、可注册性初筛、申请材料 |
 
 ### litigation-legal
 
@@ -681,6 +699,14 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | `/litigation-legal:privilege-log-review` | privilege-log-review | 第一轮证据三性审查，附标记 |
 | `/litigation-legal:brief-section-drafter` | brief-section-drafter | 按内部风格起草法律文书章节 |
 | scheduled | docket-watcher (agent) | 监控法院案件进展和截止日期 |
+| `/litigation-legal:civil-complaint-drafting` | civil-complaint-drafting | 民事起诉状 |
+| `/litigation-legal:answer-drafting` | answer-drafting | 民事答辩状 |
+| `/litigation-legal:appeal-petition` | appeal-petition | 民事上诉状或再审申请书 |
+| `/litigation-legal:agent-brief` | agent-brief | 完整的代理词与辩论意见 |
+| `/litigation-legal:settlement` | settlement | 和解协议与调解协议 |
+| `/litigation-legal:retrial-analysis` | retrial-analysis | 民事再审可行性分析 |
+| `/litigation-legal:judgment-analysis` | judgment-analysis | 判决书拆解与上诉策略 |
+| `/litigation-legal:deadline-tracker` | deadline-tracker | 诉讼/仲裁期限台账 |
 
 ### criminal-legal
 
@@ -692,6 +718,16 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | `/criminal-legal:compliance-non-prosecution` | compliance-non-prosecution | 涉案企业合规整改草案审查与盲点提示 |
 | `/criminal-legal:defense-strategy` | defense-strategy | 辩护策略分析——罪与非罪、此罪与彼罪、争议焦点 |
 | `/criminal-legal:matter-workspace` | matter-workspace | 管理事项工作空间 |
+| `/criminal-legal:investigation-stage-docs` | investigation-stage-docs | 侦查阶段正式文书：取保候审申请书、不批准逮捕意见书等 |
+| `/criminal-legal:case-file-notes` | case-file-notes | 法律援助类与委托类刑事阅卷笔录 |
+| `/criminal-legal:client-meeting-prep` | client-meeting-prep | 阅卷后会见的发问清单和会见笔录 |
+| `/criminal-legal:defense-plan` | defense-plan | 辩点矩阵与主攻路径选择 |
+| `/criminal-legal:non-prosecution-opinion` | non-prosecution-opinion | 法定、存疑、酌定三类不起诉意见书 |
+| `/criminal-legal:plea-negotiation` | plea-negotiation | 认罪认罚利弊分析与协商策略 |
+| `/criminal-legal:trial-examination-outline` | trial-examination-outline | 庭前会议、排非申请、庭审发问与质证提纲 |
+| `/criminal-legal:defense-statement` | defense-statement | 辩护词、庭审辩论提纲和最后陈述辅导 |
+| `/criminal-legal:client-communication` | client-communication | 对客户的沟通材料，不泄露辩护策略 |
+| `/criminal-legal:sentencing` | sentencing | 五步法量刑测算与量刑建议 |
 
 ### privacy-legal
 
@@ -705,6 +741,7 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 | `/privacy-legal:reg-gap-analysis` | reg-gap-analysis | 将法规与现行政策和实践进行差异比对 |
 | `/privacy-legal:policy-monitor` | policy-monitor | 保持隐私政策与实践同步 |
 | `/privacy-legal:matter-workspace` | matter-workspace | 管理事项工作空间 |
+| `/privacy-legal:privacy-policy` | privacy-policy | 按产品事实生成隐私政策 |
 
 ### product-legal
 
@@ -825,6 +862,15 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 
 ## 致谢
 
+本 fork 合并了以下项目的内容，署名与许可说明见 [NOTICE](NOTICE)：
+
+- **[CSlawyer1985/claude-for-legal-ZH](https://github.com/CSlawyer1985/claude-for-legal-ZH)** — 中国法版本的基础，本仓库由此 fork
+- **[gcheng001/legal-skills](https://github.com/gcheng001/legal-skills)** — 刑事辩护全流程技能
+- **[FAYANHUIYING/claude-for-legal-HoriZon](https://github.com/FAYANHUIYING/claude-for-legal-HoriZon)** — 起草与计算类技能
+- **[3URt7eQryqZX](https://github.com/3URt7eQryqZX/claude-for-legal-zh-falu)**、**[simayifei](https://github.com/simayifei/claude-for-legal-ZH)**、**[hansen6](https://github.com/hansen6/claude-for-legal-ZH)** — 刑法修正案索引、官方法条核验源、CLA 检查清理
+
+以下致谢沿用上游项目：
+
 - **[Anthropic](https://www.anthropic.com/)** — 提供 `claude-for-legal` 开源插件框架和 Claude 模型能力，为中国法本地化改造奠定了坚实基础
 - **[DeepSeek-V4](https://www.deepseek.com/)** — 提供优惠算力支持，使大规模法律技能文件的本地化改造在经济上可行
 - **[浙江海泰律师事务所](https://www.hightac.com/)** — 提供专业成长环境和实务土壤，本版本中融入的合同审查方法论、诉讼分析框架和风险评价体系均源于海泰的长期培养
@@ -837,4 +883,4 @@ scripts/                  # deploy-managed-agent.sh · validate.py · orchestrat
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=CSlawyer1985/claude-for-legal-ZH&type=Date)](https://www.star-history.com/?repos=CSlawyer1985%2Fclaude-for-legal-ZH)
+[![Star History Chart](https://api.star-history.com/svg?repos=DerekXuHQ/claude-for-legal-china&type=Date)](https://www.star-history.com/?repos=DerekXuHQ%2Fclaude-for-legal-china)

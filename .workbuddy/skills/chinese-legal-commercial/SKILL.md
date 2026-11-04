@@ -45,7 +45,7 @@ WorkBuddy 中已授权元典或北大法宝等法律检索服务时（见 `INSTA
 
 ## 可用原始技能
 
-`amendment-history`、`cold-start-interview`、`construction-contract-review`、`customize`、`escalation-flagger`、`matter-workspace`、`nda-review`、`renewal-tracker`、`review`、`review-proposals`、`saas-msa-review`、`stakeholder-summary`、`vendor-agreement-review`
+`amendment-history`、`cold-start-interview`、`construction-contract-review`、`contract-drafting`、`customize`、`escalation-flagger`、`matter-workspace`、`nda-review`、`renewal-tracker`、`review`、`review-proposals`、`saas-msa-review`、`stakeholder-summary`、`vendor-agreement-review`
 
 ## 法律输出规则
 

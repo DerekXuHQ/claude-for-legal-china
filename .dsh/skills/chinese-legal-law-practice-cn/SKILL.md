@@ -45,7 +45,7 @@ If the active dsh profile mounts an authenticated legal MCP such as `yuandian` o
 
 ## Available Original Skills
 
-`cold-start-interview`, `complaint-triage`, `consultation-analysis`, `legal-service-proposal`
+`cold-start-interview`, `complaint-triage`, `consultation-analysis`, `legal-service-proposal`, `legal-terminology`
 
 ## Legal Output Rules
 

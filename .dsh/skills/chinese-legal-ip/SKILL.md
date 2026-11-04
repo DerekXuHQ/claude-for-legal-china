@@ -45,7 +45,7 @@ If the active dsh profile mounts an authenticated legal MCP such as `yuandian` o
 
 ## Available Original Skills
 
-`cease-desist`, `clearance`, `cold-start-interview`, `customize`, `fto-triage`, `infringement-triage`, `invention-intake`, `ip-clause-review`, `matter-workspace`, `oss-review`, `portfolio`, `takedown`
+`cease-desist`, `clearance`, `cold-start-interview`, `customize`, `fto-triage`, `infringement-triage`, `invention-intake`, `ip-clause-review`, `matter-workspace`, `oss-review`, `portfolio`, `takedown`, `trademark-filing`
 
 ## Legal Output Rules
 

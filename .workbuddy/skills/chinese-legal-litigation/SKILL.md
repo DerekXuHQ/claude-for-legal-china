@@ -45,7 +45,7 @@ WorkBuddy 中已授权元典或北大法宝等法律检索服务时（见 `INSTA
 
 ## 可用原始技能
 
-`brief-section-drafter`、`chronology`、`claim-chart`、`cold-start-interview`、`customize`、`demand-draft`、`demand-intake`、`demand-received`、`deposition-prep`、`legal-hold`、`matter-briefing`、`matter-close`、`matter-intake`、`matter-update`、`matter-workspace`、`neutral-hearing-outline`、`oc-status`、`portfolio-status`、`privilege-log-review`、`subpoena-triage`
+`agent-brief`、`answer-drafting`、`appeal-petition`、`brief-section-drafter`、`chronology`、`civil-complaint-drafting`、`claim-chart`、`cold-start-interview`、`customize`、`deadline-tracker`、`demand-draft`、`demand-intake`、`demand-received`、`deposition-prep`、`judgment-analysis`、`legal-hold`、`matter-briefing`、`matter-close`、`matter-intake`、`matter-update`、`matter-workspace`、`neutral-hearing-outline`、`oc-status`、`portfolio-status`、`privilege-log-review`、`retrial-analysis`、`settlement`、`subpoena-triage`
 
 ## 法律输出规则
 

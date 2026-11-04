@@ -12,7 +12,7 @@ This skill lets DeepSeek Harness (`dsh`) use the original `claude-for-legal-ZH/c
 - Domain root: `criminal-legal`
 - Domain profile template and shared rules: `criminal-legal/CLAUDE.md`
 - Original skills directory: `criminal-legal/skills`
-- Original plugin description: 中国刑事辩护与刑事合规插件：脱敏前提下的阅卷笔录与证据链梳理、取保候审及羁押必要性审查辅助、辩护策略与类案法理分析、涉案企业合规不起诉审查。内置刑事诉讼法核心条文与合规评估基准参考库，强制脱敏红线与防幻觉校验纪律。适配刑事辩护律师、企业合规顾问等不同角色。
+- Original plugin description: 中国刑事辩护与刑事合规插件：脱敏前提下的阅卷笔录与证据链梳理、取保候审及羁押必要性审查、辩护策略与辩护方案、不起诉意见书、认罪认罚协商、庭审发问与质证提纲、辩护词、客户沟通，以及涉案企业合规不起诉审查。内置刑事诉讼法核心条文、合规评估基准与刑法修正案参考库，强制脱敏红线与防幻觉校验纪律。
 
 ## Path Resolution
 
@@ -45,7 +45,7 @@ If the active dsh profile mounts an authenticated legal MCP such as `yuandian` o
 
 ## Available Original Skills
 
-`bail-application`, `case-analysis`, `cold-start-interview`, `compliance-non-prosecution`, `customize`, `defense-strategy`, `matter-workspace`
+`bail-application`, `case-analysis`, `case-file-notes`, `client-communication`, `client-meeting-prep`, `cold-start-interview`, `compliance-non-prosecution`, `customize`, `defense-plan`, `defense-statement`, `defense-strategy`, `investigation-stage-docs`, `matter-workspace`, `non-prosecution-opinion`, `plea-negotiation`, `sentencing`, `trial-examination-outline`
 
 ## Legal Output Rules
 

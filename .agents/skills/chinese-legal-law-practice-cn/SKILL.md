@@ -34,7 +34,7 @@ When an original instruction says to run `/law-practice-cn:some-command`, interp
 
 ## Available Original Skills
 
-`cold-start-interview`, `complaint-triage`, `consultation-analysis`, `legal-service-proposal`
+`cold-start-interview`, `complaint-triage`, `consultation-analysis`, `legal-service-proposal`, `legal-terminology`
 
 ## Legal Output Rules
 

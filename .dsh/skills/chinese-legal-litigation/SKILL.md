@@ -45,7 +45,7 @@ If the active dsh profile mounts an authenticated legal MCP such as `yuandian` o
 
 ## Available Original Skills
 
-`brief-section-drafter`, `chronology`, `claim-chart`, `cold-start-interview`, `customize`, `demand-draft`, `demand-intake`, `demand-received`, `deposition-prep`, `legal-hold`, `matter-briefing`, `matter-close`, `matter-intake`, `matter-update`, `matter-workspace`, `neutral-hearing-outline`, `oc-status`, `portfolio-status`, `privilege-log-review`, `subpoena-triage`
+`agent-brief`, `answer-drafting`, `appeal-petition`, `brief-section-drafter`, `chronology`, `civil-complaint-drafting`, `claim-chart`, `cold-start-interview`, `customize`, `deadline-tracker`, `demand-draft`, `demand-intake`, `demand-received`, `deposition-prep`, `judgment-analysis`, `legal-hold`, `matter-briefing`, `matter-close`, `matter-intake`, `matter-update`, `matter-workspace`, `neutral-hearing-outline`, `oc-status`, `portfolio-status`, `privilege-log-review`, `retrial-analysis`, `settlement`, `subpoena-triage`
 
 ## Legal Output Rules
 

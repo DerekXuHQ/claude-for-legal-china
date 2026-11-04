@@ -34,7 +34,7 @@ When an original instruction says to run `/employment-legal:some-command`, inter
 
 ## Available Original Skills
 
-`cold-start-interview`, `customize`, `expansion-kickoff`, `expansion-update`, `handbook-updates`, `hiring-review`, `internal-investigation`, `international-expansion`, `investigation-add`, `investigation-memo`, `investigation-open`, `investigation-query`, `investigation-summary`, `leave-tracker`, `log-leave`, `matter-workspace`, `policy-drafting`, `termination-review`, `wage-hour-qa`, `worker-classification`
+`cold-start-interview`, `customize`, `expansion-kickoff`, `expansion-update`, `handbook-updates`, `hiring-review`, `internal-investigation`, `international-expansion`, `investigation-add`, `investigation-memo`, `investigation-open`, `investigation-query`, `investigation-summary`, `labor-arbitration`, `labor-contract`, `leave-tracker`, `log-leave`, `matter-workspace`, `policy-drafting`, `severance-calc`, `termination-review`, `wage-hour-qa`, `worker-classification`
 
 ## Legal Output Rules
 

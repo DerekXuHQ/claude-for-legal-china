@@ -12,7 +12,7 @@ description: "刑事辩护与合规领域法律工作：刑事辩护、阅卷笔
 - 领域根目录：`criminal-legal`
 - 领域画像与共享规则：`criminal-legal/CLAUDE.md`
 - 原始技能目录：`criminal-legal/skills`
-- 原插件说明：中国刑事辩护与刑事合规插件：脱敏前提下的阅卷笔录与证据链梳理、取保候审及羁押必要性审查辅助、辩护策略与类案法理分析、涉案企业合规不起诉审查。内置刑事诉讼法核心条文与合规评估基准参考库，强制脱敏红线与防幻觉校验纪律。适配刑事辩护律师、企业合规顾问等不同角色。
+- 原插件说明：中国刑事辩护与刑事合规插件：脱敏前提下的阅卷笔录与证据链梳理、取保候审及羁押必要性审查、辩护策略与辩护方案、不起诉意见书、认罪认罚协商、庭审发问与质证提纲、辩护词、客户沟通，以及涉案企业合规不起诉审查。内置刑事诉讼法核心条文、合规评估基准与刑法修正案参考库，强制脱敏红线与防幻觉校验纪律。
 
 ## 路径解析
 
@@ -45,7 +45,7 @@ WorkBuddy 中已授权元典或北大法宝等法律检索服务时（见 `INSTA
 
 ## 可用原始技能
 
-`bail-application`、`case-analysis`、`cold-start-interview`、`compliance-non-prosecution`、`customize`、`defense-strategy`、`matter-workspace`
+`bail-application`、`case-analysis`、`case-file-notes`、`client-communication`、`client-meeting-prep`、`cold-start-interview`、`compliance-non-prosecution`、`customize`、`defense-plan`、`defense-statement`、`defense-strategy`、`investigation-stage-docs`、`matter-workspace`、`non-prosecution-opinion`、`plea-negotiation`、`sentencing`、`trial-examination-outline`
 
 ## 法律输出规则
 

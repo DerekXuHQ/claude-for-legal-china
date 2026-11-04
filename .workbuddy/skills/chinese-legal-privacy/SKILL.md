@@ -45,7 +45,7 @@ WorkBuddy 中已授权元典或北大法宝等法律检索服务时（见 `INSTA
 
 ## 可用原始技能
 
-`cold-start-interview`、`customize`、`dpa-review`、`dsar-response`、`matter-workspace`、`pia-generation`、`policy-monitor`、`reg-gap-analysis`、`use-case-triage`
+`cold-start-interview`、`customize`、`dpa-review`、`dsar-response`、`matter-workspace`、`pia-generation`、`policy-monitor`、`privacy-policy`、`reg-gap-analysis`、`use-case-triage`
 
 ## 法律输出规则
 
