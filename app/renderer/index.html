@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
 <title>Claude for Legal China</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%238a2c2c'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='sans-serif'>法</text></svg>">
 <link rel="stylesheet" href="style.css">
@@ -14,6 +15,7 @@
     <button class="tab active" data-view="search" role="tab">检索</button>
     <button class="tab" data-view="ask" role="tab">AI 问答</button>
     <button class="tab" data-view="saved" role="tab">收藏 <span id="saved-count" class="count"></span></button>
+    <button class="tab" data-view="updates" role="tab">法规更新 <span id="upd-dot" class="dot" hidden></span></button>
   </nav>
   <button id="open-settings" class="ghost" title="设置">设置</button>
 </header>
@@ -84,6 +86,41 @@
     </div>
   </section>
 
+  <!-- 法规更新 -->
+  <section id="view-updates" class="view">
+    <div class="split">
+      <div class="pane-left">
+        <div class="upd-head">
+          <div>
+            <h3>官方更新与核对</h3>
+            <p class="muted small" id="upd-info"></p>
+          </div>
+          <div class="upd-actions">
+            <button class="primary" id="upd-run">立即检查</button>
+            <button class="ghost" id="upd-full" title="翻完三个官方网站的全部列表，逐部核对，约 30 分钟">全面核对</button>
+            <button class="ghost" id="upd-stop" hidden>停止</button>
+          </div>
+        </div>
+        <div id="upd-progress" class="upd-progress" hidden><div class="bar"><i></i></div><div class="small muted" id="upd-progress-text"></div></div>
+        <div class="seg" id="upd-filter">
+          <button data-v="" class="on">全部</button>
+          <button data-v="new_version">新版本</button>
+          <button data-v="new">新增</button>
+          <button data-v="text_corrected">文本更正</button>
+          <button data-v="case_new">新案例</button>
+          <button data-v="error">出错</button>
+        </div>
+        <ol id="upd-list" class="results"></ol>
+      </div>
+      <aside class="pane-right" id="upd-detail">
+        <div class="empty">
+          <p>app 会定期到官方网站检查法律、行政法规、司法解释和指导性案例有没有更新。</p>
+          <p class="muted small">来源：中国人大网（法律）、国家行政法规库（司法部，行政法规）、最高人民法院（司法解释、指导性案例）。<br>找到新版本时，现行版本会自动切换，并保留旧版本供对照；点左侧的条目可以看逐条对比。</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
   <!-- 收藏 -->
   <section id="view-saved" class="view">
     <div class="split">
@@ -106,7 +143,7 @@
 </main>
 
 <footer class="foot">
-  仅供参考，不构成法律意见 · 非 Anthropic 官方产品 · 法规数据：国家法律法规数据库（经 CC0 数据集 senry5433/china-effective-laws-regulations 获取，非官方汇编）· 案例：最高人民法院指导性案例
+  仅供参考，不构成法律意见 · 非 Anthropic 官方产品 · 法规文本优先采用中国人大网、国家行政法规库、最高人民法院公布的官方全文，其余取自国家法律法规数据库（经 CC0 数据集）
 </footer>
 
 <dialog id="settings">
@@ -122,7 +159,7 @@
       <input name="base_url" placeholder="例如 https://api.portkey.ai 或 https://api.deepseek.com">
     </label>
     <label>API key
-      <input name="api_key" type="password" autocomplete="off" placeholder="保存在本机 data/settings.json">
+      <input name="api_key" type="password" autocomplete="off" placeholder="只保存在这台电脑上">
     </label>
     <label>模型
       <input name="model" placeholder="claude-opus-5-5">
@@ -138,13 +175,34 @@
     <label>附加请求头 <span class="muted">（JSON，可选；Portkey 填 x-portkey-api-key 等）</span>
       <textarea name="extra_headers" rows="3" placeholder='{"x-portkey-api-key": "...", "x-portkey-provider": "anthropic"}'></textarea>
     </label>
-    <p class="muted small">API key 只保存在你电脑上的 data/settings.json（仅本人可读），只会发给你填写的接口地址。</p>
+    <p class="muted small">API key 只保存在这台电脑的 app 数据文件夹里（仅本人可读），只会发给你填写的接口地址。</p>
+    <h3 style="margin-top:8px">法规更新</h3>
+    <label class="check"><input type="checkbox" name="auto_update"> 自动检查官方网站的法规更新</label>
+    <label>检查间隔
+      <select name="update_interval_days">
+        <option value="1">每天</option>
+        <option value="3">每 3 天</option>
+        <option value="7">每周（默认）</option>
+        <option value="30">每月</option>
+      </select>
+    </label>
     <div class="dialog-actions">
       <button value="cancel" class="ghost">取消</button>
       <button value="save" class="primary" id="save-settings">保存</button>
     </div>
   </form>
 </dialog>
+
+<div id="setup" class="setup" hidden>
+  <div class="setup-card">
+    <div class="logo big">法</div>
+    <h2>正在准备法规资料库</h2>
+    <p class="muted small">第一次打开需要解压法规数据并建立全文索引，大约一两分钟。之后打开是即时的。</p>
+    <div class="bar"><i id="setup-bar"></i></div>
+    <p class="small" id="setup-phase">启动中…</p>
+    <p class="small err" id="setup-error" hidden></p>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

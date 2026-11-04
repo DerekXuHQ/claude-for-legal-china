@@ -22,10 +22,10 @@ connectors/catalog.json           # 连接器目录（元典、北大法宝等�
 references/                       # 仓库级共享参考：公司画像模板、知识库检索协议、官方法条核验源等
 scripts/                          # 适配层生成、发布检查、cookbook 部署脚本
 NOTICE                            # 上游项目署名（Apache 2.0 要求）
-app/                              # 本地检索 app（Python + SQLite 全文索引），数据在 app/data/，不进 git
+app/                              # 桌面 app（Electron + SQLite 全文索引），数据包构建产物在 app/data/、app/resources/，不进 git
 ```
 
-`app/` 的索引会收录各插件的 `references/*.md` 和 `skills/*/SKILL.md`。改了这些文件后，运行 `cd app && ./run.sh --rebuild` 重建索引。
+`app/` 的数据包会收录各插件的 `references/*.md` 和 `skills/*/SKILL.md`（标题含「国际」「境外」等的段落除外）。改了这些文件后，发布新安装包前运行 `cd app && npm run data` 重建数据包。官方网站的访问规则写在 `app/server/official/fetch.mjs`：请求间隔不少于 2 秒，遇到验证页就停，不访问 robots.txt 禁止的网站。
 
 ## 改完之后要做的事
 

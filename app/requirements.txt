@@ -1,3 +1,2 @@
-anthropic>=2.4
-openai>=3.0
+# 只用于构建数据包（scripts/build-data.sh），app 本身不需要 Python
 pyarrow>=20

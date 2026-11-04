@@ -71,7 +71,7 @@ def repo_files(suffixes: set[str] | None = None) -> list[Path]:
     files: list[Path] = []
     for path in sorted(ROOT.rglob("*")):
         # 跳过 git 元数据、Python 虚拟环境、缓存，以及 app 的本地数据目录（下载的数据、索引、设置）
-        if {".git", ".venv", "__pycache__"} & set(path.parts) or path.is_relative_to(ROOT / "app" / "data") or not path.is_file():
+        if {".git", ".venv", "__pycache__", "node_modules"} & set(path.parts) or any(path.is_relative_to(ROOT / "app" / d) for d in ("data", "dist", "resources")) or not path.is_file():
             continue
         if path.name in BINARY_NAMES:
             continue

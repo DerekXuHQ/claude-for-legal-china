@@ -1,4 +1,7 @@
-"""把下载的法规数据、指导性案例和插件参考资料建成 data/legal.db（SQLite 全文索引）。
+"""把下载的法规数据、指导性案例和插件参考资料建成 data/base.db（随安装包分发的基础数据）。
+
+全文索引不在这里建：app 第一次启动时在用户电脑上建（scripts/build-data.sh 之后的官方核对也在 base.db 上进行），
+这样安装包只需带压缩后的正文。
 
 数据来源：
 - data/raw/：HuggingFace 数据集 senry5433/china-effective-laws-regulations（CC0-1.0），
@@ -7,7 +10,7 @@
 - 仓库各插件的 references/*.md 与 skills/*/SKILL.md：实务要点与处理流程。
 - extras/：数据集快照之后公布的重要文本（例如 2026 年修订的商标法）。
 
-重复运行会整库重建；收藏和设置存放在 data/user.db，不受影响。
+重复运行会整库重建。
 """
 import glob
 import json
@@ -22,7 +25,7 @@ import pyarrow.parquet as pq
 APP = Path(__file__).resolve().parent.parent
 REPO = APP.parent
 DATA = APP / "data"
-DB = DATA / "legal.db"
+DB = DATA / "base.db"
 
 CN_NUM = "零一二三四五六七八九十百千"
 LEVEL = {"法律": "法律", "行政法规": "行政法规", "监察法规": "监察法规", "司法解释": "司法解释", "地方法规": "地方性法规"}
@@ -81,17 +84,15 @@ def schema(db: sqlite3.Connection) -> None:
         PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF;
         CREATE TABLE docs(id TEXT PRIMARY KEY, title TEXT, level TEXT, status TEXT, is_current INT,
             jurisdiction TEXT, province TEXT, issuer TEXT, doc_number TEXT, version_date TEXT,
-            listed_date TEXT, history TEXT, source TEXT, source_url TEXT, n_articles INT, topics TEXT, note TEXT);
+            listed_date TEXT, history TEXT, source TEXT, source_url TEXT, n_articles INT, topics TEXT, note TEXT,
+            effective_date TEXT DEFAULT '', official INT DEFAULT 0, checked_at TEXT DEFAULT '');
         CREATE TABLE articles(rowid INTEGER PRIMARY KEY, id TEXT UNIQUE, doc_id TEXT, title TEXT, article_no INT,
             article_cn TEXT, chapter TEXT, section TEXT, text TEXT, level TEXT, status TEXT, is_current INT,
             province TEXT, topics TEXT);
         CREATE INDEX idx_art_doc ON articles(doc_id, article_no);
-        CREATE VIRTUAL TABLE articles_fts USING fts5(title, text, content='articles', content_rowid='rowid', tokenize='trigram');
         CREATE TABLE cases(rowid INTEGER PRIMARY KEY, id TEXT UNIQUE, number INT, title TEXT, keywords TEXT,
             points TEXT, laws TEXT, facts TEXT, result TEXT, reasoning TEXT, url TEXT, text TEXT);
-        CREATE VIRTUAL TABLE cases_fts USING fts5(title, keywords, points, laws, text, content='cases', content_rowid='rowid', tokenize='trigram');
         CREATE TABLE refs(rowid INTEGER PRIMARY KEY, id TEXT UNIQUE, kind TEXT, plugin TEXT, path TEXT, title TEXT, heading TEXT, text TEXT);
-        CREATE VIRTUAL TABLE refs_fts USING fts5(title, heading, text, content='refs', content_rowid='rowid', tokenize='trigram');
         CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
         """
     )
@@ -121,7 +122,7 @@ def load_laws(db: sqlite3.Connection) -> None:
         level = LEVEL.get(d["category"], d["category"])
         info[d["id"]] = (d["title"], level, status, is_cur, prov, topics)
         db.execute(
-            "INSERT INTO docs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO docs(id,title,level,status,is_current,jurisdiction,province,issuer,doc_number,version_date,listed_date,history,source,source_url,n_articles,topics,note) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (d["id"], d["title"], level, status, is_cur, d["jurisdiction"], prov, d["issuer"], d["document_number"],
              d["filename_date"], d["listed_date"], d["promulgation_history"], d["source"], d["source_url"],
              d["n_articles"], topics, ""),
@@ -162,10 +163,10 @@ def load_extras(db: sqlite3.Connection) -> None:
         doc_id = spec["id"]
         level, prov, topics = spec["level"], "全国", topics_for(spec["title"])
         db.execute(
-            "INSERT OR REPLACE INTO docs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO docs(id,title,level,status,is_current,jurisdiction,province,issuer,doc_number,version_date,listed_date,history,source,source_url,n_articles,topics,note,effective_date,official) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
             (doc_id, spec["title"], level, spec["status"], 0, "全国", prov, spec["issuer"], spec.get("doc_number", ""),
              spec["version_date"], spec["version_date"], spec.get("history", ""), spec["source"], spec["source_url"],
-             0, topics, spec.get("note", "")),
+             0, topics, spec.get("note", ""), spec.get("effective_date", "")),
         )
         chapter, count, last_id = "", 0, None
         for line in body.split("\n"):
@@ -226,6 +227,9 @@ def load_refs(db: sqlite3.Connection) -> None:
         chunks = re.split(r"\n(?=## )", text)
         for i, chunk in enumerate(chunks):
             heading = chunk.splitlines()[0].lstrip("# ").strip() if chunk.startswith("## ") else "概述"
+            # 本 app 只收中国大陆法；境外法规动态之类的段落不收
+            if re.search(r"国际|境外|欧盟|美国|海外", heading):
+                continue
             db.execute(
                 "INSERT INTO refs(id,kind,plugin,path,title,heading,text) VALUES(?,?,?,?,?,?,?)",
                 (f"ref:{f.relative_to(REPO)}#{i}", "实务要点", plugin, str(f.relative_to(REPO)), title, heading, chunk.strip()),
@@ -257,9 +261,6 @@ def main() -> None:
     load_extras(db)
     load_cases(db)
     load_refs(db)
-    db.execute("INSERT INTO articles_fts(articles_fts) VALUES('rebuild')")
-    db.execute("INSERT INTO cases_fts(cases_fts) VALUES('rebuild')")
-    db.execute("INSERT INTO refs_fts(refs_fts) VALUES('rebuild')")
     meta = {"dataset": "senry5433/china-effective-laws-regulations（CC0-1.0，快照 2026-08-26）",
             "built_at": __import__("datetime").date.today().isoformat(),
             "topics": json.dumps(list(TOPICS), ensure_ascii=False)}

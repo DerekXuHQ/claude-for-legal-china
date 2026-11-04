@@ -1,0 +1,103 @@
+{
+  "name": "claude-for-legal-china",
+  "productName": "Claude for Legal China",
+  "version": "1.0.0",
+  "description": "中国大陆法律法规本地检索与 AI 问答",
+  "author": "DerekXuHQ",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.mjs",
+    "data": "scripts/build-data.sh",
+    "dist:mac": "scripts/build-mac.sh",
+    "dist:mac:intel": "MAC_ARCH=x64 scripts/build-mac.sh",
+    "dist:win": "scripts/build-win.sh"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.4.0",
+    "openai": "7.50.0"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.derekxuhq.legalchina",
+    "productName": "Claude for Legal China",
+    "copyright": "Apache-2.0 · 非 Anthropic 官方产品",
+    "files": [
+      "main.mjs",
+      "server/**",
+      "renderer/**",
+      "package.json",
+      "node_modules/**"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/base.db.gz",
+        "to": "base.db.gz"
+      },
+      {
+        "from": "resources/data-version.json",
+        "to": "data-version.json"
+      },
+      {
+        "from": "THIRD_PARTY.md",
+        "to": "THIRD_PARTY.md"
+      }
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.reference",
+      "target": [
+        "dmg"
+      ],
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "CFBundleDisplayName": "Claude for Legal China",
+        "LSApplicationCategoryType": "public.app-category.reference"
+      }
+    },
+    "dmg": {
+      "title": "Claude for Legal China ${version}",
+      "artifactName": "ClaudeForLegalChina-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "legalTrademarks": "非 Anthropic 官方产品"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Claude for Legal China",
+      "artifactName": "ClaudeForLegalChina-${version}-win-${arch}-setup.${ext}",
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "language": "2052",
+      "deleteAppDataOnUninstall": false
+    },
+    "asarUnpack": [
+      "server/**"
+    ]
+  }
+}

@@ -9,8 +9,10 @@ const state = {
   conversationId: null, asking: false, savedFilter: "",
 };
 
+const TOKEN = new URLSearchParams(location.hash.slice(1)).get("t") || "";
+const HEADERS = { "Content-Type": "application/json", "X-App-Token": TOKEN };
 async function api(path, opts = {}) {
-  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+  const res = await fetch(path, { headers: HEADERS, ...opts });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data;
@@ -23,10 +25,26 @@ function showView(v) {
   $$(".view").forEach((s) => s.classList.toggle("active", s.id === "view-" + v));
   if (v === "saved") renderSaved();
   if (v === "ask") $("#question").focus();
+  if (v === "updates") { renderUpdates(); $("#upd-dot").hidden = true; }
 }
 
 /* ---------- 初始化 ---------- */
+async function waitReady() {
+  for (;;) {
+    const st = await api("/api/status");
+    if (st.ready) { $("#setup").hidden = true; return st; }
+    $("#setup").hidden = false;
+    $("#setup-bar").style.width = Math.round((st.progress || 0) * 100) + "%";
+    $("#setup-phase").textContent = `${st.phase || "准备中"}… ${Math.round((st.progress || 0) * 100)}%`;
+    if (st.error) { $("#setup-error").hidden = false; $("#setup-error").textContent = st.error; return null; }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
 async function init() {
+  const st = await waitReady();
+  if (!st) return;
+  state.app = st.app;
   const m = await api("/api/meta");
   for (const l of m.levels) $("#f-level").insertAdjacentHTML("beforeend", `<option>${esc(l)}</option>`);
   for (const p of m.provinces) {
@@ -35,9 +53,11 @@ async function init() {
   }
   for (const t of m.topics || []) $("#f-topic").insertAdjacentHTML("beforeend", `<option>${esc(t)}</option>`);
   const c = m.counts || {};
-  $("#db-stats").textContent = `本地资料：法律 ${c["法律"] || 0} 部 · 司法解释 ${c["司法解释"] || 0} 件 · 行政法规 ${c["行政法规"] || 0} 部 · 地方性法规 ${c["地方性法规"] || 0} 部 · 现行条文 ${m.articles} 条 · 指导性案例 ${m.cases} 件 · 实务资料 ${m.refs} 段。数据集：${m.dataset || ""}；索引建于 ${m.built_at || ""}。`;
+  const o = m.official || {};
+  $("#db-stats").textContent = `本地资料：法律 ${c["法律"] || 0} 部 · 司法解释 ${c["司法解释"] || 0} 件 · 行政法规 ${c["行政法规"] || 0} 部 · 地方性法规 ${c["地方性法规"] || 0} 部 · 现行条文 ${m.articles} 条 · 指导性案例 ${m.cases} 件 · 实务资料 ${m.refs} 段。其中已与官方网站核对：法律 ${o["法律"] || 0} 部、行政法规 ${o["行政法规"] || 0} 部、司法解释 ${o["司法解释"] || 0} 件。数据包 ${state.app?.data?.version || ""}${m.official_checked ? "，官方核对于 " + m.official_checked : ""}。`;
   if (!m.configured) $("#open-settings").classList.replace("ghost", "primary");
   await loadBookmarks();
+  pollUpdates();
 }
 
 /* ---------- 检索 ---------- */
@@ -87,6 +107,7 @@ function badges(it) {
     const cls = it.status === "有效" ? "cur" : it.status === "尚未生效" ? "pending" : "old";
     out.push(`<span class="badge ${cls}">${esc(it.status === "有效" ? "现行有效" : it.status)}</span>`);
   }
+  if (it.official) out.push(`<span class="badge off" title="已与官方网站公布的全文核对">官方全文</span>`);
   return out.join("");
 }
 
@@ -129,7 +150,7 @@ function starBtn(kind, id) {
 function detailHTML(it, hlArticle) {
   if (it.kind === "article") {
     return `<div class="d-head"><div><h2>${esc(it.title)} <span style="color:var(--accent)">${esc(it.article)}</span></h2>
-      <div class="r-meta">${badges(it)}${it.chapter ? `<span class="badge">${esc(it.chapter)}</span>` : ""}</div></div>
+      <div class="r-meta">${badges(it)}${it.chapter ? `<span class="badge">${esc(it.chapter)}</span>` : ""}${it.effective_date ? `<span class="badge">${esc(it.effective_date)} 起施行</span>` : ""}</div></div>
       <div class="d-actions">${starBtn("article", it.id)}<button class="ghost" data-open-law="${esc(it.doc_id)}" data-hl="${esc(it.id)}">看整部法规</button></div></div>
       ${it.note ? `<div class="d-note">${esc(it.note)}</div>` : ""}
       <div class="d-text">${esc(it.text)}</div>
@@ -142,9 +163,9 @@ function detailHTML(it, hlArticle) {
       if (a.chapter && a.chapter !== lastCh) { h += `<div class="ch">${esc(a.chapter)}${a.section ? " · " + esc(a.section) : ""}</div>`; lastCh = a.chapter; }
       return h + `<div class="art-item ${a.id === hlArticle ? "hl" : ""}" data-art="${esc(a.id)}">${esc(a.text)}</div>`;
     }).join("");
-    const versions = (it.other_versions || []).map((v) => `<button class="cite" data-open-law="${esc(v.id)}">${esc(v.version_date || "")} ${esc(v.status)}</button>`).join("");
+    const versions = (it.other_versions || []).map((v) => `<span class="ver"><button class="cite" data-open-law="${esc(v.id)}">${esc(v.version_date || "")} ${esc(v.status)}</button><button class="cite" data-compare="${esc(it.id)}|${esc(v.id)}" title="逐条对比这两个版本">对比</button></span>`).join(" ");
     return `<div class="d-head"><div><h2>${esc(it.title)}</h2>
-      <div class="r-meta">${badges(it)}${it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : ""}${it.issuer ? `<span class="badge">${esc(it.issuer)}</span>` : ""}</div></div>
+      <div class="r-meta">${badges(it)}${it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : ""}${it.effective_date ? `<span class="badge">${esc(it.effective_date)} 起施行</span>` : ""}${it.issuer ? `<span class="badge">${esc(it.issuer)}</span>` : ""}</div></div>
       <div class="d-actions">${starBtn("law", it.id)}</div></div>
       ${it.note ? `<div class="d-note">${esc(it.note)}</div>` : ""}
       ${it.history ? `<p class="muted small">${esc(it.history)}</p>` : ""}
@@ -172,12 +193,18 @@ function detailHTML(it, hlArticle) {
 
 function srcLine(it) {
   const src = it.source || "";
-  return src ? `<p class="d-src small muted">来源：${it.source_url ? `<a href="${esc(it.source_url)}" target="_blank" rel="noopener">${esc(src)}</a>` : esc(src)}（数据集快照，引用前以官方文本为准）</p>` : "";
+  if (!src) return "";
+  const link = it.source_url ? `<a href="${esc(it.source_url)}" target="_blank" rel="noopener">${esc(src)}</a>` : esc(src);
+  const note = it.official
+    ? `已与官方网站公布的全文核对${it.checked_at ? "（" + esc(it.checked_at) + "）" : ""}。`
+    : "国家法律法规数据库文本，经 CC0 数据集快照（2026-08-26）获取；尚未与官方网站逐条核对，引用前以官方文本为准。";
+  return `<p class="d-src small muted src-line">来源：${link}。${note}</p>`;
 }
 
 function bindDetail(target, it) {
   $$("[data-star]", target).forEach((b) => b.addEventListener("click", () => toggleBookmark(b, it)));
   $$("[data-open-law]", target).forEach((b) => b.addEventListener("click", () => openItem("law", b.dataset.openLaw, target, b.dataset.hl)));
+  $$("[data-compare]", target).forEach((b) => b.addEventListener("click", () => { const [a, c] = b.dataset.compare.split("|"); openCompare(a, c, target); }));
   bindCites(target);
 }
 
@@ -311,7 +338,7 @@ $("#ask-form").addEventListener("submit", async (e) => {
   log.scrollTop = log.scrollHeight;
   let text = "", answerId = null;
   try {
-    const res = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" },
+    const res = await fetch("/api/ask", { method: "POST", headers: HEADERS,
       body: JSON.stringify({ question, region: $("#ask-region").value, conversation_id: state.conversationId }) });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -357,6 +384,8 @@ $("#open-settings").addEventListener("click", async () => {
   const f = $("#settings-form");
   for (const k of ["provider", "base_url", "api_key", "model", "effort"]) f.elements[k].value = s[k] ?? "";
   f.elements.extra_headers.value = s.extra_headers && Object.keys(s.extra_headers).length ? JSON.stringify(s.extra_headers, null, 2) : "";
+  f.elements.auto_update.checked = s.auto_update !== false;
+  f.elements.update_interval_days.value = String(s.update_interval_days || 7);
   $("#settings").showModal();
 });
 $("#save-settings").addEventListener("click", async (e) => {
@@ -368,9 +397,135 @@ $("#save-settings").addEventListener("click", async (e) => {
   }
   await api("/api/settings", { method: "POST", body: JSON.stringify({
     provider: f.elements.provider.value, base_url: f.elements.base_url.value.trim(), api_key: f.elements.api_key.value.trim(),
-    model: f.elements.model.value.trim(), effort: f.elements.effort.value, extra_headers: headers }) });
+    model: f.elements.model.value.trim(), effort: f.elements.effort.value, extra_headers: headers,
+    auto_update: f.elements.auto_update.checked, update_interval_days: Number(f.elements.update_interval_days.value) }) });
   $("#settings").close();
   $("#open-settings").classList.replace("primary", "ghost");
+});
+
+/* ---------- 版本对比 ---------- */
+function charDiff(a, b) {
+  // 简单的逐字对比（最长公共子序列），条文一般不长
+  const A = [...a], B = [...b];
+  if (A.length * B.length > 4e6) return { old: esc(a), new: esc(b) };
+  const dp = Array.from({ length: A.length + 1 }, () => new Uint16Array(B.length + 1));
+  for (let i = A.length - 1; i >= 0; i--) for (let j = B.length - 1; j >= 0; j--)
+    dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  let i = 0, j = 0, o = "", n = "";
+  while (i < A.length && j < B.length) {
+    if (A[i] === B[j]) { o += esc(A[i]); n += esc(B[j]); i++; j++; }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { o += `<del>${esc(A[i++])}</del>`; }
+    else { n += `<ins>${esc(B[j++])}</ins>`; }
+  }
+  while (i < A.length) o += `<del>${esc(A[i++])}</del>`;
+  while (j < B.length) n += `<ins>${esc(B[j++])}</ins>`;
+  return { old: o, new: n };
+}
+
+function diffHTML(d, oldLabel, newLabel) {
+  const parts = [];
+  parts.push(`<p class="small muted">旧版 ${d.old_count} 条，新版 ${d.new_count} 条：未改动 ${d.unchanged} 条${d.renumbered ? `（其中 ${d.renumbered} 条只是条号变了）` : ""}，修改 ${d.modified.length} 条，新增 ${d.added.length} 条，删除 ${d.removed.length} 条。</p>`);
+  for (const m of d.modified) {
+    const c = charDiff(m.old, m.new);
+    parts.push(`<div class="diff-item"><h4>修改：${esc(m.old_cn)}${m.old_cn !== m.new_cn ? " → " + esc(m.new_cn) : ""}</h4><div class="diff-cols"><div class="diff-old"><b>${esc(oldLabel)}</b>\n${c.old}</div><div class="diff-new"><b>${esc(newLabel)}</b>\n${c.new}</div></div></div>`);
+  }
+  for (const m of d.added) parts.push(`<div class="diff-item"><h4>新增：${esc(m.new_cn)}</h4><div class="diff-new d-text">${esc(m.new)}</div></div>`);
+  for (const m of d.removed) parts.push(`<div class="diff-item"><h4>删除：${esc(m.old_cn)}</h4><div class="diff-old d-text">${esc(m.old)}</div></div>`);
+  return parts.join("");
+}
+
+async function openCompare(a, b, target) {
+  target.innerHTML = `<div class="empty">对比中…</div>`;
+  try {
+    const r = await api(`/api/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+    target.innerHTML = `<div class="d-head"><div><h2>${esc(r.new.title)}：版本对比</h2>
+      <div class="r-meta"><span class="badge">旧版 ${esc(r.old.version_date)}</span><span class="badge">新版 ${esc(r.new.version_date)}</span></div></div>
+      <div class="d-actions"><button class="ghost" data-open-law="${esc(r.new.id)}">看新版全文</button><button class="ghost" data-open-law="${esc(r.old.id)}">看旧版全文</button></div></div>
+      ${diffHTML(r.diff, "旧版 " + r.old.version_date, "新版 " + r.new.version_date)}`;
+    target.scrollTop = 0;
+    $$("[data-open-law]", target).forEach((x) => x.addEventListener("click", () => openItem("law", x.dataset.openLaw, target)));
+  } catch (err) { target.innerHTML = `<div class="empty err">${esc(err.message)}</div>`; }
+}
+
+/* ---------- 法规更新 ---------- */
+const ACTION = {
+  new_version: ["新版本", "new"], new: ["新增", "new"], text_corrected: ["文本更正", "pending"], promoted: ["开始施行", "cur"],
+  case_new: ["新案例", "new"], error: ["出错", "old"], unparsed: ["未解析", "old"], blocked: ["网站拒绝访问", "old"],
+};
+const SOURCE = { npc: "中国人大网", moj: "国家行政法规库", court: "最高人民法院", cases: "指导性案例", local: "本地" };
+state.updFilter = "";
+
+$$("#upd-filter button").forEach((b) => b.addEventListener("click", () => {
+  $$("#upd-filter button").forEach((x) => x.classList.toggle("on", x === b));
+  state.updFilter = b.dataset.v; renderUpdates();
+}));
+$("#upd-run").addEventListener("click", () => runUpdate("incremental"));
+$("#upd-full").addEventListener("click", () => {
+  if (confirm("全面核对会逐部重新读取三个官方网站上的法律、行政法规和司法解释，约 30 分钟，期间可以正常使用。开始吗？")) runUpdate("full");
+});
+$("#upd-stop").addEventListener("click", () => api("/api/updates/stop", { method: "POST", body: "{}" }));
+
+async function runUpdate(mode) {
+  const r = await api("/api/updates/run", { method: "POST", body: JSON.stringify({ mode }) });
+  if (!r.ok) alert(r.error || "无法开始");
+  pollUpdates(true);
+}
+
+let pollTimer = null, wasRunning = false;
+async function pollUpdates(force) {
+  clearTimeout(pollTimer);
+  try {
+    const s = await api("/api/updates/status");
+    showProgress(s);
+    if (wasRunning && !s.running) {
+      if ($("#view-updates").classList.contains("active")) renderUpdates();
+      else if (s.last_result?.changes) $("#upd-dot").hidden = false;
+    }
+    wasRunning = s.running;
+    pollTimer = setTimeout(pollUpdates, s.running ? 1500 : 30000);
+  } catch { pollTimer = setTimeout(pollUpdates, 30000); }
+}
+
+function showProgress(s) {
+  $("#upd-progress").hidden = !s.running;
+  $("#upd-run").disabled = $("#upd-full").disabled = !!s.running;
+  $("#upd-stop").hidden = !s.running;
+  if (s.running) $("#upd-progress-text").textContent = `${s.mode === "full" ? "全面核对" : "检查更新"}：${s.phase || ""} · 已看 ${s.checked} 条，已读取 ${s.fetched} 份，发现变化 ${s.changes} 处${s.errors ? `，出错 ${s.errors}` : ""}${s.current ? " · " + s.current : ""}`;
+}
+
+async function renderUpdates() {
+  const r = await api("/api/updates");
+  showProgress(r.running);
+  const last = r.last_check ? new Date(r.last_check).toLocaleString("zh-CN") : "还没有检查过";
+  $("#upd-info").textContent = `上次检查：${last}。已核对一致 ${r.confirmed} 部。${state.app?.data?.official_checked ? `安装包数据已于 ${state.app.data.official_checked} 全面核对。` : ""}`;
+  const items = r.items.filter((x) => !state.updFilter || x.action === state.updFilter);
+  $("#upd-list").innerHTML = items.length ? items.map((x) => {
+    const [label, cls] = ACTION[x.action] || [x.action, ""];
+    return `<li data-upd="${x.id}"><div class="r-title">${esc(x.title)}</div>
+      <div class="r-meta"><span class="badge ${cls}">${esc(label)}</span><span class="badge">${esc(SOURCE[x.source] || x.source)}</span><span class="badge">${esc(new Date(x.at).toLocaleDateString("zh-CN"))}</span></div>
+      <div class="r-snip">${esc(x.summary)}</div></li>`;
+  }).join("") : `<p class="muted">${r.items.length ? "这一类没有记录。" : "还没有更新记录。点「立即检查」看看官方网站有没有新公布的法规。"}</p>`;
+}
+
+$("#upd-list").addEventListener("click", async (e) => {
+  const li = e.target.closest("li");
+  if (!li) return;
+  $$("#upd-list li").forEach((x) => x.classList.toggle("sel", x === li));
+  const target = $("#upd-detail");
+  const x = await api(`/api/updates/${li.dataset.upd}`);
+  if (x.action === "case_new" && x.doc_id) return openItem("case", x.doc_id, target);
+  if (x.action === "new_version" && x.compare_to) return openCompare(x.doc_id, x.compare_to, target);
+  if (x.action === "text_corrected" && x.diff) {
+    target.innerHTML = `<div class="d-head"><div><h2>${esc(x.title)}</h2><div class="r-meta"><span class="badge pending">文本更正</span></div></div>
+      <div class="d-actions"><button class="ghost" data-open-law="${esc(x.doc_id)}">看全文</button></div></div>
+      <p class="small">本地文本与官方网站公布的全文有出入，已改用官方全文。左边是原来的文本，右边是官方全文：</p>
+      ${diffHTML(x.diff, "原文本", "官方全文")}
+      <p class="small muted src-line">官方页面：<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a></p>`;
+    $$("[data-open-law]", target).forEach((b) => b.addEventListener("click", () => openItem("law", b.dataset.openLaw, target)));
+    return;
+  }
+  if (x.doc_id && x.action !== "error") return openItem("law", x.doc_id, target);
+  target.innerHTML = `<div class="d-head"><div><h2>${esc(x.title)}</h2></div></div><p>${esc(x.summary)}</p>${x.url ? `<p class="small"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a></p>` : ""}`;
 });
 
 init().catch((err) => { $("#db-stats").textContent = "初始化失败：" + err.message; });
