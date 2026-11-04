@@ -85,8 +85,10 @@ export function getScenario(id) {
   const P = PIPELINES[sc.pipeline] || PIPELINES.P8;
   const domainId = ["B", "C", "N", "O"].includes(sc.group) ? DOMAIN_BY_PIPE[sc.pipeline] : GROUP_DOMAIN[sc.group];
   const domain = loadTasks().get(domainId);
+  const STRUCT = { P1: "B", P9: "B", P2: "C", P3: "C", P4: "D", P12: "E", P6: "F", P7: "F", P13: "F", P8: "A", P11: "A", P10: "A" };
+  const struct = sc.pipeline === "P5" ? "输出按「合同与方案审查」的结构。" : `输出按「结构 ${STRUCT[sc.pipeline] || "A"}」（见输出约定）。`;
   const card = [
-    `## 工作流程：${P.name}`, P.steps,
+    `## 工作流程：${P.name}`, P.steps, struct,
     `## 这件事属于：${sc.name}（${sc.group_name}）`,
     sc.examples.length ? `用户常见的说法：${sc.examples.map((x) => `「${x}」`).join("；")}` : "",
     `**要弄清的事实**：${sc.facts.join("；")}`,

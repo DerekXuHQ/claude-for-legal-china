@@ -333,6 +333,7 @@ export function createServer(ctx) {
     const emit = (ev) => {
       if (ev.type === "text") answer += ev.delta;
       else if (ev.type === "text_reset") answer = "";
+      else if (ev.type === "step" && (ev.kind || ev.detail)) out.steps.push({ t: ev.text, k: ev.kind || "", d: ev.detail || "" });
       else if (ev.type === "step" || ev.type === "stage") out.steps.push(ev.text);
       else if (ev.type === "route") out.task = ev.name;
       else if (ev.type === "intake") out.intake = { questions: ev.questions, assumptions: ev.assumptions };

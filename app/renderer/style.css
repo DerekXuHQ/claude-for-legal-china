@@ -612,3 +612,23 @@ textarea.dictating::placeholder { color: var(--accent); }
 .set-laws-opts { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: end; }
 .set-laws-opts label { flex-direction: row; align-items: center; gap: 8px; }
 #set-saved { min-height: 1.2em; color: var(--ok); }
+
+/* 工作过程：每步标来源，可展开 */
+.steps-list .st { font-size: 12.5px; line-height: 1.6; padding: 2px 0; }
+.steps-list details.st > summary { cursor: pointer; list-style: none; }
+.steps-list details.st > summary::-webkit-details-marker { display: none; }
+.steps-list details.st > summary::after { content: " ▸"; color: var(--muted); font-size: 11px; }
+.steps-list details.st[open] > summary::after { content: " ▾"; }
+.st-k { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 0 6px; border-radius: 4px; margin-right: 6px; background: var(--chip); color: var(--muted); vertical-align: 1px; }
+.st-k .i { width: 11px; height: 11px; }
+.st-k.st-web { background: #e8f0fe; color: #1a56db; }
+.st-k.st-local { background: var(--accent-soft); color: var(--accent); }
+.st-k.st-check { background: #e7f5ec; color: var(--ok); }
+.st-detail { margin: 4px 0 6px 2px; padding: 6px 10px; border-left: 2px solid var(--line); color: var(--muted); white-space: pre-wrap; font-size: 12px; }
+.st-sum { margin: 4px 0; color: var(--text); }
+.st-src { margin: 4px 0 0; padding-left: 18px; }
+.st-src a { color: var(--accent); }
+:root[data-theme="dark"] .st-k.st-web { background: #1e2a44; color: #8fb3ff; }
+:root[data-theme="dark"] .st-k.st-check { background: #17301f; color: #7ccf98; }
+.st-detail, .st-src a { overflow-wrap: anywhere; word-break: break-word; }
+.st-sum { max-height: 220px; overflow: auto; }

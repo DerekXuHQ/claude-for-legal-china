@@ -113,6 +113,11 @@ def load_laws(db: sqlite3.Connection) -> None:
         valid = [d for d in items if d["status"] == "有效"] or items
         best = max(valid, key=lambda d: (d["filename_date"] or "", d["listed_date"] or ""))
         current.add(best["id"])
+    # 民法典施行（2021-01-01）时废止的九部法律，源数据仍标「有效」
+    repealed = {"中华人民共和国" + t for t in ("合同法", "物权法", "担保法", "侵权责任法", "婚姻法", "继承法", "收养法", "民法通则", "民法总则")}
+    for d in docs:
+        if d["title"] in repealed and d["status"] == "有效":
+            d["status"] = "失效"
     info = {}
     for d in docs:
         is_cur = 1 if d["id"] in current and d["status"] == "有效" else 0

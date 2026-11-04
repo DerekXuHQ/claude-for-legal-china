@@ -483,13 +483,11 @@ function renderPicker(box) {
       $("#question").value = st.prompt;
       composerChanged();
       $("#question").focus();
-      if (st.upload) $("#file-input").click();
       return;
     }
     const sc = cat.scenarios.find((x) => x.id === b.dataset.sc);
     setScenario(sc.id);
     $("#question").focus();
-    if (sc.needsDoc) $("#file-input").click();
   });
   drawItems();
 }
@@ -632,8 +630,24 @@ function userHTML(text, files) {
 function aiHead(task) {
   return `<div class="ai-head"><span class="ai-avatar">${ic("scale")}</span><span class="ai-name">法律助理</span><span class="task-chip" ${task ? "" : "hidden"}>${esc(task || "")}</span></div>`;
 }
+// 工作过程：每一步标明在哪儿查的（本地资料库 / 联网 / 思路 / 核对），点开看查了什么、读了哪些、来源链接
+const STEP_KIND = { local: ["book-open", "本地资料库"], web: ["external", "联网"], think: ["message", "思路"], check: ["circle-check", "核对"], route: ["flag", "判断"] };
+function stepDetailHTML(d) {
+  if (!d) return "";
+  if (typeof d === "string") return `<div class="st-detail">${esc(d)}</div>`;
+  return `<div class="st-detail">${d.queries?.length ? `<div>搜索：${d.queries.map(esc).join("；")}</div>` : ""}
+    ${d.summary ? `<div class="st-sum">${esc(d.summary)}</div>` : ""}
+    ${d.sources?.length ? `<ol class="st-src">${d.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title || x.url)}</a></li>`).join("")}</ol>` : ""}</div>`;
+}
 function stepsHTML(steps) {
-  return `<details class="steps"><summary>${ic("list")}<span>工作过程 · ${steps.length} 步</span>${ic("chevron-down", "chev")}</summary><div class="steps-list">${steps.map((s) => `<div>${esc(s)}</div>`).join("")}</div></details>`;
+  const webN = steps.filter((x) => x && x.k === "web").length;
+  const rows = steps.map((x) => {
+    if (typeof x === "string") return `<div class="st"><span class="st-line">${esc(x)}</span></div>`;
+    const [icon, label] = STEP_KIND[x.k] || ["list", ""];
+    const line = `<span class="st-line"><span class="st-k st-${esc(x.k || "x")}">${ic(icon)}${esc(label)}</span>${esc(x.t)}</span>`;
+    return x.d ? `<details class="st"><summary>${line}</summary>${stepDetailHTML(x.d)}</details>` : `<div class="st">${line}</div>`;
+  }).join("");
+  return `<details class="steps"><summary>${ic("list")}<span>工作过程 · ${steps.length} 步${webN ? ` · 联网 ${webN} 次` : ""}</span>${ic("chevron-down", "chev")}</summary><div class="steps-list">${rows}</div></details>`;
 }
 
 function intakeHTML(intake, active) {
@@ -948,7 +962,7 @@ async function send({ intake_answers, skip_intake, retry_question }) {
         const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
         if (!chunk.startsWith("data: ")) continue;
         const ev = JSON.parse(chunk.slice(6));
-        if (ev.type === "step" || ev.type === "stage") $(".steps .live", box).textContent = ev.text;
+        if (ev.type === "step" || ev.type === "stage" || ev.type === "live") $(".steps .live", box).textContent = ev.text;
         else if (ev.type === "route") { const c = $(".task-chip", box); c.hidden = false; c.textContent = ev.name; }
         else if (ev.type === "text") { text += ev.delta; $(".md", box).innerHTML = renderMD(text); }
         else if (ev.type === "text_reset") { text = ""; $(".md", box).innerHTML = ""; }

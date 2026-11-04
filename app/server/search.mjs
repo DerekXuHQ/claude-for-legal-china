@@ -7,7 +7,16 @@ const LEVEL_BOOST = "CASE a.level WHEN '法律' THEN 8 WHEN '司法解释' THEN 
 const SPLIT = /[\s，,。;；、]+/;
 
 let db = null;
-export function setDb(conn) { db = conn; }
+// 民法典 2021-01-01 施行时废止的九部法律：数据集里仍标「有效」，打开资料库时改正（可写时）
+export const REPEALED_BY_CIVIL_CODE = ["合同法", "物权法", "担保法", "侵权责任法", "婚姻法", "继承法", "收养法", "民法通则", "民法总则"].map((t) => "中华人民共和国" + t);
+export function fixRepealed(conn) {
+  const marks = REPEALED_BY_CIVIL_CODE.map(() => "?").join(",");
+  try {
+    conn.prepare(`UPDATE docs SET status = '失效', is_current = 0 WHERE title IN (${marks}) AND is_current = 1`).run(...REPEALED_BY_CIVIL_CODE);
+    conn.prepare(`UPDATE articles SET status = '失效', is_current = 0 WHERE title IN (${marks}) AND is_current = 1`).run(...REPEALED_BY_CIVIL_CODE);
+  } catch { /* 只读打开时跳过 */ }
+}
+export function setDb(conn) { db = conn; fixRepealed(conn); }
 export function getDb() { return db; }
 
 function terms(query) {
