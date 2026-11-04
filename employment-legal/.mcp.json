@@ -5,11 +5,6 @@
       "url": "https://open.chineselaw.com/mcp",
       "title": "华宇元典法律数据",
       "description": "法规、案例、企业与证券合规检索；连接与认证须在宿主完成，结果仍需原始法源核验。"
-    },
-    "filesystem": {
-      "type": "local",
-      "title": "本地文件系统",
-      "description": "读取本地劳动规章制度、劳动合同模板、解除协议、假期登记册等文件。"
     }
   },
   "recommendedCategories": [
