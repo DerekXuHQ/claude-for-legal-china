@@ -1,5 +1,5 @@
 # 桌面 app 安装包：app/ 有改动推到 main 后，GitHub 自动打四个安装包（Mac Apple 芯片 / Intel、Windows x64 / arm64），
-# 替换最新 Release 上的同名文件。本机不用再打包、上传。
+# 两个都成功后替换最新 Release 上的同名文件。本机不用再打包、上传。
 # 法规数据库不在 git 里：从 build-inputs 预发布下载（重建数据后运行 npm run upload-build-inputs 更新它）。
 # 在线更新（app 内自动下载的那部分）仍在本机发布：签名私钥只放在本机，不上传 GitHub。
 name: App installers
@@ -22,51 +22,81 @@ concurrency:
   group: app-installers
   cancel-in-progress: true
 
+env:
+  GH_TOKEN: ${{ github.token }}
+  REPO: ${{ github.repository }}
+
 jobs:
-  build:
-    runs-on: macos-14
+  mac:
+    runs-on: macos-latest
     timeout-minutes: 60
     defaults:
       run:
         working-directory: app
-    env:
-      GH_TOKEN: ${{ github.token }}
-      REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: app/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
-
+      - run: npm ci --no-audit --no-fund
       - name: Download legal database
-        run: |
-          mkdir -p resources
-          gh release download build-inputs --repo "$REPO" --dir resources --clobber -p base.db.gz -p data-version.json
-          ls -lh resources
-
+        run: gh release download build-inputs --repo "$REPO" --dir resources --clobber -p base.db.gz -p data-version.json
       - name: Build macOS (Apple silicon)
         run: scripts/build-mac.sh
-
       - name: Build macOS (Intel)
         run: MAC_ARCH=x64 scripts/build-mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: app/dist/*.dmg
+          retention-days: 3
+          compression-level: 0
 
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Download legal database
+        run: gh release download build-inputs --repo "$REPO" --dir resources --clobber -p base.db.gz -p data-version.json
       - name: Build Windows (x64 + arm64)
-        run: scripts/build-win.sh
+        run: |
+          node scripts/stamp.mjs
+          ./node_modules/.bin/electron-builder --win nsis --x64 --arm64 --config.directories.output=out
+          mkdir -p dist
+          cp out/*-win-x64-setup.exe out/*-win-arm64-setup.exe dist/
+          ls -l dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: app/dist/*.exe
+          retention-days: 3
+          compression-level: 0
 
+  release:
+    needs: [mac, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
       - name: Replace installers on the latest release
         run: |
+          ls -l dist
           tag=$(gh release view --repo "$REPO" --json tagName -q .tagName)
-          version=$(node -p 'require("./package.json").version')
-          echo "Release $tag, app version $version"
-          gh release upload "$tag" --repo "$REPO" --clobber \
-            "dist/ChinaLawSearch-$version-mac-arm64.dmg" \
-            "dist/ChinaLawSearch-$version-mac-x64.dmg" \
-            "dist/ChinaLawSearch-$version-win-x64-setup.exe" \
-            "dist/ChinaLawSearch-$version-win-arm64-setup.exe"
+          echo "Release $tag"
+          gh release upload "$tag" --repo "$REPO" --clobber dist/*.dmg dist/*.exe
           gh release view "$tag" --repo "$REPO" --json assets -q '.assets[]|"\(.name) \(.size) \(.updatedAt)"'
