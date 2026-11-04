@@ -287,10 +287,17 @@ app.whenReady().then(async () => {
     BOOT.state.confirmHealthy(BOOT.selected.sequence);
     BOOT.healthRecorded = true;
   }
-  // 检查在线更新：启动后一会儿查一次，之后每 6 小时
+  // 检查在线更新：启动后一会儿查一次，之后每小时；有新版本就在后台下载（签名校验通过才算下载完成），
+  // 下载好后导航栏右侧出现「新版本已就绪 · 点击重启更新」，用户点一下就重启生效
   if (updater && app.isPackaged) {
-    setTimeout(() => updater.check(), 20000);
-    setInterval(() => updater.check(), 6 * 3600 * 1000).unref?.();
+    const autoUpdate = async () => {
+      try {
+        await updater.check();
+        if (updater.snapshot().status === "available") updater.download();
+      } catch { /* 下次再查 */ }
+    };
+    setTimeout(autoUpdate, 20000);
+    setInterval(autoUpdate, 3600 * 1000).unref?.();
   }
   app.on("activate", () => { if (!BrowserWindow.getAllWindows().length) createWindow(port, server.token); });
   app.on("second-instance", () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });

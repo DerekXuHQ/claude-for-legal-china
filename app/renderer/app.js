@@ -1792,9 +1792,21 @@ $("#theme").addEventListener("click", () => {
 const mb = (n) => (n / 1e6 >= 1 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
 function renderAppUpdate(u) {
   state.appUpdate = u;
+  // 导航栏最右侧的更新提示：需要做什么就写什么，点一下就做
   const btn = $("#app-update-btn");
-  btn.hidden = !["available", "downloading", "installing", "staged", "shell"].includes(u.status);
-  btn.textContent = u.status === "staged" ? "重启以完成更新" : u.status === "downloading" ? `更新下载中 ${u.percent || 0}%` : "有新版本";
+  const pill = {
+    available: ["download", "有新版本 · 点击更新", "点一下开始下载，下载完再点一下重启"],
+    downloading: ["loader", `正在下载新版本 ${u.percent || 0}%`, "下载完成后点这里重启"],
+    installing: ["loader", "正在安装新版本…", "马上就好"],
+    staged: ["refresh", "新版本已就绪 · 点击重启更新", "点一下重启，几秒钟后生效"],
+    shell: ["download", "有新安装包 · 点击下载", "这次更新需要重新安装"],
+  }[u.status];
+  btn.hidden = !pill;
+  if (pill) {
+    btn.innerHTML = `${ic(pill[0], u.status === "downloading" || u.status === "installing" ? "spin" : "")}<span>${esc(pill[1])}</span>`;
+    btn.title = (u.notes ? `更新内容：${u.notes}\n\n` : "") + pill[2];
+    btn.dataset.state = u.status;
+  }
   $("#au-version").textContent = `版本 ${u.installed?.version || ""}（更新 ${u.installed?.sequence || 0}）· 法规数据 ${u.installed?.data || ""}${u.status === "current" ? " · 已是最新" : u.status === "error" ? " · " + u.message : ""}`;
   const body = $("#au-body"), action = $("#au-action"), bar = $("#au-bar");
   bar.hidden = !["downloading", "installing"].includes(u.status);
@@ -1825,7 +1837,17 @@ async function pollAppUpdate() {
   const busy = ["downloading", "installing"].includes(state.appUpdate?.status);
   setTimeout(pollAppUpdate, busy ? 1000 : 60000);
 }
-$("#app-update-btn").addEventListener("click", () => $("#app-update").showModal());
+// 点导航栏的更新提示：有新版本就开始下载；下载好了就重启（正在生成回答时先确认）；要重新安装就打开下载页
+$("#app-update-btn").addEventListener("click", async () => {
+  const u = state.appUpdate || {};
+  if (u.status === "available") { await api("/api/app-update/download", { method: "POST", body: "{}" }); setTimeout(pollAppUpdate, 500); }
+  else if (u.status === "staged") {
+    if (!$("#stop-btn").hidden && !confirm("正在生成回答，现在重启会中断这次回答。仍然重启吗？")) return;
+    $("#app-update-btn").innerHTML = `${ic("loader", "spin")}<span>正在重启…</span>`;
+    await api("/api/app-update/restart", { method: "POST", body: "{}" });
+  } else if (u.status === "shell") window.open(u.installerUrl, "_blank");
+  else $("#app-update").showModal();
+});
 $("#au-check").addEventListener("click", async () => { renderAppUpdate(await api("/api/app-update/check", { method: "POST", body: "{}" })); if (state.appUpdate.status !== "current") $("#app-update").showModal(); });
 $("#au-action").addEventListener("click", async () => {
   const u = state.appUpdate || {};

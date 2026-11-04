@@ -654,3 +654,14 @@ textarea.dictating::placeholder { color: var(--accent); }
 /* 拖进来时的提示 */
 body.dragging #view-ask::after { content: "松开就能添加：文件、文件夹、网页链接、zip 压缩包都可以"; position: fixed; inset: 64px 16px 16px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--accent); border-radius: 16px; background: color-mix(in srgb, var(--accent) 8%, var(--panel)); color: var(--accent); font-size: 16px; font-weight: 500; z-index: 50; pointer-events: none; }
 .chip em.warn { color: #b45309; }
+
+/* 导航栏最右侧的更新提示 */
+#app-update-btn { margin-left: auto; }
+.upd-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 10px; border-radius: 999px; border: 0; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; background: var(--accent); color: #fff; box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+.upd-pill .i { width: 15px; height: 15px; }
+.upd-pill[data-state="staged"], .upd-pill[data-state="available"] { animation: upd-pulse 2.4s ease-out infinite; }
+.upd-pill[data-state="downloading"], .upd-pill[data-state="installing"] { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); color: var(--accent); cursor: default; }
+.upd-pill:hover { filter: brightness(1.08); }
+@keyframes upd-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.i.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
