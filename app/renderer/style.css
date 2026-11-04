@@ -491,3 +491,4 @@ textarea.dictating::placeholder { color: var(--accent); }
 .sc-item:hover { background: var(--paper); }
 #mic-btn.rec, #mic-btn.connecting { height: 32px; }
 #mic-btn.connecting { border: 1px solid var(--accent); }
+.scenario-pill[hidden] { display: none; }
