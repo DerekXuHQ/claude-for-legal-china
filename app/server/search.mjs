@@ -163,7 +163,7 @@ export function getDoc(id) {
   const base = d.title.replace(/[（(]\d{4}年?(修订|修正)?[）)]$/, "");
   const more = db.prepare("SELECT id, status, version_date, official FROM docs WHERE (title = ? OR title LIKE ?) AND province = ? AND id != ? AND title != ?")
     .all(base, base + "（%", d.province, id, d.title).filter((o) => !others.some((x) => x.id === o.id));
-  return { ...d, official: !!d.official, kind: "law", articles, other_versions: [...others, ...more].sort((a, b) => (b.version_date || "").localeCompare(a.version_date || "")) };
+  return { ...d, title: cleanTitle(d.title), official: !!d.official, kind: "law", articles, other_versions: [...others, ...more].sort((a, b) => (b.version_date || "").localeCompare(a.version_date || "")) };
 }
 
 export function compareVersions(newId, oldId) {
@@ -220,6 +220,12 @@ export function meta() {
 /* ---------------- 浏览（目录） ---------------- */
 
 const collator = new Intl.Collator("zh-Hans-CN-u-co-pinyin");
+// 数据集里少数标题带着「（已记录）」前缀、用下划线代替书名号、末尾挂着日期编号：显示时整理一下
+export function cleanTitle(t) {
+  return String(t || "").replace(/^（已记录）/, "").replace(/_(?=[^_]+_)([^_]+)_/g, "《$1》").replace(/_\d{1,8}$/, "").replace(/_/g, "");
+}
+// 按名称排序时不看开头的标点和「中华人民共和国」
+const sortKey = (t) => cleanTitle(t).replace(/^[“"《（(〈【]+/, "").replace(/^中华人民共和国/, "");
 const LEVEL_ORDER = { 法律: 0, 司法解释: 1, 行政法规: 2, 监察法规: 3, 地方性法规: 4 };
 const CURRENT = "(is_current = 1 OR status = '尚未生效')";
 
@@ -237,8 +243,8 @@ export function browseLaws({ level = "", province = "", topic = "", sort = "name
   const w = browseWhere({ level, province, topic });
   const rows = db.prepare(`SELECT id, title, level, status, province, version_date, effective_date, official, n_articles FROM docs WHERE ${w.sql}`).all(...w.params);
   if (sort === "date") rows.sort((a, b) => (b.version_date || "").localeCompare(a.version_date || "") || collator.compare(a.title, b.title));
-  else rows.sort((a, b) => (LEVEL_ORDER[a.level] ?? 9) - (LEVEL_ORDER[b.level] ?? 9) || collator.compare(a.title.replace(/^中华人民共和国/, ""), b.title.replace(/^中华人民共和国/, "")));
-  return { total: rows.length, items: rows.slice(offset, offset + limit).map((r) => ({ ...r, kind: "law", official: !!r.official })) };
+  else rows.sort((a, b) => (LEVEL_ORDER[a.level] ?? 9) - (LEVEL_ORDER[b.level] ?? 9) || collator.compare(sortKey(a.title), sortKey(b.title)));
+  return { total: rows.length, items: rows.slice(offset, offset + limit).map((r) => ({ ...r, title: cleanTitle(r.title), kind: "law", official: !!r.official })) };
 }
 
 /** 各筛选项下的数量，用于目录左侧的分类。 */

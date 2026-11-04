@@ -30,6 +30,17 @@ export const DEFAULT_SETTINGS = {
  * @param {() => void} ctx.stopUpdate
  * @param {() => object} ctx.appInfo
  */
+// 把模型接口的报错翻成人话（原文附在后面，方便排查）
+function friendlyError(err) {
+  const raw = String(err?.message || err || "").slice(0, 300);
+  const st = err?.status;
+  if (st === 401 || st === 403) return `API key 无效或没有权限（HTTP ${st}）。请到「设置」检查 API key 和接口地址。`;
+  if (st === 404) return `接口上没有这个模型（HTTP 404）。请在输入框下方换一个模型，或到「设置」重新读取模型清单。`;
+  if (st === 429) return "请求太频繁，接口暂时限流了。稍等一两分钟再点「重试」。";
+  if (st >= 500 || /connection|fetch failed|terminated|timeout|ECONN|socket/i.test(raw)) return "连接 AI 接口失败：网络或网关暂时断开，已自动重试 5 次仍不成功。稍等一会儿点「重试」，已经填的内容不用重写。";
+  return `出错了：${raw}`;
+}
+
 export function createServer(ctx) {
   const token = randomUUID();
   const dataDir = path.dirname(ctx.settingsPath);
@@ -83,7 +94,7 @@ export function createServer(ctx) {
     const target = path.resolve(ctx.staticDir, rel);
     if (!target.startsWith(path.resolve(ctx.staticDir) + path.sep) || !existsSync(target) || !statSync(target).isFile()) return send(res, 404, { error: "未找到" });
     const body = readFileSync(target);
-    res.writeHead(200, { "Content-Type": MIME[path.extname(target)] || "application/octet-stream", "Content-Length": body.length, "Cache-Control": "no-cache" });
+    res.writeHead(200, { "Content-Type": MIME[path.extname(target)] || "application/octet-stream", "Content-Length": body.length, "Cache-Control": "no-store" });
     res.end(body);
   };
 
@@ -218,6 +229,7 @@ export function createServer(ctx) {
       if (p === "/api/upload") return uploadHandler(req, res);
       // 听写（照搬 CopyDeck）：start 建一条实时转写连接；append 每 200ms 送一块 24kHz PCM16，返回目前识别出的全文；
       // boundary 在说话停顿处提交一段；finish 收尾返回最终文字。
+      if (p === "/api/mic-permission") return send(res, 200, ctx.micPermission ? await ctx.micPermission() : { ok: true });
       if (p === "/api/dictation/start") {
         const settings = loadSettings();
         if (!settings.api_key) return send(res, 400, { error: "听写需要先在「设置」里填 API key" });
@@ -372,11 +384,15 @@ export function createServer(ctx) {
       }
     } catch (err) {
       if (!ctrl.signal.aborted) {
-        const status = err?.status ? `（HTTP ${err.status}）` : "";
-        emit({ type: "error", message: `${err?.name || "Error"}${status}：${String(err?.message || err).slice(0, 500)}` });
+        emit({ type: "error", message: friendlyError(err) });
       }
       if (m) {
         const display = matters.getMatter(udb(), matterId).display;
+        // 出错时也记下用户对追问的回答（重新打开事项时看得到，重试也用得上）
+        if (intakeAnswers || skipIntake) {
+          const last = [...display].reverse().find((d) => d.role === "assistant" && d.intake);
+          if (last && !last.intake.answered) last.intake.answered = intakeAnswers || "skipped";
+        }
         if (question) display.push({ role: "user", text: question, files: [], at: Date.now() });
         display.push({ ...out, text: answer, error: out.error || (ctrl.signal.aborted ? "已停止" : "出错"), at: Date.now() });
         matters.saveMatter(udb(), matterId, { display });

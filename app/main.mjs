@@ -1,6 +1,6 @@
 // 中国法律检索：Electron 主进程。
 // 启动本地检索服务（只监听 127.0.0.1），第一次运行时在后台准备资料库，定期检查官方网站的法规更新。
-import { app, BrowserWindow, Menu, shell, dialog } from "electron";
+import { app, BrowserWindow, Menu, shell, dialog, systemPreferences } from "electron";
 import { Worker } from "node:worker_threads";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import path from "node:path";
@@ -244,6 +244,18 @@ app.whenReady().then(async () => {
     startUpdate,
     stopUpdate,
     appInfo: () => ({ version: app.getVersion(), sequence: updater?.installedSequence() || 0, data: dataVersion(), data_dir: DATA, platform: process.platform, arch: process.arch }),
+    // 麦克风权限（照搬 CopyDeck）：没定过就弹系统授权；以前拒绝过（系统不会再弹）就打开系统设置的麦克风页面
+    micPermission: async () => {
+      if (process.platform !== "darwin") return { ok: true };
+      const st = systemPreferences.getMediaAccessStatus("microphone");
+      if (st === "granted") return { ok: true };
+      if (st === "not-determined") {
+        const ok = await systemPreferences.askForMediaAccess("microphone").catch(() => false);
+        return ok ? { ok: true } : { ok: false, message: "没有麦克风权限，语音输入用不了；打字照常可以用。" };
+      }
+      shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone").catch(() => {});
+      return { ok: false, message: "麦克风权限之前被拒绝了：已经打开「系统设置 → 隐私与安全性 → 麦克风」，把「中国法律检索」打开后再点一次话筒。" };
+    },
     appUpdate: {
       status: () => updater?.snapshot() || { status: "unavailable" },
       check: () => updater?.check(),

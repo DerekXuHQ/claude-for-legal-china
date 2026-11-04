@@ -294,8 +294,8 @@ async function toggleBookmark(btn, it) {
   if (state.bookmarks.has(key)) {
     await api(`/api/bookmarks/${state.bookmarks.get(key).id}`, { method: "DELETE" });
   } else {
-    const note = kind === "answer" ? "" : (prompt("给这条收藏加个备注（可留空）：") ?? "");
-    await api("/api/bookmarks", { method: "POST", body: JSON.stringify({ kind, ref_id: id, note, ...bookmarkInfo(it) }) });
+    // 桌面版不支持 prompt()：先直接收藏，备注在「收藏」页里写
+    await api("/api/bookmarks", { method: "POST", body: JSON.stringify({ kind, ref_id: id, note: "", ...bookmarkInfo(it) }) });
   }
   await loadBookmarks();
   $$(`[data-star="${CSS.escape(btn.dataset.star)}"]`).forEach((b) => {
@@ -318,10 +318,20 @@ async function renderSaved() {
   $("#saved-list").innerHTML = list.length ? list.map((b) => `<li data-kind="${esc(b.kind)}" data-id="${esc(b.ref_id)}">
     <div class="r-title">${esc(b.title)}</div>
     <div class="r-meta"><span class="badge">${label[b.kind] || b.kind}</span>${b.subtitle ? `<span class="badge">${esc(b.subtitle)}</span>` : ""}<span class="badge">${new Date(b.created * 1000).toLocaleDateString("zh-CN")}</span></div>
-    ${b.note ? `<div class="d-note">${esc(b.note)}</div>` : ""}<div class="r-snip">${esc(b.snippet)}</div></li>`).join("")
+    <div class="r-snip">${esc(b.snippet)}</div>
+    <input class="bm-note" data-note="${esc(b.kind)}|${esc(b.ref_id)}" value="${esc(b.note || "")}" placeholder="写个备注（回车保存）"></li>`).join("")
     : `<p class="muted">还没有收藏。在阅读页或助理的回答下面点「收藏」。</p>`;
 }
+$("#saved-list").addEventListener("change", async (e) => {
+  const inp = e.target.closest(".bm-note");
+  if (!inp) return;
+  const [kind, ref_id] = inp.dataset.note.split("|");
+  await api("/api/bookmarks", { method: "POST", body: JSON.stringify({ kind, ref_id, note: inp.value.trim() }) });
+  await loadBookmarks();
+});
+$("#saved-list").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.closest(".bm-note")) e.target.blur(); });
 $("#saved-list").addEventListener("click", (e) => {
+  if (e.target.closest(".bm-note")) return;
   const li = e.target.closest("li");
   if (!li) return;
   $$("#saved-list li").forEach((x) => x.classList.toggle("sel", x === li));
@@ -399,13 +409,10 @@ const STARTERS = [
   { icon: "users", title: "员工离职要高额补偿", desc: "先看该不该给、给多少，再定怎么谈、要不要硬扛", scenario: "employee_claims_compensation", prompt: "员工离职（或被辞退）后要求补偿，情况是：" },
   { icon: "gavel", title: "收到劳动仲裁", desc: "答辩期限、每一项请求怎么应对、要不要调解", scenario: "labor_arbitration_respondent", prompt: "我们收到了劳动仲裁申请书（已上传）。", upload: true },
   { icon: "user-x", title: "想让一个员工走", desc: "能力不行或违纪，怎样合法、成本最低", scenario: "terminate_underperformer", prompt: "有个员工我想让他走，情况是：" },
-  { icon: "pen", title: "协商离职协议", desc: "把钱和后续风险都写清楚", scenario: "negotiated_separation_agreement", prompt: "员工同意协商离职，请帮我写协商解除协议。情况是：" },
   { icon: "file-search", title: "审一份合同", desc: "采购、销售、服务、租赁、经销……告诉我哪些必须改", scenario: "", prompt: "请帮我审查这份合同。我方是：", upload: true },
   { icon: "file-text", title: "把对方模板改成对我有利", desc: "逐条修改并写好给对方的修改理由", scenario: "redraft_counterparty_template", prompt: "这是对方发来的合同模板，请改成对我方有利的版本。我方是：", upload: true },
   { icon: "coins", title: "客户欠款不付", desc: "先发函、先保全还是直接起诉", scenario: "receivable_collection", prompt: "客户欠我们款项一直不付，情况是：" },
-  { icon: "scale", title: "赢了官司拿不到钱", desc: "找财产、申请执行、限高失信", scenario: "judgment_enforcement", prompt: "我们胜诉了但对方不履行，情况是：" },
   { icon: "receipt", title: "顾客或家长要退费", desc: "会员卡、预付卡、学费，按规定该退多少", scenario: "", prompt: "顾客要求退费，情况是：" },
-  { icon: "compare", title: "股东闹翻了", desc: "想退出或想让对方退出，有哪些办法", scenario: "shareholder_falling_out", prompt: "我们股东之间闹翻了，情况是：" },
   { icon: "megaphone", title: "广告文案、促销合不合规", desc: "改成合规版本", scenario: "ad_copy_review", prompt: "请看看这段广告文案或促销活动有没有违法风险：" },
   { icon: "landmark", title: "收到监管通知或罚单", desc: "市场监管、税务、劳动监察：期限内该做什么", scenario: "", prompt: "我们收到了监管部门的通知（已上传）。", upload: true },
 ];
@@ -425,23 +432,26 @@ function setScenario(id) {
     q.placeholder = sc.examples[0] ? `例如：${sc.examples[0]}` : q.dataset.defaultPh;
   } else q.placeholder = q.dataset.defaultPh;
 }
-function renderCatalog(box, query = "") {
+function renderCatalog(box) {
   const cat = scenarioCat;
-  if (!cat) return;
-  const k = query.trim();
-  const hit = (x) => !k || x.name.includes(k) || x.examples.some((e) => e.includes(k));
-  box.innerHTML = cat.groups.map((g) => {
-    const items = cat.scenarios.filter((x) => x.group === g.key && hit(x));
-    if (!items.length) return "";
-    return `<details class="sc-group"${k ? " open" : ""}><summary>${ic("chevron-right")}<span>${esc(g.name)}</span><span class="sc-count">${items.length}</span></summary>
-      <div class="sc-items">${items.map((x) => `<button type="button" class="sc-item" data-sc="${esc(x.id)}" title="${esc(x.examples.join("\n"))}"><b>${esc(x.name)}</b><span>${esc(cat.pipelines[x.pipeline] || "")}${x.freq === "高" ? " · 常见" : ""}</span></button>`).join("")}</div></details>`;
-  }).join("") || `<p class="muted small">没有找到。直接在下面描述你的事，助理会判断用哪种流程。</p>`;
-  $$("[data-sc]", box).forEach((b) => b.addEventListener("click", () => {
-    const sc = cat.scenarios.find((x) => x.id === b.dataset.sc);
-    setScenario(sc.id);
-    $("#question").focus();
-    if (sc.needsDoc) $("#file-input").click();
-  }));
+  if (!cat || !cat.groups.length) return;
+  const total = $("#sc-total");
+  if (total) total.textContent = `${cat.groups.length} 个领域 · ${cat.scenarios.length} 个场景，每个场景有专门的流程`;
+  let cur = state.scGroup && cat.groups.some((g) => g.key === state.scGroup) ? state.scGroup : cat.groups[0].key;
+  const draw = () => {
+    const items = cat.scenarios.filter((x) => x.group === cur);
+    box.innerHTML = `<div class="sc-tabs">${cat.groups.map((g) => `<button type="button" class="sc-tab ${g.key === cur ? "on" : ""}" data-g="${esc(g.key)}">${esc(g.name)}<em>${cat.scenarios.filter((x) => x.group === g.key).length}</em></button>`).join("")}</div>
+      <div class="sc-list">${items.map((x) => `<button type="button" class="sc-row ${state.scenario === x.id ? "on" : ""}" data-sc="${esc(x.id)}" title="${esc(`流程：${cat.pipelines[x.pipeline] || ""}\n常见说法：${x.examples.join("；")}`)}"><span>${esc(x.name)}</span></button>`).join("")}</div>`;
+    $$("[data-g]", box).forEach((t) => t.addEventListener("click", () => { cur = state.scGroup = t.dataset.g; draw(); }));
+    $$("[data-sc]", box).forEach((r) => r.addEventListener("click", () => {
+      const sc = cat.scenarios.find((x) => x.id === r.dataset.sc);
+      setScenario(sc.id);
+      $$(".sc-row", box).forEach((x) => x.classList.toggle("on", x === r));
+      $("#question").focus();
+      if (sc.needsDoc) $("#file-input").click();
+    }));
+  };
+  draw();
 }
 
 async function loadMatters() {
@@ -504,19 +514,24 @@ $("#matter-title").addEventListener("change", async () => {
   loadMatters();
 });
 
+const ASK_DETAIL_EMPTY = `<div class="empty"><p>助理引用的法条、案例和指引，点开会在这里显示原文，可以收藏。</p></div>`;
 function renderMatter(m) {
   const log = $("#chat-log");
+  // 换了事项：右侧原文栏回到空白，不留上一个事项点开的条文
+  if ((m?.id || "") !== (state.renderedMatterId || "")) {
+    $("#ask-detail").innerHTML = ASK_DETAIL_EMPTY;
+    if (typeof setCollapsed === "function") setCollapsed("ask-right", true); // 没有原文可看时收起，给对话留出宽度
+  }
+  state.renderedMatterId = m?.id || "";
   $("#matter-head").hidden = !m;
   if (!m || !m.display.length) {
     if (m) { $("#matter-title").value = m.title; $("#matter-task").textContent = m.task || "待分类"; $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : ""; }
     log.innerHTML = `<div class="chat-intro">
       <h2>今天要处理什么事？</h2>
-      <p>助理会先问清关键事实，再查法条、案例和办案指引，给出判断、依据、下一步和可以直接用的文书。合同和方案会逐条审，并用另一家的模型复核。每件事单独保存，随时回来接着办。</p>
+      <p>直接在下面描述你的事，助理会自动选对应的工作流程；也可以点下面的常见事项或场景，跳过描述、直接开工。</p>
       <div class="starters">${STARTERS.map((s, i) => `<button class="starter" data-starter="${i}"><span class="s-ic">${ic(s.icon)}</span><b>${esc(s.title)}</b><span>${esc(s.desc)}</span></button>`).join("")}</div>
-      <div class="sc-head"><h3>全部场景</h3><input type="search" id="sc-search" placeholder="搜场景，例如：竞业、预付卡、工伤、虚开、商标"></div>
-      <p class="small muted">每种场景有自己的办法：问哪些事实、查哪些规定、怎么打、交付什么。不知道选哪个，直接在下面描述，助理会判断。</p>
+      <div class="sc-head"><h3>按领域选场景</h3><span class="muted small" id="sc-total"></span></div>
       <div id="sc-catalog" class="sc-catalog"></div>
-      <p class="small muted">可以上传 PDF、Word、图片（截图、照片会自动识别文字）、录音和视频。</p>
     </div>`;
     $$("[data-starter]", log).forEach((b) => b.addEventListener("click", async () => {
       const s = STARTERS[Number(b.dataset.starter)];
@@ -531,7 +546,6 @@ function renderMatter(m) {
       const box = $("#sc-catalog");
       if (!box) return;
       renderCatalog(box);
-      $("#sc-search").addEventListener("input", (e) => renderCatalog(box, e.target.value));
     });
     log.scrollTop = 0;
     return;
@@ -566,9 +580,21 @@ function entryEl(d, isLast) {
     <div class="md">${renderMD(d.text || "")}</div>
     ${d.intake ? intakeHTML(d.intake, isLast && !d.intake.answered) : ""}
     ${d.citations && d.citations.checked ? `<div class="cite-line ${unv.length ? "warn" : "ok"}">${ic(unv.length ? "alert" : "circle-check")}<span>引用核对：正文提到法条 ${d.citations.checked} 处，${d.citations.linked} 处已对上资料库原文${unv.length ? `；${unv.length} 处资料库未核实：${esc(unv.join("、"))}` : ""}</span></div>` : ""}
-    ${d.error ? `<p class="err">${esc(d.error)}</p>` : ""}
+    ${d.error ? `<p class="err">${esc(/connection|fetch failed|terminated|timeout/i.test(d.error) ? "连接 AI 接口失败：网络或网关暂时断开。点「重试」再试一次，已经填的内容不用重写。" : d.error)}</p>${isLast && d.error !== "已停止" ? `<button type="button" class="ghost retry-btn">${ic("refresh")}重试</button>` : ""}` : ""}
     <div class="msg-actions"></div>`;
   if (d.intake && isLast && !d.intake.answered) bindIntake(el, d.intake);
+  // 上次出错的事项：重试 = 把出错前最后一次的提问或追问回答再发一次
+  $(".retry-btn", el)?.addEventListener("click", (e) => {
+    e.currentTarget.remove();
+    const disp = state.matter?.display || [];
+    const prevIntake = [...disp].reverse().find((x) => x.role === "assistant" && x.intake && x.intake.answered);
+    const lastUser = [...disp].reverse().find((x) => x.role === "user" && x.text);
+    const lastUserIdx = lastUser ? disp.lastIndexOf(lastUser) : -1;
+    const intakeIdx = prevIntake ? disp.lastIndexOf(prevIntake) : -1;
+    if (intakeIdx > lastUserIdx && prevIntake.intake.answered !== "skipped") send({ intake_answers: prevIntake.intake.answered });
+    else if (intakeIdx > lastUserIdx) send({ skip_intake: true });
+    else if (lastUser) send({ retry_question: lastUser.text });
+  });
   if (d.text && !d.intake) addActions(el, d);
   return el;
 }
@@ -585,7 +611,7 @@ function stepsHTML(steps) {
 
 function intakeHTML(intake, active) {
   const qs = intake.questions || [];
-  if (!active) return `<div class="intake done small muted">${ic("circle-check")}已回答助理的 ${qs.length} 个问题</div>`;
+  if (!active) return intakeDoneHTML(intake, intake.answered);
   return `<form class="intake">
     <div class="intake-title">${ic("message")}先确认几件事（会影响结论）</div>
     ${qs.map((q) => `<label class="iq"><span>${esc(q.question)}${q.required ? " <b class='req'>*</b>" : ""}${q.why ? `<em>${esc(q.why)}</em>` : ""}</span>
@@ -594,6 +620,17 @@ function intakeHTML(intake, active) {
     <div class="intake-actions"><button type="submit" class="primary">${ic("arrow-up")}提交，继续分析</button><button type="button" class="ghost" data-skip>先按现有信息分析</button></div>
     ${intake.assumptions?.length ? `<div class="small muted">跳过的话，助理会假设：${esc(intake.assumptions.join("；"))}</div>` : ""}
   </form>`;
+}
+
+// 回答过的追问：留在对话里，看得到当时答了什么（跳过的显示采用的假设）
+function intakeDoneHTML(intake, answered) {
+  const qs = intake.questions || [];
+  if (!answered || answered === "skipped") {
+    return `<details class="intake done"><summary class="small muted">${ic("circle-check")}跳过了 ${qs.length} 个问题，按现有信息分析</summary>
+      ${intake.assumptions?.length ? `<div class="small muted">采用的假设：${esc(intake.assumptions.join("；"))}</div>` : ""}</details>`;
+  }
+  const rows = qs.map((q) => `<li><span>${esc(q.question)}</span><b>${esc(answered[q.key] || "（未填）")}</b></li>`).join("");
+  return `<details class="intake done"><summary class="small muted">${ic("circle-check")}已回答助理的 ${qs.length} 个问题</summary><ul class="iq-done">${rows}</ul></details>`;
 }
 
 function bindIntake(el, intake) {
@@ -607,9 +644,15 @@ function bindIntake(el, intake) {
     e.preventDefault();
     const answers = {};
     for (const q of intake.questions) answers[q.key] = form.elements[q.key].value.trim();
+    intake.answered = answers;
+    form.outerHTML = intakeDoneHTML(intake, answers);
     send({ intake_answers: answers });
   });
-  $("[data-skip]", form).addEventListener("click", () => send({ skip_intake: true }));
+  $("[data-skip]", form).addEventListener("click", () => {
+    intake.answered = "skipped";
+    form.outerHTML = intakeDoneHTML(intake, "skipped");
+    send({ skip_intake: true });
+  });
 }
 
 function addActions(el, d) {
@@ -624,7 +667,16 @@ function addActions(el, d) {
   acts.insertAdjacentHTML("beforeend", `<button class="icon-btn" data-word title="导出 Word">${ic("file-down")}</button>`);
   $("[data-copy]", acts).addEventListener("click", async (ev) => {
     const b = ev.currentTarget;
-    await navigator.clipboard.writeText(plainText(d.text));
+    const text = plainText(d.text);
+    let ok = await navigator.clipboard.writeText(text).then(() => true, () => false);
+    if (!ok) { // 剪贴板接口不可用时用老办法
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta); ta.select();
+      ok = document.execCommand("copy"); ta.remove();
+    }
+    if (!ok) { toast("复制失败，可以选中文字后按 ⌘C / Ctrl+C"); return; }
+    toast("已复制");
     b.innerHTML = ic("check"); b.title = "已复制";
     setTimeout(() => { b.innerHTML = ic("copy"); b.title = "复制"; }, 1500);
   });
@@ -731,6 +783,9 @@ async function dictStart() {
   const s = dict.s = { before: q.value.slice(0, q.selectionStart ?? q.value.length), after: q.value.slice(q.selectionEnd ?? q.value.length), original: q.value, consumed: 0, text: "", written: q.value, queue: Promise.resolve() };
   dictButton("connecting");
   try {
+    const perm = await api("/api/mic-permission", { method: "POST", body: "{}" });
+    if (!perm.ok) { s.cancelled = true; dictEnd(s); toast(perm.message); return; }
+    if (s.cancelled) return;
     const [conn, stream] = await Promise.all([
       api("/api/dictation/start", { method: "POST", body: "{}" }),
       navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }),
@@ -820,9 +875,10 @@ $("#question").addEventListener("keydown", (e) => {
 $("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); send({}); });
 $("#stop-btn").addEventListener("click", () => state.matter && api(`/api/matters/${state.matter.id}/stop`, { method: "POST", body: "{}" }));
 
-async function send({ intake_answers, skip_intake }) {
+async function send({ intake_answers, skip_intake, retry_question }) {
   if (state.asking) return;
-  const question = intake_answers || skip_intake ? "" : $("#question").value.trim();
+  const question = retry_question ?? (intake_answers || skip_intake ? "" : $("#question").value.trim());
+  state.lastSend = { intake_answers, skip_intake, retry_question: question };
   const ready = state.pendingFiles.filter((f) => f.status === "ok");
   if (state.pendingFiles.some((f) => f.status === "reading")) { toast("文件还在识别中，请稍等。"); return; }
   if (!question && !ready.length && !intake_answers && !skip_intake) return;
@@ -863,7 +919,11 @@ async function send({ intake_answers, skip_intake }) {
         else if (ev.type === "route") { const c = $(".task-chip", box); c.hidden = false; c.textContent = ev.name; }
         else if (ev.type === "text") { text += ev.delta; $(".md", box).innerHTML = renderMD(text); }
         else if (ev.type === "text_reset") { text = ""; $(".md", box).innerHTML = ""; }
-        else if (ev.type === "error") $(".md", box).insertAdjacentHTML("beforeend", `<p class="err">${esc(ev.message)}</p>`);
+        else if (ev.type === "error") {
+          $(".md", box).insertAdjacentHTML("beforeend", `<p class="err">${esc(ev.message)}</p><button type="button" class="ghost retry-btn">${ic("refresh")}重试</button>`);
+          const again = { ...state.lastSend };
+          $(".retry-btn", box).addEventListener("click", (e2) => { e2.currentTarget.remove(); send(again); });
+        }
         const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 200;
         if (nearBottom) log.scrollTop = log.scrollHeight;
       }
@@ -977,11 +1037,21 @@ function closePops() {
   $$(".pill.open").forEach((b) => b.classList.remove("open"));
 }
 function filterPop(pop, q) {
-  q = q.trim().toLowerCase();
+  const raw = q.trim();
+  q = raw.toLowerCase();
   $$(".pop-list li", pop).forEach((li) => {
+    if (li.dataset.custom) return;
     if (li.classList.contains("grp")) li.hidden = !!q;
+    else if (li.classList.contains("city")) li.hidden = !q || !li.textContent.toLowerCase().includes(q);
     else if (li.dataset.v !== undefined) li.hidden = !!q && !li.textContent.toLowerCase().includes(q) && !li.dataset.v.toLowerCase().includes(q);
   });
+  // 列表里没有的城市、区县：可以直接用输入的名字
+  const custom = $("li[data-custom]", pop);
+  if (custom) {
+    custom.hidden = !raw || [...$$(".pop-list li[data-v]", pop)].some((li) => !li.hidden && !li.dataset.custom && $("span", li).textContent.startsWith(raw));
+    custom.dataset.v = raw;
+    $("span", custom).textContent = `用「${raw}」作为地区`;
+  }
 }
 document.addEventListener("mousedown", (e) => { if (!e.target.closest?.(".popover, .pill")) closePops(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePops(); });
@@ -999,20 +1069,30 @@ $("#model-btn").addEventListener("click", () => togglePop($("#model-pop"), $("#m
 
 // 地区：直辖市排前面，其余按拼音
 const REGION_FIRST = ["北京市", "上海市", "天津市", "重庆市"];
+// 常用城市（地方规定常常细到市，如深圳经济特区、各设区的市）：值写成「省 + 市」
+const CITIES = { 广东省: "广州 深圳 珠海 汕头 佛山 东莞 中山 惠州 江门 湛江", 浙江省: "杭州 宁波 温州 绍兴 嘉兴 金华 台州 湖州", 江苏省: "南京 苏州 无锡 常州 南通 徐州 扬州", 山东省: "济南 青岛 烟台 潍坊 临沂 淄博", 福建省: "福州 厦门 泉州 漳州", 四川省: "成都 绵阳 宜宾", 湖北省: "武汉 宜昌 襄阳", 湖南省: "长沙 株洲 湘潭", 河南省: "郑州 洛阳", 河北省: "石家庄 唐山 保定", 辽宁省: "沈阳 大连", 吉林省: "长春", 黑龙江省: "哈尔滨", 陕西省: "西安", 山西省: "太原", 安徽省: "合肥 芜湖", 江西省: "南昌", 广西壮族自治区: "南宁 桂林", 海南省: "海口 三亚", 贵州省: "贵阳", 云南省: "昆明", 甘肃省: "兰州", 青海省: "西宁", 宁夏回族自治区: "银川", 新疆维吾尔自治区: "乌鲁木齐", 西藏自治区: "拉萨", 内蒙古自治区: "呼和浩特 包头" };
+const PROVINCE_RE = /^(北京市|上海市|天津市|重庆市|.+省|.+自治区)$/;
+function setRegion(v) {
+  const sel = $("#ask-region");
+  if (v && ![...sel.options].some((o) => o.value === v)) sel.insertAdjacentHTML("beforeend", `<option>${esc(v)}</option>`);
+  sel.value = v;
+}
 function renderRegionOptions() {
   const sel = $("#ask-region");
-  const all = [...sel.options].map((o) => o.value).filter(Boolean);
+  const all = [...sel.options].map((o) => o.value).filter((v) => v && PROVINCE_RE.test(v));
   const sorted = [...REGION_FIRST.filter((r) => all.includes(r)), ...all.filter((r) => !REGION_FIRST.includes(r)).sort((a, b) => a.localeCompare(b, "zh-CN"))];
   const cur = sel.value;
   $("#region-options").innerHTML = `<li data-v="" class="${cur ? "" : "on"}"><span>不指定地区</span>${ic("check", "ck")}</li>`
-    + sorted.map((r) => `<li data-v="${esc(r)}" class="${r === cur ? "on" : ""}"><span>${esc(r)}</span>${ic("check", "ck")}</li>`).join("");
-  $("#region-label").textContent = cur || "地区";
+    + sorted.map((r) => `<li data-v="${esc(r)}" class="${r === cur ? "on" : ""}"><span>${esc(r)}</span>${ic("check", "ck")}</li>`
+      + (CITIES[r] || "").split(" ").filter(Boolean).map((c) => `<li data-v="${esc(r + c + "市")}" class="city ${r + c + "市" === cur ? "on" : ""}"><span>${esc(c)}市</span><em class="muted small">${esc(r)}</em>${ic("check", "ck")}</li>`).join("")).join("")
+    + `<li data-v="" data-custom="1" class="custom" hidden><span></span></li>`;
+  $("#region-label").textContent = (cur || "地区").replace(/^.+?(省|自治区)(.+)$/, "$2");
   $("#region-btn").classList.toggle("set", !!cur);
 }
 $("#region-options").addEventListener("click", (e) => {
   const li = e.target.closest("li[data-v]");
   if (!li) return;
-  $("#ask-region").value = li.dataset.v;
+  setRegion(li.dataset.v);
   renderRegionOptions();
   closePops();
   $("#question").focus();

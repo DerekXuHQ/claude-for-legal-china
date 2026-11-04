@@ -7,5 +7,7 @@ cd "$(dirname "$0")/.."
 [ -d data/raw/documents ] || .venv/bin/python scripts/download_data.py
 .venv/bin/python scripts/fetch_cases.py
 .venv/bin/python scripts/build_index.py
+# base.db 是重新建的：先把以前抓到的官方文本全部重新并入（不访问网站），再去官网看有没有新的
+node scripts/official-sync.mjs --replay
 node scripts/official-sync.mjs "$@"
 node scripts/pack-data.mjs
