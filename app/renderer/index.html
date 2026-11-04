@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'">
 <title>中国法律检索</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%238a2c2c'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='sans-serif'>法</text></svg>">
 <link rel="stylesheet" href="style.css">
@@ -35,6 +35,7 @@
   <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-file-down" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6M9 15l3 3 3-3"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
   <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8M16 17H8M10 9H8"/></symbol>
   <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
   <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></symbol>
@@ -167,7 +168,7 @@
             <div id="attach-chips" class="chips"></div>
             <textarea id="question" rows="1" placeholder="说说是什么事，或者直接上传文件…"></textarea>
             <div class="composer-bar">
-              <button type="button" class="icon-btn" id="attach-btn" title="上传文件：合同、起诉状、通知书、截图、照片、录音、视频（PDF、Word、图片、音视频）"><svg class="i" aria-hidden="true"><use href="#i-paperclip"/></svg></button>
+              <button type="button" class="icon-btn" id="attach-btn" title="添加文件或文件夹（扫描件、照片会自动识别文字；也可以直接拖进来）"><svg class="i" aria-hidden="true"><use href="#i-paperclip"/></svg></button>
               <button type="button" class="icon-btn" id="mic-btn" title="语音输入"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg></button>
               <button type="button" class="pill" id="region-btn" title="适用地区：会优先查这个地区的地方性法规"><svg class="i" aria-hidden="true"><use href="#i-map-pin"/></svg><span id="region-label">地区</span></button>
               <span class="spacer"></span>
@@ -175,7 +176,13 @@
               <button type="submit" class="send-btn" id="ask-btn" title="发送（Enter）　换行（Shift+Enter）"><svg class="i" aria-hidden="true"><use href="#i-arrow-up"/></svg></button>
               <button type="button" class="send-btn stop" id="stop-btn" title="停止" hidden><svg class="i" aria-hidden="true"><use href="#i-stop"/></svg></button>
             </div>
-            <input type="file" id="file-input" multiple hidden accept=".pdf,.docx,.txt,.md,image/*,audio/*,video/*">
+            <div class="popover attach-pop" id="attach-pop" hidden>
+              <button type="button" id="attach-files"><svg class="i" aria-hidden="true"><use href="#i-file-text"/></svg><span>选择文件<small>可多选</small></span></button>
+              <button type="button" id="attach-folder"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg><span>选择文件夹<small>里面的文件全部读入</small></span></button>
+              <div class="attach-note">也可以把文件、文件夹、网页链接、zip 压缩包直接拖进来，或粘贴截图</div>
+            </div>
+            <input type="file" id="folder-input" webkitdirectory multiple hidden>
+            <input type="file" id="file-input" multiple hidden >
             <select id="ask-region" hidden><option value="">地区</option></select>
             <select id="ask-model" hidden><option value="">模型</option></select>
             <select id="ask-depth" hidden>

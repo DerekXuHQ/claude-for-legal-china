@@ -121,7 +121,7 @@ export async function ask(settings, { conv, question, region, attachments = [], 
         model, effort: "low", signal,
         system: `你是核对引用的律师。下面每一项是一句话和它引用的条文原文。只看原文，逐项判断原文是否支撑这句话：
 yes = 原文直接支撑；partly = 原文只支撑一部分，或这句话多说了原文没有的内容、漏了原文的前提条件；no = 原文说的是别的事，或与这句话矛盾。
-partly 或 no 时，给出按原文改写后的这句话（保持原句的语气和格式，保留句中的 [[art:…]] 标记，只改不准确的部分）。
+partly 或 no 时，给出按原文改写后的这句话（保持原句的语气和格式，保留句中的 [[art:…]] 标记和〔假设〕〔判断〕等来源标记，只改不准确的部分）。
 只输出 JSON：{"results": [{"n": 序号, "verdict": "yes/partly/no", "problem": "问题（十五字以内）", "fix": "改写后的整句"}]}`,
         user: claims.map((c, i) => `### ${i}\n句子：${c.sentence}\n原文：\n${c.sources.map((x) => x.line).join("\n")}`).join("\n\n"),
       });

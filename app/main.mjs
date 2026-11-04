@@ -244,6 +244,20 @@ app.whenReady().then(async () => {
     startUpdate,
     stopUpdate,
     appInfo: () => ({ version: app.getVersion(), sequence: updater?.installedSequence() || 0, data: dataVersion(), data_dir: DATA, platform: process.platform, arch: process.arch }),
+    // 拖进来的网页链接：在不显示的窗口里打开（独立会话，不带任何登录状态），等脚本跑完取标题和正文
+    renderUrl: (url) => new Promise((resolve, reject) => {
+      const w = new BrowserWindow({ show: false, width: 1280, height: 900, webPreferences: { partition: "linkfetch", javascript: true, nodeIntegration: false, contextIsolation: true, sandbox: true, images: false } });
+      const done = (fn) => { clearTimeout(timer); try { w.destroy(); } catch { /* 已关闭 */ } fn(); };
+      const timer = setTimeout(() => done(() => reject(new Error("超时"))), 40000);
+      w.webContents.setAudioMuted(true);
+      w.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+      w.webContents.session.on("will-download", (e) => e.preventDefault());
+      w.loadURL(url).then(async () => {
+        await new Promise((r) => setTimeout(r, 2500));
+        const page = await w.webContents.executeJavaScript(`({ title: document.title, text: (document.querySelector("article, main, #js_content, .rich_media_content") || document.body).innerText })`);
+        done(() => resolve(page));
+      }).catch((err) => done(() => reject(err)));
+    }),
     // 麦克风权限（照搬 CopyDeck）：没定过就弹系统授权；以前拒绝过（系统不会再弹）就打开系统设置的麦克风页面
     micPermission: async () => {
       if (process.platform !== "darwin") return { ok: true };

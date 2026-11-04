@@ -342,6 +342,14 @@ $("#saved-list").addEventListener("click", (e) => {
 });
 
 /* ---------- Markdown 与引用 ---------- */
+const TAG_CLASS = { 假设: "assume", 判断: "judge", 网上资料: "web", 待核实: "unv", 依据存疑: "unv" };
+const TAG_TIP = {
+  假设: "这是我们补的前提，您没有说过；与实际不符时结论可能变",
+  判断: "这是根据规定和常见做法作出的预判，不是确定的事实",
+  网上资料: "来自网上的经验或报道，只作参考，不是法律依据",
+  待核实: "资料库里没有读到原文，需要另行核实",
+  依据存疑: "核对时发现所引条文不完全支持这句话",
+};
 const CITE_LABEL = { art: "条文", law: "法规", case: "案例", ref: "资料" };
 const CITE_ICON = { art: "book-open", law: "book-open", case: "gavel", ref: "file-text" };
 function inline(s) {
@@ -353,6 +361,11 @@ function inline(s) {
       const short = k === "art" ? (id.split(":").pop()) : k === "case" ? id.replace(/^GC/, "指导案例") : CITE_LABEL[k];
       return `<button class="cite" data-cite="${k}|${id}" title="点开看原文：${CITE_LABEL[k]} ${id}">${ic(CITE_ICON[k])}${short}</button>`;
     })
+    // 来源标记：〔假设〕〔判断〕〔网上资料〕〔待核实〕〔依据存疑…〕显示成小标签
+    .replace(/〔(假设|判断|网上资料|待核实|依据存疑)([^〕]{0,40})〕/g, (_, k, rest) =>
+      `<span class="tag-src tag-${TAG_CLASS[k]}" title="${esc(TAG_TIP[k])}">${k}${rest}</span>`)
+    // 网上资料的链接（只认 http/https）
+    .replace(/\[([^\]]{1,80})\]\((https?:\/\/[^\s)]+)\)/g, (_, t, u) => `<a href="${u}" target="_blank" rel="noopener">${t}</a>`)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>");
 }
@@ -738,37 +751,260 @@ async function exportWord(d) {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
-/* 上传 */
-$("#attach-btn").addEventListener("click", () => $("#file-input").click());
-$("#file-input").addEventListener("change", async (e) => {
-  const files = [...e.target.files];
-  e.target.value = "";
+/* 上传：点回形针选文件（可多选）或文件夹；也可以把文件、文件夹、链接、压缩包直接拖进来，或者粘贴截图。
+   不管扔进来的是什么，一个文件一个小标签，各自显示进度；读不了的单独标出原因，不影响其他文件。 */
+const SKIP_FILE = /(^|\/)(\.|~\$|__MACOSX\/)|(^|\/)(Thumbs\.db|desktop\.ini)$/i;
+const MAX_FILES = 300;
+const uploadQueue = [];
+let uploadWorkers = 0;
+async function addFiles(files) {
+  files = files.filter((f) => f && f.size !== 0 && !SKIP_FILE.test(f.relPath || f.webkitRelativePath || f.name));
   if (!files.length) return;
+  if (files.length > MAX_FILES) { toast(`一次最多 ${MAX_FILES} 个文件，这次只加了前 ${MAX_FILES} 个`, 5000); files = files.slice(0, MAX_FILES); }
   const matterId = await ensureMatter();
   for (const f of files) {
-    const chip = { name: f.name, status: "reading" };
+    const chip = { name: f.relPath || f.webkitRelativePath || f.name, status: "reading", progress: "排队中…" };
+    state.pendingFiles.push(chip);
+    uploadQueue.push({ f, chip, matterId });
+  }
+  renderChips();
+  while (uploadWorkers < 2 && uploadQueue.length) runUploads();
+}
+async function runUploads() {
+  uploadWorkers++;
+  try {
+    while (uploadQueue.length) {
+      const { f, chip, matterId } = uploadQueue.shift();
+      setProgress(chip, "读取中…");
+      try {
+        Object.assign(chip, await uploadOne(f, chip, matterId), { status: "ok" });
+      } catch (err) {
+        Object.assign(chip, { status: "error", error: err.message });
+      }
+      renderChips();
+    }
+  } finally { uploadWorkers--; }
+}
+
+// 回形针：选文件（可多选）/ 选文件夹
+$("#attach-btn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const pop = $("#attach-pop");
+  pop.hidden = !pop.hidden;
+});
+document.addEventListener("click", (e) => { if (!e.target.closest("#attach-pop")) $("#attach-pop").hidden = true; });
+$("#attach-files").addEventListener("click", () => { $("#attach-pop").hidden = true; $("#file-input").click(); });
+$("#attach-folder").addEventListener("click", () => { $("#attach-pop").hidden = true; $("#folder-input").click(); });
+for (const id of ["#file-input", "#folder-input"]) {
+  $(id).addEventListener("change", (e) => { const files = [...e.target.files]; e.target.value = ""; addFiles(files); });
+}
+
+// 粘贴：剪贴板里有文件或截图就当附件，文字照常粘贴；单独粘贴一个链接不自动抓取（可能只是想引用）
+$("#question").addEventListener("paste", (e) => {
+  const files = [...(e.clipboardData?.files || [])];
+  if (!files.length) return;
+  e.preventDefault();
+  addFiles(files.map((f, i) => (f.name && f.name !== "image.png" ? f : new File([f], `粘贴的截图${files.length > 1 ? i + 1 : ""}-${new Date().toLocaleTimeString("zh-CN", { hour12: false }).replace(/:/g, "")}.png`, { type: f.type || "image/png" }))));
+});
+
+// 拖拽：文件、文件夹（逐层展开）、网页链接、选中的文字
+async function entryFiles(entry, prefix = "") {
+  if (!entry) return [];
+  if (entry.isFile) return new Promise((ok) => entry.file((f) => { f.relPath = prefix + f.name; ok([f]); }, () => ok([])));
+  if (!entry.isDirectory) return [];
+  const reader = entry.createReader();
+  const all = [];
+  for (;;) {
+    const batch = await new Promise((ok) => reader.readEntries(ok, () => ok([])));
+    if (!batch.length) break;
+    all.push(...batch);
+  }
+  const out = [];
+  for (const e of all) { out.push(...await entryFiles(e, prefix + entry.name + "/")); if (out.length > MAX_FILES) break; }
+  return out;
+}
+let dragDepth = 0;
+const dropZone = $("#view-ask");
+const hasPayload = (e) => [...(e.dataTransfer?.types || [])].some((t) => t === "Files" || t === "text/uri-list" || t === "text/plain");
+dropZone.addEventListener("dragenter", (e) => { if (!hasPayload(e)) return; e.preventDefault(); dragDepth++; document.body.classList.add("dragging"); });
+dropZone.addEventListener("dragover", (e) => { if (!hasPayload(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+dropZone.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dragging"); } });
+dropZone.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  dragDepth = 0; document.body.classList.remove("dragging");
+  const dt = e.dataTransfer;
+  const entries = [...(dt.items || [])].filter((it) => it.kind === "file").map((it) => it.webkitGetAsEntry?.());
+  if (entries.length && entries.some(Boolean)) {
+    const files = [];
+    for (const en of entries) files.push(...await entryFiles(en));
+    return addFiles(files);
+  }
+  if (dt.files?.length) return addFiles([...dt.files]);
+  const urls = (dt.getData("text/uri-list") || "").split(/\r?\n/).filter((u) => /^https?:\/\//i.test(u.trim()));
+  const text = dt.getData("text/plain") || "";
+  if (!urls.length && /^\s*https?:\/\/\S+\s*$/.test(text)) urls.push(text.trim());
+  if (urls.length) return addLinks(urls);
+  if (text.trim()) { const q = $("#question"); q.value += (q.value ? "\n" : "") + text; composerChanged(); q.focus(); }
+});
+
+// 链接：本机打开网页取正文（脚本生成的页面也能取到）；链接指向 PDF、Word、图片、音视频的，下载下来按文件处理
+async function addLinks(urls) {
+  const matterId = await ensureMatter();
+  for (const url of urls.slice(0, 20)) {
+    const chip = { name: url.replace(/^https?:\/\//, "").slice(0, 60), status: "reading", progress: "打开网页…" };
     state.pendingFiles.push(chip);
     renderChips();
     try {
-      const media = /^(audio|video)\//.test(f.type) || /\.(mp3|m4a|wav|aac|ogg|webm|mp4|mov|flac|opus)$/i.test(f.name);
-      const data = media ? await audioFileToWav16k(f).catch(() => { throw new Error("读不出这个文件里的声音（可以先导出成 m4a、mp3 或 wav 再上传）"); }) : await new Promise((ok, bad) => {
-        const r = new FileReader();
-        r.onload = () => ok(String(r.result).split(",")[1] || "");
-        r.onerror = () => bad(r.error);
-        r.readAsDataURL(f);
-      });
-      const res = await api("/api/upload", { method: "POST", body: JSON.stringify({ matter_id: matterId, name: f.name, mime: media ? (f.type || "audio/wav") : f.type, data, model: $("#ask-model").value }) });
-      Object.assign(chip, res, { status: "ok" });
+      const r = await api("/api/fetch-url", { method: "POST", body: JSON.stringify({ url }) });
+      const bytes = Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0));
+      const f = new File([bytes], r.name, { type: r.mime });
+      chip.name = r.name;
+      Object.assign(chip, await uploadOne(f, chip, matterId), { status: "ok" });
     } catch (err) {
       Object.assign(chip, { status: "error", error: err.message });
     }
     renderChips();
   }
-});
+}
+
+/* 上传一个文件。
+   文档：服务端直接读文字；扫描版 PDF 由这里把需要识别的页画成图片，逐页送去识别（显示进度），再带着结果提交。
+   录音：本机解码成 16kHz WAV 送去转写。视频：声音转写 + 按时间截取画面识别画面里的文字。 */
+const VIDEO_EXT = /\.(mp4|m4v|mov|avi|mkv|webm|mpg|mpeg|3gp)$/i;
+const AUDIO_EXT = /\.(mp3|m4a|wav|aac|ogg|oga|opus|flac|amr)$/i;
+const toB64 = (f) => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = () => bad(r.error); r.readAsDataURL(f); });
+const setProgress = (chip, text) => { chip.progress = text; renderChips(); };
+async function uploadOne(f, chip, matterId) {
+  const model = $("#ask-model").value;
+  const base = { matter_id: matterId, name: f.name, mime: f.type, model };
+  const post = (body) => api("/api/upload", { method: "POST", body: JSON.stringify({ ...base, ...body }) });
+  const isVideo = /^video\//.test(f.type) || VIDEO_EXT.test(f.name);
+  const isAudio = !isVideo && (/^audio\//.test(f.type) || AUDIO_EXT.test(f.name));
+  if (isAudio || isVideo) {
+    setProgress(chip, isVideo ? "提取声音…" : "解码录音…");
+    let wav = "";
+    try { wav = await audioFileToWav16k(f); } catch { /* 没有音轨，或浏览器解不了这种格式 */ }
+    if (isAudio && !wav) { setProgress(chip, "转换录音格式…"); return post({ data: await toB64(f) }); } // 交给服务端用系统工具转换
+    let frames = "";
+    if (isVideo) frames = await videoFramesText(f, chip, model).catch(() => "");
+    if (wav) setProgress(chip, "转写说话内容…");
+    return post({ data: wav, wav16k: wav, frames_text: frames, mime: isVideo ? f.type || "video/mp4" : "audio/wav" });
+  }
+  if (/\.zip$/i.test(f.name) || f.type === "application/zip") { // 压缩包：展开后每个文件单独处理
+    setProgress(chip, "解压中…");
+    const r = await api("/api/unzip", { method: "POST", body: JSON.stringify({ data: await toB64(f) }) });
+    const inner = r.files.map((x) => { const nf = new File([Uint8Array.from(atob(x.data), (c) => c.charCodeAt(0))], x.name.split("/").pop(), { type: x.mime || "" }); nf.relPath = f.name.replace(/\.zip$/i, "") + "/" + x.name; return nf; });
+    setTimeout(() => addFiles(inner), 0);
+    return { chars: 0, unzipped: inner.length, warn: r.skipped ? `${r.skipped} 个文件没有展开（压缩包里的压缩包或过大）` : "" };
+  }
+  if (/\.(rar|7z|tar|gz|tgz)$/i.test(f.name)) throw new Error("这种压缩包请先解压，或改成 .zip 再拖进来");
+  const data = /^image\/(jpeg|png|webp)$/.test(f.type) && f.size > 4e6 ? await shrinkImage(f) : await toB64(f);
+  setProgress(chip, /^image\//.test(f.type) || /\.(tiff?|heic|heif)$/i.test(f.name) ? "文字识别中…" : "读取中…");
+  const first = await post({ data });
+  if (!first.needs_ocr) return first;
+  // 扫描版 PDF：逐页识别
+  const pages = first.pages;
+  setProgress(chip, `文字识别 0/${pages.length} 页`);
+  const texts = await pdfOcrPages(f, pages, model, (done) => setProgress(chip, `文字识别 ${done}/${pages.length} 页`));
+  setProgress(chip, "整理识别结果…");
+  const res = await post({ data, ocr_pages: texts });
+  if (first.truncated) res.warn = [res.warn, `扫描页太多，只识别了前 ${pages.length} 页`].filter(Boolean).join("；");
+  return res;
+}
+
+/* 大照片先缩到长边 3000 像素（识别足够清楚，上传更快） */
+async function shrinkImage(f) {
+  const bmp = await createImageBitmap(f);
+  const k = Math.min(1, 3000 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", 0.9).split(",")[1];
+}
+
+/* 扫描版 PDF：用 pdf.js 把页画成图片（长边约 2000 像素），三页并行送去识别；某页失败不影响其他页 */
+let pdfjsLib = null;
+async function pdfOcrPages(file, pages, model, onDone) {
+  if (!pdfjsLib) {
+    pdfjsLib = await import("/vendor/pdfjs/build/pdf.min.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/build/pdf.worker.min.mjs";
+  }
+  const doc = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), cMapUrl: "/vendor/pdfjs/cmaps/", cMapPacked: true, standardFontDataUrl: "/vendor/pdfjs/standard_fonts/", isEvalSupported: false }).promise;
+  const out = {};
+  let next = 0, done = 0;
+  async function worker() {
+    while (next < pages.length) {
+      const n = pages[next++];
+      try {
+        const page = await doc.getPage(n);
+        const v1 = page.getViewport({ scale: 1 });
+        const vp = page.getViewport({ scale: Math.min(3, 2000 / Math.max(v1.width, v1.height)) });
+        const c = document.createElement("canvas");
+        c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+        const g = c.getContext("2d");
+        g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+        await page.render({ canvasContext: g, viewport: vp, canvas: c }).promise;
+        const data = c.toDataURL("image/jpeg", 0.88).split(",")[1];
+        c.width = c.height = 0;
+        out[n] = (await api("/api/ocr", { method: "POST", body: JSON.stringify({ image: { data, mime: "image/jpeg" }, label: `第 ${n} 页`, model }) })).text;
+      } catch (err) {
+        out[n] = `〔第 ${n} 页识别失败：${String(err.message || err).slice(0, 60)}〕`;
+      }
+      onDone(++done);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(3, pages.length) }, worker));
+  doc.destroy();
+  return out;
+}
+
+/* 视频画面：按时间均匀截取（最多 60 帧，相邻画面几乎没变的跳过），几帧一组送去识别画面里的文字 */
+async function videoFramesText(file, chip, model) {
+  const url = URL.createObjectURL(file);
+  const v = document.createElement("video");
+  v.muted = true; v.preload = "auto"; v.src = url;
+  try {
+    await new Promise((ok, bad) => { v.onloadeddata = ok; v.onerror = () => bad(new Error("解不了这个视频的画面")); setTimeout(() => bad(new Error("超时")), 30000); });
+    const d = v.duration;
+    if (!isFinite(d) || !d || !v.videoWidth) return "";
+    const step = Math.min(30, Math.max(2, d / 60));
+    const W = Math.min(1280, v.videoWidth), H = Math.round(v.videoHeight * W / v.videoWidth);
+    const big = document.createElement("canvas"); big.width = W; big.height = H;
+    const small = document.createElement("canvas"); small.width = 32; small.height = 18;
+    const bg = big.getContext("2d"), sg = small.getContext("2d", { willReadFrequently: true });
+    const seek = (t) => new Promise((ok) => { const done = () => { v.removeEventListener("seeked", done); ok(); }; v.addEventListener("seeked", done); v.currentTime = t; setTimeout(done, 5000); });
+    const frames = [];
+    let prev = null;
+    for (let t = Math.min(0.5, d / 2); t < d && frames.length < 60; t += step) {
+      await seek(t);
+      sg.drawImage(v, 0, 0, 32, 18);
+      const px = sg.getImageData(0, 0, 32, 18).data;
+      if (prev) { let diff = 0; for (let i = 0; i < px.length; i += 4) diff += Math.abs(px[i] - prev[i]) + Math.abs(px[i + 1] - prev[i + 1]) + Math.abs(px[i + 2] - prev[i + 2]); if (diff / (32 * 18 * 3) < 4) continue; }
+      prev = px;
+      bg.drawImage(v, 0, 0, W, H);
+      frames.push({ data: big.toDataURL("image/jpeg", 0.8).split(",")[1], mime: "image/jpeg", t });
+      setProgress(chip, `截取画面 ${frames.length}`);
+    }
+    const groups = [];
+    for (let i = 0; i < frames.length; i += 6) groups.push(frames.slice(i, i + 6));
+    const out = new Array(groups.length).fill("");
+    let next = 0, done = 0;
+    async function worker() {
+      while (next < groups.length) {
+        const i = next++;
+        try { out[i] = (await api("/api/ocr", { method: "POST", body: JSON.stringify({ frames: groups[i], model }) })).text; } catch { out[i] = ""; }
+        setProgress(chip, `识别画面文字 ${++done}/${groups.length}`);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(3, groups.length) }, worker));
+    return out.filter(Boolean).join("\n");
+  } finally { URL.revokeObjectURL(url); v.removeAttribute("src"); }
+}
 
 function renderChips() {
   $("#attach-chips").innerHTML = state.pendingFiles.map((f, i) => {
-    const st = f.status === "reading" ? `<em>识别中…</em>` : f.status === "error" ? `<em class="err" title="${esc(f.error)}">失败：${esc(f.error.slice(0, 40))}</em>` : `<em>${f.chars ? f.chars + " 字" : ""}</em>`;
+    const st = f.status === "reading" ? `<em>${esc(f.progress || "识别中…")}</em>` : f.status === "error" ? `<em class="err" title="${esc(f.error)}">失败：${esc(f.error.slice(0, 40))}</em>`
+      : `<em${f.warn ? ` class="warn" title="${esc(f.warn)}"` : ""}>${f.unzipped ? `已展开 ${f.unzipped} 个文件` : ""}${f.chars ? f.chars + " 字" : ""}${f.ocr_pages ? ` · 识别 ${f.ocr_pages} ${/pdf$/i.test(f.name) ? "页" : "处"}` : ""}${f.warn ? " ⚠" : ""}</em>`;
     return `<span class="chip ${f.status}" title="${esc(f.name)}">${fileIcon(f)}<span class="nm">${esc(f.name)}</span>${st}<button type="button" data-rm="${i}" title="移除">${ic("x")}</button></span>`;
   }).join("");
   $$("[data-rm]", $("#attach-chips")).forEach((b) => b.addEventListener("click", () => { state.pendingFiles.splice(Number(b.dataset.rm), 1); renderChips(); }));
@@ -892,19 +1128,21 @@ $("#mic-btn").addEventListener("mousedown", (e) => e.preventDefault()); // 不�
 $("#mic-btn").addEventListener("click", () => { if (dict.s) { dict.s.node ? dictStop() : dictCancel(); } else dictStart(); });
 window.addEventListener("keydown", (e) => { if (dict.s && e.key === "Escape" && !e.isComposing) { e.preventDefault(); e.stopImmediatePropagation(); dictCancel(); } }, true);
 
-/* 上传的录音、视频：在本机解码成 16kHz 单声道 WAV（视频只取音轨）再送去转写 */
+/* 上传的录音、视频：在本机解码成 24kHz 单声道 WAV（视频只取音轨）再送去转写。
+   24kHz 正是实时转写要求的采样率；先降到 16kHz 再升回去，实测会明显增加听错。 */
+const AUDIO_RATE = 24000;
 async function audioFileToWav16k(file) {
   const ctx = new AudioContext();
   let decoded;
   try { decoded = await ctx.decodeAudioData(await file.arrayBuffer()); } finally { ctx.close().catch(() => {}); }
-  const frames = Math.ceil(decoded.duration * 16000);
-  const off = new OfflineAudioContext(1, frames, 16000);
+  const frames = Math.ceil(decoded.duration * AUDIO_RATE);
+  const off = new OfflineAudioContext(1, frames, AUDIO_RATE);
   const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
   const pcm = (await off.startRendering()).getChannelData(0);
   const out = new DataView(new ArrayBuffer(44 + pcm.length * 2));
   const str = (o, x) => [...x].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
   str(0, "RIFF"); out.setUint32(4, 36 + pcm.length * 2, true); str(8, "WAVEfmt "); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 1, true);
-  out.setUint32(24, 16000, true); out.setUint32(28, 32000, true); out.setUint16(32, 2, true); out.setUint16(34, 16, true); str(36, "data"); out.setUint32(40, pcm.length * 2, true);
+  out.setUint32(24, AUDIO_RATE, true); out.setUint32(28, AUDIO_RATE * 2, true); out.setUint16(32, 2, true); out.setUint16(34, 16, true); str(36, "data"); out.setUint32(40, pcm.length * 2, true);
   for (let i = 0; i < pcm.length; i++) { const v = Math.max(-1, Math.min(1, pcm[i])); out.setInt16(44 + i * 2, Math.round(v * (v < 0 ? 32768 : 32767)), true); }
   const bytes = new Uint8Array(out.buffer);
   let raw = "";

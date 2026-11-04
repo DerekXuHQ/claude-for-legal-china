@@ -3,12 +3,17 @@ import http from "node:http";
 import { readFileSync, writeFileSync, existsSync, chmodSync, statSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
+
+// 前端画扫描版 PDF 的页用的 pdf.js（含中文编码表 cmaps）
+const PDFJS_DIR = path.dirname(createRequire(import.meta.url).resolve("pdfjs-dist/package.json"));
 import * as search from "./search.mjs";
 import { ask, newConversation } from "./ai/ask.mjs";
 import { listModels, DEFAULT_BASE_URL, complete, client } from "./ai/models.mjs";
-import { extractText } from "./ai/docs.mjs";
+import { extractDoc, tidy, garbleRatio, EXT } from "./ai/docs.mjs";
+import { ocrImage, ocrPages, ocrFrames, tiffToPngs, heicToJpeg, audioToWav16k } from "./ai/ocr.mjs";
 import { markdownToDocx } from "./ai/export.mjs";
-import { LiveDictation, transcribeWav, DEFAULT_SPEECH_MODEL } from "./ai/speech.mjs";
+import { LiveDictation, transcribeWav, transcribeRobust, DEFAULT_SPEECH_MODEL } from "./ai/speech.mjs";
 import * as matters from "./matters.mjs";
 import { scenarioCatalog } from "./ai/tasks.mjs";
 import { PIPELINES } from "./ai/pipelines.mjs";
@@ -89,6 +94,15 @@ export function createServer(ctx) {
     req.on("error", reject);
   });
 
+  const serveVendor = (res, rel) => {
+    rel = decodeURIComponent(rel);
+    if (!/^(build\/pdf(\.worker)?\.min\.mjs|cmaps\/[\w.-]+\.bcmap|standard_fonts\/[\w.-]+)$/.test(rel)) return send(res, 404, { error: "未找到" });
+    const target = path.join(PDFJS_DIR, rel);
+    if (!existsSync(target)) return send(res, 404, { error: "未找到" });
+    const body = readFileSync(target);
+    res.writeHead(200, { "Content-Type": rel.endsWith(".mjs") ? "application/javascript; charset=utf-8" : "application/octet-stream", "Content-Length": body.length, "Cache-Control": "max-age=86400" });
+    res.end(body);
+  };
   const serveStatic = (res, urlPath) => {
     const rel = urlPath === "/" ? "index.html" : decodeURIComponent(urlPath).replace(/^\/+/, "");
     const target = path.resolve(ctx.staticDir, rel);
@@ -101,6 +115,7 @@ export function createServer(ctx) {
   async function handle(req, res) {
     const url = new URL(req.url, "http://127.0.0.1");
     const p = url.pathname;
+    if (p.startsWith("/vendor/pdfjs/")) return serveVendor(res, p.slice("/vendor/pdfjs/".length));
     if (!p.startsWith("/api/")) return serveStatic(res, p);
     if (req.headers["x-app-token"] !== token) return send(res, 403, { error: "forbidden" });
     const q = Object.fromEntries(url.searchParams);
@@ -227,6 +242,9 @@ export function createServer(ctx) {
         return send(res, 200, { ok: true });
       }
       if (p === "/api/upload") return uploadHandler(req, res);
+      if (p === "/api/ocr") return ocrHandler(req, res);
+      if (p === "/api/unzip") return unzipHandler(req, res);
+      if (p === "/api/fetch-url") return fetchUrlHandler(req, res);
       // 听写（照搬 CopyDeck）：start 建一条实时转写连接；append 每 200ms 送一块 24kHz PCM16，返回目前识别出的全文；
       // boundary 在说话停顿处提交一段；finish 收尾返回最终文字。
       if (p === "/api/mic-permission") return send(res, 200, ctx.micPermission ? await ctx.micPermission() : { ok: true });
@@ -275,44 +293,161 @@ export function createServer(ctx) {
     return send(res, 404, { error: "未找到" });
   }
 
-  // 上传：文档取文字；图片用视觉模型识别文字和内容；音频、视频转成文字
+  // 上传：能直接读文字的直接读；读不出的（扫描件、照片、截图、视频画面）做文字识别；录音和视频的声音转成文字。
+  // 扫描版 PDF：本函数先返回需要识别的页码，前端把这些页画成图片逐页送 /api/ocr（显示进度），再带着识别结果重新提交。
+  const MAX_OCR_PAGES = 150;
   async function uploadHandler(req, res) {
     const b = await readBody(req, 300e6);
     const settings = loadSettings();
     const name = String(b.name || "文件").slice(0, 200);
     const mime = String(b.mime || "");
     const matterId = String(b.matter_id || "");
+    const model = String(b.model || settings.model || "");
     if (!matters.getMatter(udb(), matterId)) return send(res, 404, { error: "事项不存在" });
     const buffer = Buffer.from(String(b.data || ""), "base64");
+    const ext = EXT(name);
+    const needKey = (what) => { if (!settings.api_key || !model) throw new Error(`${what}需要先在「设置」里配好 API key 并选择模型`); };
     try {
-      let kind = "text", text = "";
-      if (/^image\//.test(mime) || /\.(png|jpe?g|gif|webp|heic|bmp)$/i.test(name)) {
-        kind = "image";
-        const model = String(b.model || settings.model || "");
-        if (!settings.api_key || !model) throw new Error("识别图片需要先在「设置」里配好 API key 并选择模型");
-        const r = await complete(settings, {
-          model, effort: "low",
-          messages: [{ role: "user", content: [
-            { type: "text", text: "这是用户上传给律师助理的图片。请把图中所有文字完整、准确地转录出来（保持原有分段；聊天截图要保留每句话的说话人和时间）。然后用一两句话说明这是什么材料（如合同某页、聊天记录、通知书、收据），以及图中非文字的关键信息（印章、签名、手写批注等）。不要分析法律问题。" },
-            { type: "image_url", image_url: { url: `data:${mime || "image/png"};base64,${buffer.toString("base64")}` } },
-          ] }],
-        });
-        text = r.choices?.[0]?.message?.content || "";
-      } else if (/^(audio|video)\//.test(mime) || /\.(mp3|m4a|wav|aac|ogg|webm|mp4|mov|mpeg|mpga)$/i.test(name)) {
-        kind = /^video\//.test(mime) || /\.(mp4|mov)$/i.test(name) ? "video" : "audio";
+      let kind = "text", text = "", ocred = 0;
+      if (/^(heic|heif)$/.test(ext) || /image\/hei[cf]/.test(mime)) {
+        kind = "image"; needKey("识别照片");
+        text = await ocrImage(settings, { model, img: await heicToJpeg(buffer), label: "照片" }); ocred = 1;
+      } else if (/^tiff?$/.test(ext) || mime === "image/tiff") {
+        kind = "image"; needKey("识别扫描件");
+        const pages = await tiffToPngs(buffer);
+        if (!pages.length) throw new Error("读不出这个 TIFF 文件里的图像");
+        const texts = await ocrPages(settings, { model, images: pages });
+        text = texts.map((t, i) => (pages.length > 1 ? `【第 ${i + 1} 页】\n${t}` : t)).join("\n\n"); ocred = pages.length;
+      } else if (/^image\//.test(mime) || /^(png|jpe?g|gif|webp|bmp)$/.test(ext)) {
+        kind = "image"; needKey("识别图片");
+        text = await ocrImage(settings, { model, img: { data: buffer.toString("base64"), mime: mime || "image/png" }, label: "图片" }); ocred = 1;
+      } else if (/^(audio|video)\//.test(mime) || /^(mp3|m4a|wav|aac|ogg|oga|opus|flac|amr|webm|mp4|m4v|mov|mpeg|mpg|mpga|avi|mkv|3gp)$/.test(ext)) {
+        kind = /^video\//.test(mime) || /^(mp4|m4v|mov|avi|mkv|webm|mpg|mpeg|3gp)$/.test(ext) ? "video" : "audio";
         if (!settings.api_key) throw new Error("转写录音需要先在「设置」里填 API key");
-        // 前端已经把录音（视频取音轨）解码成 16kHz 单声道 WAV（b.wav16k）；没有就当原文件是 WAV
-        const wav = b.wav16k ? Buffer.from(String(b.wav16k), "base64") : buffer;
-        text = await transcribeWav({ settings, client: client(settings), model: settings.transcribe_model, wav });
-        if (!text.trim()) throw new Error("录音里没有识别出说话内容");
+        // 前端已经把声音解码成 16kHz 单声道 WAV（b.wav16k），视频画面里的文字也已识别好（b.frames_text）
+        let speech = "";
+        if (!b.wav16k && buffer.length && kind === "audio") b.wav16k = (await audioToWav16k(buffer, ext)).toString("base64");
+        if (b.wav16k) speech = (await transcribeRobust({ settings, client: client(settings), model: settings.transcribe_model, wav: Buffer.from(String(b.wav16k), "base64"), mergeModel: model, complete })).trim();
+        const frames = String(b.frames_text || "").trim();
+        if (!speech && !frames) throw new Error(kind === "video" ? "视频里既没有识别出说话内容，也没有识别出画面文字" : "录音里没有识别出说话内容");
+        const note = "〔以下是录音的自动转写：同音字、人名、数字可能听错，关键语句请以原录音为准〕";
+        text = kind === "video" ? [speech && `【说话内容】${note}\n${speech}`, frames && `【画面里的文字】\n${frames}`].filter(Boolean).join("\n\n") : `${note}\n${speech}`;
       } else {
-        text = await extractText(name, buffer);
+        const r = await extractDoc(name, buffer);
+        text = r.text;
+        if (ext === "pdf" && r.ocrPages.length) {
+          const given = b.ocr_pages && typeof b.ocr_pages === "object" ? b.ocr_pages : null;
+          if (!given) {
+            needKey("识别扫描版 PDF");
+            const pages = r.ocrPages.slice(0, MAX_OCR_PAGES);
+            return send(res, 200, { needs_ocr: true, pages, total: r.pages.length, truncated: r.ocrPages.length > pages.length });
+          }
+          const pages = r.pages.slice();
+          for (const [n, t] of Object.entries(given)) if (pages[Number(n) - 1] !== undefined) { pages[Number(n) - 1] = String(t || ""); ocred++; }
+          kind = ocred ? "scan" : kind;
+          text = pages.map((t, i) => (pages.length > 1 ? `【第 ${i + 1} 页】\n${t}` : t)).join("\n\n");
+          if (r.ocrPages.length > MAX_OCR_PAGES) text += `\n\n〔扫描页超过 ${MAX_OCR_PAGES} 页，后面的页没有识别〕`;
+        } else if (r.images?.length) {
+          needKey("识别文档里的图片");
+          const texts = await ocrPages(settings, { model, images: r.images, labelOf: (i) => r.images[i].label });
+          ocred = texts.length;
+          if (r.parts) { // PPT：识别结果放回对应的幻灯片
+            r.images.forEach((img, i) => { r.parts[img.slot] += `\n（图片文字）\n${texts[i]}`; });
+            text = r.parts.join("\n\n");
+          } else {
+            text = [text.trim(), ...texts.map((t, i) => `【${r.images[i].label}（文字识别）】\n${t}`)].filter(Boolean).join("\n\n");
+          }
+        }
       }
+      text = tidy(text);
+      if (!text || /^（空白页）$/.test(text)) throw new Error("文件里没有找到文字（识别后也是空白）");
+      const g = garbleRatio(text);
+      const warn = g > 0.005 ? "识别结果里有少量无法辨认的字符，关键内容请对照原件" : "";
       const f = matters.addFile(udb(), dataDir, matterId, { name, kind, mime, text, buffer });
       matters.saveMatter(udb(), matterId, {});
-      return send(res, 200, { ...f, preview: text.slice(0, 200) });
+      return send(res, 200, { ...f, preview: text.slice(0, 200), ocr_pages: ocred, warn });
     } catch (err) {
       return send(res, 400, { error: String(err?.message || err).slice(0, 400) });
+    }
+  }
+
+  // zip 压缩包：展开成文件交给前端逐个处理。中文 Windows 打的包，文件名常是 GBK 编码（没有 UTF-8 标记），要按 GBK 解。
+  async function unzipHandler(req, res) {
+    const b = await readBody(req, 400e6);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const decodeName = (bytes) => { try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); } catch { return new TextDecoder("gb18030").decode(bytes); } };
+      const zip = await JSZip.loadAsync(Buffer.from(String(b.data || ""), "base64"), { decodeFileName: decodeName });
+      const files = [];
+      let skipped = 0, total = 0;
+      for (const [name, e] of Object.entries(zip.files)) {
+        if (e.dir || /(^|\/)(__MACOSX|\.)|(^|\/)(Thumbs\.db|desktop\.ini)$/i.test(name)) continue;
+        if (files.length >= 300 || /\.(zip|rar|7z)$/i.test(name)) { skipped++; continue; }
+        const buf = await e.async("nodebuffer");
+        if ((total += buf.length) > 300e6) { skipped++; continue; }
+        files.push({ name, data: buf.toString("base64") });
+      }
+      return send(res, 200, { files, skipped });
+    } catch (err) {
+      return send(res, 400, { error: "解不开这个压缩包（可能损坏或加了密码）" });
+    }
+  }
+
+  // 拖进来的链接：网页在本机打开取正文（脚本生成的内容也能取到）；指向文件的直接下载交给前端按文件处理
+  async function fetchUrlHandler(req, res) {
+    const b = await readBody(req);
+    const url = String(b.url || "").trim();
+    if (!/^https?:\/\//i.test(url)) return send(res, 400, { error: "只支持 http/https 链接" });
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 45000);
+      const r = await fetch(url, { signal: ctrl.signal, redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36", "Accept-Language": "zh-CN,zh;q=0.9" } }).finally(() => clearTimeout(timer));
+      if (!r.ok) throw new Error(`网站返回 ${r.status}`);
+      const type = (r.headers.get("content-type") || "").toLowerCase();
+      const host = new URL(r.url || url).hostname;
+      if (/text\/html|application\/xhtml/.test(type) || !type) {
+        let page = null;
+        if (ctx.renderUrl) page = await ctx.renderUrl(url).catch(() => null);
+        if (!page || (page.text || "").replace(/\s/g, "").length < 50) {
+          const buf = Buffer.from(await r.arrayBuffer());
+          const cs = type.match(/charset=([\w-]+)/)?.[1] || buf.toString("latin1").match(/<meta[^>]+charset=["']?([\w-]+)/i)?.[1] || "utf-8";
+          let html; try { html = new TextDecoder(cs).decode(buf); } catch { html = buf.toString("utf-8"); }
+          const title = html.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim() || host;
+          const { extractDoc } = await import("./ai/docs.mjs");
+          page = { title, text: (await extractDoc("x.html", Buffer.from(html, "utf-8"))).text };
+        }
+        const text = `来源：${url}\n标题：${page.title || host}\n\n${page.text || ""}`;
+        if ((page.text || "").replace(/\s/g, "").length < 50) throw new Error("这个网页读不到正文（可能需要登录，或者有验证页）");
+        const name = `${(page.title || host).replace(/[\\/:*?"<>|\s]+/g, " ").trim().slice(0, 60)}.txt`;
+        return send(res, 200, { name, mime: "text/plain", data: Buffer.from(text, "utf-8").toString("base64") });
+      }
+      const len = Number(r.headers.get("content-length") || 0);
+      if (len > 200e6) throw new Error("文件太大（超过 200MB）");
+      const buf = Buffer.from(await r.arrayBuffer());
+      const cd = r.headers.get("content-disposition") || "";
+      let name = decodeURIComponent(cd.match(/filename\*=UTF-8''([^;]+)/i)?.[1] || cd.match(/filename="?([^";]+)/i)?.[1] || decodeURIComponent(new URL(r.url || url).pathname.split("/").pop() || "") || host);
+      const extByType = { "application/pdf": ".pdf", "image/jpeg": ".jpg", "image/png": ".png", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx", "application/msword": ".doc", "audio/mpeg": ".mp3", "video/mp4": ".mp4", "text/plain": ".txt" };
+      const ext = extByType[type.split(";")[0]];
+      if (ext && !name.toLowerCase().endsWith(ext)) name += ext;
+      return send(res, 200, { name, mime: type.split(";")[0], data: buf.toString("base64") });
+    } catch (err) {
+      return send(res, 400, { error: err.name === "AbortError" ? "打开链接超时" : String(err.message || err).slice(0, 200) });
+    }
+  }
+
+  // 识别一页（扫描版 PDF 的页）或一组视频画面
+  async function ocrHandler(req, res) {
+    const b = await readBody(req, 40e6);
+    const settings = loadSettings();
+    const model = String(b.model || settings.model || "");
+    if (!settings.api_key || !model) return send(res, 400, { error: "文字识别需要先在「设置」里配好 API key 并选择模型" });
+    try {
+      if (Array.isArray(b.frames)) return send(res, 200, { text: await ocrFrames(settings, { model, frames: b.frames.slice(0, 8) }) });
+      const img = b.image && { data: String(b.image.data || ""), mime: String(b.image.mime || "image/jpeg") };
+      if (!img?.data) return send(res, 400, { error: "没有图片" });
+      return send(res, 200, { text: await ocrImage(settings, { model, img, label: String(b.label || "").slice(0, 60) }) });
+    } catch (err) {
+      return send(res, 400, { error: friendlyError ? friendlyError(err) : String(err?.message || err).slice(0, 300) });
     }
   }
 
