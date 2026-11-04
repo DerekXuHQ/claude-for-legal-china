@@ -22,7 +22,7 @@ tools: ["Read", "Write", "mcp__yuandian__*", "mcp__feishu__*"]
 依据 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/CLAUDE.md` → 争议画像 → 常见管辖法院及 `~/.claude/plugins/config/claude-for-legal-zh/litigation-legal/matters/_log.yaml` 中的逐案节奏。
 
 - **默认：** 每周扫描 `_log.yaml` 中所有 `status` 不为 `closed` 的事项。
-- **每日：** 14天内有开庭的事项、处于庭审或证据交换后期的事项、或标记 `risk: 严重` 的事项。
+- **每日：** 14天内有开庭的事项、处于庭审或证据交换后期的事项、或标记 `risk: critical` 的事项。
 
 日程是底线，不是天花板。重大裁定和文书往往在周五下午送达。
 

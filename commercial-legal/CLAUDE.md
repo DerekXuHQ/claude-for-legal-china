@@ -59,6 +59,8 @@ before doing anything. Fix something here and it's fixed everywhere.*
 | 文档存储（飞书云文档/钉钉/坚果云） | [PLACEHOLDER ✓/✗] | 用户每次审查时直接上传协议 |
 | 飞书/Slack | [PLACEHOLDER ✓/✗] | 提醒与利益方摘要以文字形式内联输出，而非推送至频道 |
 
+**已签署合同存放位置：**[PLACEHOLDER —— 合同管理系统名称或文档存储路径；deal-debrief 从这里读取近期签署的协议]
+
 *重新检查：`/commercial-legal:cold-start-interview --check-integrations`*
 
 ---
@@ -229,6 +231,17 @@ before doing anything. Fix something here and it's fixed everywhere.*
 **交付物输出位置：**[PLACEHOLDER —— 合同管理系统、飞书云文档文件夹、飞书频道]
 
 **续约提醒发送至：**[PLACEHOLDER —— 飞书频道或邮箱]
+
+---
+
+## 合同手册监测设置
+
+*playbook-monitor 用来判断何时建议修订合同手册。不填则用默认值。*
+
+```yaml
+pattern_threshold: 5        # 同一条款偏离达到几次，就建议修订
+lookback_months: 12         # 统计偏离的滚动窗口（月）
+```
 
 ---
 

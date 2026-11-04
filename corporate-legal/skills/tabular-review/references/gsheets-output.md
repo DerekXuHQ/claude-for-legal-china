@@ -1,66 +1,63 @@
-# Google Sheets Output Spec
+# 在线表格输出规范（Google Sheets，及飞书表格 / 腾讯文档等）
 
-For teams on Google Workspace. Same structure as the Excel output, different mechanics. If both Excel and Sheets paths are available, ask the user which they prefer — don't guess from your environment.
+适用于用 Google Workspace 或国内在线协作表格的团队。结构与 Excel 输出相同，只是实现方式不同。下文以 Google Sheets 为例；飞书表格、飞书多维表格、腾讯文档、WPS 在线表格有相应 MCP 或 API 写入权限的，按同一结构和同样的安全要求处理，具体接口以该平台文档为准。Excel 和在线表格两条路都走得通时，问用户想用哪个，不要根据环境去猜。
 
-## How to write it
+## 怎么写
 
-Three paths, in order of preference:
+三条路径，按优先顺序：
 
-1. **Google Sheets MCP** (if a `gdrive` or `gsheets` MCP with write/create capability is connected). Create the spreadsheet, write the sheets, set formatting via the API.
-2. **Google Sheets API via ADC** (if the user has `gcloud auth application-default login --enable-gdrive-access` set up and Python `google-api-python-client` available). Use `sheets.spreadsheets().create()` and `batchUpdate` for formatting.
-3. **Fallback: CSV + manual import.** Write the CSVs, tell the user to import to Sheets. Also write a `format-instructions.md` so they can apply the color coding and data validation manually.
+1. **在线表格 MCP**（已连接带写入/新建能力的 `gdrive`、`gsheets` 或飞书、腾讯文档等 MCP）。新建表格、写入各工作表、通过 API 设置格式。
+2. **通过 ADC 调用 Google Sheets API**（用户已运行 `gcloud auth application-default login --enable-gdrive-access`，且装有 Python `google-api-python-client`）。用 `sheets.spreadsheets().create()` 新建，用 `batchUpdate` 设置格式。
+3. **退路：CSV + 手动导入。** 写出 CSV，请用户导入在线表格。同时写一份 `format-instructions.md`，便于用户手动设置填色和数据验证。
 
-Do not assume write access you haven't verified. Check first; fall back gracefully.
+没核实过的写入权限，不要假设有。先检查，不行就平稳地退到下一条路。
 
-## Workbook structure
+## 工作簿结构
 
-Mirror the Excel spec exactly — same sheets, same semantics, Sheets-native mechanics:
+与 Excel 规范完全对应——同样的工作表、同样的含义，只是用在线表格自己的机制实现。工作表名称和 `Verified` 列名保持英文。
 
-**Sheet: `Review`** (the main grid)
-- Row 1: Work-product header (merged cell)
-- Row 2: Column labels
-- Row 3+: One row per document
-- Column A: Document name / link (if source docs are in Drive, hyperlink to the file — this is a Sheets advantage over Excel)
-- Columns B onward: one per schema column
-- **Source quotes go in cell notes** (Sheets notes, not comments — notes are persistent annotations, comments are collaboration threads). Notes surface on hover and export to `.xlsx` as comments.
-- Cell fill by state: default = `answered`, light yellow = `unclear` or `needs_review`, light gray = `not_present`. Use `repeatCell` with `userEnteredFormat.backgroundColor` in `batchUpdate`.
-- A `Verified` column after each group: blank by default, data validation dropdown `✓ | ✗ | ?` via `setDataValidation`.
+**工作表：`Review`**（主表）
+- 第 1 行：工作成果页眉（合并单元格）
+- 第 2 行：列标题
+- 第 3 行起：每份文件一行
+- A 列：文件名 / 链接（源文件在云端盘的，链接到该文件——这是在线表格相对 Excel 的优势）
+- B 列起：每个模式列占一列
+- **来源引文放在单元格备注里**（Sheets 的"备注"，不是"评论"——备注是持久的注释，评论是协作讨论串）。备注悬停可见，导出为 `.xlsx` 时会变成批注。
+- 按状态填色：默认 = `answered`；浅黄 = `unclear` 或 `needs_review`；浅灰 = `not_present`。在 `batchUpdate` 中用 `repeatCell` 设置 `userEnteredFormat.backgroundColor`。
+- 每组后面加一个 `Verified` 列：默认留空，用 `setDataValidation` 设置下拉验证 `✓ | ✗ | ?`。
 
-**Sheet: `Flags`**
-- Same as Excel spec. One row per flagged cell.
+**工作表：`Flags`**
+- 同 Excel 规范。每个被标记的单元格占一行。
 
-**Sheet: `_schema`**
-- Column definitions from `.review-schema.yaml`.
+**工作表：`_schema`**
+- 来自 `.review-schema.yaml` 的列定义。
 
-**Sheet: `_summary`**
-- Counts, flagged columns, verification reminder.
+**工作表：`_summary`**
+- 各项计数、被标记的列、核实提醒。
 
-## Sheets-specific advantages to use
+## 用好在线表格的长处
 
-- **Hyperlinks to source documents.** If the reviewed documents are in Drive (common for VDR exports and internal repositories), each row's document name should be a hyperlink to the file. This is the click-to-source pattern, and Sheets does it natively.
-- **Shared review.** Sheets handles concurrent review better than a local `.xlsx`. If the deal team wants to divide verification work, this is the format to use.
-- **Named ranges for the schema.** Define a named range over each column so downstream formulas (pivot tables, conditional counts) are readable.
-- **Conditional formatting by state column.** If you write a hidden `_state` column per data column, you can drive the color coding from it with conditional formatting rules — cleaner than per-cell formatting and survives sorting.
+- **链接到源文件。** 被审文件在云端盘的（数据室导出和内部文件库常见这种情况），每行的文件名都做成指向该文件的链接。点一下就能看原文，在线表格原生支持。
+- **多人同时审查。** 在线表格处理多人并行审查比本地 `.xlsx` 好。交易团队要分工核实的，就用这种格式。
+- **为模式定义命名区域。** 给每一列定义命名区域，下游公式（数据透视表、条件计数）读起来更清楚。
+- **按状态列设置条件格式。** 每个数据列配一个隐藏的 `_state` 列，用条件格式规则驱动填色——比逐格设置格式干净，排序后也不会乱。
 
-## Sheets-specific gotchas
+## 在线表格特有的坑
 
-- **Notes are per-cell and invisible in print.** If the output will be printed or PDFed for a partner meeting, also write the quotes into the `Flags` sheet so they survive.
-- **Sheets has a 10 million cell limit.** You won't hit it in a legal review, but if someone tries to grid 50,000 documents with 30 columns plus source columns, warn them.
-- **Sharing defaults.** Per the plugin practice profile, this is attorney work product. Create the spreadsheet with restricted sharing (owner only), and tell the user to share it deliberately. Do not default to "anyone with the link."
-- **Formula escaping.** If a verbatim quote begins with `=`, `+`, `-`, or `@`, prefix it with a single quote (`'`) so Sheets doesn't try to parse it as a formula. This is a real failure mode: a contract clause that starts "- The parties agree..." will render as a formula error without the escape.
+- **备注是逐格的，打印时看不到。** 输出要打印或转成 PDF 带去合伙人会议的，把引文也写进 `Flags` 表，免得丢失。
+- **Google Sheets 上限是 1000 万个单元格。** 法律审查一般碰不到，但如果有人要把 5 万份文件、30 列外加来源列做成一张表，要提醒他。其他平台的上限以平台文档为准。
+- **共享默认设置。** 按插件实务画像，这属于律师工作成果。新建表格时设为受限共享（仅所有者可见），并告诉用户需要时再有意识地分享。不要默认"知道链接的任何人"。
+- **公式转义。** 逐字引文以 `=`、`+`、`-` 或 `@` 开头的，前面加一个单引号（`'`），以免被当成公式解析。这是真会出的问题：一个以"- 双方同意……"开头的条款，不转义就会显示成公式错误。
 
-## What not to do
+## 不要这样做
 
-Same as the Excel spec: no confidence percentages, no truncated quotes, no merged cells in the data region, and always write the `_schema` and `_summary` sheets.
+与 Excel 规范相同：不加置信度百分比，不截断引文，数据区不合并单元格，`_schema` 和 `_summary` 两张表一定要写。
 
+## 防范公式注入
 
-## Formula injection defense
+写入 Excel、在线表格或 CSV 的任何单元格之前，先消除公式注入风险。来自对方的文字（合同引文、当事人名称、工商登记信息、合同管理系统导出数据）都可能被人操纵。以 `=`、`+`、`-`、`@`、制表符（`\t`）、回车符（`\r`）或换行符（`\n`）开头的单元格，会被当成公式执行，或者打乱行结构。
 
-Before writing any cell in Excel, Sheets, or CSV output, neutralize formula injection. Counterparty-sourced text (contract quotes, party names, registered agent data, CLM exports) is attacker-controlled. A cell starting with `=`, `+`, `-`, `@`, `	`, ``, or `
-` will be interpreted as a formula or break the row structure.
-
-- **Prefix with a single quote:** `'=SUM(A1:A10)` → `=SUM(A1:A10)` (displayed as text, not executed)
-- **Applies to every cell that contains text sourced from a document, a tool result, or a user paste.** Column headers you control and computed values you produce are safe.
-- **CSV: also escape embedded commas, double quotes, newlines** (RFC 4180 quoting).
-- This is not optional. A spreadsheet your user opens in Excel that triggers a macro or exfiltrates data via DDE is a supply-chain attack on your user.
-
+- **在开头加一个单引号：** `'=SUM(A1:A10)` 显示为文本 `=SUM(A1:A10)`，不会执行
+- **凡是内容来自文件、工具返回结果或用户粘贴的单元格，一律适用。** 你自己控制的列标题和自己算出的数值是安全的。
+- **CSV 还要转义内嵌的逗号、双引号和换行**（按 RFC 4180 加引号）。
+- 这一步不能省。用户打开表格时触发宏、或通过 DDE 外泄数据，就是对用户的供应链攻击。

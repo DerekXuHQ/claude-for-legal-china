@@ -244,7 +244,7 @@ argument-hint: "[可选案件名称]"
     engagement: signed
   conflicts:
     status: cleared
-    method: firm
+    method: system-check
     cleared_by: "内部法务"
     cleared_date: 2026-04-20
     override:

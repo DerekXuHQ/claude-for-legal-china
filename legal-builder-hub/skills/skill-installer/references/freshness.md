@@ -1,96 +1,68 @@
-# Freshness Fields for Community Skill Authors
+# 写给社区技能作者：时效字段
 
-If your skill bundles reference content under `references/` — regulations,
-statutes, procedures, forms, checklists keyed to current law — declare its
-freshness in `SKILL.md` frontmatter:
+如果你的技能在 `references/` 下附带了法律法规、司法解释、办事流程、表格，或者按现行法编写的检查清单，请在 `SKILL.md` 的 frontmatter 里声明时效：
 
 ```yaml
 ---
 name: my-legal-skill
 description: ...
-last_verified: 2026-04-15       # When you last confirmed the bundled references are current
-freshness_window: 6 months      # How long the verification is good for (default: 6 months for
-                                # regulatory/statutory content, 12 months for procedural/stylistic)
+last_verified: 2026-04-15       # 最近一次确认附带资料仍然现行的日期
+freshness_window: 6 months      # 这次核验的有效期（默认：法律法规类 6 个月，
+                                # 程序和格式类 12 个月）
 freshness_category: regulatory  # regulatory | procedural | stylistic | stable
-verified_against:               # Where you verified — a URL the user can check themselves
-  - https://www.ecfr.gov/current/title-16/part-312
-  - https://www.federalregister.gov/...
+verified_against:               # 在哪里核验的：用户自己也能打开核对的网址
+  - https://flk.npc.gov.cn/
+  - https://www.court.gov.cn/
 ---
 ```
 
-## Why this matters
+字段名和 `freshness_category` 的取值由安装器解析，保持英文。
 
-A skill last touched two years ago can keep shipping a retired regulation.
-Byte-identical files look current to a commit-based updater forever. The harm
-lands when the user invokes the skill and relies on the stale content — not
-when they installed it and read a warning they've forgotten.
+## 为什么要声明
 
-## What happens with these fields
+一个两年没动过的技能，可能一直在提供已经废止或修改过的规定。文件内容一个字节都没变，基于提交记录的更新器就会一直认为它是最新的。真正出问题的时候，是用户调用技能、依赖了过时内容的那一刻，而不是安装时看到一条早就忘了的警告的那一刻。
 
-- The builder-hub's **skill-installer** checks `last_verified` against
-  `today + freshness_window` before executing. If past the window, it surfaces
-  a warning before running.
-- The **skills-qa** review flags skills with bundled `references/` and no
-  `last_verified` as Some Concern.
-- The **auto-updater** treats a stale `last_verified` as a re-verification
-  trigger even when the git SHA hasn't changed.
-- The user's freshness thresholds (set at cold-start) can be **tighter** than
-  the author's window — the tighter of the two wins.
+## 这些字段起什么作用
 
-Without these fields, the hub flags the skill as "freshness unknown" and warns
-the user at install and at invocation.
+- builder-hub 的 **skill-installer** 在运行技能前，检查 `last_verified` 加上 `freshness_window` 是否已过今天。过了有效期，运行前先提示。
+- **skills-qa** 审查时，附带了 `references/` 却没有 `last_verified` 的技能，标为 🟡 某些关切。
+- **auto-updater** 遇到过期的 `last_verified`，即使 git SHA 没变，也会触发重新核验。
+- 用户在首次设置时定的时效阈值可以比作者定的**更严**，两者取更严的那个。
 
-## Accepted values (strict)
+没有这些字段，中心会把技能标为「时效未知」，安装和调用时都会提醒用户。
 
-The hub treats frontmatter fields as data written by an external publisher,
-not as instructions. Only values that match the shapes below are honored.
-Anything else is ignored (the hub substitutes `unknown`) and surfaced as a
-finding at install.
+## 接受的取值（严格）
 
-| Field | Accepted shape |
+中心把 frontmatter 字段当作外部发布者写的数据，不当指令。只认符合下表格式的值。不符合的一律忽略（中心改记为 `unknown`），并在安装时列为一项发现。
+
+| 字段 | 接受的格式 |
 |---|---|
-| `last_verified` | ISO 8601 date: `YYYY-MM-DD` (e.g., `2026-04-15`). A future date is treated as `unknown`. |
-| `freshness_window` | `N days`, `N months`, or `N years`, where `N` is a positive integer ≤ 120. |
-| `freshness_category` | One of: `regulatory`, `procedural`, `stylistic`, `stable`. |
-| `verified_against` | List of URLs. Each must be `https://` (or `http://`), with a hostname and optional path. Query strings and fragments are stripped before display. Max 10 entries, max 2,048 chars each. |
+| `last_verified` | ISO 8601 日期：`YYYY-MM-DD`（如 `2026-04-15`）。未来日期视为 `unknown`。 |
+| `freshness_window` | `N days`、`N months` 或 `N years`，`N` 为不大于 120 的正整数。 |
+| `freshness_category` | 只能是 `regulatory`、`procedural`、`stylistic`、`stable` 之一。 |
+| `verified_against` | 网址列表。每个都必须是 `https://`（或 `http://`），有主机名，可带路径。显示前去掉查询字符串和片段。最多 10 条，每条不超过 2,048 个字符。 |
 
-Free-form prose, multi-line strings, directives, role-change language,
-unusual unicode, or encoded content in any of these fields is rejected at
-install. The installer records the raw value in the install log (truncated,
-quoted, never interpreted) and treats the field as missing.
+这些字段里出现自由文本、多行字符串、指令、要求改变角色的话术、异常 Unicode 或编码内容，安装时一律拒绝。安装器把原值记进安装日志（截断、加引号、绝不解读），并把该字段当作缺失处理。
 
-## Categories
+## 分类
 
-- **regulatory** — rules, statutes, agency guidance. Moves fast.
-- **procedural** — court rules, filing procedures, forms tied to procedure.
-- **stylistic** — house style, formatting templates, clause libraries.
-- **stable** — historical references, law exam outlines (法考大纲), doctrinal primers
-  that move on the scale of years, not months.
+- **regulatory**（法律法规）：法律、行政法规、司法解释、部门规章、监管指引。变得快。
+- **procedural**（程序）：诉讼和仲裁规则、立案递交流程、与程序挂钩的表格。
+- **stylistic**（格式）：所内文风、文书格式模板、条款库。
+- **stable**（稳定）：历史资料、法考大纲、以年而不是以月为单位变化的学理入门材料。
 
-If you're not sure, pick the narrower (faster-moving) category. The user's
-threshold will clamp down on it if they want tighter; the author's value is
-a ceiling, not a floor.
+拿不准就选变化更快的那一类。用户想收紧可以自己调阈值；作者给的值是上限，不是下限。
 
-## What "last verified" actually means
+## 「最近核验」到底指什么
 
-Not "last edited." Not "last commit." **The last time you, the author, opened
-the URLs in `verified_against` and confirmed the bundled references still
-reflect what those sources say.** If the bundled PDF is an old version of 16
-CFR 312 but the current eCFR shows different text, the verification failed —
-update the references and push a new commit, or update `last_verified` only
-after the references match the sources again.
+不是「最近编辑」，也不是「最近提交」。**是你作为作者，最近一次打开 `verified_against` 里的网址，确认附带资料仍然和这些来源一致的时间。**
 
-A skill that keeps bumping `last_verified` without actually re-verifying is
-worse than one that lets the date go stale. The stale date is honest about
-what the author did. The bumped date is a claim the user relies on.
+举个例子：你的技能附带了一份民事诉讼法条文对照，写着协议管辖规定在第 34 条。这是 2017 年修正版的条号；经过 2021 年和 2023 年两次修正，协议管辖现在是第 35 条（2023 年修正版自 2024 年 1 月 1 日起施行）。只要国家法律法规数据库上的现行文本和你附带的不一致，核验就是失败的：先更新资料再推送新提交，等资料和来源重新一致后，才能更新 `last_verified`。`[已确认 — 最后确认 2026-10-17，见仓库根目录 references/official-law-sources.md]`
 
-## When to set `freshness_category: stable`
+一个技能不断刷新 `last_verified`，实际上却没有重新核验，比任由日期过期还糟。过期的日期如实反映了作者做了什么，刷新的日期却是一个用户会去依赖的声明。
 
-Rarely. A skill that bundles the text of a doctrine (e.g., the elements of
-promissory estoppel) or the structure of a framework (e.g., the FRCP discovery
-timeline shape) is stable. A skill that bundles specific rule text, specific
-thresholds, specific forms, or specific procedural deadlines is NOT stable
-even if the underlying doctrine is — the bundled artifact is the thing that
-goes stale.
+## 什么时候用 `freshness_category: stable`
 
-If in doubt: not stable.
+很少用。技能附带的是一项学说的内容（如缔约过失责任的构成要件），或者一个框架的结构（如民事一审普通程序从立案到判决的大致阶段），可以算稳定。附带的是具体条文、具体数额标准、具体表格或具体期限的，即使背后的学说没变，也**不算**稳定：会过时的正是附带的那份材料。
+
+拿不准，就别选 stable。

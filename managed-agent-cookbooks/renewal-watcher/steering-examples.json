@@ -1,5 +1,5 @@
 [
-  { "event": "Scan renewals 0-180 days out, flag playbook deviations, as-of 2026-05-07", "description": "Scheduled weekly sweep — the default Monday-morning run" },
-  { "event": "Targeted scan: counterparty Acme Corp, all active agreements, surface cancel-by windows and price escalators", "description": "Ad-hoc scan before a renegotiation or relationship review" },
-  { "event": "Deviation check: contract IC-2026-00412 post-signature, compare against playbook and flag any terms outside standard", "description": "Follow-up after a negotiated deal closes to confirm no late-stage changes breached the playbook" }
+  { "event": "扫描 0–180 天内到期的续约，标出偏离合同手册的条款，基准日 2026-05-07", "description": "每周一上午的例行扫描" },
+  { "event": "专项扫描：相对方 某某科技有限公司 的全部有效合同，列出终止通知窗口和调价条款", "description": "重新谈判或关系复盘前的临时扫描" },
+  { "event": "偏离复核：合同 IC-2026-00412 签署后，对照合同手册，标出标准之外的条款", "description": "谈判完成后复核，确认最后阶段的改动没有突破合同手册" }
 ]

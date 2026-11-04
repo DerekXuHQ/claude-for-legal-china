@@ -1,766 +1,771 @@
 ---
 name: internal-investigation
 description: >
-  Reference: shared framework for managing internal investigations from intake
-  through final memo — privileged investigation log, document processing with
-  needle-finding, source coverage tracking, Q&A against the log, memo drafting,
-  and audience summaries. Loaded by /investigation-open, /investigation-add,
-  /investigation-query, /investigation-memo, and /investigation-summary; not
-  invoked directly.
+  参考框架：内部调查从立案到调查备忘录的共享工作方法——保密调查日志、
+  文件批量筛查（找出关键材料）、证据来源覆盖跟踪、基于日志的问答、
+  备忘录起草和分受众摘要。由 /investigation-open、/investigation-add、
+  /investigation-query、/investigation-memo、/investigation-summary 加载，
+  不单独调用。
 user-invocable: false
 ---
 
-# Internal Investigation Skill
+# 内部调查（共享参考）
 
-> **法域门禁：** 本文件保留上游美国法域调查参考，含 work-product、Weingarten、Garrity 等美国程序。中国大陆事项不得按下文美国程序、特权标签或期限直接执行；改用本领域已本地化的 `investigation-open`、`investigation-add`、`investigation-query`、`investigation-memo`、`investigation-summary` 及目标工作区规则。仅在用户明确指定美国法域且负责律师确认适用性后，才把下文作为比较或当地律师复核材料。标注“保密”不创造中国法上的独立工作成果特权。
+> **法域门禁：** 本文件以中国大陆法为框架。调查涉及境外雇员、港澳台用工或外国法时，先识别适用法，不得把下文的大陆程序、期限和证据规则直接套用到境外事实上。
 
-## Matter context
+本文件是五个调查命令共用的工作方法，以中国大陆法为框架：规章制度的效力、严重违纪解除、证据规则、员工个人信息处理、工会程序和刑事移送。上游版本中的美国程序（work-product 特权、Upjohn 警示、Weingarten、Garrity、EEOC 答辩等）已删除。事项涉及境外员工或境外法律时，按 CLAUDE.md「管辖地识别」处理，不把本框架套到境外事实上。
 
-**Matter context.** Check `## Matter workspaces` in the practice-level CLAUDE.md. If `Enabled` is `✗` (the default for in-house users), skip the rest of this paragraph — skills use practice-level context and the matter machinery is invisible. If enabled and there is no active matter, ask: "Which matter is this for? Run `/employment-legal:matter-workspace switch <slug>` or say `practice-level`." Load the active matter's `matter.md` for matter-specific context and overrides. Write outputs to the matter folder at `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/matters/<matter-slug>/`. Never read another matter's files unless `Cross-matter context` is `on`.
+## 案件上下文
 
----
-
-## Output header
-
-Prepend the work-product header from `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → `## Outputs` (it differs by user role — see `## Who's using this`). Every file, log, memo, and summary produced by this skill opens with that header.
-
-> **Distribution discipline.** Every file this skill creates — log entries, memo drafts, audience summaries, document notes — inherits the privilege and confidentiality status of the underlying investigation. Distribution beyond the privilege circle (forwarding to non-attorneys outside the investigation team, cc'ing HR without scoping, handing to the business side) can waive privilege over the entire investigation. Store these files where privileged materials live, label per the work-product header, and make every distribution decision deliberately.
-
-## ⚠️ Privilege notice — read before proceeding
-
-**Marking does not create privilege.** The header above reflects the intended
-protection and is important to include — but it does not itself establish
-privilege. Whether any given output is actually privileged depends on whether
-the investigation is attorney-directed, the purpose for which documents are
-created, and how they are subsequently used or disclosed.
-
-**Before opening a matter, confirm:** Is this investigation attorney-directed?
-If it is not — if HR is running it with legal in an advisory role, or if it was
-not initiated at the direction of counsel for the purpose of obtaining legal advice —
-the privilege analysis changes materially and this skill's default labeling may
-be misleading. Flag that question to the attorney before creating any log or file.
-
-If there is any doubt about privilege applicability, the attorney should resolve it
-before investigation files are created. Improperly labeled materials can create
-problems in discovery if privilege is later challenged.
+**案件上下文。** 检查实务级 CLAUDE.md 中的 `## Matter workspaces`。如果 `Enabled` 为 `✗`（法务用户默认值），跳过本段——技能使用实务级上下文，案件机制不可见。如果已启用且无活跃案件，询问："这是哪个案件的？运行 `/employment-legal:matter-workspace switch <slug>` 或说 `practice-level`。" 加载活跃案件的 `matter.md` 获取案件特定上下文和覆盖项。将输出写入案件文件夹 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/matters/<matter-slug>/`。除非 `Cross-matter context` 为 `on`，否则不得读取其他案件的文件。
 
 ---
 
-## Purpose
+## 输出标头
 
-Internal investigations fail in two ways: coverage gaps (sources that were
-never gathered) and synthesis gaps (evidence that was gathered but never
-connected). This skill handles both — it tracks what has and hasn't been
-gathered, processes document dumps to surface what matters without burying
-the attorney, and maintains a structured log that can be turned into a
-privileged memo at any point.
+每个文件、日志、备忘录和摘要的开头，都加上 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → `## 输出` 中的工作成果标头（律师和非律师用的标头不同，见 `## 使用者`）。调查材料另加一行「保密 · 内部调查」。
 
-## Privilege note
+> **分发纪律。** 本技能生成的每份材料——日志条目、备忘录草稿、受众摘要、文件笔记——都属于调查保密材料。转给调查组以外的人、抄送整个 HR 部门、交给业务部门，都会扩大知悉范围，增加泄露、打击报复和侵犯隐私的风险，也会削弱日后主张保密的基础。材料放在受控位置，每一次分发都要想清楚给谁、给到哪一层。
 
-All files created by this skill carry the privilege marking above.
-See the notice at the top of this skill for the full caveat on what that
-marking does and does not do.
+## 保密说明：动笔前先读
 
-## Load context
+**中国法下没有与美国 work-product 对应的独立特权。** 标注「保密」「律师工作成果」不会让材料免于法院调取或仲裁庭要求提交。保密主要靠以下几方面支撑（与 CLAUDE.md `## 输出` 中的说明一致）：
 
-Read `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → escalation table, any investigation protocols noted.
+- **《律师法》第38条**：律师对执业中知悉的商业秘密、当事人隐私和委托人不愿泄露的情况负保密义务。`[模型知识 — 需验证]` 这是律师的执业义务，不是对抗法院调取的证据特权。
+- **合同约束**：调查人员、证人、外部顾问（取证机构、会计师）签署保密承诺或保密协议；员工的保密义务以劳动合同和规章制度为依据。
+- **知悉范围控制**：调查组名单、材料存放位置、分发记录。
+
+**开立事项前先确认两件事：**
+
+1. **谁主导调查。** 律师（内部法务或外部律师）主导，还是 HR 主导、法务提供意见？如实记录在 `attorney_directed` 字段，不要因为有律师参与就推定材料受保护。外部律师出具的法律意见与内部调查记录分开存放，前者的保密基础更清楚。
+2. **调查结果可能用在哪里。** 如果预期会用于解除劳动合同、劳动仲裁或刑事报案，调查记录本身就可能要作为证据提交。这类材料从第一天起就按「会被对方和仲裁员看到」的标准来写：只记事实，分析意见另放。
+
+对保密安排有疑问的，在建立任何日志或文件之前由负责律师决定。
 
 ---
 
-## Mode 1: Open a new matter
+## 目的
 
-Triggered by `/employment-legal:investigation-open` or "open an investigation"
-or "start an investigation into".
+内部调查出问题，通常是两种情况：证据来源没收集全（覆盖缺口），或者证据收齐了却没串起来（综合缺口）。本技能两头都管：跟踪哪些来源已经拿到、哪些还没拿到；批量处理文件，把要紧的挑出来，又不把律师淹没在材料里；维护一份结构化日志，随时可以转成调查备忘录。
 
-### Step 1 — Intake
+在中国劳动争议中，用人单位作出解除劳动合同等决定引发争议的，由用人单位负举证责任（《最高人民法院关于审理劳动争议案件适用法律问题的解释（一）》第44条 `[模型知识 — 需验证]`）。调查日志的价值很大程度上就在这里：它决定了公司日后能不能把处理决定的事实依据摆出来。
 
-Ask the following in a single block:
+## 加载上下文
 
-> To open the investigation log I need a few things:
+读取 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` → 上报矩阵、劳动规章制度（现行版本、位置、民主程序和公示情况）、管辖范围、已记录的调查规程。
+
+---
+
+## 模式一：开立新事项
+
+由 `/employment-legal:investigation-open` 或「开一个调查」「启动对……的调查」触发。
+
+### 第1步——立案登记
+
+一次性问完以下问题：
+
+> 建立调查日志前，我需要了解几件事：
 >
-> **The matter**
-> - What is the allegation or concern in plain terms?
-> - Who is the complainant (or what triggered this — complaint, tip, audit,
->   manager observation)?
-> - Who is the respondent or subject?
-> - What is the approximate timeframe the alleged conduct occurred?
-> - Is this attorney-directed? Record the role and purpose; do not infer privilege solely from attorney involvement. Ask the responsible lawyer to assess confidentiality under the applicable law.
+> **事项本身**
+> - 投诉或问题是什么？用大白话说。
+> - 谁投诉的，或者是什么引发的（实名投诉、匿名举报、审计发现、上级察觉）？
+> - 被投诉人或被调查人是谁？什么岗位、在哪个省/直辖市工作？
+> - 涉嫌行为大概发生在什么时间段？公司是什么时候知道的？
+> - 调查由谁主导、为什么启动？如实记录角色和目的。
 >
-> **Investigation type** (helps me suggest the right sources checklist)
-> - HR: harassment / discrimination / retaliation
-> - Financial misconduct: expense fraud / procurement irregularities / embezzlement
-> - Executive misconduct: COI / undisclosed relationships / governance failures
-> - Whistleblower: retaliation for protected activity
-> - Other: describe briefly
+> **调查类型**（决定用哪份证据来源清单）
+> - 人事类：性骚扰 / 歧视 / 打击报复 / 职场霸凌 / 严重违纪
+> - 舞弊类：报销造假 / 采购舞弊 / 收受回扣 / 侵占挪用
+> - 高管类：利益冲突 / 未披露关联关系 / 同业竞争 / 治理失当
+> - 举报类：举报后遭受打击报复
+> - 其他：简要描述
 >
-> **Representation and employer status** (surfaces parallel legal frameworks
-> that change interview procedure)
-> - Is the respondent, the complainant, or any anticipated witness represented
->   by a union or covered by a collective bargaining agreement? (If yes, flag
->   for Weingarten research — representational rights at investigatory
->   interviews may apply and change the interview protocol.)
-> - Is the company a public employer (government entity, public university,
->   state or municipal agency) or otherwise acting under color of state law?
->   (If yes, flag for Garrity research — compelled statements in public-sector
->   investigations have special use-immunity consequences and change how
->   interviews must be conducted and documented.)
+> **会改变调查程序的情况**
+> - 公司是否建立了工会？（如是，后续任何单方解除都要事先通知工会，《劳动合同法》第43条 `[模型知识 — 需验证]`；规章制度若规定调查期间工会可派员参加，按制度执行。）
+> - 被调查人是否属于「三期」女职工、工伤或职业病职工、医疗期内职工，或者是工会主席、职工董事监事等受特别保护的人员？（如是，解除受《劳动合同法》第42条限制或另有程序要求，标记 `[需审查]`。）
+> - 公司是否为国有企业，被调查人是否为国企管理人员？（如是，可能属于监察对象，涉嫌职务违法或职务犯罪的由纪检监察机关管辖，内部调查的边界和移送路径需要先由律师确认，《监察法》第15条 `[模型知识 — 需验证]`。）
+> - 是否可能涉嫌犯罪（职务侵占、挪用资金、非国家工作人员受贿、侵犯商业秘密等）？（如是，取证要兼顾日后报案，见下文「刑事移送」。）
+> - 公司是否上市，或者事项是否涉及境外关联方？（如是，可能有信息披露、境外监管或跨境数据问题，标记 `[需审查]`。）
 
-If either flag fires, research the applicable rules (NLRA / state
-public-sector labor statutes for Weingarten; 5th Amendment and the Garrity
-line of cases, plus any state analogs) before conducting interviews. Cite
-primary sources. Verify currency. Do not interview until the protocol is
-adjusted.
+任一标记触发，访谈前先研究适用规则，引用一手来源并核实现行有效，必要时调整访谈方案后再开始访谈。
 
-### Step 2 — Create the matter directory and files
+### 第2步——建立事项目录和文件
 
-Create the following files:
+创建以下文件：
 
-`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[matter-slug]/log.yaml`:
+`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[matter-slug]/log.yaml`：
 
 ```yaml
-# [WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
-matter: "[matter name]"
+# [工作成果标头——按插件配置 ## 输出，律师与非律师不同；见 ## 使用者]
+# 保密 · 内部调查
+matter: "[事项名称]"
 matter_slug: "[slug]"
-opened: "[ISO date]"
-attorney_directed: [true/false]
-allegation: "[plain-language summary]"
-complainant: "[name/role or anonymous]"
-respondent: "[name/role]"
-conduct_timeframe: "[approximate dates]"
-investigation_type: "[HR/financial/executive/whistleblower/other]"
+opened: "[ISO 日期]"
+attorney_directed: [true/false]   # 是否由律师主导；只记录事实，不据此推定材料受保护
+allegation: "[通俗的投诉/问题概述]"
+complainant: "[姓名/岗位，或匿名]"
+respondent: "[姓名/岗位]"
+work_location: "[被调查人劳动合同履行地，省/直辖市]"
+conduct_timeframe: "[大致时间段]"
+company_aware_date: "[公司知道或应当知道的日期——影响规章制度中的处理时限]"
+investigation_type: "[HR/financial/executive/whistleblower/other]"  # 人事/舞弊/高管/举报/其他
+union_exists: [true/false]
+special_protection: "[三期/工伤/医疗期/工会干部/无]"
+criminal_referral_possible: [true/false]
 status: open
-last_updated: "[ISO date]"
+last_updated: "[ISO 日期]"
 
 issues:
-  - "[Issue 1 — derived from allegation, e.g. 'alleged hostile work environment']"
-  - "[Issue 2 if applicable]"
+  - "[争议焦点1——从投诉中提炼，例如「是否在部门聚餐中对投诉人实施性骚扰」]"
+  - "[争议焦点2，如有]"
+
+applicable_rules:
+  - "[处理依据——规章制度名称、版本、条款；行为发生时有效的版本]"
 
 entries: []
 
 evidentiary_gaps: []
 ```
 
-`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[matter-slug]/sources-checklist.yaml`:
+`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[matter-slug]/sources-checklist.yaml`：
 
-Generated from the investigation type. See sources checklist templates below.
+按调查类型生成，模板见下文。
 
-`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[matter-slug]/documents-reviewed.yaml`:
+`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[matter-slug]/documents-reviewed.yaml`：
 
 ```yaml
-# [WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
-matter: "[matter name]"
+# [工作成果标头——按插件配置 ## 输出，律师与非律师不同；见 ## 使用者]
+# 保密 · 内部调查
+matter: "[事项名称]"
 total_reviewed: 0
 total_surfaced: 0
-last_updated: "[ISO date]"
+last_updated: "[ISO 日期]"
 documents: []
 ```
 
-### Step 3 — Sources checklist
+### 第3步——证据来源清单
 
-Generate the appropriate checklist based on investigation type. Present it
-to the attorney and ask: "Does this fit your matter? Let me know if any items
-are not applicable (I'll mark them N/A) or if there are additional sources
-specific to this situation."
+按调查类型生成清单，交给律师确认："这份清单符合你的事项吗？哪些不适用告诉我（我标为 N/A），也可以补充本事项特有的来源。"
 
-**HR investigation sources (harassment/discrimination/retaliation):**
+所有清单共用的两条：
+- **处理依据**：行为发生时有效的规章制度版本，以及该版本履行民主程序（职代会或全体职工讨论、与工会或职工代表协商）和公示/告知的证据（《劳动合同法》第4条 `[模型知识 — 需验证]`）。缺了这一条，严重违纪解除的依据就站不住。
+- **访谈告知记录**：每次访谈开场是否告知了调查目的、谈话人身份、保密要求、禁止打击报复、记录方式，笔录是否经被访谈人核对签字。这一项取代上游的 Upjohn 警示。
+
+**人事类（性骚扰/歧视/打击报复/霸凌/违纪）：**
 ```yaml
 sources:
   - id: 1
-    source: "Complainant interview"
+    source: "投诉人访谈"
     status: open
     notes: ""
   - id: 2
-    source: "Respondent interview"
+    source: "被投诉人访谈（含听取陈述和申辩）"
     status: open
     notes: ""
   - id: 3
-    source: "Witness interviews — identify from complainant and respondent accounts"
+    source: "证人访谈——从投诉人和被投诉人的陈述中确定人选"
     status: open
     notes: ""
   - id: 4
-    source: "Email/messaging review — parties, relevant date range"
+    source: "公司邮箱、企业微信/钉钉/飞书等办公通讯记录——当事人、相关时间段（调取依据和告知情况见下文「员工个人信息」）"
     status: open
     notes: ""
   - id: 5
-    source: "HR records — respondent's performance history, prior complaints,
-             prior discipline"
+    source: "人事档案——被投诉人的绩效记录、既往投诉、既往处分"
     status: open
     notes: ""
   - id: 6
-    source: "Prior complaints — any prior complaints against respondent in
-             HR system"
+    source: "既往投诉——HR 系统和投诉渠道中针对被投诉人的其他投诉"
     status: open
     notes: ""
   - id: 7
-    source: "Comparator data — how were similar situations handled"
+    source: "同类处理先例——公司过去对类似行为如何处理（处理尺度是否一致）"
     status: open
     notes: ""
   - id: 8
-    source: "Relevant policies — harassment, code of conduct, reporting
-             procedures (version in effect at time of alleged conduct)"
+    source: "相关制度——反性骚扰制度、员工行为准则、奖惩制度、投诉处理程序（行为发生时有效的版本，及其民主程序和公示证据）"
     status: open
     notes: ""
   - id: 9
-    source: "Org chart and reporting relationships at time of alleged conduct"
+    source: "行为发生时的组织架构和汇报关系"
     status: open
     notes: ""
   - id: 10
-    source: "Calendar records — any meetings or events mentioned in accounts"
+    source: "日程、考勤、门禁、监控录像——陈述中提到的会议、聚餐或场所（注意监控的保存期限，尽早固定）"
     status: open
     notes: ""
   - id: 11
-    source: "Upjohn warning documentation — confirm interviews were preceded
-             by Upjohn warnings and documented"
+    source: "访谈告知记录——确认每次访谈前已告知并记录在案，笔录已签字"
     status: open
     notes: ""
 ```
 
-**Financial misconduct sources:**
+**舞弊类：**
 ```yaml
 sources:
   - id: 1
-    source: "Expense reports — subject, relevant period"
+    source: "报销单据——被调查人、相关期间"
     status: open
     notes: ""
   - id: 2
-    source: "Approval records — who approved the expenses or transactions"
+    source: "审批记录——谁审批了相关报销或交易"
     status: open
     notes: ""
   - id: 3
-    source: "Vendor/contractor records — contracts, invoices, payment records"
+    source: "供应商/外包方资料——合同、发票、付款记录、工商登记和股东信息（核查关联关系）"
     status: open
     notes: ""
   - id: 4
-    source: "Financial system records — AP, GL entries for relevant accounts"
+    source: "财务系统记录——应付、总账中相关科目的分录"
     status: open
     notes: ""
   - id: 5
-    source: "Email/messaging review — subject, approvers, counterparties"
+    source: "邮件/办公通讯记录——被调查人、审批人、交易对方"
     status: open
     notes: ""
   - id: 6
-    source: "Subject interview"
+    source: "被调查人访谈（含听取陈述和申辩）"
     status: open
     notes: ""
   - id: 7
-    source: "Approver interviews"
+    source: "审批人访谈"
     status: open
     notes: ""
   - id: 8
-    source: "Counterparty/vendor interviews (if accessible)"
+    source: "交易对方/供应商访谈（如能接触）"
     status: open
     notes: ""
   - id: 9
-    source: "Audit logs — system access logs for relevant accounts/systems"
+    source: "系统日志——相关账户和系统的登录与操作日志（电子数据的提取过程要可复现，必要时公证或委托鉴定）"
     status: open
     notes: ""
   - id: 10
-    source: "Prior audits or reviews covering the relevant period"
+    source: "覆盖相关期间的既往审计或内控检查"
     status: open
     notes: ""
   - id: 11
-    source: "Upjohn warning documentation"
+    source: "访谈告知记录"
     status: open
     notes: ""
 ```
 
-**Executive misconduct sources:**
+**高管类：**
 ```yaml
 sources:
   - id: 1
-    source: "Subject interview"
+    source: "被调查人访谈（含听取陈述和申辩）"
     status: open
     notes: ""
   - id: 2
-    source: "Board/compensation committee records — relevant resolutions,
-             minutes, approvals"
+    source: "董事会/股东会/薪酬委员会记录——相关决议、会议记录、审批"
     status: open
     notes: ""
   - id: 3
-    source: "Employment agreement and any amendments"
+    source: "劳动合同及补充协议；如兼任董事、高管，另查公司章程和任职文件"
     status: open
     notes: ""
   - id: 4
-    source: "Equity records — grants, exercises, vesting"
+    source: "股权激励记录——授予、行权、归属"
     status: open
     notes: ""
   - id: 5
-    source: "Expense reports and approval records"
+    source: "报销单据和审批记录"
     status: open
     notes: ""
   - id: 6
-    source: "Email/messaging review — subject, relevant counterparties"
+    source: "邮件/办公通讯记录——被调查人、相关交易对方"
     status: open
     notes: ""
   - id: 7
-    source: "Conflict of interest disclosures (or absence thereof)"
+    source: "利益冲突申报（或未申报的情况）"
     status: open
     notes: ""
   - id: 8
-    source: "Outside business activity records"
+    source: "对外投资、兼职和关联企业记录（工商登记检索）"
     status: open
     notes: ""
   - id: 9
-    source: "Witness interviews — direct reports, peers, board members"
+    source: "证人访谈——直接下属、同级、董事"
     status: open
     notes: ""
   - id: 10
-    source: "Prior complaints or concerns raised about subject"
+    source: "既往针对被调查人的投诉或疑虑"
     status: open
     notes: ""
   - id: 11
-    source: "Upjohn warning documentation"
+    source: "访谈告知记录"
     status: open
     notes: ""
 ```
 
-**Whistleblower sources:**
+**举报类：**
 ```yaml
 sources:
   - id: 1
-    source: "Complainant interview"
+    source: "举报人访谈"
     status: open
     notes: ""
   - id: 2
-    source: "Original complaint or tip — written form if exists"
+    source: "原始举报材料——如有书面形式"
     status: open
     notes: ""
   - id: 3
-    source: "Records related to the underlying allegation (the thing
-             complainant blew the whistle on)"
+    source: "被举报事项本身的相关记录"
     status: open
     notes: ""
   - id: 4
-    source: "Records related to any adverse action taken against complainant
-             after the protected activity"
+    source: "举报之后公司对举报人采取的不利措施的相关记录（调岗、降薪、考核、解除）"
     status: open
     notes: ""
   - id: 5
-    source: "Decision-maker interviews — who made the adverse action decision"
+    source: "决策人访谈——谁作出了不利措施的决定"
     status: open
     notes: ""
   - id: 6
-    source: "Comparator data — treatment of similarly situated employees
-             who did not engage in protected activity"
+    source: "同类处理先例——未举报的同类员工受到怎样的对待"
     status: open
     notes: ""
   - id: 7
-    source: "Email/messaging review — decision-makers, relevant timeframe"
+    source: "邮件/办公通讯记录——决策人、相关时间段"
     status: open
     notes: ""
   - id: 8
-    source: "Timing analysis — proximity of protected activity to adverse
-             action"
+    source: "时间线分析——举报与不利措施之间隔了多久，决策人何时知道举报"
     status: open
     notes: ""
   - id: 9
-    source: "Respondent/decision-maker interviews"
+    source: "被举报人/决策人访谈"
     status: open
     notes: ""
   - id: 10
-    source: "Upjohn warning documentation"
+    source: "访谈告知记录"
     status: open
     notes: ""
 ```
 
-After presenting the checklist, write it to
-`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[slug]/sources-checklist.yaml`.
+清单确认后，写入
+`~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[slug]/sources-checklist.yaml`。
 
 ---
 
-## Mode 2: Add data
+## 调查中的中国法要点
 
-Triggered by `/employment-legal:investigation-add` or "add to the [matter]
-investigation" or when the attorney pastes documents or interview notes.
+以下要点贯穿各模式，立案、加数据、起草备忘录时都要对照。
 
-### Step 1 — Identify the matter
+### 处理依据：规章制度和劳动合同
 
-If multiple investigation folders exist in `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/`, ask which matter this
-data belongs to. If only one, proceed.
+- 严重违纪解除（《劳动合同法》第39条第（二）项 `[模型知识 — 需验证]`）以规章制度为依据。规章制度要能作为裁判依据，须经民主程序制定、内容不违反法律法规、已向劳动者公示（《劳动合同法》第4条 `[模型知识 — 需验证]`；《劳动争议司法解释（一）》第50条 `[模型知识 — 需验证]`）。
+- 用行为发生时有效的版本。事后修订的制度不能拿来处理之前的行为。
+- 「严重」要有制度上的明确界定，或者行为本身足以让一般人认为严重。制度写得含糊的，标记 `[需审查]`。
+- 规章制度若规定了调查和处理程序（时限、听取申辩、审批层级），公司自己也要遵守。程序违反自身制度，是仲裁中常见的败因。
+- 处理时限：法律没有统一规定从知道违纪到作出处理的期限，但拖得过久，仲裁员可能认为公司已经原谅或放弃处理。查规章制度有无时限规定，记录 `company_aware_date`。`[需审查]`
 
-### Step 2 — Identify the data type
+### 证据规则
 
-Ask (if not clear from context):
-- Interview notes (whose interview?)
-- Document batch (emails, records, files)
-- Attorney notes or observations
-- Upjohn warning confirmation
+- **举证责任**：解除等决定引发的争议由用人单位负举证责任；与争议有关、由用人单位掌握管理的证据，用人单位应当提供（《劳动争议调解仲裁法》第6条 `[模型知识 — 需验证]`）。
+- **证据三性**：真实性、合法性、关联性。日志里每条重要证据都要能回答「从哪来、怎么拿到的、证明什么」。
+- **非法证据**：以严重侵害他人合法权益、违反法律禁止性规定或严重违背公序良俗的方法取得的证据，不能作为认定事实的根据（《民事诉讼法解释》第106条 `[模型知识 — 需验证]`）。
+- **录音录像**：谈话一方自行录音，一般可以作为证据，但不得在私人场所偷录偷拍、不得侵犯隐私。访谈录音建议事先告知并在笔录中写明。办公区监控须事先有制度告知，卫生间、更衣室等私密场所禁止监控。
+- **电子数据**：聊天记录、邮件、系统日志要保留原始载体，记录提取时间、提取人和方法；关键电子证据考虑公证保全或委托鉴定（《最高人民法院关于民事诉讼证据的若干规定》中关于电子数据的条款 `[模型知识 — 需验证]`）。截图单独使用证明力弱。
+- **证人证言**：在职员工作证，仲裁员通常会考虑其与公司的利害关系。笔录要当场核对签字，写明时间、地点、在场人员。
+- **证明标准**：民事程序采用「高度可能性」标准（《民事诉讼法解释》第108条 `[模型知识 — 需验证]`）。内部认定参照这一标准，不要用「排除合理怀疑」，也不要比它更松。
 
-### Step 3 — Document pull criteria
+### 员工个人信息
 
-For any document batch, apply the following pull criteria. A document is
-surfaced if it meets ANY of the following. The criteria are intentionally
-set to pull slightly aggressively — it is better to surface a false positive
-than to miss a significant item.
+- **处理依据**：按照依法制定的劳动规章制度和依法签订的集体合同实施人力资源管理所必需的，可以不取得个人同意（《个人信息保护法》第13条第一款第（二）项 `[模型知识 — 需验证]`）。调查是否落在这一依据内，取决于规章制度有没有写明公司可以为调查目的查看办公邮箱、办公设备和办公通讯账号。没写的，标记 `[需审查]`。
+- **告知**：处理员工个人信息要告知处理目的、方式、种类和保存期限（《个人信息保护法》第17条 `[模型知识 — 需验证]`）。通常靠制度、员工手册或入职时的告知书完成；调查中新增的处理方式另行告知。
+- **最小必要**：只调取与争议焦点相关的时间段、相关人员和相关内容（《个人信息保护法》第6条 `[模型知识 — 需验证]`）。不要「先全部拉下来再说」。
+- **敏感个人信息**：健康信息（如以病假为由的违纪）、行踪轨迹、生物识别、性生活相关信息（性骚扰调查中常见）属于敏感个人信息，处理须有特定目的和充分必要性，并采取严格保护措施，一般需要单独同意（《个人信息保护法》第28—29条 `[模型知识 — 需验证]`）。涉及时标记 `[需审查]`，并考虑个人信息保护影响评估（第55条 `[模型知识 — 需验证]`）。
+- **个人设备和私人账号**：员工个人手机、个人微信不能强制交出或检查。可以请员工自愿提供并书面确认；员工拒绝的，记录在案，作为证据缺口处理。
+- **投诉人隐私**：性骚扰调查中，投诉人的身份和陈述只在调查必需的范围内披露（《妇女权益保障法》要求用人单位保护当事人隐私 `[模型知识 — 需验证]`）。
 
-**Pull criteria:**
-1. Contains the name of any party to the investigation (complainant,
-   respondent, witnesses named in prior log entries)
-2. Was authored or received by a party during the key conduct timeframe
-3. Contains keywords related to the allegation type (identified at intake
-   and from prior log entries — update the keyword list as new terms emerge
-   from accounts)
-4. Contains explicit or implicit admissions ("I shouldn't have," "I know
-   how this looks," "don't put this in writing," "delete this")
-5. Contains language contradicting any account already in the log — flag
-   the specific contradiction and the log entry it conflicts with
-6. Contains language that would be sensitive in litigation: discriminatory
-   terms, threats, discussions of protected characteristics or activities,
-   financial irregularities matching the allegation pattern
-7. Is a document type that has been mentioned in prior accounts but has
-   not yet appeared in the document set (e.g., a meeting was mentioned in
-   an interview but no calendar invite has been reviewed) → log as
-   evidentiary gap, not a surfaced document
+### 访谈
 
-**Disposition for every document reviewed:**
-- `surfaced`: meets one or more pull criteria — added to log as a log entry
-- `reviewed-nothing-significant`: reviewed, does not meet pull criteria —
-  logged in documents-reviewed.yaml with one-line description only
+- **访谈开场告知**（每次都记录）：调查目的和范围；谈话人身份——代表公司，律师是公司的律师，不代表员工个人；访谈内容保密，员工也须对访谈内容保密；公司禁止打击报复；记录方式（笔录/录音）；员工有如实陈述的义务（以规章制度有此规定为前提）。
+- **不得限制人身自由**：不得扣留员工、不得收手机、不得以威胁方式取得陈述。强迫取得的陈述没有证明力，还可能引发治安或刑事责任。
+- **陈述和申辩**：被调查人有机会就指控逐项陈述和申辩，记录在案。这一步不是法定的统一程序，但在仲裁中常被视为程序正当的关键 `[需审查]`。
+- **陪同人员**：员工没有法定的「带律师参加内部访谈」的权利。规章制度或集体合同允许工会代表陪同的，按制度执行。
+- **调查期间的措施**：停职、待岗、暂时调岗须有规章制度或劳动合同依据，待岗期间的工资按制度和当地规定支付 `[需审查]`。
 
-**After processing a document batch, report:**
+### 反性骚扰
+
+- 《妇女权益保障法》（2022年修订）禁止违背妇女意愿实施性骚扰，并要求用人单位采取预防和制止措施：制定制度、开展培训、畅通投诉渠道、及时调查处置、保护当事人隐私、支持受害人维权 `[模型知识 — 需验证]`。《民法典》第1010条规定了性骚扰的民事责任和单位的预防、处置义务 `[模型知识 — 需验证]`。
+- 用人单位未采取合理措施、导致性骚扰发生或扩大的，可能承担责任。调查本身就是在履行处置义务，过程要及时、可证明。
+- 男性受害人同样适用《民法典》第1010条。
+
+### 刑事移送
+
+- 舞弊和高管类事项，先判断是否可能涉嫌：职务侵占罪（《刑法》第271条）、挪用资金罪（第272条）、非国家工作人员受贿罪（第163条）、对非国家工作人员行贿罪（第164条）、侵犯商业秘密罪（第219条）。`[模型知识 — 需验证]` 国企人员可能涉及贪污、受贿等罪名，管辖不同。
+- 立案追诉标准（数额等）会调整，不在本技能中写死，需要时按现行规定核实 〔待核〕。
+- 可能报案的，内部调查要注意：保全原始证据，不在报案前惊动被调查人致其销毁证据；不以「不报案」换取退赔或签署协议（可能被认定为敲诈勒索或妨害作证）；报案材料由律师整理。是否报案、何时报案，由律师和管理层决定 `[需审查]`。
+- 刑事程序与劳动处理可以并行。公司以涉嫌犯罪为由解除前，注意第39条第（六）项是「被依法追究刑事责任」，不是「涉嫌犯罪」 `[模型知识 — 需验证]`——在判决前，解除应依据严重违纪等其他事由。
+
+### 工会通知
+
+- 用人单位单方解除劳动合同，应当事先将理由通知工会（《劳动合同法》第43条 `[模型知识 — 需验证]`）。建立了工会但未通知的，存在违法解除风险；司法解释对起诉前补正有规定（《劳动争议司法解释（一）》第47条 `[模型知识 — 需验证]`）。
+- 这一步在处理决定阶段，但调查结论要写成可以直接交给工会的形式：事实、证据、依据的制度条款。
+
+---
+
+## 模式二：添加数据
+
+由 `/employment-legal:investigation-add`、「加到[事项]调查里」或律师粘贴文件、访谈笔录时触发。
+
+### 第1步——确定事项
+
+如果 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/` 下有多个调查文件夹，问清这批数据属于哪个事项。只有一个就直接继续。
+
+### 第2步——确定数据类型
+
+上下文不清楚时询问：
+- 访谈笔录（谁的访谈？）
+- 文件批次（邮件、记录、文件）
+- 律师笔记或观察
+- 访谈告知确认
+
+同时记录每份材料的来源和取得方式，供合法性审查使用。
+
+### 第3步——文件筛选标准
+
+文件批次逐份按以下标准筛查，满足**任意一条**即挑出。标准有意放宽：多挑出一份无关的，好过漏掉一份要紧的。
+
+**筛选标准：**
+1. 出现调查中任何一方的名字（投诉人、被投诉人、此前日志中出现过的证人）
+2. 在关键时间段内由任何一方撰写或接收
+3. 含有与投诉类型相关的关键词（立案时确定，随陈述中出现的新说法持续更新关键词表）
+4. 含有明示或暗示的自认（「我不该……」「这事看起来不好」「别写下来」「删掉」「当面说」）
+5. 与日志中已有的某段陈述相矛盾——写明具体矛盾点和冲突的日志条目
+6. 含有在仲裁或诉讼中敏感的内容：歧视性用语、威胁、涉及性别/婚育/民族/宗教/户籍/健康等特征的表述、与投诉模式吻合的财务异常
+7. 陈述中提到过、但文件集中还没出现的材料（例如访谈中提到一次会议，却没看到会议邀请）→ 记为证据缺口，不作为挑出的文件
+
+每份挑出的文件，按 `investigation-add` 的四个维度标注：
+
+| 维度 | 检查 |
+|---|---|
+| 相关性 | 与哪个争议焦点相关？ |
+| 真实性 | 来源能否核验？是否原始载体？ |
+| 合法性 | 取得方式是否合法？是否涉及个人设备、私密场所、敏感个人信息？ |
+| 重要性 | 会不会影响结论？ |
+
+**每份已审查文件的处理结果：**
+- `surfaced`：满足一条或多条标准——作为日志条目写入 log.yaml
+- `reviewed-nothing-significant`：已审查，不满足标准——只在 documents-reviewed.yaml 中记一行描述
+
+**处理完一批文件后，报告：**
 
 ```
-Document review complete.
-Reviewed: [N] documents
-Surfaced: [N] as potentially significant
-Logged as reviewed / nothing significant: [N]
-New evidentiary gaps identified: [N]
+文件审查完成。
+已审查：[N] 份
+挑出：[N] 份可能重要
+已审查、无重要内容：[N] 份
+新发现证据缺口：[N] 个
+取得方式需审查：[N] 份
 
-Surfaced items:
-[list with one-line description and which pull criterion triggered]
+挑出事项：
+[逐项列出，一行描述 + 触发的筛选标准]
 ```
 
-This report is the answer to "what about missed needles." The pull criteria
-are documented, the surface ratio is visible, and the attorney can review
-the full document log at any time. In Q&A mode, "I have not seen any document
-on [topic] in the [N] documents reviewed" is a meaningful statement only
-because every document reviewed is logged.
+这份报告回答的是「会不会漏掉关键材料」。筛选标准写在这里，挑出比例看得见，律师随时可以翻完整的文件记录。查询模式中「在已审查的 [N] 份文件中，我没看到关于[主题]的文件」之所以有意义，正是因为每份审查过的文件都有记录。
 
-### Step 4 — Write log entries
+### 第4步——写入日志条目
 
-For each surfaced item, append to `log.yaml`:
+每个挑出的事项，追加到 `log.yaml`：
 
 ```yaml
-- entry_id: [auto-increment]
-  entry_type: [interview / document / attorney-note / gap]
-  date_of_event: "[date the event occurred — not when logged]"
-  date_logged: "[ISO datetime]"
-  source: "[witness name/role, or document filename/description]"
+- entry_id: [自动递增]
+  entry_type: [interview / document / attorney-note / gap]   # 访谈 / 文件 / 律师笔记 / 缺口
+  date_of_event: "[事件发生日期——不是记录日期]"
+  date_logged: "[ISO 日期时间]"
+  source: "[证人姓名/岗位，或文件名/描述]"
   source_type: [complainant / respondent / witness / document / attorney-note]
-  issues: ["[which investigation issue(s) this entry relates to]"]
+  acquisition: "[取得方式——例如 公司邮箱调取（制度第X条）、员工自愿提供并签字、公证保全]"
+  issues: ["[关联的争议焦点]"]
   significance: [high / medium / background]
-  summary: "[what this entry adds to the record — 2-5 sentences]"
-  quote: "[verbatim quote if significant — otherwise empty]"
-  contradicts_entry: [entry_id or null]
-  corroborates_entry: [entry_id or null]
+  summary: "[本条为记录增加了什么——2至5句]"
+  quote: "[重要的原文摘录——否则留空]"
+  contradicts_entry: [entry_id 或 null]
+  corroborates_entry: [entry_id 或 null]
   credibility_note: ""
-  pull_criterion: "[which criterion triggered — for documents]"
-  privilege: attorney-work-product
+  pull_criterion: "[触发的筛选标准——文件适用]"
+  privilege: confidential-investigation   # 保密 · 内部调查；不代表享有证据特权
 ```
 
-For evidentiary gaps:
+证据缺口：
 
 ```yaml
-- gap_id: [auto-increment]
-  description: "[what document/source should exist but hasn't been found]"
-  identified_from: "[which log entry or account raised this]"
-  source_to_obtain: "[where to get it]"
+- gap_id: [自动递增]
+  description: "[应当存在但尚未找到的文件/来源]"
+  identified_from: "[哪条日志或哪段陈述引出的]"
+  source_to_obtain: "[从哪里获取]"
   priority: [high / medium / low]
   status: open
 ```
 
-### Step 5 — Update sources checklist
+原始材料（投诉信、聊天记录、邮件）保持原样，不改动；分析意见写进 `summary` 或 `credibility_note`，不混进 `quote`。
 
-If the data added corresponds to a checklist item, ask the attorney if it
-should be marked complete or in-progress. Do not auto-mark complete —
-the attorney decides when a source is adequately covered.
+### 第5步——更新证据来源清单
 
----
-
-## Mode 3: Query the log
-
-Triggered by `/employment-legal:investigation-query` or any question
-phrased against the investigation (e.g., "what did [witness] say about",
-"what documents corroborate", "what do we still need", "what's the
-strongest evidence on each side").
-
-Read the full log before answering. Answer types:
-
-**Factual query** ("what did X say about Y"):
-Answer from the log entries, citing entry IDs. If the log contains nothing
-on the topic: "I have not seen any information on [topic] in this
-investigation log ([N] entries reviewed). This may be worth flagging as
-a gap."
-
-**Conflict query** ("where do accounts conflict"):
-Surface all contradicts_entry links. For each conflict: state what the
-conflict is, which entries are in tension, and what (if any) documentary
-evidence bears on the conflict.
-
-**Coverage query** ("what do we still need" / "what are our gaps"):
-Read sources-checklist.yaml and evidentiary_gaps in log.yaml. Report:
-- Checklist items still open
-- Evidentiary gaps logged
-- Any accounts that reference sources not yet gathered
-
-**Strength query** ("what's the strongest evidence on each issue"):
-For each issue in the log, identify: the highest-significance log entries,
-any documentary corroboration, and any unresolved conflicts. Present
-issue by issue.
-
-**Upjohn query** ("have we documented Upjohn warnings"):
-Check checklist item and any log entries tagged as Upjohn documentation.
-Flag if not yet completed.
+新数据对应清单中的某一项时，问律师是标为完成还是进行中。不要自动标完成——来源是否充分覆盖，由律师决定。
 
 ---
 
-## Mode 4: Draft or update the memo
+## 模式三：查询日志
 
-Triggered by `/employment-legal:investigation-memo` or "draft the memo"
-or "update the memo".
+由 `/employment-legal:investigation-query`，或针对调查提出的任何问题触发（例如「[证人]关于……说了什么」「哪些文件能印证」「还缺什么」「每个焦点上双方最有力的证据是什么」）。
 
-### If no memo exists — first draft
+回答前读完整份日志。回答类型：
 
-Read the full log. Do not draft until the following are complete (warn if
-not):
-- At least one entry for each open issue
-- Complainant and respondent entries present
-- Sources checklist reviewed (flag any high-priority open items)
+**事实查询**（「X 关于 Y 说了什么」）：
+依据日志条目回答，引用条目编号。日志里没有相关内容的："在本次调查日志中（已审查 [N] 条记录），我没看到关于[主题]的任何信息，可以考虑记为缺口。"
 
-Draft the memo in the following structure, following standard internal
-investigation memorandum practice:
+**矛盾查询**（「哪些陈述互相矛盾」）：
+列出所有 contradicts_entry 关联。每处矛盾说明：矛盾是什么、涉及哪几条、有没有文件证据可以判断谁更可信。
+
+**覆盖查询**（「还缺什么」「有哪些缺口」）：
+读取 sources-checklist.yaml 和 log.yaml 中的 evidentiary_gaps，报告：
+- 清单中仍未完成的项目
+- 已记录的证据缺口
+- 陈述中提到但尚未收集的来源
+- 处理依据是否齐全：规章制度版本、民主程序和公示证据
+
+**证明力查询**（「每个焦点上最有力的证据是什么」）：
+逐个争议焦点列出：重要性最高的日志条目、文件印证、尚未解决的矛盾，以及取得方式有合法性疑问的证据。
+
+**程序查询**（「访谈告知都记录了吗」「申辩听了吗」）：
+检查清单中的访谈告知记录项和相关日志条目，确认被调查人已就每个焦点陈述和申辩。未完成的标出来。
+
+**时间线核对**（「各证人对[日期]的说法是否一致」）：
+按 date_of_event 排列相关条目，指出不一致之处。
+
+---
+
+## 模式四：起草或更新备忘录
+
+由 `/employment-legal:investigation-memo` 或「起草备忘录」「更新备忘录」触发。
+
+### 尚无备忘录——起草初稿
+
+读完整份日志。以下条件未满足的，先提示再决定是否起草：
+- 每个未结争议焦点至少有一条日志
+- 投诉人和被投诉人的条目都有
+- 被调查人已有陈述和申辩记录
+- 处理依据（规章制度及其民主程序、公示证据）已收集
+- 证据来源清单已审阅（标出仍未完成的高优先级项目）
+
+备忘录沿用 `investigation-memo` 的六部分结构，以下是展开版：
 
 ```markdown
-[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]
+[工作成果标头——按插件配置 ## 输出，律师与非律师不同；见 ## 使用者]
+保密 · 内部调查工作成果
 
 ---
 
-**MEMORANDUM**
+# 调查备忘录：[事项名称]
 
-To: [Attorney to fill in]
-From: [Attorney to fill in]
-Date: [Date]
-Re: Internal Investigation — [Matter name]
-Status: PRELIMINARY DRAFT
-
----
-
-## Executive Summary
-
-[2-3 paragraphs: allegation in plain terms, investigation scope and
-methodology summary, key findings in bullet form (Sustained / Not
-Sustained / Inconclusive), recommended actions. Written last but
-appears first.]
+**致：** [律师填写]
+**发：** [律师填写]
+**日期：** [日期]
+**事由：** 内部调查——[事项名称]
+**状态：** 初稿
+**调查期间：** [立案日期] — [截至日期]
+**调查人员：** [姓名/角色]
 
 ---
 
-## Background and Scope
+## 摘要
 
-**Triggering event:** [What initiated the investigation]
-
-**Allegations investigated:**
-[Each issue from the log as a numbered allegation]
-
-**Out of scope:** [Anything explicitly not investigated and why]
-
-**Investigation period:** [Dates of conduct alleged]
-**Investigation conducted:** [Date opened] to [present or close date]
+[两三段：用大白话说明投诉内容、调查范围和方法，主要结论逐条列出（成立 / 不成立 / 无法认定），建议措施。最后写，放最前。]
 
 ---
 
-## Methodology
+## 一、投诉/举报概述
 
-**Interviews conducted:**
-| Witness | Role | Date | Notes |
-|---|---|---|---|
-[Populated from log entries with source_type = interview]
+**启动原因：** [什么引发了调查，公司何时知道]
 
-**Documents reviewed:**
-[Summary of document categories reviewed, volume, date range.
-Full document log is maintained separately.]
+**调查事项：**
+[日志中的每个争议焦点，逐条编号]
 
-**Other sources:**
-[Any other sources from checklist — policies, HR records, etc.]
+**不在调查范围内的事项：** [明确未调查的内容及原因]
 
-**Limitations:** [Any sources requested but not obtained, any constraints]
+**涉嫌行为期间：** [日期]
 
 ---
 
-## Factual Findings
+## 二、调查过程
 
-*[Organized by issue — one section per allegation. Not by witness,
-not purely chronological.]*
+**访谈情况：**
+| 被访谈人 | 岗位 | 日期 | 告知记录 | 笔录签字 |
+|---|---|---|---|---|
+[从 source_type 为访谈的日志条目生成]
 
-### Issue 1: [Allegation]
+**文件审查：**
+[审查的文件类别、数量、时间范围。完整文件记录另行保存。]
 
-[Narrative of what the evidence shows on this issue. Cite log entry IDs
-inline in brackets. Where accounts conflict, present the conflict directly
-— do not smooth it over. Documentary evidence presented with quotes where
-significant.]
+**其他来源：**
+[清单中的其他来源——制度、人事档案等]
 
-### Issue 2: [Allegation]
-
-[Same structure]
-
-[Continue for each issue]
+**局限：** [申请了但未取得的来源、员工拒绝提供的材料、其他限制]
 
 ---
 
-## Credibility Assessment
+## 三、事实发现
 
-*[Standalone section. Address only witnesses whose credibility is
-determinative — i.e., where the finding on an issue depends on which
-account is credited.]*
+*[按争议焦点组织，一个焦点一节。不按证人分节，也不纯按时间排。]*
 
-### [Witness name/role]
+### 焦点一：[事项]
 
-**Internal consistency:** [Consistent / Inconsistent — note specifics]
-**Corroboration:** [What documentary or other evidence corroborates
-or undermines the account]
-**Motive:** [Any reason to credit or discount the account]
-**Demeanor:** [Attorney's observations if interviews were in person —
-leave blank if not applicable or not observed]
-**Assessment:** [Credit / Do not credit / Partially credit — with basis]
+[证据显示了什么。正文中用方括号引用日志条目编号。陈述有矛盾的，直接写出矛盾，不要抹平。重要的文件证据附原文摘录。]
+
+### 焦点二：[事项]
+
+[同上]
 
 ---
 
-## Relevant Policies
+## 四、证据分析
 
-[Policies in effect at the time of alleged conduct that bear on the issues.
-Cite the version. Do not cite policies that were adopted after the conduct.]
+### 证据三性
+
+[逐项说明关键证据的真实性、合法性、关联性；取得方式有疑问的单独列出，说明如被排除对结论的影响。]
+
+### 证人可信度
+
+*[只分析可信度对结论起决定作用的证人，即某个焦点的认定取决于采信谁的说法。]*
+
+**[证人姓名/岗位]**
+- **前后一致：** [一致 / 不一致——写明具体之处]
+- **印证情况：** [哪些文件或其他证据印证或削弱其陈述]
+- **利害关系：** [采信或不采信的理由，如与公司或当事人的关系]
+- **当面观察：** [律师当面访谈时的观察——没有就留空]
+- **评估：** [采信 / 不采信 / 部分采信——附依据]
 
 ---
 
-## Conclusions
+## 五、初步结论
 
-| Issue | Finding | Basis |
+| 焦点 | 结论 | 依据 |
 |---|---|---|
-| [Issue 1] | Sustained / Not Sustained / Inconclusive | [One sentence] |
-| [Issue 2] | ... | ... |
+| [焦点一] | 成立 / 不成立 / 无法认定 | [一句话] |
+| [焦点二] | ... | ... |
 
-*Findings are based on a preponderance of the evidence standard.*
+*结论参照民事「高度可能性」证明标准作出。*
 
----
+**适用的制度条款：** [行为发生时有效的制度名称、版本、条款，及其民主程序和公示证据。不要引用行为之后才生效的制度。]
 
-## Recommendations
-
-[Organized by action type:]
-
-**Disciplinary action:** [If any — state the basis, not just the outcome]
-**Policy or process changes:** [If any gap in policies contributed]
-**Training:** [If indicated]
-**Further investigation:** [Any threads not fully resolved]
-**Monitoring:** [Any follow-up needed]
+**仍存在的证据缺口和不确定性：** [逐条]
 
 ---
 
-## Appendix A: Chronology of Events
+## 六、建议
 
-[Auto-generated from log entries sorted by date_of_event, not date_logged.
-Format: Date | Summary | Source (Entry ID)]
+**处理措施：** [如有——写明依据（规章制度条款、《劳动合同法》第39条某项等），不只写结果；涉及解除的，提示事先通知工会（第43条）并运行 `/employment-legal:termination-review`]
+**制度或流程改进：** [调查中暴露的制度漏洞，例如反性骚扰制度缺失、制度未公示]
+**培训：** [如需要]
+**进一步调查：** [尚未查清的线索]
+**刑事移送：** [是否建议报案；由律师和管理层决定]
+**后续跟踪：** [防止打击报复的措施、对投诉人的回访]
 
-## Appendix B: Documents Reviewed
+---
 
-[Summary table from documents-reviewed.yaml]
+## 附件一：事件时间线
+
+[按 date_of_event（不是 date_logged）排序自动生成。格式：日期 | 摘要 | 来源（条目编号）]
+
+## 附件二：已审查文件
+
+[来自 documents-reviewed.yaml 的汇总表]
 ```
 
-Write the draft to `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[slug]/memo.md`.
+写入 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/investigation-[slug]/memo.md`。
 
-### If memo already exists — update
+### 已有备忘录——更新
 
-Read the memo and the log. Identify log entries added since the memo was
-last drafted (compare date_logged against memo's last-updated date).
+读取备忘录和日志。找出备忘录上次更新之后新增的日志条目（用 date_logged 对比备忘录的更新日期）。
 
-Report what has changed:
+先报告变化：
 
 ```
-Since the last memo draft ([date]), the following has been added to the log:
+自上一版备忘录（[日期]）以来，日志新增：
 
-[N] new entries
-New issues: [any]
-New conflicts: [any]
-Resolved gaps: [any]
+新条目 [N] 条
+新争议焦点：[如有]
+新矛盾：[如有]
+已解决的缺口：[如有]
 
-Sections that need updating:
-  Factual findings: [which issues are affected]
-  Credibility: [any new credibility-relevant entries]
-  Conclusions: [any findings that should be revisited]
-  Appendix A: [N] new chronology entries
+需要更新的部分：
+  事实发现：[涉及哪些焦点]
+  证据分析/可信度：[新增的相关条目]
+  初步结论：[可能需要重新考虑的结论]
+  附件一：新增时间线条目 [N] 条
 ```
 
-Ask: "Want me to update the full memo, or just the affected sections?"
+问："要更新整份备忘录，还是只改受影响的部分？"
 
-Apply updates. Preserve prior drafting. Mark changed sections with
-`[UPDATED: date]` until the attorney reviews.
+按选择更新。保留原有内容，改动的部分标 `[已更新：日期]`，律师审阅后再去掉。
 
 ---
 
-## Mode 5: Draft audience summary
+## 模式五：分受众摘要
 
-Triggered by `/employment-legal:investigation-summary` or "draft a
-summary for [audience]".
+由 `/employment-legal:investigation-summary` 或「给[受众]写个摘要」触发。
 
-Ask: who is the audience and what decision or action does this summary
-support?
+先问：给谁看，这份摘要支持什么决定或行动？受众与 `investigation-summary` 一致：`hr` / `管理层` / `外部律师`。
 
-**HR summary** (for HR decision on disciplinary action):
-- What happened (factual summary, no legal analysis)
-- Finding on each allegation (Sustained/Not Sustained/Inconclusive)
-- Recommended action
-- What is NOT in this summary: privilege analysis, credibility methodology,
-  legal exposure assessment, attorney mental impressions
-- Header: "Confidential — HR Use Only — Do Not Distribute"
-- Do not include entry IDs or document citations — those stay in the memo
+**HR 摘要**（供 HR 作出处理决定）：
+- 发生了什么（事实概述，不含法律分析）
+- 每个焦点的结论（成立 / 不成立 / 无法认定）
+- 建议措施，以及执行时的程序要求（书面通知、工会通知、送达）
+- 不包含：保密安排分析、可信度评估方法、法律风险敞口、律师的主观判断
+- 标头："保密 · 仅限 HR 使用 · 不得转发"
+- 不写日志条目编号和文件引用——这些留在备忘录里
+- 投诉人和证人的身份信息只写处理所必需的部分
 
-**Leadership/Board summary** (for governance decision):
-- The allegation and scope in one paragraph
-- Key findings
-- Business impact / exposure (high level — no specific legal analysis)
-- What the company is doing about it
-- Header: "[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]"
+**管理层/董事会摘要**（供治理层决策）：
+- 一段话说明投诉内容和调查范围
+- 主要结论
+- 业务影响和风险（概括说明，不展开法律分析）
+- 公司正在采取的措施
+- 标头："[工作成果标头——按插件配置 ## 输出，律师与非律师不同；见 ## 使用者]"
 
-**Outside counsel briefing** (handing off for litigation or deeper review):
-- Full context including legal exposure analysis
-- Open evidentiary threads
-- Credibility issues that remain contested
-- Documents that would be most significant in litigation
-- Header: "[WORK-PRODUCT HEADER — per plugin config ## Outputs — differs by role; see `## Who's using this`]"
+**外部律师简报**（移交仲裁、诉讼、报案或深入审查）：
+- 完整背景，含法律风险分析
+- 未结的证据线索
+- 仍有争议的可信度问题
+- 仲裁或诉讼中最关键的文件，及其取得方式
+- 需要外部律师给出意见的问题
+- 标头："[工作成果标头——按插件配置 ## 输出，律师与非律师不同；见 ## 使用者]"
 
 ---
 
-## Consequential-action gate (respond to a demand or complaint)
+## 对外答复门禁
 
-**Before producing a summary, memo, or content intended for an external response (EEOC/DFEH/state agency charge response, plaintiff's-counsel demand letter response, regulator response, or any formal complaint reply):** Read `## Who's using this` in `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md`. If the Role is **Non-lawyer**:
+**在生成用于对外答复的摘要、备忘录或内容之前**（劳动仲裁答辩、劳动保障监察投诉答复、妇联或工会转办投诉的答复、对方律师函的回复、监管问询答复、配合公安调查的说明）：读取 `~/.claude/plugins/config/claude-for-legal-zh/employment-legal/CLAUDE.md` 中的 `## 使用者`。如果角色为**非律师**：
 
-> Responding to a demand, charge, or complaint has legal consequences — positions taken here are admissions in later proceedings, waivers of defenses can be inadvertent, and privilege over the underlying investigation can be lost. Have you reviewed this response with an attorney? If yes, proceed. If no, here's a brief to bring to them:
+> 对外答复有法律后果——这里表达的立场在后续程序中可能被当作自认，抗辩可能在不经意间放弃，调查材料也可能因此被要求提交。这份答复你和律师一起看过了吗？看过就继续。没看过的话，这是一份带给律师的简报：
 >
-> - The allegation, the forum, and the deadline
-> - What the investigation surfaced (findings by allegation; documents reviewed; witnesses interviewed; Upjohn warnings given or not)
-> - Any unresolved evidentiary threads or credibility contests
-> - What the proposed response says and what it implicitly concedes
-> - Open questions and what's unresolved
-> - What could go wrong (privilege waiver, inconsistent factual statements, missed affirmative defense)
-> - What to ask the attorney (is this the right theory; are we preserving defenses; should an outside firm take this over; what needs redaction or a privilege log)
+> - 投诉/申请内容、受理机构、答复期限
+> - 调查查明了什么（按焦点列出结论；审查了哪些文件；访谈了哪些人；访谈告知是否记录）
+> - 尚未解决的证据线索和可信度争议
+> - 拟答复的内容，以及它隐含承认了什么
+> - 尚未回答的问题
+> - 可能出什么问题（陈述前后不一致、取证合法性被质疑、错过抗辩事由、超过答复期限）
+> - 要问律师什么（这个答辩思路对不对；抗辩有没有保留；要不要交给外部律所；哪些内容需要删减）
 >
-> If you need to find an attorney, solicitor, barrister, or other authorised legal professional: contact your professional regulator (state bar in the US, SRA/Bar Standards Board in England & Wales, Law Society in Scotland/NI/Ireland/Canada/Australia, or your jurisdiction's equivalent) for a referral service. Agency and demand-letter responses are a place where untrained replies regularly create more exposure than the underlying allegation did.
+> 需要找律师的，可以联系当地律师协会，或拨打 12348 公共法律服务热线。仲裁答辩和监察投诉答复，正是未经专业处理的答复常常比原投诉惹出更大麻烦的地方。
 
-Do not produce an external-response draft past this gate without an explicit yes. Internal memos, HR summaries, and leadership briefings used only within the organization do not trip this gate (but the privilege-formation caveat at the top of this skill still applies).
+没有明确的「看过了」，不越过这道门禁生成对外答复稿。只在组织内部使用的备忘录、HR 摘要和管理层简报不触发这道门禁（但本文件开头的保密说明仍然适用）。
 
 ---
 
-## What this skill does NOT do
+## 本技能不做的事
 
-- Make disciplinary decisions — it supports the attorney's findings,
-  not HR's action
-- Guarantee privilege — privilege depends on how the investigation is
-  structured, not on how the memo is labeled
-- Process documents it cannot read — if files are in formats that cannot
-  be parsed, flag them for manual review
-- Conduct interviews — it logs interview notes, it does not interview witnesses
-- Replace Upjohn warnings — it tracks whether they were given, it does not
-  give them
+- 不作处理决定——它支持律师的事实认定，不替 HR 拍板
+- 不保证保密——中国法下没有调查材料的独立特权，保密取决于调查怎么组织、材料怎么管，不取决于怎么标注
+- 不处理读不了的文件——格式无法解析的，标出来交人工审查
+- 不做访谈——只记录访谈笔录，不替代调查人员访谈证人
+- 不替代访谈告知——只跟踪是否告知并记录，不代为告知
+- 不决定是否报案——只提示可能涉嫌的罪名和取证注意事项
 
-## Close with the next-steps decision tree
+## 以下一步决策树收尾
 
-End with the next-steps decision tree per CLAUDE.md `## Outputs`. Customize the options to what this skill just produced — the five default branches (draft the X, escalate, get more facts, watch and wait, something else) are a starting point, not a lock-in. The tree is the output; the lawyer picks.
-
+按 CLAUDE.md `## 输出` 的格式，以下一步决策树收尾。选项按本次产出定制——五个默认分支（起草 X、上报、获取更多事实、观察等待、其他）是起点，不是固定模板。决策树本身就是输出，由律师选择。

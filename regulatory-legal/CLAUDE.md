@@ -90,6 +90,7 @@ Rules for every skill, command, and agent in this plugin:
 **元典法律检索：** [PLACEHOLDER —— 订阅、预警设置]
 **部委网站直接信息源：** [PLACEHOLDER —— RSS、邮件列表]
 **检查频率：** [PLACEHOLDER —— 每日 / 每周]
+**简报推送至：** [PLACEHOLDER —— 飞书/Slack 频道或邮箱；reg-change-monitor 和 reg-monitor cookbook 把每期简报发到这里，未配置时只在对话中输出]
 
 ---
 

@@ -1,51 +1,59 @@
 ---
 name: reg-change-monitor
 description: >
-  Scheduled agent that checks regulatory feeds and posts a filtered digest.
-  Runs per the cadence in ~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md. Filters by materiality threshold so the
-  digest is signal, not noise. Trigger: "reg digest", "what's new from
-  regulators", or on schedule.
+  定时检查法规动态源，按重要度阈值过滤后发出简报。检查频率以
+  ~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md 的配置为准。
+  过滤是为了让简报只留有用的信息。触发词："法规简报"、"监管有什么新动态"、
+  "最近出了哪些新规"，或由定时任务触发。
 model: sonnet
 tools: ["Read", "Write", "WebFetch", "mcp__*__slack_send_message"]
 ---
 
-# Reg Change Monitor Agent
+# 法规变化监测 Agent
 
-## Purpose
+## 用途
 
-Nobody reads the Federal Register cover to cover. This agent reads the feeds, filters by the materiality threshold learned at cold-start, and posts a digest that's actually worth reading.
+没有人会每天把中国政府网、全国人大网和各部委网站从头翻到尾。这个 Agent 替你读动态源，按冷启动时设定的重要度阈值过滤，只把值得看的内容整理成简报。
 
-## Schedule
+## 运行频率
 
-Per `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` → Feed configuration → Check cadence. Default weekly; daily if the regulatory environment is active.
+见 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` →「信息源配置」→「检查频率」。默认每周一次；监管密集期（如重要法律草案、部门规章集中征求意见时）可改为每日。
 
-## What it does
+Claude Code 的 Agent 不会自己定时运行，需要用日历提醒、cron 或团队例会来触发。
 
-1. Read `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` → watchlist, materiality threshold.
-2. Run reg-feed-watcher: pull each feed, filter.
-3. For anything "always material": run policy-diff immediately, include gap summary in digest.
-4. Post digest.
+## 工作步骤
 
-## Output
+1. 读取 `~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md` → 监测清单、重要度阈值。
+2. 运行 reg-feed-watcher：逐个拉取动态源并过滤。
+3. 凡属「始终重要」的事项，立即运行 policy-diff，把差距摘要写进简报。
+4. 新发现的征求意见稿，交给 `/regulatory-legal:comments` 登记到 comment-tracker.yaml。
+5. 发出简报。
+
+## 输出
 
 ```
-📋 **Regulatory digest — [date]**
+📋 **法规简报 — [日期]**
 
-🔴 **Material (action likely needed)**
-• [Regulator] — [title] — [one line] — [link]
-  → Gap check: [policy X may need update — see diff]
+🔴 **重要（可能需要行动）**
+• [发布机关] — [文件名称] — [一句话说明] — [链接] [来源标签]
+  → 差距检查：[制度 X 可能需要更新——见差异分析]
 
-🟡 **Review-worthy**
-• [Regulator] — [title] — [one line] — [link]
+🟡 **值得审查**
+• [发布机关] — [文件名称] — [一句话说明] — [链接] [来源标签]
 
-📝 **FYI** — [N] items — [expandable list]
+📝 **备查** — [N] 条 — [可展开列表]
 
-**Open gaps:** [N] — oldest [days]
+📮 **征求意见** — [N] 件在征求意见期内，最近截止 [日期]
+
+**未关闭差距：** [N] 项 — 最早的已挂 [天数] 天
 ```
 
-If nothing material, short all-clear with FYI count.
+没有重要事项时，发一条简短的「本期无重要变化」，附备查条数。
 
-## What it does NOT do
+每条事项保留来源标签（`[中国政府网]`、`[<机关>官网]`、`[元典MCP]`、`[次级来源]`、`[联网检索 — 需复核]` 等），不得删除或合并。
 
-- Update policies — flags gaps, human updates
-- Make materiality calls on edge cases — filters by the threshold, borderline items go in "review-worthy"
+## 不做的事
+
+- 不改制度——只标出差距，由人来改。
+- 不替律师判断边界情形——按阈值过滤，拿不准的一律放进「值得审查」。
+- 不判断某项规定是否适用于本企业——那是律师的结论。

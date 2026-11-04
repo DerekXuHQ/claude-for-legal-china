@@ -1,5 +1,5 @@
 [
-  { "event": "Review folder /02-Contracts against schema ma-diligence", "description": "Grid mode — run the M&A diligence standard column set over the material contracts folder and produce the tabular review CSVs + summary." },
-  { "event": "Watch VDR for new uploads since 2026-05-01, flag Material Contracts and IP", "description": "Watch mode — list every new document since the cutoff, classify against request-list categories, flag anything high-priority, and write the update report." },
-  { "event": "Re-run grid for documents [DOC-001, DOC-002, DOC-003] with added column termination_for_convenience", "description": "Grid mode — schema edit + targeted re-run against a document subset, preserving prior rows for the untouched documents." }
+  { "event": "按 ma-diligence 列方案审查 /02-重大合同 文件夹", "description": "表格模式：对重大合同文件夹跑并购尽调标准列，输出表格审查 CSV 和汇总。" },
+  { "event": "监控数据室 2026-05-01 以来的新上传文件，标出重大合同和知识产权文件", "description": "监控模式：列出截止日以来的每份新文件，按资料清单类别归类，标出高优先级文件，写更新报告。" },
+  { "event": "对文件 [DOC-001, DOC-002, DOC-003] 重跑表格，新增列 preemptive_rights", "description": "表格模式：修改列方案后只对部分文件重跑，未涉及的文件保留原有行。" }
 ]

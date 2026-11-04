@@ -1,32 +1,36 @@
-# Clinic deadline ledger — legal-clinic
+# 诊所期限台账 — legal-clinic
 #
-# Populated by /legal-clinic:deadlines --add (or by extraction from /client-intake,
-# /draft, /status when those skills surface a deadline). Read by
-# /legal-clinic:deadlines --report for cross-case rollup.
+# 由 /legal-clinic:deadlines --add 写入（/client-intake、/draft、/status 发现期限时
+# 也会提取过来）。/legal-clinic:deadlines --report 读取本文件，做跨案件汇总。
 #
-# Missed deadlines in clinic work are malpractice exposure for the
-# supervising attorney. Treat this file as the operational record.
+# 诊所案件错过期限，指导律师要承担执业风险。把本文件当作正式的工作记录。
+#
+# 注意：键名和下面的枚举值（英文）由技能解析，保持英文不要翻译。
+# 括号里的中文只是说明。
 #
 # ──────────────────────────────────────────────────────────────────────────
-# Schema
+# 字段结构
 # ──────────────────────────────────────────────────────────────────────────
-# - id:             string (slug: [case]-[short-description]-[YYYY-MM])
-#   case_id:        string — references the case / client in intake system
-#   case_name:      string — human-readable case name
-#   practice_area:  immigration | housing | family | consumer | criminal-defense | civil-rights | other
+# - id:             string（slug：[案件]-[简述]-[YYYY-MM]）
+#   case_id:        string — 对应接案系统里的案件或当事人
+#   case_name:      string — 便于阅读的案件名称
+#   practice_area:  immigration | housing | family | consumer | criminal-defense | civil-rights | labor | administrative | other
+#                   （出入境 | 房屋租赁与物业 | 婚姻家庭 | 消费者权益 | 刑事辩护 | 公民权利 | 劳动争议 | 行政纠纷 | 其他）
 #   type:           filing | hearing | statute-of-limitations | discovery | cure-period | response | notice | other
-#   description:    string — one-line what's due
+#                   （递交/立案 | 开庭 | 诉讼时效/仲裁时效 | 举证期限 | 催告履行期 | 答辩/回复 | 通知 | 其他）
+#   description:    string — 一句话写清要办什么
 #   due_date:       YYYY-MM-DD
-#   time:           HH:MM (optional; for hearings or filing deadlines with specific cutoffs)
-#   timezone:       string (optional; default from CLAUDE.md jurisdiction)
-#   source:         string — where the deadline came from (court order, statute, client doc, etc.)
-#   owner_student:  string — which student owns this deadline
-#   owner_attorney: string — supervising attorney (usually from CLAUDE.md)
+#   time:           HH:MM（可选；开庭或有具体截止时刻的递交）
+#   timezone:       string（可选；默认取 CLAUDE.md 里的管辖地，一般为 Asia/Shanghai）
+#   source:         string — 期限从哪里来（法院通知、法律规定、当事人材料等）
+#   owner_student:  string — 负责该期限的学生
+#   owner_attorney: string — 指导律师或指导老师（通常取自 CLAUDE.md）
 #   status:         upcoming | today | overdue | completed | closed
+#                   （未到期 | 今日到期 | 已逾期 | 已完成 | 已关闭）
 #   completed_date: YYYY-MM-DD | null
 #   notes:          string | null
 #   created:        YYYY-MM-DD
-#   created_by:     string — student who logged it
+#   created_by:     string — 登记该期限的学生
 # ──────────────────────────────────────────────────────────────────────────
 
 deadlines: []

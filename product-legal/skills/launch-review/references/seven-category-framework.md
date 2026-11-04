@@ -1,135 +1,106 @@
-# Eight-Category Launch Review Framework
+# 八类别产品上线审查框架
 
-Default framework if the team doesn't have their own. Adapted from internal
-product-legal practice. Each category has a key question and an auto-skip
-condition.
+团队没有自己的审查框架时，默认用这一套。它来自产品法务的内部实践，每个类别给出一个核心问题和一个可跳过的条件。（文件名沿用早期的"七类别"，内容已扩展为八类。）
 
-The categories are stable framing concepts. What counts as "Needs work" vs.
-"Blocker" *within* a category depends on the applicable jurisdictions, sector
-regimes, and the company's own calibration in `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md`. Research the
-regulatory regimes applicable to the product's sector, audience, and
-jurisdictions before concluding that a specific fact pattern is or isn't a
-problem.
+八个类别是稳定的分析框架。至于同一类别里什么算"需付出工作量"、什么算"阻断上线"，取决于适用的法域、行业监管和公司在 `~/.claude/plugins/config/claude-for-legal-zh/product-legal/CLAUDE.md` 中的风险校准。判断某个具体事实是否构成问题之前，先查清产品所在行业、面向的用户和覆盖地区适用哪些监管规定。
 
-## 1. Contractual commitments
+下文列举的法规名称只是检索起点，不代表现行有效版本。引用条号、生效日期或备案要求前，按插件 CLAUDE.md 的时效规则到官方来源核实；本文所列条文和日期默认视为 `[模型知识 — 需验证]`。
 
-**Key question:** Does this conflict with any customer-facing promise?
+## 1. 合同承诺
 
-Check: Terms of Service, SLA commitments, marketing materials, customer
-contracts (especially enterprise MSAs with custom terms), published
-documentation.
+**核心问题：** 是否与对用户、客户作出的承诺相冲突？
 
-**Auto-skip if:** No customer-facing changes — internal tool, infra, or change
-invisible to users.
+检查：用户协议和服务条款、SLA 承诺、营销物料、客户合同（尤其是带定制条款的企业客户框架协议）、对外发布的产品文档。
 
-**Common findings:**
-- New feature contradicts a ToS restriction
-- SLA implications of a new dependency
-- Feature marketed as "included" moving to a paid tier
+**可跳过：** 没有面向客户的改动，例如内部工具、基础设施，或用户感知不到的变化。
 
-## 2. Privacy
+**常见问题：**
+- 新功能与用户协议中的限制性条款冲突
+- 新增依赖影响 SLA
+- 宣传为"包含在内"的功能改为付费，涉及《消费者权益保护法》及其实施条例、《电子商务法》对变更服务内容和收费规则的要求
+- 自动续费、会员权益调整未按规定显著提示
 
-**Key question:** New data collection, new purpose, or new sharing?
+## 2. 个人信息保护
 
-Check: What data is touched, whether it's new or existing, whether the purpose
-is covered by the current privacy policy, whether any new third party sees it.
-Research the applicable privacy regimes for the affected users' jurisdictions
-before concluding whether a new notice, consent, or assessment is required.
+**核心问题：** 是否新增收集个人信息、改变处理目的，或向新的第三方提供？
 
-**Auto-skip if:** No data changes — pure UI, pure infra without new logging.
+检查：涉及哪些个人信息，是新增的还是已有的；新目的是否在现行隐私政策（个人信息处理规则）覆盖范围内；是否有新的第三方（含第三方 SDK）接触到数据；是否涉及敏感个人信息或不满十四周岁未成年人的个人信息；是否需要单独同意；是否触发个人信息保护影响评估（《个人信息保护法》第55条）。数据出境的，另看《个人信息保护法》第三章和数据出境相关规定。判断是否需要更新告知、取得同意或开展评估前，先查清受影响用户所在地的适用规则。
 
-**Common findings:** See the privacy-legal plugin's PIA skill.
+**可跳过：** 数据没有任何变化，例如纯界面调整，或没有新增日志的纯基础设施改动。
 
-## 3. Security
+**常见问题：** 见 privacy-legal 插件的影响评估技能（`/privacy-legal:pia-generation`）。
 
-**Key question:** New attack surface?
+## 3. 数据安全
 
-Check: new endpoints, new data at rest, new access paths, new auth requirements.
+**核心问题：** 是否增加了新的攻击面？
 
-**Auto-skip if:** UI-only change, no backend. (But check that it really is
-UI-only — "UI change" that adds a new API call is not.)
+检查：新接口、新增落盘数据、新的访问路径、新的鉴权要求；是否涉及重要数据或数据分类分级的调整；是否影响网络安全等级保护定级。
 
-**Not legal's call alone** — loop security team. Legal's role is ensuring the
-security review happened and any findings are addressed.
+**可跳过：** 只改界面、没有后端变化。（要确认真的只改界面：一个"界面调整"如果新增了接口调用，就不是。）
 
-## 4. IP
+**不是法务一家能定的事**，要拉上安全团队。法务的职责是确认安全评审已经做过，发现的问题已经处理。
 
-**Key question:** Any third-party code, content, or potentially infringing output?
+## 4. 知识产权
 
-Check: new open-source dependencies (license compatibility — some copyleft
-licenses create obligations inconsistent with a proprietary product; research
-the specific license), third-party content (stock images, fonts, datasets),
-features that output content that could infringe (AI generation, user
-uploads displayed publicly).
+**核心问题：** 是否用到第三方代码、内容，或者产出可能侵权的内容？
 
-**Auto-skip if:** No new dependencies, no content generation, no user uploads.
+检查：新增开源依赖的许可证兼容性（部分 copyleft 许可证会带来与闭源产品不相容的义务，要具体查看该许可证）；第三方内容（图库图片、字体、数据集）的授权范围；会产出可能侵权内容的功能（AI 生成、公开展示用户上传内容）。
 
-**Common findings:**
-- Copyleft license in a new dependency
-- Training data provenance unclear
-- User-generated content without a notice-and-takedown process — research the
-  applicable safe-harbor regime
+**可跳过：** 没有新依赖、不生成内容、不涉及用户上传。
 
-## 5. Third-party interactions
+**常见问题：**
+- 新依赖使用 copyleft 许可证
+- 训练数据来源不清（《生成式人工智能服务管理暂行办法》要求使用具有合法来源的数据和基础模型）
+- 用户上传内容没有建立通知—删除机制，要查清适用的避风港规则（《民法典》第1195条至第1197条、《信息网络传播权保护条例》、《电子商务法》第42条至第45条）
+- 商用字体、图片超出授权范围
 
-**Key question:** New vendor, partner, or integration?
+## 5. 第三方合作
 
-Check: is there a contract, is there a data processing agreement if data
-flows, is the third party's failure our problem (uptime, security).
+**核心问题：** 是否引入新的供应商、合作方或集成？
 
-**Auto-skip if:** No new external parties.
+检查：是否签了合同；有数据流转的，是否签了委托处理协议或数据共享协议（《个人信息保护法》第21条、第23条）；第三方出问题（可用性、安全事件）是否会变成我们的问题。
 
-**Common findings:**
-- New vendor without a DPA
-- Integration partner with different data practices
-- API dependency without SLA
+**可跳过：** 没有新的外部主体。
 
-## 6. Regulatory / sector-specific
+**常见问题：**
+- 新供应商没有签委托处理协议
+- 集成合作方的数据处理方式与我们不一致
+- 依赖的接口没有 SLA
+- 接入第三方 SDK 未在隐私政策中披露
 
-**Key question:** Does this touch a regulated sector, audience, or jurisdiction?
+## 6. 行业监管
 
-Research the regulatory regimes applicable to the product's sector (for
-example, health, financial services, children and students, insurance,
-telecommunications, employment, advertising), audience, and jurisdictions
-(US federal, US state, EU, UK, and other regions the product reaches). Also
-consider accessibility and export-control regimes where relevant. Cite the
-controlling primary sources and verify currency — regulated sectors and
-jurisdictions change frequently.
+**核心问题：** 是否涉及受监管的行业、特殊用户群体或新的地区？
 
-**Auto-skip if:** Same users, same sectors, same jurisdictions as the existing
-product — nothing new in regulatory scope.
+查清产品所在行业（如医疗健康、金融支付、教育、未成年人、保险、电信和增值电信业务、网络游戏、新闻信息和网络视听、劳动用工、广告）、面向的用户和覆盖地区适用哪些监管规定。常见的有：增值电信业务经营许可和 ICP 备案、App 备案、网络出版和游戏版号、互联网新闻信息服务许可、《非银行支付机构监督管理条例》、互联网诊疗和医疗器械软件相关规定、《未成年人保护法》和《未成年人网络保护条例》。必要时还要看无障碍（《无障碍环境建设法》）和出口管制（《出口管制法》《两用物项出口管制条例》）。产品出海或面向港澳台用户的，单独识别当地法域，不要把大陆规则直接套用。引用规定时以原始来源为准，并核实是否为现行版本，受监管行业的规则变化很快。
 
-**Common findings:**
-- Expansion into a regulated sector without the supporting infrastructure
-  (contracts, controls, disclosures) the regime requires
-- Feature that could be used by a regulated audience (e.g., children) without
-  the protections the applicable regime requires
-- International expansion into a jurisdiction with localization, licensing, or
-  notice requirements
+**可跳过：** 用户、行业、地区都与现有产品相同，监管范围没有新增。
 
-## 7. Marketing claims
+**常见问题：**
+- 进入受监管行业，但还没有监管要求的配套（资质许可、合同、内控、披露）
+- 功能可能被特殊群体（如未成年人）使用，但没有落实相应的保护措施（未成年人模式、防沉迷、监护人同意等）
+- 拓展到新地区，当地有数据本地化、许可或告知要求
 
-**Key question:** Any claims that need substantiation?
+## 7. 营销宣传
 
-See the marketing-claims-review skill.
+**核心问题：** 是否有需要证据支撑的宣传用语？
 
-**Auto-skip if:** No marketing component — silent launch, internal feature, flag flip.
+重点看《广告法》（绝对化用语、比较广告、证明材料、特殊商品广告）、《反不正当竞争法》（虚假或引人误解的商业宣传）、《互联网广告管理办法》（广告可识别性、"广告"标注）。详见 `/product-legal:marketing-claims-review` 技能。
 
-## 8. AI governance
+**可跳过：** 没有营销环节，例如静默上线、内部功能、开关切换。
 
-**Key question:** Does this use AI in any form? Is the use case in the
-registry? Is an AI impact assessment done? Have vendor AI terms been reviewed?
+## 8. AI 治理
 
-Check: third-party models, internally built models, AI-powered vendor
-features, automated scoring or classification, generative content,
-recommendations, predictions. Research the applicable AI governance regimes
-for the affected users' jurisdictions and the use case type — AI-specific
-rules are evolving and vary substantially by region and sector.
+**核心问题：** 是否用到任何形式的 AI？用例是否已登记在 AI 用例登记册中？是否完成算法备案、生成式人工智能服务备案或登记、安全评估？供应商的 AI 条款是否已经审过？
 
-**Auto-skip if:** No AI component detected.
+检查：第三方模型、自研模型、供应商产品中的 AI 功能、自动化评分或分类、生成内容、推荐、预测。可能适用的规定包括《生成式人工智能服务管理暂行办法》《互联网信息服务算法推荐管理规定》《互联网信息服务深度合成管理规定》《人工智能生成合成内容标识办法》《具有舆论属性或社会动员能力的互联网信息服务安全评估规定》，以及《个人信息保护法》第24条关于自动化决策的规定。AI 规则还在快速演进，不同行业、不同用例差别很大，引用前先核实现行要求 `[模型知识 — 需验证]`。
 
-**Common findings:**
-- Use case not in the AI registry
-- Vendor AI terms permit training on inputs
-- Automated decision-making without a human-in-the-loop design where one may
-  be required
+**可跳过：** 没有检测到 AI 组件。
+
+**常见问题：**
+- 用例未登记在 AI 用例登记册中
+- 面向公众提供生成式服务或具有舆论属性的算法推荐，但未完成备案或安全评估
+- 生成合成内容没有按规定添加显式或隐式标识
+- 算法推荐未向用户提供关闭个性化推荐的选项
+- 供应商的 AI 条款允许用我们的输入数据训练模型
+- 自动化决策对个人权益有重大影响，却没有设计人工复核环节，也没有向个人说明或提供拒绝的途径

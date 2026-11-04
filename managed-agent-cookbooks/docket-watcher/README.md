@@ -1,58 +1,79 @@
-# Docket Watcher — managed-agent template
+# 案件进度监控（Docket Watcher）托管 Agent 模板
 
-## Overview
+## 概述
 
-Monitors court dockets for matters in the active litigation portfolio. 人民法院案例库 covers published judgments; 裁判文书网 covers trial-court filings; 元典/聚法案例 supplements for broader coverage. For each active matter the agent pulls new filings since the last check, maps filing types to candidate deadlines, cross-references against the matter's history and open deliverables, and produces a docket status report plus a structured deadline feed.
+按排程检查诉讼案件组合里每个在办案件的进度：拉取上次检查以来的新节点和新文书（受理、举证通知、开庭传票、判决裁定送达、上诉、执行立案等），按文书类型推算候选期限，再和案件历史、待办事项逐案比对，最后输出一份案件进度报告和一份结构化的期限清单。
 
-Same source as the [`docket-watcher`](../../litigation-legal/agents/docket-watcher.md) agent in the litigation-legal Claude Code plugin — this directory is the Managed Agent cookbook for `POST /v1/agents`.
+与 litigation-legal 插件里的 [`docket-watcher`](../../litigation-legal/agents/docket-watcher.md) Agent 同源。本目录是它的托管 Agent cookbook，用于 `POST /v1/agents`。
 
-## ⚠️ Before you deploy
+### 数据从哪里来
 
-- **Computed deadlines are leads, not calendar entries.** Court deadline rules vary by jurisdiction, court, judge, and local rule, and can be modified by standing order or case-specific case management order. Missing a court deadline has malpractice consequences. A licensed attorney verifies every computed deadline against the court's actual rules and any case-specific orders before it is docketed. The agent is upstream of that decision, not a substitute for it.
-- **Filing classifications are heuristic.** A filing the agent misclassifies — an administrative motion read as a dispositive motion, a stipulation read as a discovery dispute — can produce a wrong deadline rule. Read the filing; do not trust the label.
-- **An unknown court is not a default.** If the jurisdiction-rule table does not cover a court, the mapper must produce `confidence: low` + `needs_verification: true`, never a silent default. If you see a confident deadline on an obscure court, treat the rule table as stale until proven otherwise.
-- **A quiet docket is not a clean docket.** Clerks docket late. Minute entries sometimes arrive days after the event. "No new filings" is a statement about the feed, not a statement about the case.
+中国法院的案件进度没有统一的公开 API，这一点和美国的 PACER 不同。下面这些官方网站都只提供网页查询，不提供公开接口：
 
-## Deploy
+| 来源 | 网址 | 能查什么 | 2026-11-03 访问检查 |
+|---|---|---|---|
+| 中国审判流程信息公开网 | https://splcgk.court.gov.cn/ | 当事人及代理律师凭账号查看本案流程节点、送达记录 | 可访问（200） |
+| 人民法院诉讼服务网 | https://ssfw.court.gov.cn/ | 网上立案、阅卷、送达等诉讼服务入口 | 可访问，跳转到 zxfw.court.gov.cn 登录页 `[模型知识 — 需验证：平台名称和入口可能已调整]` |
+| 中国庭审公开网 | https://tingshen.court.gov.cn/ | 庭审直播、录播及排期 | 可访问（200） |
+| 人民法院公告网 | https://rmfygg.court.gov.cn/ | 公告送达、开庭公告等；公告送达自发出公告之日起经过 30 日视为送达（涉外 60 日） | 可访问（200） |
+| 中国裁判文书网 | https://wenshu.court.gov.cn/ | 已公开的裁判文书，上网通常滞后 | 可访问（200） |
+
+中国执行信息公开网（zxgk.court.gov.cn）检查时返回 403（站点有反爬防护），本模板没有把它列为数据源；需要查执行信息的，由律师人工登录查询。
+
+所以 `docket-reader` 用的两个 MCP 连接需要部署方自己准备：
+
+- **`yuandian`**（华宇元典）：检索已公开的裁判文书和案例，用来补充判决、裁定内容。它不提供在办案件的实时流程节点。
+- **`court_portal`**：部署方自建的连接器，把律所案件管理系统里的案件节点（通常由承办律师从审判流程信息公开网、诉讼服务网、短信或电子送达中录入）以只读方式提供给 Agent。不要用它去自动抓取需要登录的法院网站：这些网站有账号和使用规则限制，批量抓取可能违反平台规定。
+
+## ⚠️ 部署前必读
+
+- **推算出的期限只是线索，不能直接排进日程。** 期限规则会因案件类型、审判程序（普通、简易、小额诉讼）、法院和承办法官而不同，还会被举证通知书、开庭传票等个案文书改变。错过法定期间可能构成执业过失。每个推算出的期限，都要由执业律师对照法律、司法解释和本案文书核实后，才能登记入册。本 Agent 在这个决定的上游，不能替代它。
+- **文书分类靠的是启发式判断。** 一份文书分错类，比如把管辖权异议裁定当成实体裁定、把调解书当成判决书，就会套错期限规则。要读文书本身，不要相信标签。
+- **没配置的法院不能套默认规则。** 规则表里没有覆盖的法院，deadline-mapper 必须输出 `confidence: low` 加 `needs_verification: true`，不能悄悄套用默认值。如果看到一个冷门法院的期限被标成高置信度，先当规则表过期处理，核实之后再说。
+- **没有新节点不等于案件没有变化。** 流程节点录入会延迟，裁判文书上网更慢，邮寄送达的签收日也可能比系统显示的晚几天。「无新进文书」只说明数据源没有更新，不说明案件没有动静。
+
+## 部署
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-export YUANDIAN_MCP_URL=...
-export CAIPANWENSHU_MCP_URL=...
-export FEISHU_MCP_URL=...
+export YUANDIAN_MCP_URL=...        # 华宇元典 MCP
+export COURT_PORTAL_MCP_URL=...    # 部署方自建：律所案件管理系统里的案件节点（只读）
+export FEISHU_MCP_URL=...          # 报告交付渠道
 ../../scripts/deploy-managed-agent.sh docket-watcher
 ```
 
-## Steering events
+## 调度事件示例
 
-See [`steering-examples.json`](./steering-examples.json).
+见 [`steering-examples.json`](./steering-examples.json)。
 
-## Security & handoffs
+## 安全隔离与交接
 
-Court filings are public records, but they are also UNTRUSTED INPUT. The filer controls the text and can embed prompts, URLs, and instructions aimed at the agent. Three-tier isolation:
+法院文书和公告虽然是公开记录，但对 Agent 来说是**不可信输入**：文书内容由提交方控制，里面可能夹带针对 Agent 的提示、网址和指令。因此分三层隔离：
 
-| Tier | Touches filings? | Tools | Connectors |
+| 层级 | 是否接触文书？ | 工具 | 连接器 |
 |---|---|---|---|
-| **`docket-reader`** | **Yes** | `Read`, `Grep` only | yuandian, caiPanWenShu (read-only) |
-| `deadline-mapper` / Orchestrator | No — sees structured JSON only | `Read`, `Grep`, `Glob`, `Agent` | feishu (jurisdiction config, read-only) |
-| **`tracker-writer`** (Write-holder) | No | `Read`, `Write`, `Edit` | None |
+| **`docket-reader`** | **是** | 只有 `Read`、`Grep` | yuandian、court_portal（只读） |
+| `deadline-mapper` / 编排器 | 否，只看结构化 JSON | `Read`、`Grep`、`Glob`、`Agent` | 无（规则表从部署方本地配置读取） |
+| **`tracker-writer`**（唯一有写权限） | 否 | `Read`、`Write`、`Edit` | 无 |
 
-`docket-reader` returns length-capped, schema-validated JSON. `deadline-mapper` has no MCP and no web — it applies rules the deploying team has configured. `tracker-writer` produces `./out/docket-report-<date>.md` and `./out/deadlines.yaml` and never sees raw filings.
+编排器的 `mcp_servers` 里声明了 `yuandian`、`court_portal`、`feishu` 三个连接，但它自己不持有任何 `mcp_toolset`，MCP 工具只授予 `docket-reader` 这个叶子节点。
 
-## Adaptation notes
+`docket-reader` 返回有长度上限、经过 schema 校验的 JSON。`deadline-mapper` 没有 MCP，也不能上网，只套用部署方配置好的规则。`tracker-writer` 生成 `./out/docket-report-<date>.md` 和 `./out/deadlines.yaml`，从不接触原始文书。
 
-This cookbook is a starting point. It will not work in production until you have done the following:
+## 改造清单
 
-- **Set the MCP URLs.** `YUANDIAN_MCP_URL` and `CAIPANWENSHU_MCP_URL` must point at your deployment's endpoints, with whatever authentication your platform requires. `FEISHU_MCP_URL` (or a substitute) points at wherever your jurisdiction-rule tables live.
-- **Load the portfolio.** The agent reads `matters/_log.yaml` plus the per-matter `docket_id` and `court` from the deploying team's litigation-legal configuration. If your docketing system is the source of truth, front it with an MCP or a scheduled sync into the config path.
-- **Configure jurisdiction rules.** Ship the deadline-mapper a local-rule table for every court in your portfolio. Federal rules you can encode once; state trial courts and individual judges are where the landmines live. An unknown court should produce `confidence: low` + `needs_verification: true`, never a silent default.
-- **Wire delivery.** Decide where the output goes: your docketing system ingests `./out/deadlines.yaml`; the narrative report goes to Slack, email, or your matter management workspace; critical flags route to whoever you want woken up.
-- **Set the schedule.** Weekly for most matters; daily for anything with a hearing inside 14 days, any `trial` or late-`discovery` posture, or any `risk: critical` matter.
+这个 cookbook 只是起点，做完下面几件事才能上生产：
 
-## Computed deadlines are leads, not calendar entries
+- **配置 MCP 地址。** `YUANDIAN_MCP_URL` 和 `COURT_PORTAL_MCP_URL` 指向你自己的部署端点，并按平台要求配好认证。`court_portal` 需要你自建，对接律所案件管理系统，或经授权的数据服务商。
+- **加载案件组合。** Agent 读取 `matters/_log.yaml`，以及部署方 litigation-legal 配置里每个案件的 `docket_id`（案号）和 `court`（受理法院）。如果你的权威记录在律所案件管理系统里，用 MCP 接入，或者定时同步到配置路径。
+- **配置期限规则表。** 给 deadline-mapper 一张覆盖组合内所有法院的规则表。民事诉讼法及其司法解释、刑事诉讼法、仲裁法和仲裁规则这类全国统一的规则可以一次写好；各地高院的审判指导意见、仲裁机构规则、个案举证通知书是最容易出错的地方。没覆盖的法院必须输出 `confidence: low` 加 `needs_verification: true`，不能悄悄套用默认值。
+- **接好交付渠道。** 决定输出去哪里：`./out/deadlines.yaml` 导入律所案件管理系统；文字报告发到飞书、邮件或案件协作空间；紧急事项推给需要第一时间知道的人。
+- **设定频率。** 多数案件每周一次；14 日内有开庭、处于庭审或举证后期、或标记 `risk: critical` 的案件，每天一次。
 
-**The computed deadlines this agent produces require human verification against the controlling local rule, standing order, and case management order before they are calendared. Missing a court deadline has malpractice consequences. This agent surfaces deadlines; a human verifies and dockets them.**
+## 推算出的期限只是线索
 
-Every deadline carries `confidence` and `needs_verification` fields. The report segregates low-confidence entries and stamps a verification callout on anything not derived from an unambiguous federal rule. Treat that as the minimum — not the ceiling — of human review. Judges override defaults by individual order, local rules change, and the date the clerk actually docketed service may differ from the date the docket displays.
+**本 Agent 推算出的期限，必须由人对照法律、司法解释、本院规定和本案文书（受理通知书、举证通知书、开庭传票等）核实后才能登记入册。错过法定期间可能构成执业过失。本 Agent 负责发现期限，核实和登记由人完成。**
 
-**Not guaranteed:** this agent recommends a deadline; the docketing attorney confirms against the controlling rule and books the date.
+每个期限都带 `confidence` 和 `needs_verification` 两个字段。报告会把低置信度的期限单独列出，凡不是由一条明确的全国性法律规定直接推出的期限，都加核实提示。这只是人工审核的下限，不是上限：法官可以在个案中另行指定期间，地方规定会变，实际送达日（尤其是邮寄送达的签收日、公告送达的期满日）也可能和系统显示的不一样。
+
+**不作保证：** 本 Agent 只给出期限建议，由负责登记的律师对照依据确认并登记。

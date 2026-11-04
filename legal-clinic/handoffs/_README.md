@@ -1,44 +1,47 @@
-# handoffs/ — end-of-semester case handoff memos
+# handoffs/ — 学期末案件交接备忘录
 
-Per-semester folder with one handoff memo per active case. Produced by `/legal-clinic:semester-handoff` at end of semester. Read by incoming students during `/ramp` for the cases they inherit.
+每学期一个文件夹，每个在办案件一份交接备忘录。学期末由 `/legal-clinic:semester-handoff` 生成；新学期接手的学生运行 `/ramp` 时，会读到自己接手案件的备忘录。
 
-## Layout
+## 目录结构
 
 ```
 handoffs/
-├── _README.md                             # this file
-└── [YYYY-semester]/                       # e.g., 2026-spring, 2026-fall
-    ├── _summary.md                        # cross-case rollup: what transitions, who to whom
-    ├── [case-id].md                       # one per active case
+├── _README.md                             # 本文件
+└── [YYYY-semester]/                       # 如 2026-spring、2026-fall
+    ├── _summary.md                        # 全部案件汇总：哪些案件交接、谁交给谁
+    ├── [case-id].md                       # 每个在办案件一份
     └── ...
 ```
 
-## Slug / folder conventions
+## 文件夹和文件命名
 
-Semester folder: `[year]-[spring|summer|fall]`. Examples:
+学期文件夹：`[年份]-[spring|summer|fall]`，分别对应春季学期、夏季学期（小学期）、秋季学期。例如：
+
 - `2026-spring`
 - `2026-summer`
 - `2026-fall`
 
-Case memo: use the case_id (from `deadlines.yaml` or the intake record). Consistent with other files per case.
+秋季学期跨年的，用开学所在年份（如 2026 年 9 月开学的秋季学期写 `2026-fall`）。
 
-## What a handoff memo contains
+案件备忘录：用 case_id 命名（来自 `deadlines.yaml` 或接案记录），与该案件的其他文件保持一致。
 
-- Case summary (facts, practice area, current posture)
-- Outgoing student's name + relationship built with client (if relevant)
-- Pending deadlines (pulled from `deadlines.yaml`)
-- Open issues / decisions pending
-- Communications history (pulled from `client-comms/[case-id]/log.md`)
-- Documents drafted / filed to date (pointers to case files)
-- What the incoming student needs to know / do first
-- Professor's flags for incoming student (if any)
+## 交接备忘录包括什么
 
-## Workflow
+- 案件概况（事实、业务领域、当前进展）
+- 离任学生姓名，以及与当事人建立的信任关系（如有必要）
+- 未到期的期限（取自 `deadlines.yaml`）
+- 未解决的问题和待定事项
+- 沟通历史（取自 `client-comms/[case-id]/log.md`）
+- 已起草、已提交的文书（指向案卷文件）
+- 新接手学生需要先了解、先办的事
+- 指导老师给新接手学生的提醒（如有）
 
-1. `/legal-clinic:semester-handoff` is run by the professor (or by departing students on their own cases) ~1-2 weeks before semester ends.
-2. Outputs per-case memos + summary.
-3. Incoming cohort runs `/legal-clinic:ramp` at start of next semester; `/ramp` surfaces the handoff memos for cases each new student is assigned.
+## 流程
 
-## Retention
+1. 学期结束前一到两周，由指导老师（或离任学生就自己的案件）运行 `/legal-clinic:semester-handoff`。
+2. 生成每个案件的备忘录和汇总。
+3. 下学期开始时，新一批学生运行 `/legal-clinic:ramp`；`/ramp` 会列出每个学生分到的案件的交接备忘录。
 
-Handoff memos stay on disk. Historical handoffs are useful for the clinic's own record of case transitions and for students looking at how a case evolved across semesters.
+## 保存
+
+交接备忘录留在磁盘上。历次交接记录既是诊所自己的案件交接档案，也方便学生看一个案件怎样跨学期推进。

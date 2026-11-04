@@ -1,42 +1,43 @@
-# matters/ — portfolio data
+# matters/ — 案件组合数据
 
-This folder holds the portfolio. Two layers:
+这个文件夹存放案件组合，分两层：
 
-- **`_log.yaml`** — the ledger. One row per matter. Parseable by skills. Source of truth for rollups.
-- **`[slug]/`** — per-matter detail. Narrative and history. Where humans read and edit.
+- **`_log.yaml`**：台账。一个案件一行，供技能解析，是汇总统计的权威来源。
+- **`[slug]/`**：单个案件的详细材料，包括案情叙述和历史记录，供人阅读和编辑。
 
-## Layout
+## 目录结构
 
 ```
 matters/
-├── _log.yaml                  # ledger (all matters, including closed)
-├── _README.md                 # this file
+├── _log.yaml                  # 台账（全部案件，含已结案）
+├── _README.md                 # 本文件
 └── [matter-slug]/
-    ├── matter.md              # narrative intake + theory + posture
-    └── history.md             # append-only event log
+    ├── matter.md              # 立案登记信息、诉讼思路、当前态势
+    └── history.md             # 只追加的事件记录
 ```
 
-## Slug conventions
+## 命名规则（slug）
 
-Lowercase, hyphens, year at the end. Examples:
-- `acme-v-us-2026`
-- `ftc-inquiry-2026`
-- `employment-smith-2026`
+小写字母，用连字符连接，年份放最后。例如：
 
-Year makes the slug stable even if a similar matter arises later. The folder name matches the slug exactly.
+- `acme-v-us-2026`（某某公司诉我方）
+- `samr-inquiry-2026`（市场监管部门调查）
+- `labor-zhang-2026`（劳动争议）
 
-## Who writes what
+带年份，以后再出现类似案件时 slug 也不会冲突。文件夹名与 slug 完全一致。slug 用拼音或英文，不用中文和真实姓名。
 
-| File | Written by | Edit directly? |
+## 谁写哪个文件
+
+| 文件 | 由谁写入 | 能否直接编辑？ |
 |---|---|---|
-| `_log.yaml` | `/matter-intake`, `/matter-update`, `/matter-close` | Yes, but reflect the change in the matter's `history.md` |
-| `matter.md` | `/matter-intake` at intake; appended by `/matter-close` | Yes, for evolving theory / posture notes |
-| `history.md` | `/matter-intake` seeds; `/matter-update` and `/matter-close` append | Append-only in practice — treat past entries as record |
+| `_log.yaml` | `/matter-intake`、`/matter-update`、`/matter-close` | 可以，但要在该案件的 `history.md` 里记一笔 |
+| `matter.md` | 立案登记时由 `/matter-intake` 写入；结案时 `/matter-close` 追加 | 可以，用于更新诉讼思路和态势 |
+| `history.md` | `/matter-intake` 建立；`/matter-update` 和 `/matter-close` 追加 | 实际上只追加，已有条目视为记录 |
 
-## Closed matters
+## 已结案件
 
-Stay here. Don't delete. `/portfolio-status` filters them from active rollups by default; `/portfolio-status --all` includes them. Closed matters are the training set for portfolio judgment.
+留在这里，不要删除。`/portfolio-status` 默认不把它们计入在办汇总，`/portfolio-status --all` 会包括。已结案件是判断整个案件组合的经验来源。
 
-## Corrections
+## 更正
 
-If a past history entry was wrong, don't edit it. Append a new entry that references and corrects it. The record of the correction is as important as the correction itself.
+历史条目写错了，不要改原条目。追加一条新记录，注明更正的是哪一条。更正的记录本身和更正内容一样重要。

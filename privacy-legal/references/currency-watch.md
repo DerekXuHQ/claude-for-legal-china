@@ -1,39 +1,59 @@
-# Privacy Currency Watch
+# 个人信息保护时效监测
 
-**Last verified: 2026-05-10.**
+**最近核实：2026-11-03。** 本次只核对了文中官网链接能否打开；各条目的施行日期和现行状态来自模型知识，凡标 `[模型知识 — 需验证]` 的，依赖前逐条到官方来源核对。
 
-> **⚠️ Staleness check.** If the last-verified date above is more than 90 days old, treat this file as stale and verify each entry before relying on it. A stale watch list is worse than no watch list — it looks current while being wrong. When a skill reads this file, check the last-verified date first. If stale, say: "The currency watch was last verified [date] — [N] months ago. I'm using it as a checklist of areas to search, not as a source of current status." When you update any entry, also update the last-verified date at the top.
+> **⚠️ 陈旧检查。** 上面的核实日期如果已超过 90 天，把本文件当作过时，逐条核实后再用。过时的监测清单比没有更糟——看起来是新的，其实已经不对。技能读取本文件时先看核实日期；过时的，要说明：「时效监测最近核实于 [日期]，已过去 [N] 个月。我只把它当作需要检索的领域清单，不当作现行状态的依据。」更新任何条目时，同步更新顶部的核实日期。
 
-Privacy law moves. Before relying on an effective date, threshold, or obligation, verify it. These are the areas most likely to have moved since model training:
+个人信息保护和数据合规的规则变得快。依赖施行日期、数量门槛或具体义务之前，先核实。以下是模型训练之后最可能已经变化的领域。核实来源：[国家法律法规数据库](https://flk.npc.gov.cn/)、[国家网信办](https://www.cac.gov.cn/)、[中国政府网](https://www.gov.cn/)、[全国网络安全标准化技术委员会](https://www.tc260.org.cn/)（以上网址 2026-11-03 检查可访问）。
 
-## COPPA (16 CFR Part 312)
+## 基础法律
 
-- **2025 Amendments — compliance deadline April 22, 2026.** Major changes: biometric identifiers and government IDs are now "personal information"; separate verifiable parental consent required for third-party disclosure tied to targeted advertising; written information security program mandatory; indefinite retention prohibited.
-- A plugin that knows pre-2025 COPPA looks competent while being stale. Verify at [FTC COPPA page](https://www.ftc.gov/legal-library/browse/rules/childrens-online-privacy-protection-rule-coppa).
+| 法律 | 施行 | 关注点 | 状态 |
+|---|---|---|---|
+| 《个人信息保护法》 | 2021-11-01 | 处理规则、敏感个人信息、自动化决策（第24条）、个人信息保护影响评估（第55条）、出境（第三章）、大型平台义务（第58条） | 现行有效 `[模型知识 — 需验证]` |
+| 《数据安全法》 | 2021-09-01 | 数据分类分级、重要数据、数据安全审查 | 现行有效 `[模型知识 — 需验证]` |
+| 《网络安全法》 | 2017-06-01 | 网络运营者义务、关键信息基础设施、等级保护 | 据模型知识，全国人大常委会已于 2025 年作出修改决定，自 2026-01-01 起施行，提高了法律责任并增加了人工智能相关条款。修改后条号和罚则须对照官方文本 `[模型知识 — 需验证]` |
 
-## State privacy laws (comprehensive)
+## 配套行政法规与部门规章
 
-The map grows every year. As of May 2026, comprehensive privacy laws in force or imminent: CA (CCPA/CPRA), VA, CO, CT, UT, IA, IN, TN, MT, OR, TX, FL, DE, NH, NJ, KY, MD, MN, NE, RI. Check the IAPP state law tracker for current effective dates and the most recent additions.
+| 规定 | 发布机关 | 施行 | 关注点 | 状态 |
+|---|---|---|---|---|
+| 《网络数据安全管理条例》 | 国务院 | 2025-01-01 | 个人信息保护一般规定、重要数据安全、网络数据跨境、平台义务 | 现行有效 `[模型知识 — 需验证]` |
+| 《数据出境安全评估办法》 | 国家网信办 | 2022-09-01 | 需申报安全评估的情形、评估有效期 | 现行有效，部分门槛已被《促进和规范数据跨境流动规定》调整 `[模型知识 — 需验证]` |
+| 《个人信息出境标准合同办法》 | 国家网信办 | 2023-06-01 | 标准合同适用条件、备案 | 现行有效，适用门槛已被调整 `[模型知识 — 需验证]` |
+| 《促进和规范数据跨境流动规定》 | 国家网信办 | 2024-03-22 | 豁免情形、安全评估 / 标准合同 / 认证的分档门槛、自贸区负面清单 | 现行有效 `[模型知识 — 需验证]`。分档门槛以该规定第七条至第九条原文为准 〔待核〕，不要凭记忆写人数 |
+| 《个人信息出境认证办法》 | 国家网信办、国家市场监督管理总局 | 2026-01-01 | 个人信息保护认证作为出境路径的具体程序 | 据模型知识于 2025 年公布 `[模型知识 — 需验证]` |
+| 《个人信息保护合规审计管理办法》 | 国家网信办 | 2025-05-01 | 定期合规审计、监管要求的审计；触发频次的人数门槛以办法原文为准 〔待核〕 | 现行有效 `[模型知识 — 需验证]` |
+| 《人脸识别技术应用安全管理办法》 | 国家网信办、公安部 | 2025-06-01 | 人脸识别的必要性、替代方式、备案 | `[模型知识 — 需验证]` |
+| 《国家网络身份认证公共服务管理办法》 | 公安部、国家网信办等 | 2025-07-15 | 网号、网证的使用与互联网平台接入 | `[模型知识 — 需验证]` |
+| 《网络安全事件报告管理办法》 | 国家网信办 | 2025-11-01 | 网络安全事件分级与报告时限 | `[模型知识 — 需验证]`。报告时限以办法原文为准 〔待核〕 |
+| 《未成年人网络保护条例》 | 国务院 | 2024-01-01 | 未成年人个人信息处理、合规审计、未成年人模式 | 现行有效 `[模型知识 — 需验证]` |
 
-## Cross-border transfers
+各地自贸试验区陆续发布数据出境负面清单，适用前确认企业所在自贸区是否已有清单及其版本 `[模型知识 — 需验证]`。
 
-- **EU-US DPF** in force since July 2023. Subject to Schrems III litigation — verify it's still valid before relying.
-- **UK-US Data Bridge** in force since October 2023.
-- **Swiss-US DPF** in force since September 2024.
-- For any transfer that relies on an adequacy decision, check the EU Commission's current adequacy list.
+## 国家标准（多为推荐性，但执法和评估中常被参照）
 
-## FTC enforcement trends
+| 标准 | 关注点 | 状态 |
+|---|---|---|
+| GB/T 35273《信息安全技术 个人信息安全规范》 | 隐私政策、告知同意、个人信息主体权利响应的实务基准 | 现行版本为 2020 版，是否已有修订以 [全国标准信息公共服务平台](https://std.samr.gov.cn/) 为准 `[模型知识 — 需验证]` |
+| GB/T 42574《信息安全技术 个人信息处理中告知和同意的实施指南》 | 告知同意的具体做法 | `[模型知识 — 需验证]` |
+| GB/T 43697《数据安全技术 数据分类分级规则》 | 数据分类分级、重要数据识别 | `[模型知识 — 需验证]` |
+| 《数据安全技术 敏感个人信息识别指南》 | 敏感个人信息的识别 | 据模型知识已于 2025 年发布，标准号和实施日期待核 `[模型知识 — 需验证]` |
 
-- **FTC v. Humor Rainbow/OkCupid (March 2026):** Undisclosed sharing of user data with a third party for AI training as a §5 violation. Flag for any DPA or privacy policy review involving AI training pathways.
-- Health data: FTC's expansive reading of the Health Breach Notification Rule (GoodRx, BetterHelp, Premom settlements). Verify current scope.
-- Dark patterns: FTC's pattern of treating confusing consent flows as deceptive. Verify current enforcement posture.
+全国网络安全标准化技术委员会还会发布「网络安全标准实践指南」（如个人信息出境认证、个人信息保护合规审计相关指南），更新频繁，用前到 tc260.org.cn 查最新版本。
 
-## DSAR response timelines
+## 执法动态
 
-CCPA: 45 days + 45-day extension with notice. GDPR: 1 month + 2-month extension. Other states vary — verify the specific state's window. The plugin defaults may be out of date for the newest states.
+- **App 违法违规收集使用个人信息专项治理。** 网信办、工信部、公安部、市场监管总局持续通报，常见问题是超范围收集、强制授权、未提供注销渠道、SDK 违规。审查隐私政策和 SDK 清单时对照最新通报 `[模型知识 — 需验证]`。
+- **数据出境。** 关注网信办公布的安全评估、标准合同备案的常见问题解答和申报指南更新，口径变化比规章本身更频繁。
+- **网络安全法修改后的罚则。** 修改决定施行后，执法案例中的罚款幅度可能明显变化。引用罚则前对照修改后文本，不写死金额 〔待核〕。
 
-## How to use this file
+## 个人信息主体权利响应期限
 
-When a skill cites a privacy rule, effective date, or threshold, it should note: "Privacy law is moving — this may have changed since my training. Verify at [source]. See `references/currency-watch.md`."
+《个人信息保护法》第五十条要求「及时」处理并说明拒绝理由，法律本身没有规定固定天数。《网络数据安全管理条例》和国家标准对响应期限另有规定或建议 `[模型知识 — 需验证]`。具体天数以条例、标准原文和行业主管部门要求为准 〔待核〕，插件默认值可能已经过时。
 
-**This file goes stale.** Current as of May 2026. Update when you notice drift.
+## 怎么用这份文件
+
+技能引用个人信息保护规则、施行日期或数量门槛时，要注明：「这一领域变化快，训练之后可能已有调整，请到 [来源] 核实。见 `references/currency-watch.md`。」
+
+**这份文件会过时。** 本版核实于 2026-11-03（仅限链接可访问性）。发现条目与现行规定不符时，及时更新。

@@ -1,8 +1,7 @@
-# Docket Watcher — managed-agent cookbook
+# 案件进度监控（Docket Watcher）托管 Agent cookbook
 #
-# Same agent as the `docket-watcher` agent in the litigation-legal Claude Code
-# plugin. This manifest resolves the canonical system prompt and skills against
-# the plugin on disk so there is one source of truth.
+# 与 litigation-legal Claude Code 插件里的 `docket-watcher` Agent 同源。
+# 本清单直接引用磁盘上插件的系统提示和技能，只保留一份权威来源。
 
 name: docket-watcher
 model: claude-opus-4-7
@@ -10,26 +9,24 @@ model: claude-opus-4-7
 system:
   file: ../../litigation-legal/agents/docket-watcher.md
   append: |
-    You are running headless behind the platform team's workflow engine.
-    Produce files in ./out/; do not assume an interactive session. Prepend the
-    work-product header from the deploying team's litigation-legal CLAUDE.md.
+    你运行在平台团队的工作流引擎后面，没有交互会话。所有产出写入 ./out/，
+    不要假设有人在实时对话。报告开头加上部署方 litigation-legal CLAUDE.md
+    里配置的工作成果标识。
 
-    Your output is a lead, not a legal conclusion. Computed deadlines are
-    leads, not calendar entries. Court deadline rules vary by jurisdiction,
-    court, judge, and local rule, and are routinely modified by standing
-    order or case-specific case management order. Missing a court deadline
-    has malpractice consequences. A licensed attorney verifies every computed
-    deadline against the court's actual rules and any case-specific orders
-    before it is docketed.
+    你的产出是线索，不是法律结论。推算出的期限是线索，不是日程条目。期限规则
+    因案件类型、审判程序、法院和承办法官而不同，还经常被举证通知书、开庭传票
+    等个案文书改变。错过法定期间可能构成执业过失。每个推算出的期限，都要由执业
+    律师对照法律、司法解释和本案文书核实后，才能登记入册。
 
-    Filing classifications are heuristic. A filing the agent misclassifies
-    can produce a wrong deadline rule. The docketing attorney reads the
-    filing. Do not soften these guardrails in the report to make the output
-    read cleaner — loud is correct.
+    文书分类靠的是启发式判断。分错类的文书会套错期限规则，负责登记的律师要读
+    文书本身。不要为了让报告读起来干净而弱化这些提示，提示醒目才是对的。
+
+    中国法院的流程信息公开网、诉讼服务网等官方网站没有公开 API。数据只来自
+    已配置的 MCP 连接；不要自行访问或抓取任何法院网站。
 
 tools:
-  # Orchestrator is scoped to local-only tools; MCP and web_fetch are held by
-  # the subagent leaves (see callable_agents).
+  # 编排器只拿本地工具。MCP 工具只授予 docket-reader，写权限只授予 tracker-writer；
+  # 任何节点都没有 web_fetch（见 callable_agents）。下面 mcp_servers 只是声明连接。
   - type: agent_toolset_20260401
     default_config: { enabled: false }
     configs:
@@ -38,9 +35,9 @@ tools:
       - { name: glob, enabled: true }
 
 mcp_servers:
-  - { type: url, name: trellis,       url: "${TRELLIS_MCP_URL}" }
-  - { type: url, name: courtlistener, url: "${COURTLISTENER_MCP_URL}" }
-  - { type: url, name: gdrive,        url: "${GDRIVE_MCP_URL}" }
+  - { type: url, name: yuandian,     url: "${YUANDIAN_MCP_URL}" }
+  - { type: url, name: court_portal, url: "${COURT_PORTAL_MCP_URL}" }
+  - { type: url, name: feishu,       url: "${FEISHU_MCP_URL}" }
 
 skills:
   - { from_plugin: ../../litigation-legal }
@@ -48,4 +45,4 @@ skills:
 callable_agents:
   - { manifest: ./subagents/docket-reader.yaml }
   - { manifest: ./subagents/deadline-mapper.yaml }
-  - { manifest: ./subagents/tracker-writer.yaml }   # only leaf with Write
+  - { manifest: ./subagents/tracker-writer.yaml }   # 唯一有写权限的叶子节点

@@ -1,19 +1,22 @@
-# Comment Period Tracker
-# Populated automatically by reg-feed-watcher when NPRMs are detected.
-# Managed via /regulatory-legal:comments
+# 征求意见跟踪表
+# reg-feed-watcher 发现征求意见稿时自动登记。
+# 来源包括：全国人大常委会法律草案征求意见、司法部（国务院）行政法规草案征求意见、
+# 国务院各部门规章及规范性文件征求意见（网信办、市场监管总局、证监会、金融监管总局等）、
+# 国家标准征求意见稿（如全国网络安全标准化技术委员会）。
+# 通过 /regulatory-legal:comments 管理。
 
 comments:
   - id: CMT-001
-    regulation: "[NPRM name + Federal Register citation]"
-    regulator: "[agency name]"
-    summary: "[one sentence — what this rulemaking proposes]"
-    link: "[Federal Register URL]"
-    comment_deadline: "2026-05-15"
+    regulation: "[征求意见稿全称，如《××管理办法（征求意见稿）》]"
+    regulator: "[起草或发布机关，如国家互联网信息办公室]"
+    summary: "[一句话说明草案拟规定什么]"
+    link: "[发布机关官网原文链接]"
+    comment_deadline: "2026-05-15"  # 意见反馈截止日期，以公告原文为准
     detected: "2026-03-20"
     decision: "undecided"  # undecided | filing | not-filing | filed | waived
-    owner: "[default comment decision owner from CLAUDE.md]"
-    owner_slack: "[Slack user ID or handle]"
+    owner: "[CLAUDE.md 中默认的反馈意见决策人]"
+    owner_slack: "[飞书/Slack 用户 ID 或账号]"
     notified: false
-    rationale: ""  # filled when decision is made
-    filed_at: null  # ISO datetime if filed
-    notes: ""
+    rationale: ""  # 作出决定时填写理由
+    filed_at: null  # 已提交的，填 ISO 格式时间
+    notes: ""  # 可记录反馈渠道：在线提交 / 电子邮件 / 信函，以公告载明的方式为准

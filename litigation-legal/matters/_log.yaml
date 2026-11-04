@@ -1,63 +1,71 @@
-# Portfolio Ledger — litigation-legal
+# 案件组合台账 — litigation-legal
 #
-# One entry per matter under `matters:`. Source of truth for /portfolio-status rollups.
-# Closed matters stay in this file (searchable history) but are filtered out
-# of active rollups by default. Edit via /litigation-legal:matter-intake,
-# /matter-update, and /matter-close — direct edits are fine but show your work in
-# the matter's history.md.
+# `matters:` 下一个案件一条，是 /portfolio-status 汇总的权威来源。
+# 已结案件留在本文件里（便于检索历史），但默认不计入在办汇总。
+# 通过 /litigation-legal:matter-intake、/matter-update、/matter-close 编辑；
+# 也可以直接改，但要在该案件的 history.md 里记一笔。
+#
+# 注意：键名和下面的枚举值（英文）由技能解析，保持英文不要翻译。
+# 括号里的中文只是说明。
 #
 # ──────────────────────────────────────────────────────────────────────────
-# Schema
+# 字段结构
 # ──────────────────────────────────────────────────────────────────────────
-# - id:                string — slug, stable; matches matters/[slug]/ folder
-#   name:              string — display name
+# - id:                string — slug，固定不变；与 matters/[slug]/ 文件夹名一致
+#   name:              string — 显示名称，如 "某某公司诉我方买卖合同纠纷案"
 #   type:              contract | employment | ip | regulatory | investigation | product | other
+#                      （合同 | 劳动 | 知识产权 | 行政监管 | 调查 | 产品 | 其他）
 #   role:              plaintiff | defendant | claimant | respondent | investigated
-#   counterparty:      string
-#   jurisdiction:      string — court or regulatory body
+#                      （原告 | 被告 | 仲裁申请人 | 仲裁被申请人 | 被调查方）
+#   counterparty:      string — 对方当事人
+#   jurisdiction:      string — 受理法院、仲裁机构或监管机关
 #   status:            threatened | active | discovery | trial | appeal | closed
-#                      (resolution type is captured separately via `outcome` at close time;
-#                       `/matter-close` writes `outcome: settled` for resolved-via-settlement)
-#   stage:             string — free-text substage (e.g., "pleadings", "fact discovery")
+#                      （潜在纠纷 | 在办 | 举证/证据交换 | 庭审 | 二审/再审 | 已结案）
+#                      （结案方式在结案时另记于 `outcome`；
+#                       `/matter-close` 对调解或和解结案写 `outcome: settled`）
+#   stage:             string — 自由填写的细分阶段（如 "答辩期"、"证据交换"）
 #   source:            demand-letter | complaint-served | subpoena | regulator-inquiry | internal-report | pre-suit-threat
+#                      （律师函 | 收到起诉状副本 | 调查令/协查通知 | 监管问询 | 内部报告 | 诉前威胁）
 #   outside_counsel:
-#     firm:            string | null
-#     lead:            string | null
-#     email:           string | null     # NEW v2 — used by /oc-status email drafter
-#     engagement:      signed | pending | none
+#     firm:            string | null     # 外部律所
+#     lead:            string | null     # 主办律师
+#     email:           string | null     # v2 新增，供 /oc-status 起草邮件使用
+#     engagement:      signed | pending | none   （已签委托 | 待签 | 无）
 #   conflicts:
-#     status:          cleared | pending | not-run | waived
+#     status:          cleared | pending | not-run | waived   （已通过 | 待定 | 未检索 | 已豁免）
 #     method:          corporate-legal | outside-counsel | system-check | informal | other
 #     cleared_by:      string | null
 #     cleared_date:    YYYY-MM-DD | null
-#     override:                                                          # NEW v2.1
-#       by:              string | null        # who authorized the bypass
+#     override:                                                          # v2.1 新增
+#       by:              string | null        # 批准跳过检索的人
 #       date:            YYYY-MM-DD | null
-#       rationale:       string | null        # permanent record; does not auto-expire
-#   risk:              critical | high | medium | low   (per CLAUDE.md risk matrix)
+#       rationale:       string | null        # 永久记录，不会自动失效
+#   risk:              critical | high | medium | low   （严重 | 高 | 中 | 低，按 CLAUDE.md 风险矩阵）
 #   materiality:       reserved | disclosed | monitored | none
-#   exposure_range:    string — e.g., "$2M–$5M" or "<$250K"
+#                      （已计提准备金 | 已对外披露 | 监控中 | 无）
+#   exposure_range:    string — 如 "200万-500万元" 或 "<25万元"
 #   internal_owners:
-#     business_lead:   string | null
-#     hr_partner:      string | null
-#     comms_contact:   string | null
-#   legal_hold:
+#     business_lead:   string | null     # 业务负责人
+#     hr_partner:      string | null     # 人力对接人
+#     comms_contact:   string | null     # 公关对接人
+#   legal_hold:                          # 证据保全/文件保存通知
 #     issued:          bool
 #     issued_date:     YYYY-MM-DD | null
 #     scope:           string | null
-#     custodians:      [string]            # NEW v2
-#     last_refresh:    YYYY-MM-DD | null   # NEW v2
-#     next_refresh:    YYYY-MM-DD | null   # NEW v2
-#     released:        YYYY-MM-DD | null   # NEW v2
-#   related_matters:   [string] | null     # NEW v2 — list of related matter slugs
+#     custodians:      [string]            # v2 新增，保管人
+#     last_refresh:    YYYY-MM-DD | null   # v2 新增
+#     next_refresh:    YYYY-MM-DD | null   # v2 新增
+#     released:        YYYY-MM-DD | null   # v2 新增
+#   related_matters:   [string] | null     # v2 新增，关联案件 slug 列表
 #   opened:            YYYY-MM-DD
 #   next_deadline:     YYYY-MM-DD | null
 #   last_updated:      YYYY-MM-DD
 #   path:              string — "matters/[slug]/"
 #
-# Closed matters additionally carry:
+# 已结案件另外带：
 #   closed:            YYYY-MM-DD
 #   outcome:           settled | dismissed | judgment-for-us | judgment-against-us | withdrawn | consolidated | other
+#                      （调解/和解 | 驳回起诉 | 胜诉 | 败诉 | 撤诉 | 合并审理 | 其他）
 #   final_cost:        string | number
 # ──────────────────────────────────────────────────────────────────────────
 

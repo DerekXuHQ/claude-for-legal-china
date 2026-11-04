@@ -1,58 +1,57 @@
-# Excel Output Spec
+# Excel 输出规范
 
-The Excel file is the deliverable most deal teams will actually open. Get it right.
+交易团队真正会打开的，多半就是这份 Excel，务必做对。
 
-## If Claude in Excel / Office agent is available
+## 有 Claude in Excel / Office 代理时
 
-Build the workbook directly in Excel via the Office agent. This is the preferred path because it preserves formatting, lets the reviewer work in their native tool, and supports the cell-comment pattern natively.
+直接通过 Office 代理在 Excel 里建工作簿。这是首选路径：格式不会丢，审查人在自己熟悉的工具里干活，单元格批注也是原生支持的。
 
-## If not, use openpyxl
+## 没有时，用 openpyxl
 
-Check with `python3 -c "import openpyxl"`. If not installed, offer to install (`pip3 install openpyxl`) or fall back to CSV.
+先运行 `python3 -c "import openpyxl"` 检查。没装的，询问用户是否安装（`pip3 install openpyxl`），或退回到 CSV。
 
-## Workbook structure
+## 工作簿结构
 
-**Sheet 1: `Review`** (the main grid)
-- Row 1: Work-product header (merged cell, the header from plugin config `## Outputs`)
-- Row 2: Column labels
-- Row 3+: One row per document
-- Column A: Document name / path
-- Columns B onward: one per schema column, in schema order
-- After every data column, a hidden `_source` column with `[quote] | [location]`
-- Cell comment on the data column cell = the quote and location (so it surfaces on hover even with `_source` hidden)
-- Cell fill by state: no fill = `answered`, `#FFF2CC` (light yellow) = `unclear` or `needs_review`, `#EFEFEF` (light gray) = `not_present`
-- A `Verified` column after each group of [data + _source]: blank by default. The reviewer fills it. Dropdown validation: `✓`, `✗`, `?`.
+工作表名称和 `Verified` 列名保持英文，方便下游脚本和公式引用。
 
-**Sheet 2: `Flags`**
-- One row per cell flagged as `unclear` or `needs_review`
-- Columns: Document, Column, State, Value (if any), Quote, Location, Note
-- This is the verification work queue. Sort by column so the reviewer can batch similar judgments.
+**工作表 1：`Review`**（主表）
+- 第 1 行：工作成果页眉（合并单元格，取插件配置 `## 输出规范` 中的页眉）
+- 第 2 行：列标题
+- 第 3 行起：每份文件一行
+- A 列：文件名 / 路径
+- B 列起：每个模式列占一列，按模式中的顺序排列
+- 每个数据列后面跟一个隐藏的 `_source` 列，内容为 `[引文] | [位置]`
+- 数据列单元格的批注 = 引文和位置（即使 `_source` 隐藏，鼠标悬停也能看到）
+- 按状态填色：无填充 = `answered`；`#FFF2CC`（浅黄）= `unclear` 或 `needs_review`；`#EFEFEF`（浅灰）= `not_present`
+- 每组 [数据列 + `_source`] 后面加一个 `Verified` 列，默认留空，由审查人填写。设置下拉验证：`✓`、`✗`、`?`
 
-**Sheet 3: `_schema`**
-- The column definitions from `.review-schema.yaml`, one row per column: id, label, type, options, prompt
-- Makes the file self-documenting. A partner who opens it six months later can see exactly what was asked.
+**工作表 2：`Flags`**
+- 每个标为 `unclear` 或 `needs_review` 的单元格占一行
+- 列：文件、列、状态、值（如有）、引文、位置、备注
+- 这是核实工作队列。按列排序，方便审查人把同类判断集中处理。
 
-**Sheet 4: `_summary`**
-- Document count, column count, run date
-- Per-column counts of answered / not_present / unclear / needs_review
-- List of columns the normalization pass flagged
-- The verification reminder text
+**工作表 3：`_schema`**
+- 来自 `.review-schema.yaml` 的列定义，每列一行：id、label、type、options、prompt
+- 文件因此能自我说明。半年后合伙人打开，也能看清当初到底问了什么。
 
-## What not to do
+**工作表 4：`_summary`**
+- 文件数、列数、运行日期
+- 每列 answered / not_present / unclear / needs_review 的计数
+- 归一化环节标记过的列
+- 核实提醒文字
 
-- Do not write a confidence percentage column. It's not information. The state + quote is the signal.
-- Do not truncate quotes to fit a cell. Wrap the text or put the full quote in the comment.
-- Do not merge cells in the data region. Lawyers will sort and filter.
-- Do not write the table without the `_schema` and `_summary` sheets. The self-documentation is what makes the file trustworthy.
+## 不要这样做
 
+- 不要加置信度百分比列。它不提供信息，状态加引文才是信号。
+- 不要为了塞进单元格而截断引文。设置自动换行，或把完整引文放进批注。
+- 数据区不要合并单元格，律师会排序和筛选。
+- 不要只写主表而不写 `_schema` 和 `_summary`。文件靠这两张表的自我说明才值得信任。
 
-## Formula injection defense
+## 防范公式注入
 
-Before writing any cell in Excel, Sheets, or CSV output, neutralize formula injection. Counterparty-sourced text (contract quotes, party names, registered agent data, CLM exports) is attacker-controlled. A cell starting with `=`, `+`, `-`, `@`, `	`, ``, or `
-` will be interpreted as a formula or break the row structure.
+写入 Excel、在线表格或 CSV 的任何单元格之前，先消除公式注入风险。来自对方的文字（合同引文、当事人名称、工商登记信息、合同管理系统导出数据）都可能被人操纵。以 `=`、`+`、`-`、`@`、制表符（`\t`）、回车符（`\r`）或换行符（`\n`）开头的单元格，会被当成公式执行，或者打乱行结构。
 
-- **Prefix with a single quote:** `'=SUM(A1:A10)` → `=SUM(A1:A10)` (displayed as text, not executed)
-- **Applies to every cell that contains text sourced from a document, a tool result, or a user paste.** Column headers you control and computed values you produce are safe.
-- **CSV: also escape embedded commas, double quotes, newlines** (RFC 4180 quoting).
-- This is not optional. A spreadsheet your user opens in Excel that triggers a macro or exfiltrates data via DDE is a supply-chain attack on your user.
-
+- **在开头加一个单引号：** `'=SUM(A1:A10)` 显示为文本 `=SUM(A1:A10)`，不会执行
+- **凡是内容来自文件、工具返回结果或用户粘贴的单元格，一律适用。** 你自己控制的列标题和自己算出的数值是安全的。
+- **CSV 还要转义内嵌的逗号、双引号和换行**（按 RFC 4180 加引号）。
+- 这一步不能省。用户在 Excel 里打开表格时触发宏、或通过 DDE 外泄数据，就是对用户的供应链攻击。

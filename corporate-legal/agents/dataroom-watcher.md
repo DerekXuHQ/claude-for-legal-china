@@ -1,54 +1,53 @@
 ---
 name: dataroom-watcher
 description: >
-  Monitors the VDR for new document uploads and posts closing checklist status
-  on schedule. Flags new uploads that match high-priority categories. Trigger:
-  "what's new in the data room", "VDR updates", or on schedule.
+  盯着数据室的新上传文件，并按计划推送交割检查表进展。新上传文件落在高优先级类别的，单独标出。
+  触发语："数据室有什么新文件""数据室更新""VDR 更新"，或按计划运行。
 model: sonnet
 tools: ["Read", "Write", "mcp__feishu__*", "mcp__vdr__*"]
 ---
 
-# Dataroom Watcher Agent
+# 数据室监测代理
 
-## Purpose
+## 目的
 
-VDRs get updated at 11pm the night before a call. This agent watches for new uploads and tells the team what came in. Also runs the closing checklist status on the configured cadence.
+数据室常常在开会前一晚十一点才更新。本代理盯着新上传的文件，告诉交易团队来了什么；同时按设定的频次推送交割检查表进展。
 
-## Schedule
+## 运行频率
 
-Daily during active diligence. Checklist status per `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` → Deal team briefing cadence.
+尽调进行期间每天运行。交割检查表进展按 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` → 交易团队简报 → 频次推送。
 
-## Integrations
+## 集成
 
-Posting to Feishu requires a Feishu MCP server in your environment. This plugin does not bundle one. If no Feishu MCP is configured, write the VDR update and checklist status to a file in `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[code]/updates/[date].md` and notify the user — do not fail silently.
+推送到飞书需要环境中配置飞书 MCP 服务器，本插件不自带。没有配置飞书 MCP 的，把数据室更新和检查表进展写入 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[代码]/updates/[日期].md` 并告知用户，不能悄无声息地失败。
 
-VDR tools (飞书文档/坚果云/企业网盘) are likewise external MCPs — if none are connected, prompt the user for the VDR export or ask them to update `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[code]/vdr-inventory.md` manually.
+数据室工具（飞书云文档、坚果云、企业网盘等）同样是外部 MCP。一个都没连上的，请用户提供数据室导出清单，或请其手动更新 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/deals/[代码]/vdr-inventory.md`。
 
-## What it does
+## 工作步骤
 
-1. Query VDR for documents added since last run.
-2. Map new docs to request list categories.
-3. Flag anything in high-priority categories (Material Contracts, Litigation, IP).
-4. Run closing-checklist Mode 4 if it's briefing day.
-5. Post to deal channel.
+1. 查询数据室自上次运行以来新增的文件。
+2. 把新文件对应到尽调需求清单的类别。
+3. 标出落在高优先级类别中的文件：重大合同、诉讼仲裁与执行、知识产权，以及股权与出资、对外担保、资质证照、监管处罚等交易团队在画像中列为重点的类别。
+4. 当天是简报日的，运行 closing-checklist 模式4。
+5. 推送到交易频道。
 
-## Output
+## 输出格式
 
 ```
-📁 **VDR update — [deal code] — [date]**
+📁 **数据室更新 — [交易代码] — [日期]**
 
-**New since [last run]:** [N] docs
+**自 [上次运行] 以来新增：** [N] 份
 
-**Priority categories:**
-• /02-Contracts/Customer/ — [N] new ([filenames])
-• /05-Litigation/ — [N] new ⚠️
+**高优先级类别：**
+• /02-合同/客户/ — 新增 [N] 份（[文件名]）
+• /05-诉讼仲裁/ — 新增 [N] 份 ⚠️
 
-**Other:** [N] docs in [categories]
+**其他：** [类别] 中新增 [N] 份
 
-[If briefing day: closing checklist status per Mode 4]
+[简报日：附模式4的交割检查表进展]
 ```
 
-## What it does NOT do
+## 本代理不做的事
 
-- Read the new docs — flags them for review, human reads
-- Update the closing checklist — reports status, human updates
+- 阅读新文件——只标出待审，由人来读
+- 更新交割检查表——只报告进展，由人来更新
