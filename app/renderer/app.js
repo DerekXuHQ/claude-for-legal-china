@@ -317,7 +317,7 @@ async function renderSaved() {
   const label = { article: "条文", law: "法规", case: "案例", ref: "办案指引", answer: "助理产出" };
   $("#saved-list").innerHTML = list.length ? list.map((b) => `<li data-kind="${esc(b.kind)}" data-id="${esc(b.ref_id)}">
     <div class="r-title">${esc(b.title)}</div>
-    <div class="r-meta"><span class="badge">${label[b.kind] || b.kind}</span>${b.subtitle ? `<span class="badge">${esc(b.subtitle)}</span>` : ""}<span class="badge">${new Date(b.created * 1000).toLocaleDateString("zh-CN")}</span></div>
+    <div class="r-meta"><span class="badge">${label[b.kind] || b.kind}</span>${b.subtitle && b.subtitle !== label[b.kind] ? `<span class="badge">${esc(b.subtitle)}</span>` : ""}<span class="badge">${new Date(b.created * 1000).toLocaleDateString("zh-CN")}</span></div>
     <div class="r-snip">${esc(b.snippet)}</div>
     <input class="bm-note" data-note="${esc(b.kind)}|${esc(b.ref_id)}" value="${esc(b.note || "")}" placeholder="写个备注（回车保存）"></li>`).join("")
     : `<p class="muted">还没有收藏。在阅读页或助理的回答下面点「收藏」。</p>`;
@@ -421,6 +421,7 @@ let scenarioCat = null;
 async function loadScenarioCat() { if (!scenarioCat) scenarioCat = await api("/api/scenarios").catch(() => ({ groups: [], scenarios: [], pipelines: {} })); return scenarioCat; }
 function setScenario(id) {
   state.scenario = id || "";
+  $$(".sc-row").forEach((r) => r.classList.toggle("on", r.dataset.sc === state.scenario));
   const q = $("#question");
   if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
   const sc = scenarioCat?.scenarios.find((x) => x.id === id);
