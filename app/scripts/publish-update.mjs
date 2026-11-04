@@ -30,7 +30,7 @@ mkdirSync(out, { recursive: true });
 // 现在线上的清单（没有就是第一次发布）
 let prev = null;
 try {
-  const r = await fetch(BASE + "update-manifest.json", { redirect: "follow" });
+  const r = await fetch(BASE + "update-manifest.json?t=" + Date.now(), { redirect: "follow" });
   if (r.ok) prev = JSON.parse(Buffer.from((await r.json()).payload, "base64").toString("utf8"));
 } catch { /* 第一次 */ }
 const sequence = Math.max(prev?.sequence || 0, pkg.updateSequence || 0) + 1;

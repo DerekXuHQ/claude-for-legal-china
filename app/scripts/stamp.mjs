@@ -8,7 +8,7 @@ const p = path.join(APP, "package.json");
 const pkg = JSON.parse(readFileSync(p, "utf8"));
 let seq = pkg.updateSequence || 0;
 try {
-  const r = await fetch("https://github.com/DerekXuHQ/claude-for-legal-china/releases/download/updates/update-manifest.json", { redirect: "follow" });
+  const r = await fetch("https://github.com/DerekXuHQ/claude-for-legal-china/releases/download/updates/update-manifest.json?t=" + Date.now(), { redirect: "follow" });
   if (r.ok) seq = Math.max(seq, JSON.parse(Buffer.from((await r.json()).payload, "base64").toString("utf8")).sequence);
 } catch { /* 没发布过更新 */ }
 pkg.updateSequence = seq;
