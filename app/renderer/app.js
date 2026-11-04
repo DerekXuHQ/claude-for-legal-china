@@ -442,7 +442,7 @@ function renderPicker(box) {
   box.innerHTML = `<ul class="pk-groups">${groups.map((g) => `<li data-g="${esc(g.key)}" class="${g.key === cur ? "on" : ""}"><span>${esc(g.name)}</span><em>${g.count}</em></li>`).join("")}</ul><div class="pk-items"></div>`;
   const items = $(".pk-items", box);
   // 每种流程一个图标和短名，让人一眼看出点进去会做什么
-  const PIPE = { P1: ["gavel", "应对争议"], P2: ["coins", "追讨维权"], P3: ["scale", "执行回款"], P4: ["users", "用工方案"], P5: ["file-search", "合同审查"], P6: ["file-text", "改写文本"], P7: ["pen", "从零起草"], P8: ["shield-check", "合规判断"], P9: ["landmark", "监管应对"], P10: ["alert", "刑事应急"], P11: ["book-open", "规定解读"], P12: ["list", "期限计算"], P13: ["flag", "制度搭建"] };
+  const PIPE = { P1: ["gavel", "应对争议"], P2: ["coins", "追讨维权"], P3: ["scale", "执行回款"], P4: ["users", "用工方案"], P5: ["file-search", "合同审查"], P6: ["file-text", "改写文本"], P7: ["pen", "起草文书"], P8: ["shield-check", "合规判断"], P9: ["landmark", "监管应对"], P10: ["alert", "刑事应急"], P11: ["book-open", "规定解读"], P12: ["list", "期限计算"], P13: ["flag", "制度流程"] };
   const card = ({ attrs, icon, title, sub, tag, on, tip }) => `<button type="button" class="pk-card ${on ? "on" : ""}" ${attrs} title="${esc(tip || "")}">
       <span class="pk-ic">${ic(icon)}</span><span class="pk-body"><b>${esc(title)}</b><span>${tag ? `<em class="pk-tag">${esc(tag)}</em>` : ""}${esc(sub)}</span></span></button>`;
   const drawItems = () => {
