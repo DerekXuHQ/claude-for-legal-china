@@ -16,6 +16,8 @@ export function ensureMatterTables(db) {
 const now = () => Date.now() / 1000;
 
 export function listMatters(db) {
+  // 旧版本点「新事项」就建空事项：没对话、没文件、一小时以上没动的，清掉
+  db.prepare("DELETE FROM matters WHERE (display IS NULL OR display = '' OR display = '[]') AND updated < ? AND NOT EXISTS (SELECT 1 FROM matter_files f WHERE f.matter_id = matters.id)").run(now() - 3600);
   return db.prepare("SELECT id, title, created, updated, task, (SELECT count(*) FROM matter_files f WHERE f.matter_id = m.id) files FROM matters m ORDER BY updated DESC").all();
 }
 

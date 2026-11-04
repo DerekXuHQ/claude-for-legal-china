@@ -258,7 +258,9 @@ body.resizing iframe, body.resizing .view { pointer-events: none; }
 #matter-list li.sel { background: var(--accent-soft); }
 #matter-list li.sel .m-title { color: var(--accent); }
 #matter-list .m-title { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.5; }
-#matter-list .m-meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; line-height: 1.6; }
+#matter-list .m-meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; line-height: 1.6; min-width: 0; }
+#matter-list .m-meta > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+#matter-list .m-meta > span:not(:first-child) { flex: none; }
 #matter-list .m-meta .i { width: 12px; height: 12px; margin-right: 2px; vertical-align: -1px; }
 #matter-list .m-del { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; opacity: 0; }
 #matter-list li:hover .m-del { opacity: 1; }
@@ -474,7 +476,11 @@ textarea.dictating::placeholder { color: var(--accent); }
 .sc-head input { flex: 1; max-width: 360px; }
 .sc-catalog { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 14px; }
 .sc-group { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
-.sc-group summary { cursor: pointer; padding: 9px 12px; font-weight: 600; font-size: 14px; }
+.sc-group summary { cursor: pointer; padding: 9px 12px; font-weight: 600; font-size: 14px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.sc-group summary::-webkit-details-marker { display: none; }
+.sc-group summary .i { width: 14px; height: 14px; color: var(--muted); transition: transform .15s; }
+.sc-group[open] summary .i { transform: rotate(90deg); }
+.sc-group summary .sc-count { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--muted); }
 .sc-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; padding: 0 10px 10px; }
 .sc-item { text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
 .sc-item:hover { border-color: var(--accent); }

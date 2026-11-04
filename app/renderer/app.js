@@ -396,7 +396,7 @@ state.pendingFiles = [];  // 已上传、还没随消息发出的文件
 
 // 首屏 12 个最常见的事（依据 docs/scenarios-research.md §5）；scenario 为空的交给助理按内容分到具体场景
 const STARTERS = [
-  { icon: "users", title: "员工要 2N+1", desc: "最多要赔多少、怎么谈能少赔、要不要硬扛", scenario: "employee_demands_2n_plus_1", prompt: "员工被辞退后要求 2N+1。情况是：" },
+  { icon: "users", title: "员工离职要高额补偿", desc: "先看该不该给、给多少，再定怎么谈、要不要硬扛", scenario: "employee_claims_compensation", prompt: "员工离职（或被辞退）后要求补偿，情况是：" },
   { icon: "gavel", title: "收到劳动仲裁", desc: "答辩期限、每一项请求怎么应对、要不要调解", scenario: "labor_arbitration_respondent", prompt: "我们收到了劳动仲裁申请书（已上传）。", upload: true },
   { icon: "user-x", title: "想让一个员工走", desc: "能力不行或违纪，怎样合法、成本最低", scenario: "terminate_underperformer", prompt: "有个员工我想让他走，情况是：" },
   { icon: "pen", title: "协商离职协议", desc: "把钱和后续风险都写清楚", scenario: "negotiated_separation_agreement", prompt: "员工同意协商离职，请帮我写协商解除协议。情况是：" },
@@ -433,7 +433,7 @@ function renderCatalog(box, query = "") {
   box.innerHTML = cat.groups.map((g) => {
     const items = cat.scenarios.filter((x) => x.group === g.key && hit(x));
     if (!items.length) return "";
-    return `<details class="sc-group"${k ? " open" : ""}><summary>${esc(g.name)} <span class="muted small">${items.length}</span></summary>
+    return `<details class="sc-group"${k ? " open" : ""}><summary>${ic("chevron-right")}<span>${esc(g.name)}</span><span class="sc-count">${items.length}</span></summary>
       <div class="sc-items">${items.map((x) => `<button type="button" class="sc-item" data-sc="${esc(x.id)}" title="${esc(x.examples.join("\n"))}"><b>${esc(x.name)}</b><span>${esc(cat.pipelines[x.pipeline] || "")}${x.freq === "高" ? " · 常见" : ""}</span></button>`).join("")}</div></details>`;
   }).join("") || `<p class="muted small">没有找到。直接在下面描述你的事，助理会判断用哪种流程。</p>`;
   $$("[data-sc]", box).forEach((b) => b.addEventListener("click", () => {
@@ -468,9 +468,14 @@ $("#matter-list").addEventListener("click", async (e) => {
   if (li) openMatter(li.dataset.id);
 });
 
-$("#new-matter").addEventListener("click", async () => {
-  const { id } = await api("/api/matters", { method: "POST", body: "{}" });
-  await openMatter(id);
+// 新事项：先只显示起始页，第一次发送或上传时才真正建事项（不留下一堆空的「新事项」）
+$("#new-matter").addEventListener("click", () => {
+  state.matter = null;
+  state.pendingFiles = [];
+  renderChips();
+  setScenario("");
+  renderMatter({ title: "新事项", task: "", files: [], display: [] });
+  loadMatters();
   $("#question").focus();
 });
 
@@ -528,6 +533,7 @@ function renderMatter(m) {
       renderCatalog(box);
       $("#sc-search").addEventListener("input", (e) => renderCatalog(box, e.target.value));
     });
+    log.scrollTop = 0;
     return;
   }
   $("#matter-title").value = m.title;
