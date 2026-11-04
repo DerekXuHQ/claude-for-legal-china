@@ -22,7 +22,10 @@ connectors/catalog.json           # 连接器目录（元典、北大法宝等�
 references/                       # 仓库级共享参考：公司画像模板、知识库检索协议、官方法条核验源等
 scripts/                          # 适配层生成、发布检查、cookbook 部署脚本
 NOTICE                            # 上游项目署名（Apache 2.0 要求）
+app/                              # 本地检索 app（Python + SQLite 全文索引），数据在 app/data/，不进 git
 ```
+
+`app/` 的索引会收录各插件的 `references/*.md` 和 `skills/*/SKILL.md`。改了这些文件后，运行 `cd app && ./run.sh --rebuild` 重建索引。
 
 ## 改完之后要做的事
 

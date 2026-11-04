@@ -28,6 +28,16 @@
 
 本仓库是一套**面向中国法律实务的通用插件集**——以 16 个业务领域、202 个技能和 12 个领域 Agent 为主体，内嵌参考材料与数据连接器，并可按需接入外部法律检索服务。它不绑定单一 agent 环境：可安装为 [Claude Code](https://claude.com/product/claude-code) 插件，可通过一键脚本接入 [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness)、**Codex** 或 **WorkBuddy**（腾讯工作智能体），也可通过 [Claude Managed Agents API](https://docs.claude.com/en/api/managed-agents) 部署在你自己的工作流引擎后台。同一套 system prompt，同一套技能——你选择在哪里运行。
 
+### 本地检索 app：Claude for Legal China
+
+[`app/`](app/) 是一个在本机运行的法律检索工具：17,701 部法律法规（约 70 万条）、278 件最高法指导性案例，加上本仓库的实务要点和处理流程，全部下载到本地，按层级、地区、领域检索到条，可以收藏。另带一个会多轮检索的 AI 问答，接你自己的 Anthropic、Portkey 或 OpenAI 兼容接口。启动：
+
+```bash
+cd app && ./run.sh
+```
+
+数据来源、限制和设置方法见 [app/README.md](app/README.md)。
+
 ### 2026 年 11 月：本 fork 的补充
 
 - **刑事**：新增 9 个全流程文书技能（侦查阶段文书、阅卷笔录、会见准备、辩护方案、不起诉意见书、认罪认罚协商、庭审发问与质证提纲、辩护词、客户沟通），改编自 [gcheng001/legal-skills](https://github.com/gcheng001/legal-skills)，另加量刑测算；每个技能都带脱敏前置检查。

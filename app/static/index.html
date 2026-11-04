@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude for Legal China</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%238a2c2c'/><text x='16' y='22' font-size='17' text-anchor='middle' fill='white' font-family='sans-serif'>法</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">法</span><span>Claude for Legal <b>China</b></span></div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="search" role="tab">检索</button>
+    <button class="tab" data-view="ask" role="tab">AI 问答</button>
+    <button class="tab" data-view="saved" role="tab">收藏 <span id="saved-count" class="count"></span></button>
+  </nav>
+  <button id="open-settings" class="ghost" title="设置">设置</button>
+</header>
+
+<main>
+  <!-- 检索 -->
+  <section id="view-search" class="view active">
+    <div class="split">
+      <div class="pane-left">
+        <form id="search-form" class="searchbar">
+          <input id="q" type="search" placeholder="输入关键词，例如：劳动合同 解除 经济补偿" autocomplete="off" autofocus>
+          <button type="submit" class="primary">检索</button>
+        </form>
+        <div class="filters">
+          <div class="seg" id="f-type">
+            <button data-v="articles" class="on">条文</button>
+            <button data-v="laws">法规名称</button>
+            <button data-v="cases">指导性案例</button>
+            <button data-v="refs">实务资料</button>
+          </div>
+          <div class="row law-only">
+            <select id="f-level"><option value="">全部层级</option></select>
+            <select id="f-province"><option value="">全部地区</option><option value="全国">仅全国性规定</option></select>
+            <select id="f-topic"><option value="">全部领域（按标题粗分）</option></select>
+            <label class="check"><input type="checkbox" id="f-all"> 含旧版本和失效</label>
+          </div>
+        </div>
+        <div id="result-info" class="muted small"></div>
+        <ol id="results" class="results"></ol>
+        <button id="more" class="ghost more" hidden>加载更多</button>
+      </div>
+      <aside class="pane-right" id="detail">
+        <div class="empty">
+          <p>在左侧检索，点击结果查看全文。</p>
+          <p class="muted small" id="db-stats"></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- AI 问答 -->
+  <section id="view-ask" class="view">
+    <div class="split">
+      <div class="pane-left chat">
+        <div id="chat-log" class="chat-log">
+          <div class="chat-intro">
+            <h2>直接问法律问题</h2>
+            <p>AI 会在本地资料库里多轮检索条文、指导性案例和实务资料，按「适用的规定 / 不适用的规定 / 相关案例 / 处理流程 / 建议」整理给你。点击回答里的引用可以打开原文。</p>
+            <div class="examples">
+              <button class="ex">公司以业绩不达标为由辞退员工，没有提前通知，员工能拿到多少补偿？</button>
+              <button class="ex">别人在电商平台用和我们近似的商标卖同类商品，我们能怎么维权？赔偿怎么算？</button>
+              <button class="ex">我们的 App 要把用户数据传到境外服务器，需要走哪些程序？</button>
+            </div>
+          </div>
+        </div>
+        <form id="ask-form" class="ask-box">
+          <textarea id="question" rows="3" placeholder="描述你的情况和问题…（Enter 发送，Shift+Enter 换行）"></textarea>
+          <div class="ask-row">
+            <select id="ask-region"><option value="">地区：未指定</option></select>
+            <button type="button" id="new-chat" class="ghost">新对话</button>
+            <button type="submit" class="primary" id="ask-btn">发送</button>
+          </div>
+        </form>
+      </div>
+      <aside class="pane-right" id="ask-detail">
+        <div class="empty"><p>点击回答中的引用，在这里查看原文并收藏。</p></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 收藏 -->
+  <section id="view-saved" class="view">
+    <div class="split">
+      <div class="pane-left">
+        <div class="seg" id="saved-filter">
+          <button data-v="" class="on">全部</button>
+          <button data-v="article">条文</button>
+          <button data-v="law">法规</button>
+          <button data-v="case">案例</button>
+          <button data-v="ref">实务资料</button>
+          <button data-v="answer">AI 回答</button>
+        </div>
+        <ol id="saved-list" class="results"></ol>
+      </div>
+      <aside class="pane-right" id="saved-detail">
+        <div class="empty"><p>收藏的条文、案例和 AI 回答都在这里。</p></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  仅供参考，不构成法律意见 · 非 Anthropic 官方产品 · 法规数据：国家法律法规数据库（经 CC0 数据集 senry5433/china-effective-laws-regulations 获取，非官方汇编）· 案例：最高人民法院指导性案例
+</footer>
+
+<dialog id="settings">
+  <form method="dialog" id="settings-form">
+    <h3>AI 设置</h3>
+    <label>接口类型
+      <select name="provider">
+        <option value="anthropic">Anthropic（Claude；也可经 Portkey 等网关）</option>
+        <option value="openai">OpenAI 兼容接口（DeepSeek、Portkey OpenAI 路由等）</option>
+      </select>
+    </label>
+    <label>接口地址 <span class="muted">（直连 Anthropic 留空）</span>
+      <input name="base_url" placeholder="例如 https://api.portkey.ai 或 https://api.deepseek.com">
+    </label>
+    <label>API key
+      <input name="api_key" type="password" autocomplete="off" placeholder="保存在本机 data/settings.json">
+    </label>
+    <label>模型
+      <input name="model" placeholder="claude-opus-5-5">
+    </label>
+    <label>分析深度 <span class="muted">（仅 Anthropic 接口）</span>
+      <select name="effort">
+        <option value="low">低：快、省</option>
+        <option value="medium">中（默认）</option>
+        <option value="high">高：更深入</option>
+        <option value="xhigh">很高</option>
+      </select>
+    </label>
+    <label>附加请求头 <span class="muted">（JSON，可选；Portkey 填 x-portkey-api-key 等）</span>
+      <textarea name="extra_headers" rows="3" placeholder='{"x-portkey-api-key": "...", "x-portkey-provider": "anthropic"}'></textarea>
+    </label>
+    <p class="muted small">API key 只保存在你电脑上的 data/settings.json（仅本人可读），只会发给你填写的接口地址。</p>
+    <div class="dialog-actions">
+      <button value="cancel" class="ghost">取消</button>
+      <button value="save" class="primary" id="save-settings">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
