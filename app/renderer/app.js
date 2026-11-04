@@ -35,7 +35,7 @@ function showView(v) {
   if (v === "saved") renderSaved();
   // 第一次进法律助理：打开最近的事项；之后切回来保持原样（包括还没发消息的新事项页）
   if (v === "ask") { $("#question").focus(); if (!state.matter && !state.askOpened) { state.askOpened = true; loadMatters().then((l) => { if (state.matter || state.newMatterShown) return; l[0] ? openMatter(l[0].id) : renderMatter(null); }); } }
-  if (v === "updates") { renderUpdates(); $("#upd-dot").hidden = true; }
+  if (v === "settings") { loadSettingsForm(); renderUpdates(); $("#upd-dot").hidden = true; }
 }
 
 /* ---------- 初始化 ---------- */
@@ -72,6 +72,8 @@ async function init() {
   initBrowse();
   loadModels();
   pollUpdates();
+  // 打开就是法律助理；没配好接口时直接到设置
+  showView(m.configured ? "ask" : "settings");
 }
 
 /* ---------- 检索 ---------- */
@@ -969,7 +971,14 @@ async function send({ intake_answers, skip_intake, retry_question }) {
 }
 
 /* ---------- 设置 ---------- */
-$("#open-settings").addEventListener("click", async () => {
+// 设置页：左边分类，右边内容；改了就自动保存
+$$(".set-nav [data-sec]").forEach((b) => b.addEventListener("click", () => showSettingsSection(b.dataset.sec)));
+function showSettingsSection(sec) {
+  $$(".set-nav [data-sec]").forEach((x) => x.classList.toggle("on", x.dataset.sec === sec));
+  $$(".set-sec").forEach((x) => x.classList.toggle("on", x.dataset.sec === sec));
+  if (sec === "laws") renderUpdates();
+}
+async function loadSettingsForm() {
   const s = await api("/api/settings");
   const f = $("#settings-form");
   f.elements.base_url.value = s.base_url || "";
@@ -980,7 +989,17 @@ $("#open-settings").addEventListener("click", async () => {
   fillModelSelects(state.modelList || []);
   $("#models-status").textContent = "";
   $("#model-list").hidden = true;
-  $("#settings").showModal();
+  renderAppUpdate(state.appUpdate || await api("/api/app-update").catch(() => ({ status: "unavailable" })));
+}
+let saveTimer = null;
+$("#settings-form").addEventListener("change", (e) => {
+  if (e.target.closest(".keys-opts, .keys-list")) return; // 快捷键自己存
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    await saveSettings();
+    toast("已保存", 1500);
+    if (["base_url", "api_key"].includes(e.target.name)) { const r = await loadModels(); $("#open-settings").classList.toggle("attn", !r.models?.length); }
+  }, 300);
 });
 
 async function saveSettings() {
@@ -1002,13 +1021,7 @@ $("#test-models").addEventListener("click", async () => {
   fillModels(r);
 });
 
-$("#save-settings").addEventListener("click", async (e) => {
-  e.preventDefault();
-  await saveSettings();
-  $("#settings").close();
-  const r = await loadModels();
-  $("#open-settings").classList.toggle("attn", !r.models?.length);
-});
+
 
 /* ---------- 模型清单（AI 问答输入框下方） ---------- */
 function fillModelSelects(models) {
@@ -1342,7 +1355,7 @@ async function pollUpdates(force) {
     const s = await api("/api/updates/status");
     showProgress(s);
     if (wasRunning && !s.running) {
-      if ($("#view-updates").classList.contains("active")) renderUpdates();
+      if ($("#view-settings").classList.contains("active")) renderUpdates();
       else if (s.last_result?.changes) $("#upd-dot").hidden = false;
     }
     wasRunning = s.running;
@@ -1591,7 +1604,7 @@ document.addEventListener("keydown", (e) => {
   if (KEYS.matches(e, k.newMatter)) { e.preventDefault(); state.askOpened = true; showView("ask"); $("#new-matter").click(); return; }
   if (KEYS.matches(e, k.focusAsk)) { e.preventDefault(); showView("ask"); $("#question").focus(); return; }
   if (KEYS.matches(e, k.search)) { e.preventDefault(); showView("search"); $("#q")?.focus(); $("#q")?.select(); return; }
-  if (KEYS.matches(e, k.settings)) { e.preventDefault(); $("#open-settings").click(); }
+  if (KEYS.matches(e, k.settings)) { e.preventDefault(); showView("settings"); }
 }, true);
 // 按住说话：松开快捷键（主键或任一修饰键）就结束
 document.addEventListener("keyup", (e) => {

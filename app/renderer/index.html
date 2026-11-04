@@ -65,20 +65,19 @@
 <header class="top">
   <div class="brand"><span class="logo">法</span><span>中国法律检索</span></div>
   <nav class="tabs" role="tablist">
-    <button class="tab active" data-view="browse" role="tab"><svg class="i" aria-hidden="true"><use href="#i-book-open"/></svg><span>浏览</span></button>
+    <button class="tab active" data-view="ask" role="tab"><svg class="i" aria-hidden="true"><use href="#i-scale"/></svg><span>法律助理</span></button>
+    <button class="tab" data-view="browse" role="tab"><svg class="i" aria-hidden="true"><use href="#i-book-open"/></svg><span>浏览</span></button>
     <button class="tab" data-view="search" role="tab"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><span>检索</span></button>
-    <button class="tab" data-view="ask" role="tab"><svg class="i" aria-hidden="true"><use href="#i-scale"/></svg><span>法律助理</span></button>
     <button class="tab" data-view="saved" role="tab"><svg class="i" aria-hidden="true"><use href="#i-bookmark"/></svg><span>收藏</span> <span id="saved-count" class="count"></span></button>
-    <button class="tab" data-view="updates" role="tab"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span>法规更新</span> <span id="upd-dot" class="dot" hidden></span></button>
+    <button class="tab" data-view="settings" role="tab" id="open-settings"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg><span>设置</span> <span id="upd-dot" class="dot" hidden></span></button>
+    <button id="theme" class="icon-btn" title="切换浅色 / 深色"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button>
   </nav>
   <button id="app-update-btn" class="primary small-btn" hidden>有新版本</button>
-  <button id="theme" class="icon-btn" title="切换浅色 / 深色"><svg class="i" aria-hidden="true"><use href="#i-monitor"/></svg></button>
-  <button id="open-settings" class="icon-btn" title="设置"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg></button>
 </header>
 
 <main>
   <!-- 浏览 -->
-  <section id="view-browse" class="view active">
+  <section id="view-browse" class="view">
     <div class="split">
       <div class="pane-left">
         <div class="seg" id="b-kind">
@@ -140,7 +139,7 @@
   </section>
 
   <!-- 法律助理 -->
-  <section id="view-ask" class="view">
+  <section id="view-ask" class="view active">
     <div class="assist">
       <aside class="matters side-pane" data-pane="ask-left">
         <div class="matters-head">
@@ -210,7 +209,89 @@
   </section>
 
   <!-- 法规更新 -->
-  <section id="view-updates" class="view">
+
+  <!-- 收藏 -->
+  <section id="view-saved" class="view">
+    <div class="split">
+      <div class="pane-left">
+        <div class="seg" id="saved-filter">
+          <button data-v="" class="on">全部</button>
+          <button data-v="article">条文</button>
+          <button data-v="law">法规</button>
+          <button data-v="case">案例</button>
+          <button data-v="ref">办案指引</button>
+          <button data-v="answer">助理产出</button>
+        </div>
+        <ol id="saved-list" class="results"></ol>
+      </div>
+      <aside class="pane-right reader-pane" id="saved-detail">
+        <div class="empty"><p>收藏的条文、案例和 AI 回答都在这里。</p></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 设置：左边分类，右边内容 -->
+  <section id="view-settings" class="view">
+    <form id="settings-form" class="settings" autocomplete="off" onsubmit="return false">
+      <nav class="set-nav">
+        <button type="button" data-sec="ai" class="on"><svg class="i" aria-hidden="true"><use href="#i-sparkles"/></svg>AI 设置</button>
+        <button type="button" data-sec="keys"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>快捷键</button>
+        <button type="button" data-sec="version"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>软件版本</button>
+        <button type="button" data-sec="laws"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>法规更新</button>
+        <p class="muted small set-note">开源软件，没有账号；设置只保存在这台电脑上，改了就生效。</p>
+      </nav>
+      <div class="set-body">
+        <section class="set-sec on" data-sec="ai">
+          <h2>AI 设置</h2>
+    <p class="muted small">接口使用 OpenAI 兼容格式。默认是 Portkey；也可以改成 OpenAI、DeepSeek 等任何兼容服务的地址。</p>
+    <label>接口地址
+      <input name="base_url" placeholder="https://api.portkey.bond/v1">
+    </label>
+    <label>API key
+      <input name="api_key" type="password" autocomplete="off" placeholder="粘贴你的 API key">
+    </label>
+    <div class="row">
+      <button type="button" class="ghost" id="test-models">连接并读取模型清单</button>
+      <span class="small muted" id="models-status"></span>
+    </div>
+    <ul class="model-list" id="model-list" hidden></ul>
+    <label>复核模型 <span class="muted">（合同、方案审查时用另一家的模型交叉复核）</span>
+      <select name="review_model"><option value="auto">自动选择另一家族的强模型</option></select>
+    </label>
+    <label>语音转文字模型 <span class="muted">（话筒听写、上传的录音和视频都用它；默认 gpt-live-transcribe）</span>
+      <select name="transcribe_model"><option>gpt-live-transcribe</option></select>
+    </label>
+    <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。主力模型和分析深度在法律助理的输入框下方选。</p>
+          <p class="small muted" id="set-saved"></p>
+        </section>
+        <section class="set-sec" data-sec="keys">
+          <h2>快捷键</h2>
+    <div class="keys-opts">
+      <label>发送消息 <select id="send-key"><option value="enter">回车发送，Shift＋回车换行</option><option value="mod-enter">⌘/Ctrl＋回车发送，回车换行</option></select></label>
+      <label>听写方式 <select id="dict-mode"><option value="toggle">按一下开始，再按一下结束</option><option value="hold">按住说话，松开结束</option></select></label>
+    </div>
+    <ul class="keys-list" id="keys-list"></ul>
+    <p class="muted small">点一个快捷键，再按下新的组合键即可修改；Esc 取消。设置只保存在这台电脑上。</p>
+        </section>
+        <section class="set-sec" data-sec="version">
+          <h2>软件版本</h2>
+          <p class="muted small">app 会自动检查新版本。有新版本时只下载变了的部分（通常不到 1 MB），重启后生效；新版本出问题会自动退回。</p>
+          <div class="row"><span id="au-version"></span></div>
+          <div class="row"><button type="button" class="primary" id="au-check">检查软件更新</button></div>
+        </section>
+        <section class="set-sec set-laws" data-sec="laws">
+          <h2>法规更新</h2>
+          <div class="set-laws-opts">
+    <label class="check"><input type="checkbox" name="auto_update"> 自动检查官方网站的法规更新</label>
+    <label>检查间隔
+      <select name="update_interval_days">
+        <option value="1">每天</option>
+        <option value="3">每 3 天</option>
+        <option value="7">每周（默认）</option>
+        <option value="30">每月</option>
+      </select>
+    </label>
+          </div>
     <div class="split">
       <div class="pane-left">
         <div class="upd-head">
@@ -250,26 +331,9 @@
         </div>
       </aside>
     </div>
-  </section>
-
-  <!-- 收藏 -->
-  <section id="view-saved" class="view">
-    <div class="split">
-      <div class="pane-left">
-        <div class="seg" id="saved-filter">
-          <button data-v="" class="on">全部</button>
-          <button data-v="article">条文</button>
-          <button data-v="law">法规</button>
-          <button data-v="case">案例</button>
-          <button data-v="ref">办案指引</button>
-          <button data-v="answer">助理产出</button>
-        </div>
-        <ol id="saved-list" class="results"></ol>
+        </section>
       </div>
-      <aside class="pane-right reader-pane" id="saved-detail">
-        <div class="empty"><p>收藏的条文、案例和 AI 回答都在这里。</p></div>
-      </aside>
-    </div>
+    </form>
   </section>
 </main>
 
@@ -277,53 +341,6 @@
   仅供参考，不构成法律意见 · 法规文本优先采用中国人大网、国家行政法规库、最高人民法院公布的官方全文，其余取自国家法律法规数据库（经 CC0 数据集）
 </footer>
 
-<dialog id="settings">
-  <form method="dialog" id="settings-form">
-    <h3>AI 设置</h3>
-    <p class="muted small">接口使用 OpenAI 兼容格式。默认是 Portkey；也可以改成 OpenAI、DeepSeek 等任何兼容服务的地址。</p>
-    <label>接口地址
-      <input name="base_url" placeholder="https://api.portkey.bond/v1">
-    </label>
-    <label>API key
-      <input name="api_key" type="password" autocomplete="off" placeholder="粘贴你的 API key">
-    </label>
-    <div class="row">
-      <button type="button" class="ghost" id="test-models">连接并读取模型清单</button>
-      <span class="small muted" id="models-status"></span>
-    </div>
-    <ul class="model-list" id="model-list" hidden></ul>
-    <label>复核模型 <span class="muted">（合同、方案审查时用另一家的模型交叉复核）</span>
-      <select name="review_model"><option value="auto">自动选择另一家族的强模型</option></select>
-    </label>
-    <label>语音转文字模型 <span class="muted">（话筒听写、上传的录音和视频都用它；默认 gpt-live-transcribe）</span>
-      <select name="transcribe_model"><option>gpt-live-transcribe</option></select>
-    </label>
-    <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。主力模型和分析深度在法律助理的输入框下方选。</p>
-    <h3 style="margin-top:8px">快捷键</h3>
-    <div class="keys-opts">
-      <label>发送消息 <select id="send-key"><option value="enter">回车发送，Shift＋回车换行</option><option value="mod-enter">⌘/Ctrl＋回车发送，回车换行</option></select></label>
-      <label>听写方式 <select id="dict-mode"><option value="toggle">按一下开始，再按一下结束</option><option value="hold">按住说话，松开结束</option></select></label>
-    </div>
-    <ul class="keys-list" id="keys-list"></ul>
-    <p class="muted small">点一个快捷键，再按下新的组合键即可修改；Esc 取消。设置只保存在这台电脑上。</p>
-    <h3 style="margin-top:8px">版本</h3>
-    <div class="row"><span class="small muted" id="au-version"></span><button type="button" class="ghost" id="au-check">检查更新</button></div>
-    <h3 style="margin-top:8px">法规更新</h3>
-    <label class="check"><input type="checkbox" name="auto_update"> 自动检查官方网站的法规更新</label>
-    <label>检查间隔
-      <select name="update_interval_days">
-        <option value="1">每天</option>
-        <option value="3">每 3 天</option>
-        <option value="7">每周（默认）</option>
-        <option value="30">每月</option>
-      </select>
-    </label>
-    <div class="dialog-actions">
-      <button value="cancel" class="ghost">取消</button>
-      <button value="save" class="primary" id="save-settings">保存</button>
-    </div>
-  </form>
-</dialog>
 
 <dialog id="app-update">
   <form method="dialog">

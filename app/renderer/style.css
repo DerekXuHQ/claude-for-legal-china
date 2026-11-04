@@ -588,3 +588,27 @@ textarea.dictating::placeholder { color: var(--accent); }
 .pk-body span { font-size: 12px; color: var(--muted); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .pk-tag { font-style: normal; font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 0 5px; margin-right: 6px; line-height: 1.6; display: inline-block; }
 @media (max-width: 860px) { .pk-items { grid-template-columns: 1fr; } }
+
+/* 设置页（像 ChatGPT / Claude 的设置）：左边分类，右边内容 */
+.tabs #theme { margin-left: 4px; }
+#view-settings { overflow: hidden; }
+.settings { display: grid; grid-template-columns: 210px 1fr; height: 100%; min-height: 0; }
+.set-nav { border-right: 1px solid var(--line); padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; background: var(--panel); }
+.set-nav button { display: flex; align-items: center; gap: 8px; text-align: left; border: 0; background: none; padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text); }
+.set-nav button .i { width: 15px; height: 15px; color: var(--muted); }
+.set-nav button:hover { background: var(--chip); }
+.set-nav button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.set-nav button.on .i { color: var(--accent); }
+.set-note { margin-top: auto; padding: 0 10px; line-height: 1.6; }
+.set-body { overflow: auto; min-height: 0; }
+.set-sec { display: none; max-width: 640px; padding: 24px 32px 40px; }
+.set-sec.on { display: flex; flex-direction: column; gap: 12px; }
+.set-sec h2 { margin: 0 0 4px; font-size: 18px; }
+.set-sec label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.set-sec input:not([type=checkbox]), .set-sec select { padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.set-sec label.check { flex-direction: row; align-items: center; gap: 6px; }
+.set-sec.set-laws { max-width: none; height: 100%; box-sizing: border-box; }
+.set-laws .split { flex: 1; min-height: 360px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.set-laws-opts { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: end; }
+.set-laws-opts label { flex-direction: row; align-items: center; gap: 8px; }
+#set-saved { min-height: 1.2em; color: var(--ok); }
