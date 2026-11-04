@@ -44,9 +44,9 @@ jobs:
       - name: Download legal database
         run: gh release download build-inputs --repo "$REPO" --dir resources --clobber -p base.db.gz -p data-version.json
       - name: Build macOS (Apple silicon)
-        run: scripts/build-mac.sh
+        run: scripts/build-mac.sh --publish never
       - name: Build macOS (Intel)
-        run: MAC_ARCH=x64 scripts/build-mac.sh
+        run: MAC_ARCH=x64 scripts/build-mac.sh --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: mac
@@ -74,7 +74,7 @@ jobs:
       - name: Build Windows (x64 + arm64)
         run: |
           node scripts/stamp.mjs
-          ./node_modules/.bin/electron-builder --win nsis --x64 --arm64 --config.directories.output=out
+          ./node_modules/.bin/electron-builder --win nsis --x64 --arm64 --config.directories.output=out --publish never
           mkdir -p dist
           cp out/*-win-x64-setup.exe out/*-win-arm64-setup.exe dist/
           ls -l dist
