@@ -229,9 +229,9 @@ function detailHTML(it, hlArticle) {
   }
   if (it.kind === "ref") {
     const kindLabel = it.kind_label === "流程" || it.kind_label === "处理流程" ? "工作流程" : "实务要点";
-    return `<article class="reader">${headHTML(`办案指引 · ${esc(it.plugin_label || it.plugin)} · ${kindLabel}`, esc(it.title), "", starBtn("ref", it.id))}
+    return `<article class="reader">${headHTML(`办案指引 · ${esc(it.plugin_label || it.plugin)} · ${kindLabel}`, esc(it.title), it.summary ? `<span class="rd-summary">${esc(it.summary)}</span>` : "", starBtn("ref", it.id))}
       <div class="md rd-prose">${renderMD(it.text.replace(/^#\s+.*\n/, ""))}</div>
-      <p class="muted small src-line">来源：本项目 ${esc(it.path)}</p></article>`;
+      <p class="muted small src-line">办案指引是本项目整理的实务方法，只读，不具有法律效力；引用的法规以本 app 里的法规正文为准。</p></article>`;
   }
   if (it.kind === "answer") {
     const meta = (it.region ? `<span class="badge">${esc(it.region)}</span>` : "") + `<span class="badge">${esc(it.model)}</span><span class="badge">${new Date(it.created * 1000).toLocaleString("zh-CN")}</span>`;
@@ -702,7 +702,7 @@ function itemLI(it, i) {
   } else if (it.kind === "case") {
     meta = `<span class="badge">第 ${it.number} 号</span>` + (it.keywords ? `<span class="badge">${esc(it.keywords.replace(/\s+/g, " ").slice(0, 36))}</span>` : "");
   } else {
-    meta = `<span class="badge">${it.id.startsWith("doc:") ? "要点" : "流程"}</span>`;
+    meta = `<span class="badge">${esc(it.kind_label || "")}</span>`;
   }
   const title = it.kind === "case" ? it.title.replace(/^指导性?案例\s*\d+\s*号[：:\s]*/, "") || it.title : it.title;
   return `<li data-i="${i}"><div class="r-title">${esc(title)}</div><div class="r-meta">${meta}</div></li>`;

@@ -269,13 +269,13 @@ export const PLUGIN_LABEL = {
   "legal-research-cn": "法律检索方法", "procurement-legal": "采购与招投标", "law-practice-cn": "律所实务", "仓库共享": "通用",
 };
 
-/** 办案指引目录：参考资料按文件合并成一篇，工作流程每个一篇；按领域分组。 */
+/** 办案指引目录：每篇文档一项，按领域分组。 */
 export function browseGuides() {
-  const rows = db.prepare("SELECT id, kind, plugin, path, title, heading FROM refs ORDER BY rowid").all();
+  const rows = db.prepare("SELECT kind, plugin, path, title, heading, id FROM refs ORDER BY rowid").all();
   const docs = new Map();
   for (const r of rows) {
-    const key = r.kind === "实务要点" ? "doc:" + r.path : r.id;
-    if (!docs.has(key)) docs.set(key, { id: key, kind: r.kind === "实务要点" ? "要点" : "流程", plugin: r.plugin, title: r.title, path: r.path });
+    const key = "doc:" + r.path;
+    if (!docs.has(key)) docs.set(key, { id: key, kind_label: r.kind === "处理流程" ? "流程" : "要点", plugin: r.plugin, title: r.title, summary: r.id.endsWith("#0") ? r.heading : "" });
   }
   const groups = new Map();
   for (const d of docs.values()) {
@@ -283,19 +283,22 @@ export function browseGuides() {
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label).push(d);
   }
-  return [...groups].map(([label, items]) => ({ label, items: items.sort((a, b) => a.kind.localeCompare(b.kind) || collator.compare(a.title, b.title)) }))
+  return [...groups].map(([label, items]) => ({ label, items: items.sort((a, b) => a.kind_label.localeCompare(b.kind_label) || collator.compare(a.title, b.title)) }))
     .sort((a, b) => (a.label === "通用" ? -1 : b.label === "通用" ? 1 : collator.compare(a.label, b.label)));
 }
 
-/** 读一篇办案指引：参考资料按文件拼回全文。 */
+/** 读一篇办案指引（整篇）；检索结果里的分段编号也能打开，打开的是所在的整篇。 */
 export function getGuide(id) {
-  if (id.startsWith("doc:")) {
-    const rows = db.prepare("SELECT * FROM refs WHERE path = ? AND kind = '实务要点' ORDER BY rowid").all(id.slice(4));
-    if (!rows.length) return null;
-    return { kind: "ref", id, kind_label: "要点", plugin: rows[0].plugin, plugin_label: PLUGIN_LABEL[rows[0].plugin] || rows[0].plugin, path: rows[0].path, title: rows[0].title, heading: "", text: rows.map((r) => r.text).join("\n\n") };
-  }
-  const r = getRef(id);
-  return r ? { ...r, kind_label: r.kind_label === "处理流程" ? "流程" : "要点", plugin_label: PLUGIN_LABEL[r.plugin] || r.plugin } : null;
+  let path = id.startsWith("doc:") ? id.slice(4) : db.prepare("SELECT path FROM refs WHERE id = ?").get(id)?.path;
+  if (!path) return null;
+  const rows = db.prepare("SELECT * FROM refs WHERE path = ? ORDER BY rowid").all(path);
+  if (!rows.length) return null;
+  const r = rows[0];
+  return {
+    kind: "ref", id: "doc:" + path, kind_label: r.kind === "处理流程" ? "流程" : "要点", plugin: r.plugin,
+    plugin_label: PLUGIN_LABEL[r.plugin] || r.plugin, path, title: r.title, summary: r.id.endsWith("#0") ? r.heading : "",
+    text: rows.map((x) => x.text).join("\n\n"),
+  };
 }
 
 /** 合并检索：名称匹配的法规排在前面，然后是条文匹配。 */

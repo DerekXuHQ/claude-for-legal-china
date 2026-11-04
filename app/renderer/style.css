@@ -235,3 +235,4 @@ button.icon { width: 34px; padding: 6px 0; font-size: 15px; }
 .rd-nav button:disabled { opacity: .35; cursor: default; }
 .reader .src-line { font-family: inherit; }
 .md pre.code { background: var(--chip); border-radius: 8px; padding: 8px 12px; font-size: 13px; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; }
+.rd-summary { color: var(--muted); font-size: 14px; }

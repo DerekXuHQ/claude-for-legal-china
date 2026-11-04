@@ -217,6 +217,36 @@ def load_cases(db: sqlite3.Connection) -> None:
     print(f"指导性案例 {seen} 件", flush=True)
 
 
+def load_guides(db: sqlite3.Connection) -> bool:
+    """app/guides/ 下的通用可读版办案指引（见 guides/WRITING-GUIDE.md）。有就用它，没有再退回插件原文。"""
+    files = sorted(p for p in (APP / "guides").rglob("*.md") if p.name not in ("WRITING-GUIDE.md", "REVIEW-NOTES.md"))
+    if not files:
+        return False
+    n = 0
+    for f in files:
+        text = f.read_text(encoding="utf-8")
+        meta, body = {}, text
+        m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+        if m:
+            for line in m.group(1).splitlines():
+                k, _, v = line.partition(":")
+                meta[k.strip()] = re.sub(r"\s+#.*$", "", v).strip()
+            body = text[m.end():]
+        plugin = "仓库共享" if f.parent.name == "shared" else f.parent.name
+        kind = "处理流程" if meta.get("kind", "").startswith("流程") else "实务要点"
+        title = meta.get("title") or f.stem
+        rel = str(f.relative_to(REPO))
+        for i, chunk in enumerate(re.split(r"\n(?=## )", body.strip())):
+            heading = chunk.splitlines()[0].lstrip("# ").strip() if chunk.startswith("## ") else meta.get("summary", "")
+            db.execute(
+                "INSERT INTO refs(id,kind,plugin,path,title,heading,text) VALUES(?,?,?,?,?,?,?)",
+                (f"guide:{rel}#{i}", kind, plugin, rel, title, heading, chunk.strip()),
+            )
+            n += 1
+    print(f"办案指引（通用可读版）{len(files)} 篇，{n} 段", flush=True)
+    return True
+
+
 def load_refs(db: sqlite3.Connection) -> None:
     """插件参考资料按二级标题切块；技能（处理流程）整篇收录。"""
     n = 0
@@ -270,7 +300,8 @@ def main() -> None:
     load_laws(db)
     load_extras(db)
     load_cases(db)
-    load_refs(db)
+    if not load_guides(db):
+        load_refs(db)
     meta = {"dataset": "senry5433/china-effective-laws-regulations（CC0-1.0，快照 2026-08-26）",
             "built_at": __import__("datetime").date.today().isoformat(),
             "topics": json.dumps(list(TOPICS), ensure_ascii=False)}
