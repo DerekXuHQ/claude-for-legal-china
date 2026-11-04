@@ -116,7 +116,7 @@ export class Updater {
     if (this.busy) return this.snapshot();
     this.busy = true;
     try {
-      const buf = await fetchBytes(CONFIG.manifestUrl, { signal: AbortSignal.timeout(30000), limit: 5 * 1024 * 1024 });
+      const buf = await fetchBytes(`${CONFIG.manifestUrl}?t=${Date.now()}`, { signal: AbortSignal.timeout(30000), limit: 5 * 1024 * 1024 });
       const envelope = JSON.parse(buf.toString("utf8"));
       const m = verifyManifest(envelope);
       this.envelope = envelope;
@@ -153,8 +153,9 @@ export class Updater {
   async download() {
     if (this.busy) return this.snapshot();
     if (!this.manifest) throw new Error("先检查更新");
-    this.busy = true;
     const m = this.manifest;
+    if (m.sequence <= this.installedSequence() || m.shellProtocol > SHELL_PROTOCOL) return this.snapshot();
+    this.busy = true;
     const plan = this.plan(m);
     const total = plan.reduce((n, c) => n + c.size, 0);
     let received = 0;
