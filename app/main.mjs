@@ -4,7 +4,7 @@ import { app, BrowserWindow, Menu, shell, dialog } from "electron";
 import { Worker } from "node:worker_threads";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { createServer, DEFAULT_SETTINGS } from "./server/api.mjs";
 import * as search from "./server/search.mjs";
@@ -29,7 +29,10 @@ const LEGAL_DB = path.join(DATA, "legal.db");
 const USER_DB = path.join(DATA, "user.db");
 const SETTINGS = path.join(DATA, "settings.json");
 
-if (!app.requestSingleInstanceLock()) app.quit();
+// 启动器（boot.mjs）已经拿到单实例锁并选好了版本；在线更新模块在外壳里，不随补丁替换
+const BOOT = globalThis.__clsBoot || null;
+const SHELL_DIR = path.join(BOOT?.builtin || APP_DIR, "shell");
+let updater = null;
 
 let win = null;
 let legalDb = null;
@@ -38,9 +41,12 @@ const setup = { ready: false, phase: "启动中", progress: 0, error: "" };
 let sync = { running: false, mode: "", phase: "", checked: 0, fetched: 0, changes: 0, errors: 0, current: "", finished_at: "", last_result: null };
 let syncWorker = null;
 
-function dataVersion() {
-  try { return JSON.parse(readFileSync(path.join(RES, "data-version.json"), "utf-8")); } catch { return null; }
+// 法规数据包：安装包自带的和在线更新下载的，取最新的一个
+function dataPack() {
+  if (updater) return updater.dataPack();
+  try { return { gz: path.join(RES, "base.db.gz"), info: JSON.parse(readFileSync(path.join(RES, "data-version.json"), "utf-8")) }; } catch { return null; }
 }
+function dataVersion() { return dataPack()?.info || null; }
 
 function openUserDb() {
   userDb = new DatabaseSync(USER_DB);
@@ -69,8 +75,9 @@ function installedVersion() {
 }
 
 function prepareData() {
-  const dv = dataVersion();
-  const gz = path.join(RES, "base.db.gz");
+  const pack = dataPack();
+  const dv = pack?.info;
+  const gz = pack?.gz || path.join(RES, "base.db.gz");
   if (!dv || !existsSync(gz)) {
     if (existsSync(LEGAL_DB)) { openLegalDb(); Object.assign(setup, { ready: true, phase: "完成", progress: 1 }); return; }
     Object.assign(setup, { error: "安装包里缺少法规数据（resources/base.db.gz）。开发环境请先运行 npm run data。" });
@@ -215,6 +222,17 @@ app.setAboutPanelOptions({
 
 app.whenReady().then(async () => {
   mkdirSync(DATA, { recursive: true });
+  try {
+    const { Updater } = await import(pathToFileURL(path.join(SHELL_DIR, "updater.mjs")).href);
+    const { ReleaseState } = await import(pathToFileURL(path.join(SHELL_DIR, "release-state.mjs")).href);
+    updater = new Updater({
+      dir: BOOT?.updatesDir || path.join(app.getPath("userData"), "updates"),
+      builtin: BOOT?.builtin || APP_DIR, resources: RES,
+      state: BOOT?.state || new ReleaseState({ dir: path.join(app.getPath("userData"), "updates") }),
+    });
+  } catch (err) {
+    console.error("在线更新模块加载失败", err);
+  }
   openUserDb();
   buildMenu();
   const server = createServer({
@@ -225,13 +243,29 @@ app.whenReady().then(async () => {
     updateStatus: () => ({ ...sync }),
     startUpdate,
     stopUpdate,
-    appInfo: () => ({ version: app.getVersion(), data: dataVersion(), data_dir: DATA, platform: process.platform, arch: process.arch }),
+    appInfo: () => ({ version: app.getVersion(), sequence: updater?.installedSequence() || 0, data: dataVersion(), data_dir: DATA, platform: process.platform, arch: process.arch }),
+    appUpdate: {
+      status: () => updater?.snapshot() || { status: "unavailable" },
+      check: () => updater?.check(),
+      download: () => updater?.download(),
+      restart: () => { app.relaunch(); app.exit(0); },
+    },
   });
   const port = await server.listen();
   // 开发模式下打印地址，便于在浏览器里调试界面
   if (!app.isPackaged) console.log(`[dev] http://127.0.0.1:${port}/#t=${server.token}`);
   prepareData();
   await createWindow(port, server.token);
+  // 窗口和本地服务都起来了：这个版本健康，试运行的候选版本转正
+  if (BOOT?.selected?.load) {
+    BOOT.state.confirmHealthy(BOOT.selected.sequence);
+    BOOT.healthRecorded = true;
+  }
+  // 检查在线更新：启动后一会儿查一次，之后每 6 小时
+  if (updater && app.isPackaged) {
+    setTimeout(() => updater.check(), 20000);
+    setInterval(() => updater.check(), 6 * 3600 * 1000).unref?.();
+  }
   app.on("activate", () => { if (!BrowserWindow.getAllWindows().length) createWindow(port, server.token); });
   app.on("second-instance", () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 }).catch((err) => {

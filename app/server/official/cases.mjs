@@ -48,7 +48,8 @@ export async function fetchCase(item, { signal } = {}) {
 export function upsertCase(db, c) {
   const s = c.sections || {};
   const id = c.number ? `GC${c.number}` : c.url.split("/").pop().split(".")[0];
-  const old = db.prepare("SELECT rowid, title, keywords, points, laws, text FROM cases WHERE id = ?").get(id);
+  const hasNote = db.prepare("PRAGMA table_info(cases)").all().some((c) => c.name === "note");
+  const old = db.prepare(`SELECT rowid, title, keywords, points, laws, text${hasNote ? ", note" : ""} FROM cases WHERE id = ?`).get(id);
   const fts = !!db.prepare("SELECT 1 FROM sqlite_master WHERE name='cases_fts'").get();
   if (old && fts) {
     db.prepare("INSERT INTO cases_fts(cases_fts, rowid, title, keywords, points, laws, text) VALUES('delete', ?, ?, ?, ?, ?, ?)")
@@ -57,6 +58,8 @@ export function upsertCase(db, c) {
   if (old) db.prepare("DELETE FROM cases WHERE id = ?").run(id);
   const r = db.prepare("INSERT INTO cases(id,number,title,keywords,points,laws,facts,result,reasoning,url,text) VALUES(?,?,?,?,?,?,?,?,?,?,?)")
     .run(id, c.number, c.title, s["关键词"] || "", s["裁判要点"] || "", s["相关法条"] || "", s["基本案情"] || "", s["裁判结果"] || "", s["裁判理由"] || "", c.url, c.text);
+  // 保留「不再参照」等状态说明
+  if (hasNote && old?.note) db.prepare("UPDATE cases SET note = ? WHERE id = ?").run(old.note, id);
   if (fts) {
     db.prepare("INSERT INTO cases_fts(rowid, title, keywords, points, laws, text) VALUES(?,?,?,?,?,?)")
       .run(r.lastInsertRowid, c.title, s["关键词"] || "", s["裁判要点"] || "", s["相关法条"] || "", c.text);

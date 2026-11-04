@@ -8,6 +8,7 @@ MAC_ARCH="${MAC_ARCH:-arm64}"
 case "$MAC_ARCH" in arm64|x64) ;; *) echo "MAC_ARCH 只能是 arm64 或 x64"; exit 2 ;; esac
 cd "$(dirname "$0")/.."
 [ -f resources/base.db.gz ] || { echo "缺少 resources/base.db.gz，先运行 npm run data"; exit 1; }
+node scripts/stamp.mjs
 out=$(mktemp -d /private/tmp/legalchina-mac.XXXXXX)
 if security find-identity -v -p codesigning | grep -q "Developer ID Application"; then
   echo "找到 Developer ID 证书：正式签名并公证"

@@ -1,53 +1,31 @@
-// AI 检索代理：在本地资料库里多轮检索，然后按固定结构给出参考意见。
-// 只接 OpenAI 兼容接口（默认是 Portkey 网关），同一个 key 下的各家模型都通过它调用。
-import OpenAI from "openai";
-import * as search from "./search.mjs";
+// 资料库检索工具和带工具的多轮回答循环。任务分流、追问、合同审查流程在 ask.mjs。
+import * as search from "../search.mjs";
+import { stream, complete } from "./models.mjs";
 
-const MAX_STEPS = 14;
+export const SYSTEM_PROMPT = `你是一名经验丰富的中国大陆执业律师助理，服务对象是企业老板、HR、企业法务和个人。用户把你当作随时可以请教的专业顾问：他们要的是能直接拿去用的判断、依据和下一步，而不是泛泛的摘要。只处理中国大陆法律；涉及港澳台或境外法律时指出这一点，只就大陆法部分作答。
 
-export const SYSTEM_PROMPT = `你是一个中国大陆法律检索与分析工具，用户把你当作参考用的法律智囊。你的任务：理解问题，在本地资料库里多轮检索，给出清楚、具体、可追溯的参考意见。只处理中国大陆法律；问题涉及港澳台或境外法律时，指出这一点，只就大陆法部分作答。
-
-## 工作方法
-1. 先拆解问题：涉及哪些法律关系、哪个地区、哪个时间点、用户想解决什么。
-2. 多轮检索：先找全国性法律和司法解释，再看行政法规和用户所在地区的地方性法规；需要时看法规目录、读原文条文；查找相关的最高法指导性案例；查找实务要点和处理流程。检索词换几种说法（例如「解除劳动合同」「辞退」「经济补偿」）。
-3. 只依据检索到的资料下结论。资料库里没有、或你没有读到原文的规定，不要当作已确认的依据；确有必要提到时，明确写「资料库中未检索到，需另行核实」。
-4. 注意效力和版本：区分现行有效、旧版本、尚未生效（例如商标法 2026 年修订版 2027-01-01 才施行，在此之前仍适用 2019 年修正版）。上位法优先，特别规定优先，地方性法规只在对应地区适用。检索结果里标了「官方全文」的，是从中国人大网、国家行政法规库、最高人民法院网站核对过的文本。
+## 怎么工作
+1. **先想清楚这是什么事。** 用户真正要解决的问题是什么（判断合法性、应对索赔、决定要不要起诉、改合同……）？涉及哪些法律关系、哪一方、哪个地区、哪个时间点（行为发生时适用的法律版本）？下面的「本次任务」给了这类事的专业做法，照着走。
+2. **用资料库检索，按效力层级找依据：** 法律 → 司法解释 → 行政法规、部门规章 → 用户所在地的地方性法规 → 最高法指导性案例 → 办案指引。检索词换几种说法（例如「解除劳动合同」「辞退」「经济补偿」）。关键条文一定读原文（read_articles），不要只看检索摘要。
+3. **只依据查到的原文下结论。** 资料库里没有、或你没读到原文的规定，不能当作已确认的依据；确有必要提到，写明「资料库中未检索到，需另行核实」。不要编造条号、金额、比例、期限。每个结论都要有条文真正支撑，不要把不相干的条文挂在结论后面。
+4. **注意效力和版本：** 区分现行有效、旧版本、尚未生效（例如商标法 2026 年修订版 2027-01-01 才施行）。上位法优先，特别规定优先，新法优先；地方性法规只在对应地区适用。行为发生在新法施行前的，按当时的法律判断并说明。
+5. **案例的效力：** 指导性案例带有 status「不再参照」的，不能作为裁判参照依据，最多作为背景说明并写明已不再参照。
+6. **像律师一样把事情想全：** 用户没问但会直接影响结果的风险、期限、证据要求、程序要件、对方可能的抗辩，都要指出来。对方的主张合理的地方，直说。
+7. **事实不清时：** 能根据常理合理假设的，写明假设并据此分析；结论取决于某个关键事实的，分情况给结论（「如果……则……；如果……则……」），并在最后列出需要补充的材料。
 
 ## 引用格式（必须遵守）
-每次引用资料，都在句末用双方括号写上检索结果里给出的编号，界面会把它变成可点击的链接：
+引用资料时，在句末用双方括号写上检索结果里给出的编号，界面会把它变成可点击的原文链接：
 - 条文：[[art:编号]]，例如 [[art:593cdcfe417d6650:第一条]]
 - 法规整体：[[law:编号]]
 - 指导性案例：[[case:编号]]，例如 [[case:GC279]]
-- 实务要点或处理流程：[[ref:编号]]
-编号必须原样复制工具返回的 id，不能编造。
+- 办案指引：[[ref:编号]]
+编号必须原样复制工具返回的 id，不能编造。正文提到法条时写全称和条号，例如「《劳动合同法》第四十七条」。
 
-## 回答结构（Markdown，按需省略空的部分）
-## 结论摘要
-用三五句话直接回答问题，给出你的判断。
-
-## 适用的规定
-逐条列出适用的条文：写明法规名称和条号、它说了什么、为什么适用于本案情形，附引用。
-
-## 不适用或需要排除的规定
-用户可能以为适用、但实际不适用或需要区分的规定，说明理由。
-
-## 相关案例
-相关的指导性案例及其裁判要点对本问题的意义。没有就写「未检索到直接相关的指导性案例」。
-
-## 建议的处理流程
-按步骤写出实际怎么做：先做什么、准备哪些材料、注意哪些期限和程序。
-
-## 建议
-你的具体建议和风险提示，包括对用户最有利的做法和需要避免的做法。
-
-## 可以向律师确认的问题
-三到五个值得拿去问执业律师的具体问题。
-
-## 写作要求
-- 用简洁的中文直接给出意见，不要寒暄，不要表演个性。
-- 不需要反复声明「这不构成法律意见」「我不是律师」，界面已有统一提示。
-- 用户没说地区时，先按全国性规定回答，并指出哪些地方会因地区不同而变化。
-- 金额、期限、比例等数字以检索到的条文为准；条文没写的，不要自己编。`;
+## 输出
+- 结论先行：第一段直接回答（能 / 不能、合法 / 违法、合理 / 不合理、大概多少钱、风险高低），一两句话说清理由。
+- 然后按「本次任务」给的输出结构展开；没有给结构时用：结论 → 适用的规定 → 分析（含不适用或需要排除的规定）→ 相关案例 → 下一步怎么做（含期限）→ 需要补充的材料 → 什么情况下应当请律师。
+- 金额、期限要给出计算过程和起算点。表格能说清楚的用表格。
+- 用简洁的中文书面语，不寒暄，不表演个性，不反复声明「不构成法律意见」（界面已有统一提示）。`;
 
 export const TOOLS = [
   {
@@ -191,7 +169,7 @@ export function runTool(name, args) {
       return J(search.searchCases(str(args.query), { limit: int(args.limit, 8, 15) }).items);
     case "read_case": {
       const c = search.getCase(str(args.case_id));
-      return J(c ? pick(c, ["id", "title", "keywords", "points", "laws", "facts", "result", "reasoning", "url"]) : { error: "未找到该案例" });
+      return J(c ? { ...pick(c, ["id", "title", "keywords", "points", "laws", "facts", "result", "reasoning", "url"]), ...(c.note ? { status: c.note } : {}) } : { error: "未找到该案例" });
     }
     case "search_guides":
       return J(search.searchRefs(str(args.query), { limit: int(args.limit, 6, 12) }).items);
@@ -213,80 +191,50 @@ function stepText(name, args) {
   return detail ? `${label}：${detail}` : label;
 }
 
-const userText = (q, region) => (region ? `[用户所在或关注的地区：${region}]\n\n${q}` : q);
-export const DEFAULT_BASE_URL = "https://api.portkey.bond/v1";
+export { stepText };
 
-// 分析深度：控制检索轮数和回答详略；支持 reasoning_effort 的模型同时调整推理强度
-const DEPTH = {
-  low: { steps: 6, effort: "low", note: "\n\n## 本次要求\n快速作答：检索两到四次即可，回答精简，只写最关键的规定和建议。" },
-  medium: { steps: 14, effort: null, note: "" },
-  high: { steps: 22, effort: "high", note: "\n\n## 本次要求\n深入分析：多换几种检索词，逐条核对条文原文和版本，覆盖例外情形、地方差异和相关案例，回答写完整。" },
+const TOOL_DEFS = () => TOOLS.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }));
+
+// 分析深度：检索轮数和推理强度
+export const DEPTH = {
+  low: { steps: 8, effort: "low", note: "\n\n## 本次要求\n快速作答：检索两到四次即可，回答精简，只写最关键的规定、结论和下一步。" },
+  medium: { steps: 16, effort: "medium", note: "" },
+  high: { steps: 26, effort: "high", note: "\n\n## 本次要求\n深入分析：多换几种检索词，逐条读原文、核对版本和施行日期，覆盖例外情形、地方差异和相关案例，回答写完整。" },
 };
 
-function client(settings) {
-  return new OpenAI({ apiKey: settings.api_key || "none", baseURL: settings.base_url || DEFAULT_BASE_URL, maxRetries: 1 });
-}
-
-/** 读取这个 key 能用的模型清单。 */
-export async function listModels(settings, signal) {
-  const ids = [];
-  for await (const m of client(settings).models.list({ signal })) ids.push(m.id);
-  return [...new Set(ids)].sort((a, b) => a.localeCompare(b));
-}
-
-const noEffort = new Set(); // 不支持 reasoning_effort 的模型，本次运行内记住，不再发送
-
-async function streamTurn(api, params, emit, signal) {
-  const stream = await api.chat.completions.create({ ...params, stream: true }, { signal });
-  let content = "";
-  const calls = [];
-  for await (const chunk of stream) {
-    const d = chunk.choices?.[0]?.delta;
-    if (!d) continue;
-    if (d.content) { content += d.content; emit({ type: "text", delta: d.content }); }
-    for (const tc of d.tool_calls || []) {
-      const c = (calls[tc.index ?? 0] ||= { id: "", type: "function", function: { name: "", arguments: "" } });
-      if (tc.id) c.id = tc.id;
-      if (tc.function?.name) c.function.name += tc.function.name;
-      if (tc.function?.arguments) c.function.arguments += tc.function.arguments;
-    }
-  }
-  return { content, calls: calls.filter(Boolean) };
-}
-
-export async function ask(settings, history, question, region, emit, signal, { model, depth = "medium" } = {}) {
-  const api = client(settings);
-  const cfg = DEPTH[depth] || DEPTH.medium;
-  const tools = TOOLS.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }));
-  const messages = [{ role: "system", content: SYSTEM_PROMPT + cfg.note }, ...history, { role: "user", content: userText(question, region) }];
-  for (let step = 0; step < cfg.steps; step++) {
-    const params = { model, messages, tools };
-    if (cfg.effort && !noEffort.has(model)) params.reasoning_effort = cfg.effort;
+/**
+ * 带工具的多轮检索与回答。stream 为 true 时把文字增量推给 emit。
+ * @returns {Promise<{messages: object[], text: string}>}
+ */
+export async function runAgent(settings, { model, effort, system, messages, steps = 16, emit = () => {}, signal, stream: doStream = true, label = "" }) {
+  const msgs = [{ role: "system", content: system }, ...messages];
+  const tools = TOOL_DEFS();
+  for (let step = 0; step < steps; step++) {
     let turn;
-    try {
-      turn = await streamTurn(api, params, emit, signal);
-    } catch (err) {
-      // 模型不支持 reasoning_effort 时去掉再试一次
-      if (params.reasoning_effort && err?.status === 400 && !signal?.aborted) {
-        noEffort.add(model);
-        emit({ type: "text_reset" });
-        step--;
-        continue;
-      }
-      throw err;
+    if (doStream) {
+      turn = await stream(settings, { model, messages: msgs, effort, tools, signal, onText: (delta) => emit({ type: "text", delta }) });
+    } else {
+      const r = await complete(settings, { model, messages: msgs, effort, tools, signal });
+      const m = r.choices?.[0]?.message || {};
+      turn = { content: m.content || "", calls: m.tool_calls || [] };
     }
-    messages.push({ role: "assistant", content: turn.content || "", ...(turn.calls.length ? { tool_calls: turn.calls } : {}) });
-    if (!turn.calls.length) return messages.slice(1);
+    msgs.push({ role: "assistant", content: turn.content || "", ...(turn.calls.length ? { tool_calls: turn.calls } : {}) });
+    if (!turn.calls.length) return { messages: msgs.slice(1), text: turn.content || "" };
     for (const c of turn.calls) {
       let args = null;
       try { args = JSON.parse(c.function.arguments || "{}"); } catch { /* 交给 runTool 报错 */ }
-      emit({ type: "step", text: stepText(c.function.name, args) });
+      emit({ type: "step", text: (label ? label + " · " : "") + stepText(c.function.name, args) });
       let content;
       try { content = runTool(c.function.name, args); } catch (e) { content = JSON.stringify({ error: String(e.message || e) }); }
-      messages.push({ role: "tool", tool_call_id: c.id, content });
+      msgs.push({ role: "tool", tool_call_id: c.id, content });
     }
-    emit({ type: "text_reset" });
+    if (doStream) emit({ type: "text_reset" });
   }
-  emit({ type: "error", message: "检索步骤过多，已停止。可以把问题拆小一点，或把分析深度调高。" });
-  return messages.slice(1);
+  // 步数用完：要求直接根据已有资料作答
+  msgs.push({ role: "user", content: "检索次数已到上限。请不要再调用工具，直接根据已经查到的资料给出完整回答；没查到的部分明确说明。" });
+  const r = doStream
+    ? await stream(settings, { model, messages: msgs, effort, signal, onText: (delta) => emit({ type: "text", delta }) })
+    : { content: (await complete(settings, { model, messages: msgs, effort, signal })).choices?.[0]?.message?.content || "" };
+  msgs.push({ role: "assistant", content: r.content || "" });
+  return { messages: msgs.slice(1), text: r.content || "" };
 }

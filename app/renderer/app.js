@@ -24,7 +24,7 @@ function showView(v) {
   $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
   $$(".view").forEach((s) => s.classList.toggle("active", s.id === "view-" + v));
   if (v === "saved") renderSaved();
-  if (v === "ask") $("#question").focus();
+  if (v === "ask") { $("#question").focus(); if (!state.matter) loadMatters().then((l) => l[0] ? openMatter(l[0].id) : renderMatter(null)); }
   if (v === "updates") { renderUpdates(); $("#upd-dot").hidden = true; }
 }
 
@@ -125,7 +125,7 @@ function resultHTML(it) {
   let title = esc(it.title), meta = badges(it);
   if (it.kind === "article") title += `<span class="art">${esc(it.article)}</span>`;
   if (it.kind === "law") meta += it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : "";
-  if (it.kind === "case") meta = it.keywords ? `<span class="badge">${esc(it.keywords.slice(0, 40))}</span>` : "";
+  if (it.kind === "case") meta = (it.note ? `<span class="badge old">不再参照</span>` : "") + (it.keywords ? `<span class="badge">${esc(it.keywords.slice(0, 40))}</span>` : "");
   if (it.kind === "ref") { title = esc(it.title) + (it.heading ? ` · ${esc(it.heading.slice(0, 40))}` : ""); meta = `<span class="badge">${it.ref_kind === "处理流程" ? "流程" : "要点"}</span>`; }
   return `<li data-key="${esc(key)}"><div class="r-title">${title}</div><div class="r-meta">${meta}</div><div class="r-snip">${highlight(it.snippet || "", state.q)}</div></li>`;
 }
@@ -224,6 +224,7 @@ function detailHTML(it, hlArticle) {
       .filter(([, v]) => v).map(([k, v]) => `<h3 class="rd-ch left">${k}</h3><div class="rd-prose">${para(v)}</div>`).join("");
     const title = it.title.replace(/^指导性?案例\s*\d+\s*号[：:\s]*/, "") || it.title;
     return `<article class="reader">${headHTML("最高人民法院指导性案例" + (it.number ? ` · 第 ${it.number} 号` : ""), esc(title), "", starBtn("case", it.id))}
+      ${it.note ? `<div class="d-note">${esc(it.note)}</div>` : ""}
       ${sec || `<div class="rd-prose">${para(it.text)}</div>`}
       <p class="d-src small muted src-line">来源：<a href="${esc(it.url)}" target="_blank" rel="noopener">最高人民法院</a></p></article>`;
   }
@@ -235,7 +236,7 @@ function detailHTML(it, hlArticle) {
   }
   if (it.kind === "answer") {
     const meta = (it.region ? `<span class="badge">${esc(it.region)}</span>` : "") + `<span class="badge">${esc(it.model)}</span><span class="badge">${new Date(it.created * 1000).toLocaleString("zh-CN")}</span>`;
-    return `<article class="reader">${headHTML("AI 回答", esc(it.question), meta, starBtn("answer", it.id))}
+    return `<article class="reader">${headHTML("法律助理产出", esc(it.question), meta, starBtn("answer", it.id))}
       <div class="md rd-prose">${renderMD(it.answer)}</div></article>`;
   }
   return `<pre>${esc(JSON.stringify(it, null, 2))}</pre>`;
@@ -272,7 +273,7 @@ function bookmarkInfo(it) {
   if (it.kind === "law") return { title: it.title, subtitle: it.level, snippet: it.history ? it.history.slice(0, 120) : "" };
   if (it.kind === "case") return { title: it.title, subtitle: "指导性案例", snippet: (it.points || "").slice(0, 120) };
   if (it.kind === "ref") return { title: it.title, subtitle: it.heading, snippet: it.text.slice(0, 120) };
-  if (it.kind === "answer") return { title: it.question, subtitle: "AI 回答", snippet: it.answer.replace(/\[\[[^\]]+\]\]|[#*]/g, "").slice(0, 120) };
+  if (it.kind === "answer") return { title: it.question, subtitle: "助理产出", snippet: it.answer.replace(/\[\[[^\]]+\]\]|[#*]/g, "").slice(0, 120) };
   return { title: it.id };
 }
 
@@ -300,12 +301,12 @@ $$("#saved-filter button").forEach((b) => b.addEventListener("click", () => {
 
 async function renderSaved() {
   const list = (await loadBookmarks()).filter((b) => !state.savedFilter || b.kind === state.savedFilter);
-  const label = { article: "条文", law: "法规", case: "案例", ref: "办案指引", answer: "AI 回答" };
+  const label = { article: "条文", law: "法规", case: "案例", ref: "办案指引", answer: "助理产出" };
   $("#saved-list").innerHTML = list.length ? list.map((b) => `<li data-kind="${esc(b.kind)}" data-id="${esc(b.ref_id)}">
     <div class="r-title">${esc(b.title)}</div>
     <div class="r-meta"><span class="badge">${label[b.kind] || b.kind}</span>${b.subtitle ? `<span class="badge">${esc(b.subtitle)}</span>` : ""}<span class="badge">${new Date(b.created * 1000).toLocaleDateString("zh-CN")}</span></div>
     ${b.note ? `<div class="d-note">${esc(b.note)}</div>` : ""}<div class="r-snip">${esc(b.snippet)}</div></li>`).join("")
-    : `<p class="muted">还没有收藏。在检索结果或 AI 回答里点「☆ 收藏」。</p>`;
+    : `<p class="muted">还没有收藏。在检索结果或助理的产出里点「☆ 收藏」。</p>`;
 }
 $("#saved-list").addEventListener("click", (e) => {
   const li = e.target.closest("li");
@@ -371,34 +372,282 @@ function bindCites(root) {
   });
 }
 
-/* ---------- AI 问答 ---------- */
-$$(".ex").forEach((b) => b.addEventListener("click", () => { $("#question").value = b.textContent; $("#question").focus(); }));
+/* ---------- 法律助理 ---------- */
+state.matter = null;      // 当前事项
+state.pendingFiles = [];  // 已上传、还没随消息发出的文件
+
+const STARTERS = [
+  { title: "审一份合同", desc: "上传合同，逐条找漏洞、给修改文字和谈判要点", prompt: "请帮我审查这份合同。我方是：", upload: true },
+  { title: "被起诉 / 收到律师函", desc: "上传起诉状、仲裁申请、律师函或处罚告知书", prompt: "我收到了附件里的文书，请帮我分析怎么应对。", upload: true },
+  { title: "我想告对方 / 追款", desc: "判断有没有依据、能不能开始、需要哪些证据", prompt: "我想起诉对方，情况是：" },
+  { title: "员工纠纷", desc: "辞退、补偿、N+1、加班费、竞业限制", prompt: "员工的情况是：" },
+  { title: "这个方案合不合法", desc: "上传营销活动、商业模式或制度方案", prompt: "请审查这个方案有没有违法或合规风险。", upload: true },
+  { title: "起草一份文书", desc: "律师函、催款函、解除通知、协议、决议", prompt: "请帮我起草一份：" },
+];
+
+async function loadMatters() {
+  const list = await api("/api/matters");
+  $("#matter-list").innerHTML = list.length ? list.map((m) => `<li data-id="${esc(m.id)}" class="${state.matter?.id === m.id ? "sel" : ""}">
+      <div class="m-title">${esc(m.title)}</div>
+      <div class="m-meta">${m.task ? `<span>${esc(m.task)}</span>` : ""}<span>${new Date(m.updated * 1000).toLocaleDateString("zh-CN")}</span>${m.files ? `<span>📎${m.files}</span>` : ""}</div>
+      <button class="m-del" data-del="${esc(m.id)}" title="删除这个事项">×</button></li>`).join("")
+    : `<li class="m-empty">还没有事项。点「新事项」开始。</li>`;
+  return list;
+}
+
+$("#matter-list").addEventListener("click", async (e) => {
+  const del = e.target.closest("[data-del]");
+  if (del) {
+    e.stopPropagation();
+    if (!confirm("删除这个事项？对话记录和上传的文件都会删除，不能恢复。")) return;
+    await api(`/api/matters/${del.dataset.del}`, { method: "DELETE" });
+    if (state.matter?.id === del.dataset.del) { state.matter = null; renderMatter(null); }
+    loadMatters();
+    return;
+  }
+  const li = e.target.closest("li[data-id]");
+  if (li) openMatter(li.dataset.id);
+});
+
+$("#new-matter").addEventListener("click", async () => {
+  const { id } = await api("/api/matters", { method: "POST", body: "{}" });
+  await openMatter(id);
+  $("#question").focus();
+});
+
+async function ensureMatter() {
+  if (state.matter) return state.matter.id;
+  const { id } = await api("/api/matters", { method: "POST", body: "{}" });
+  await openMatter(id);
+  return id;
+}
+
+async function openMatter(id) {
+  const m = await api(`/api/matters/${id}`);
+  state.matter = m;
+  state.pendingFiles = [];
+  renderChips();
+  renderMatter(m);
+  loadMatters();
+}
+
+$("#matter-title").addEventListener("change", async () => {
+  if (!state.matter) return;
+  await api(`/api/matters/${state.matter.id}/rename`, { method: "POST", body: JSON.stringify({ title: $("#matter-title").value }) });
+  loadMatters();
+});
+
+function renderMatter(m) {
+  const log = $("#chat-log");
+  $("#matter-head").hidden = !m;
+  if (!m || !m.display.length) {
+    if (m) { $("#matter-title").value = m.title; $("#matter-task").textContent = m.task || "待分类"; $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : ""; }
+    log.innerHTML = `<div class="chat-intro">
+      <h2>法律助理</h2>
+      <p>把事情交给助理：它会先问清关键事实，再按这类事的专业做法查法条、案例和办案指引，给出判断、依据、下一步和可以直接用的文书。合同和方案审查会分段逐条审，再用另一家的模型复核。每件事单独保存，随时回来接着办。</p>
+      <div class="starters">${STARTERS.map((s, i) => `<button class="starter" data-starter="${i}"><b>${esc(s.title)}</b><span>${esc(s.desc)}</span></button>`).join("")}</div>
+      <p class="small muted">可以上传 PDF、Word、图片（截图、照片会自动识别文字）、录音和视频。</p>
+    </div>`;
+    $$("[data-starter]", log).forEach((b) => b.addEventListener("click", () => {
+      const s = STARTERS[Number(b.dataset.starter)];
+      $("#question").value = s.prompt;
+      $("#question").focus();
+      if (s.upload) $("#file-input").click();
+    }));
+    return;
+  }
+  $("#matter-title").value = m.title;
+  $("#matter-task").textContent = m.task || "待分类";
+  $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : "";
+  log.innerHTML = "";
+  m.display.forEach((d, i) => log.appendChild(entryEl(d, i === m.display.length - 1)));
+  bindCites(log);
+  log.scrollTop = log.scrollHeight;
+}
+
+function fileChip(f) {
+  const icon = { image: "🖼", audio: "🎧", video: "🎬" }[f.kind] || "📄";
+  return `<span class="chip">${icon} ${esc(f.name)}</span>`;
+}
+
+function entryEl(d, isLast) {
+  const el = document.createElement("div");
+  if (d.role === "user") {
+    el.className = "msg user";
+    const answers = d.intake_answers ? Object.values(d.intake_answers).filter(Boolean) : [];
+    el.innerHTML = `${d.text ? `<div>${esc(d.text)}</div>` : ""}${d.files?.length ? `<div class="chips">${d.files.map(fileChip).join("")}</div>` : ""}${answers.length ? `<div class="small">补充：${esc(answers.join("；"))}</div>` : ""}${d.skip_intake ? `<div class="small muted">先按现有信息分析</div>` : ""}`;
+    return el;
+  }
+  el.className = "msg ai";
+  el.innerHTML = `${d.task ? `<div class="task-chip">${esc(d.task)}</div>` : ""}
+    ${d.steps?.length ? `<details class="steps"><summary>工作过程（${d.steps.length} 步）</summary>${d.steps.map((s) => `<div>${esc(s)}</div>`).join("")}</details>` : ""}
+    <div class="md">${renderMD(d.text || "")}</div>
+    ${d.intake ? intakeHTML(d.intake, isLast && !d.intake.answered) : ""}
+    ${d.citations && d.citations.checked ? `<div class="cite-line small ${d.citations.unverified?.length ? "warn" : "ok"}">引用核对：正文提到法条 ${d.citations.checked} 处，${d.citations.linked} 处已对上资料库原文${d.citations.unverified?.length ? `；${d.citations.unverified.length} 处资料库未核实：${esc(d.citations.unverified.join("、"))}` : ""}</div>` : ""}
+    ${d.error ? `<p class="err">${esc(d.error)}</p>` : ""}
+    <div class="msg-actions"></div>`;
+  if (d.intake && isLast && !d.intake.answered) bindIntake(el, d.intake);
+  if (d.text && !d.intake) addActions(el, d);
+  return el;
+}
+
+function intakeHTML(intake, active) {
+  const qs = intake.questions || [];
+  if (!active) return `<div class="intake done small muted">已回答助理的 ${qs.length} 个问题</div>`;
+  return `<form class="intake">
+    <div class="intake-title">先确认几件事（会影响结论）：</div>
+    ${qs.map((q) => `<label class="iq"><span>${esc(q.question)}${q.required ? " <b class='req'>*</b>" : ""}${q.why ? `<em>${esc(q.why)}</em>` : ""}</span>
+      ${q.options?.length ? `<div class="opts">${q.options.map((o) => `<button type="button" class="opt" data-key="${esc(q.key)}" data-val="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}
+      <input name="${esc(q.key)}" placeholder="${q.options?.length ? "选一个，或直接填写" : "填写"}"></label>`).join("")}
+    <div class="intake-actions"><button type="submit" class="primary">提交，继续分析</button><button type="button" class="ghost" data-skip>先按现有信息分析</button></div>
+    ${intake.assumptions?.length ? `<div class="small muted">跳过的话，助理会假设：${esc(intake.assumptions.join("；"))}</div>` : ""}
+  </form>`;
+}
+
+function bindIntake(el, intake) {
+  const form = $("form.intake", el);
+  if (!form) return;
+  $$(".opt", form).forEach((b) => b.addEventListener("click", () => {
+    form.elements[b.dataset.key].value = b.dataset.val;
+    $$(`.opt[data-key="${CSS.escape(b.dataset.key)}"]`, form).forEach((x) => x.classList.toggle("on", x === b));
+  }));
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const answers = {};
+    for (const q of intake.questions) answers[q.key] = form.elements[q.key].value.trim();
+    send({ intake_answers: answers });
+  });
+  $("[data-skip]", form).addEventListener("click", () => send({ skip_intake: true }));
+}
+
+function addActions(el, d) {
+  const acts = $(".msg-actions", el);
+  if (d.answer_id) {
+    acts.insertAdjacentHTML("beforeend", starBtn("answer", d.answer_id));
+    const it = { kind: "answer", id: d.answer_id, question: state.matter?.title || "", answer: d.text };
+    $("[data-star]", acts).addEventListener("click", (ev) => toggleBookmark(ev.currentTarget, it));
+  }
+  acts.insertAdjacentHTML("beforeend", `<button class="ghost" data-copy>复制</button><button class="ghost" data-word>导出 Word</button>`);
+  $("[data-copy]", acts).addEventListener("click", () => navigator.clipboard.writeText(plainText(d.text)));
+  $("[data-word]", acts).addEventListener("click", () => exportWord(d));
+}
+
+const plainText = (t) => String(t || "").replace(/\[\[(art|law|case|ref):[^\]]+\]\]/g, "");
+
+async function exportWord(d) {
+  const title = (state.matter?.title || "法律助理产出") + (d.task ? `（${d.task}）` : "");
+  const res = await fetch("/api/export", { method: "POST", headers: HEADERS, body: JSON.stringify({ title, markdown: d.text }) });
+  if (!res.ok) { alert("导出失败"); return; }
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${title.replace(/[\\/:*?"<>|]/g, "")}.docx`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* 上传 */
+$("#attach-btn").addEventListener("click", () => $("#file-input").click());
+$("#file-input").addEventListener("change", async (e) => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  if (!files.length) return;
+  const matterId = await ensureMatter();
+  for (const f of files) {
+    const chip = { name: f.name, status: "reading" };
+    state.pendingFiles.push(chip);
+    renderChips();
+    try {
+      const data = await new Promise((ok, bad) => {
+        const r = new FileReader();
+        r.onload = () => ok(String(r.result).split(",")[1] || "");
+        r.onerror = () => bad(r.error);
+        r.readAsDataURL(f);
+      });
+      const res = await api("/api/upload", { method: "POST", body: JSON.stringify({ matter_id: matterId, name: f.name, mime: f.type, data, model: $("#ask-model").value }) });
+      Object.assign(chip, res, { status: "ok" });
+    } catch (err) {
+      Object.assign(chip, { status: "error", error: err.message });
+    }
+    renderChips();
+  }
+});
+
+function renderChips() {
+  $("#attach-chips").innerHTML = state.pendingFiles.map((f, i) => {
+    const icon = { image: "🖼", audio: "🎧", video: "🎬" }[f.kind] || "📄";
+    const st = f.status === "reading" ? `<em>识别中…</em>` : f.status === "error" ? `<em class="err" title="${esc(f.error)}">失败：${esc(f.error.slice(0, 40))}</em>` : `<em>${f.chars ? f.chars + " 字" : ""}</em>`;
+    return `<span class="chip ${f.status}">${icon} ${esc(f.name)} ${st}<button type="button" data-rm="${i}" title="移除">×</button></span>`;
+  }).join("");
+  $$("[data-rm]", $("#attach-chips")).forEach((b) => b.addEventListener("click", () => { state.pendingFiles.splice(Number(b.dataset.rm), 1); renderChips(); }));
+}
+
+/* 语音输入：配置了语音转文字模型就录音转写；否则提示用系统听写 */
+let recorder = null;
+$("#mic-btn").addEventListener("click", async () => {
+  if (recorder) { recorder.stop(); return; }
+  const s = await api("/api/settings");
+  if (!s.transcribe_model) {
+    alert("还没有配置语音转文字模型。可以直接用系统听写：Mac 在输入框里连按两下 Fn（地球键），Windows 按 Win+H。\n\n如果你的接口支持语音转文字，可以在「设置 → 语音转文字模型」里选。");
+    $("#question").focus();
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => chunks.push(e.data);
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      recorder = null;
+      $("#mic-btn").classList.remove("rec");
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.readAsDataURL(blob); });
+      try {
+        const res = await api("/api/transcribe", { method: "POST", body: JSON.stringify({ name: "dictation.webm", mime: "audio/webm", data }) });
+        $("#question").value += res.text || "";
+        $("#question").focus();
+      } catch (err) { alert("语音转文字失败：" + err.message); }
+    };
+    recorder.start();
+    $("#mic-btn").classList.add("rec");
+  } catch (err) { alert("无法使用麦克风：" + err.message); recorder = null; }
+});
+
+/* 发送 */
 $("#question").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#ask-form").requestSubmit(); }
 });
-$("#new-chat").addEventListener("click", () => {
-  if (state.conversationId) api(`/api/conversation/${state.conversationId}`, { method: "DELETE" }).catch(() => {});
-  state.conversationId = null;
-  $("#chat-log").innerHTML = "";
-  $("#question").focus();
-});
-$("#ask-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const question = $("#question").value.trim();
-  if (!question || state.asking) return;
-  state.asking = true; $("#ask-btn").disabled = true; $("#question").value = "";
+$("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); send({}); });
+$("#stop-btn").addEventListener("click", () => state.matter && api(`/api/matters/${state.matter.id}/stop`, { method: "POST", body: "{}" }));
+
+async function send({ intake_answers, skip_intake }) {
+  if (state.asking) return;
+  const question = intake_answers || skip_intake ? "" : $("#question").value.trim();
+  const ready = state.pendingFiles.filter((f) => f.status === "ok");
+  if (state.pendingFiles.some((f) => f.status === "reading")) { alert("文件还在识别中，请稍等。"); return; }
+  if (!question && !ready.length && !intake_answers && !skip_intake) return;
+  const matterId = await ensureMatter();
+  state.asking = true;
+  $("#ask-btn").disabled = true; $("#stop-btn").hidden = false;
+  if (!intake_answers && !skip_intake) $("#question").value = "";
+  const fileIds = ready.map((f) => f.id);
+  state.pendingFiles = [];
+  renderChips();
   $(".chat-intro")?.remove();
+  $$("form.intake").forEach((f) => f.remove());
   const log = $("#chat-log");
-  log.insertAdjacentHTML("beforeend", `<div class="msg user">${esc(question)}</div>`);
+  if (question || fileIds.length) log.insertAdjacentHTML("beforeend", `<div class="msg user">${question ? `<div>${esc(question)}</div>` : ""}${ready.length ? `<div class="chips">${ready.map(fileChip).join("")}</div>` : ""}</div>`);
   const box = document.createElement("div");
   box.className = "msg ai";
-  box.innerHTML = `<div class="steps running"><div>理解问题</div></div><div class="md"></div><div class="msg-actions"></div>`;
+  box.innerHTML = `<div class="task-chip" hidden></div><div class="steps running"><div>理解问题</div></div><div class="md"></div>`;
   log.appendChild(box);
   log.scrollTop = log.scrollHeight;
-  let text = "", answerId = null;
+  let text = "";
   try {
-    const res = await fetch("/api/ask", { method: "POST", headers: HEADERS,
-      body: JSON.stringify({ question, region: $("#ask-region").value, model: $("#ask-model").value, depth: $("#ask-depth").value, conversation_id: state.conversationId }) });
+    const res = await fetch("/api/ask", { method: "POST", headers: HEADERS, body: JSON.stringify({
+      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake,
+      region: $("#ask-region").value, model: $("#ask-model").value, depth: $("#ask-depth").value }) });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
@@ -411,31 +660,22 @@ $("#ask-form").addEventListener("submit", async (e) => {
         const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
         if (!chunk.startsWith("data: ")) continue;
         const ev = JSON.parse(chunk.slice(6));
-        if (ev.type === "step") $(".steps", box).insertAdjacentHTML("beforeend", `<div>${esc(ev.text)}</div>`);
+        if (ev.type === "step" || ev.type === "stage") $(".steps", box).insertAdjacentHTML("beforeend", `<div>${esc(ev.text)}</div>`);
+        else if (ev.type === "route") { const c = $(".task-chip", box); c.hidden = false; c.textContent = ev.name; }
         else if (ev.type === "text") { text += ev.delta; $(".md", box).innerHTML = renderMD(text); }
         else if (ev.type === "text_reset") { text = ""; $(".md", box).innerHTML = ""; }
         else if (ev.type === "error") $(".md", box).insertAdjacentHTML("beforeend", `<p class="err">${esc(ev.message)}</p>`);
-        else if (ev.type === "done") { answerId = ev.answer_id; state.conversationId = ev.conversation_id; }
-        const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 160;
+        const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 200;
         if (nearBottom) log.scrollTop = log.scrollHeight;
       }
     }
   } catch (err) {
     $(".md", box).insertAdjacentHTML("beforeend", `<p class="err">连接出错：${esc(err.message)}</p>`);
   }
-  $(".steps", box).classList.remove("running");
-  const steps = $$(".steps div", box);
-  if (steps.length > 1) { steps[0].remove(); $(".steps", box).insertAdjacentHTML("afterbegin", `<div>共检索 ${steps.length - 1} 次</div>`); }
-  bindCites(box);
-  if (answerId) {
-    const acts = $(".msg-actions", box);
-    acts.innerHTML = starBtn("answer", answerId) + `<button class="ghost" data-copy>复制</button>`;
-    const it = { kind: "answer", id: answerId, question, answer: text };
-    $("[data-star]", acts).addEventListener("click", (ev) => toggleBookmark(ev.currentTarget, it));
-    $("[data-copy]", acts).addEventListener("click", () => navigator.clipboard.writeText(text.replace(/\[\[(art|law|case|ref):[^\]]+\]\]/g, "")));
-  }
-  state.asking = false; $("#ask-btn").disabled = false; $("#question").focus();
-});
+  state.asking = false;
+  $("#ask-btn").disabled = false; $("#stop-btn").hidden = true;
+  await openMatter(matterId);
+}
 
 /* ---------- 设置 ---------- */
 $("#open-settings").addEventListener("click", async () => {
@@ -445,6 +685,8 @@ $("#open-settings").addEventListener("click", async () => {
   f.elements.api_key.value = s.api_key || "";
   f.elements.auto_update.checked = s.auto_update !== false;
   f.elements.update_interval_days.value = String(s.update_interval_days || 7);
+  state.settingsModels = { review: s.review_model || "auto", transcribe: s.transcribe_model || "" };
+  fillModelSelects(state.modelList || []);
   $("#models-status").textContent = "";
   $("#model-list").hidden = true;
   $("#settings").showModal();
@@ -454,6 +696,7 @@ async function saveSettings() {
   const f = $("#settings-form");
   await api("/api/settings", { method: "POST", body: JSON.stringify({
     base_url: f.elements.base_url.value.trim(), api_key: f.elements.api_key.value.trim(),
+    review_model: f.elements.review_model.value, transcribe_model: f.elements.transcribe_model.value,
     auto_update: f.elements.auto_update.checked, update_interval_days: Number(f.elements.update_interval_days.value) }) });
 }
 
@@ -477,15 +720,28 @@ $("#save-settings").addEventListener("click", async (e) => {
 });
 
 /* ---------- 模型清单（AI 问答输入框下方） ---------- */
+function fillModelSelects(models) {
+  const f = $("#settings-form");
+  const cur = state.settingsModels || { review: "auto", transcribe: "" };
+  f.elements.review_model.innerHTML = `<option value="auto">自动选择另一家族的强模型</option>` + models.map((m) => `<option>${esc(m)}</option>`).join("");
+  f.elements.review_model.value = models.includes(cur.review) ? cur.review : "auto";
+  const tr = models.filter((m) => /transcri|whisper|audio|speech|asr/i.test(m));
+  f.elements.transcribe_model.innerHTML = `<option value="">不使用（用系统听写）</option>` + tr.map((m) => `<option>${esc(m)}</option>`).join("");
+  f.elements.transcribe_model.value = tr.includes(cur.transcribe) ? cur.transcribe : "";
+}
+
 function fillModels(r) {
+  state.modelList = r.models || [];
   const sel = $("#ask-model");
   if (!r.models?.length) {
     sel.innerHTML = `<option value="">${r.error ? "模型：未连接" : "模型：请先在设置里填 key"}</option>`;
     return;
   }
+  // 只列能对话的模型（去掉图片生成、语音、测试用的）
+  const chat = r.models.filter((m) => !/image|transcri|tts|embed|whisper|mock|loadtest|codex-auto-review/i.test(m));
   const keep = sel.value || r.model;
-  sel.innerHTML = r.models.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
-  sel.value = r.models.includes(keep) ? keep : r.models[0];
+  sel.innerHTML = chat.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  sel.value = chat.includes(keep) ? keep : (chat.includes("gpt-6-luna") ? "gpt-6-luna" : chat[0]);
   if (r.depth) $("#ask-depth").value = r.depth;
 }
 async function loadModels() {
@@ -700,7 +956,7 @@ function itemLI(it, i) {
       + (it.status === "尚未生效" ? `<span class="badge pending">尚未生效</span>` : "") + (it.official ? `<span class="badge off">官方全文</span>` : "")
       + (it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : "");
   } else if (it.kind === "case") {
-    meta = `<span class="badge">第 ${it.number} 号</span>` + (it.keywords ? `<span class="badge">${esc(it.keywords.replace(/\s+/g, " ").slice(0, 36))}</span>` : "");
+    meta = `<span class="badge">第 ${it.number} 号</span>` + (it.note ? `<span class="badge old">不再参照</span>` : "") + (it.keywords ? `<span class="badge">${esc(it.keywords.replace(/\s+/g, " ").slice(0, 36))}</span>` : "");
   } else {
     meta = `<span class="badge">${esc(it.kind_label || "")}</span>`;
   }
@@ -748,5 +1004,53 @@ $("#theme").addEventListener("click", () => {
   try { localStorage.setItem("theme", theme); } catch { /* 忽略 */ }
   applyTheme(theme);
 });
+
+/* ---------- 在线更新 ---------- */
+const mb = (n) => (n / 1e6 >= 1 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
+function renderAppUpdate(u) {
+  state.appUpdate = u;
+  const btn = $("#app-update-btn");
+  btn.hidden = !["available", "downloading", "installing", "staged", "shell"].includes(u.status);
+  btn.textContent = u.status === "staged" ? "重启以完成更新" : u.status === "downloading" ? `更新下载中 ${u.percent || 0}%` : "有新版本";
+  $("#au-version").textContent = `版本 ${u.installed?.version || ""}（更新 ${u.installed?.sequence || 0}）· 法规数据 ${u.installed?.data || ""}${u.status === "current" ? " · 已是最新" : u.status === "error" ? " · " + u.message : ""}`;
+  const body = $("#au-body"), action = $("#au-action"), bar = $("#au-bar");
+  bar.hidden = !["downloading", "installing"].includes(u.status);
+  $("i", bar).style.width = (u.percent || 0) + "%";
+  action.disabled = ["downloading", "installing"].includes(u.status);
+  if (u.status === "available") {
+    body.innerHTML = `<p>新版本：更新 ${u.sequence}（${esc(u.version)}）</p>${u.notes ? `<pre>${esc(u.notes)}</pre>` : ""}<p class="muted">需要下载：${esc((u.parts || []).join("、"))}，共 ${mb(u.bytes || 0)}。不用重新安装，下载完重启即可。</p>`;
+    action.textContent = "下载并更新";
+  } else if (u.status === "downloading" || u.status === "installing") {
+    body.innerHTML = `<p>${u.status === "installing" ? "正在安装…" : `正在下载${u.current ? "：" + esc(u.current) : ""}…`}</p>`;
+    action.textContent = "下载中…";
+  } else if (u.status === "staged") {
+    body.innerHTML = `<p>更新已下载并通过签名校验，重启后生效。</p>${u.notes ? `<pre>${esc(u.notes)}</pre>` : ""}<p class="muted">新版本第一次启动如果出问题，会自动退回现在的版本。</p>`;
+    action.textContent = "立即重启";
+  } else if (u.status === "shell") {
+    body.innerHTML = `<p>新版本 ${esc(u.version)} 需要重新下载安装包（这次更新改动了程序外壳）。</p>${u.notes ? `<pre>${esc(u.notes)}</pre>` : ""}`;
+    action.textContent = "去下载安装包";
+  } else if (u.status === "error") {
+    body.innerHTML = `<p class="err">${esc(u.message || "")}</p>`;
+    action.textContent = "重新检查";
+  } else {
+    body.innerHTML = `<p>${esc(u.message || "已是最新版本")}</p>`;
+    action.textContent = "检查更新";
+  }
+}
+async function pollAppUpdate() {
+  try { renderAppUpdate(await api("/api/app-update")); } catch { /* 忽略 */ }
+  const busy = ["downloading", "installing"].includes(state.appUpdate?.status);
+  setTimeout(pollAppUpdate, busy ? 1000 : 60000);
+}
+$("#app-update-btn").addEventListener("click", () => $("#app-update").showModal());
+$("#au-check").addEventListener("click", async () => { renderAppUpdate(await api("/api/app-update/check", { method: "POST", body: "{}" })); if (state.appUpdate.status !== "current") $("#app-update").showModal(); });
+$("#au-action").addEventListener("click", async () => {
+  const u = state.appUpdate || {};
+  if (u.status === "available") { await api("/api/app-update/download", { method: "POST", body: "{}" }); setTimeout(pollAppUpdate, 500); }
+  else if (u.status === "staged") await api("/api/app-update/restart", { method: "POST", body: "{}" });
+  else if (u.status === "shell") window.open(u.installerUrl, "_blank");
+  else renderAppUpdate(await api("/api/app-update/check", { method: "POST", body: "{}" }));
+});
+pollAppUpdate();
 
 init().catch((err) => { $("#db-stats").textContent = "初始化失败：" + err.message; });

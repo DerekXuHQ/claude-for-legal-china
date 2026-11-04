@@ -14,10 +14,11 @@
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="browse" role="tab">浏览</button>
     <button class="tab" data-view="search" role="tab">检索</button>
-    <button class="tab" data-view="ask" role="tab">AI 问答</button>
+    <button class="tab" data-view="ask" role="tab">法律助理</button>
     <button class="tab" data-view="saved" role="tab">收藏 <span id="saved-count" class="count"></span></button>
     <button class="tab" data-view="updates" role="tab">法规更新 <span id="upd-dot" class="dot" hidden></span></button>
   </nav>
+  <button id="app-update-btn" class="primary small-btn" hidden>有新版本</button>
   <button id="theme" class="ghost icon" title="切换浅色 / 深色">◐</button>
   <button id="open-settings" class="ghost" title="设置">设置</button>
 </header>
@@ -85,24 +86,27 @@
     </div>
   </section>
 
-  <!-- AI 问答 -->
+  <!-- 法律助理 -->
   <section id="view-ask" class="view">
-    <div class="split">
+    <div class="assist">
+      <aside class="matters">
+        <button class="primary" id="new-matter">＋ 新事项</button>
+        <ol id="matter-list"></ol>
+      </aside>
       <div class="pane-left chat">
-        <div id="chat-log" class="chat-log">
-          <div class="chat-intro">
-            <h2>直接问法律问题</h2>
-            <p>AI 会在本地资料库里多轮检索条文、指导性案例和办案指引，按「适用的规定 / 不适用的规定 / 相关案例 / 处理流程 / 建议」整理给你。点击回答里的引用可以打开原文。</p>
-            <div class="examples">
-              <button class="ex">公司以业绩不达标为由辞退员工，没有提前通知，员工能拿到多少补偿？</button>
-              <button class="ex">别人在电商平台用和我们近似的商标卖同类商品，我们能怎么维权？赔偿怎么算？</button>
-              <button class="ex">我们的 App 要把用户数据传到境外服务器，需要走哪些程序？</button>
-            </div>
-          </div>
+        <div class="matter-head" id="matter-head" hidden>
+          <input id="matter-title" maxlength="80" title="事项名称，可以直接改">
+          <span class="badge" id="matter-task"></span>
+          <span class="small muted" id="matter-files"></span>
         </div>
+        <div id="chat-log" class="chat-log"></div>
         <form id="ask-form" class="ask-box">
-          <textarea id="question" rows="3" placeholder="描述你的情况和问题…（Enter 发送，Shift+Enter 换行）"></textarea>
+          <div id="attach-chips" class="chips"></div>
+          <textarea id="question" rows="3" placeholder="说说是什么事，或者直接上传文件…（Enter 发送，Shift+Enter 换行）"></textarea>
           <div class="ask-row">
+            <button type="button" class="ghost icon" id="attach-btn" title="上传文件：合同、起诉状、通知书、截图、照片、录音、视频（PDF、Word、图片、音视频）">📎</button>
+            <button type="button" class="ghost icon" id="mic-btn" title="语音输入">🎤</button>
+            <input type="file" id="file-input" multiple hidden accept=".pdf,.docx,.txt,.md,image/*,audio/*,video/*">
             <select id="ask-region"><option value="">地区：未指定</option></select>
             <select id="ask-model" title="模型"><option value="">模型：读取中…</option></select>
             <select id="ask-depth" title="分析深度">
@@ -110,13 +114,13 @@
               <option value="medium" selected>标准</option>
               <option value="high">深入</option>
             </select>
-            <button type="button" id="new-chat" class="ghost">新对话</button>
+            <button type="button" class="ghost" id="stop-btn" hidden>停止</button>
             <button type="submit" class="primary" id="ask-btn">发送</button>
           </div>
         </form>
       </div>
       <aside class="pane-right reader-pane" id="ask-detail">
-        <div class="empty"><p>点击回答中的引用，在这里查看原文并收藏。</p></div>
+        <div class="empty"><p>助理引用的法条、案例和指引，点开会在这里显示原文，可以收藏。</p></div>
       </aside>
     </div>
   </section>
@@ -174,7 +178,7 @@
           <button data-v="law">法规</button>
           <button data-v="case">案例</button>
           <button data-v="ref">办案指引</button>
-          <button data-v="answer">AI 回答</button>
+          <button data-v="answer">助理产出</button>
         </div>
         <ol id="saved-list" class="results"></ol>
       </div>
@@ -204,7 +208,15 @@
       <span class="small muted" id="models-status"></span>
     </div>
     <ul class="model-list" id="model-list" hidden></ul>
-    <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。用哪个模型、分析多深，在 AI 问答的输入框下方选。</p>
+    <label>复核模型 <span class="muted">（合同、方案审查时用另一家的模型交叉复核）</span>
+      <select name="review_model"><option value="auto">自动选择另一家族的强模型</option></select>
+    </label>
+    <label>语音转文字模型 <span class="muted">（上传录音、视频和语音输入用；留空则用系统听写）</span>
+      <select name="transcribe_model"><option value="">不使用</option></select>
+    </label>
+    <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。主力模型和分析深度在法律助理的输入框下方选。</p>
+    <h3 style="margin-top:8px">版本</h3>
+    <div class="row"><span class="small muted" id="au-version"></span><button type="button" class="ghost" id="au-check">检查更新</button></div>
     <h3 style="margin-top:8px">法规更新</h3>
     <label class="check"><input type="checkbox" name="auto_update"> 自动检查官方网站的法规更新</label>
     <label>检查间隔
@@ -218,6 +230,18 @@
     <div class="dialog-actions">
       <button value="cancel" class="ghost">取消</button>
       <button value="save" class="primary" id="save-settings">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="app-update">
+  <form method="dialog">
+    <h3>更新中国法律检索</h3>
+    <div id="au-body" class="small"></div>
+    <div class="bar" id="au-bar" hidden><i></i></div>
+    <div class="dialog-actions">
+      <button value="cancel" class="ghost">稍后</button>
+      <button type="button" class="primary" id="au-action">下载并更新</button>
     </div>
   </form>
 </dialog>

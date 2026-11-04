@@ -8,6 +8,7 @@ const SPLIT = /[\s，,。;；、]+/;
 
 let db = null;
 export function setDb(conn) { db = conn; }
+export function getDb() { return db; }
 
 function terms(query) {
   // 三个字及以上走全文索引，一两个字的用 LIKE 兜底（trigram 索引不支持短词）
@@ -113,7 +114,7 @@ export function searchCases(query, { limit = 20, offset = 0 } = {}) {
     rows = rows.concat(loose("cases", ["title", "keywords", "points", "text"], query, new Set(rows.map((r) => r.id)), limit - rows.length, ", number DESC"));
   }
   return {
-    items: rows.slice(0, limit).map((r) => ({ kind: "case", id: r.id, title: r.title, keywords: r.keywords, snippet: snippet(r.points || r.text, query, 140) })),
+    items: rows.slice(0, limit).map((r) => ({ kind: "case", id: r.id, title: r.title, keywords: r.keywords, note: r.note || "", snippet: snippet(r.points || r.text, query, 140) })),
     more: rows.length > limit,
   };
 }
@@ -258,7 +259,7 @@ export function browseFacets({ level = "", province = "", topic = "" } = {}) {
 
 export function browseCases({ offset = 0, limit = 400 } = {}) {
   const total = db.prepare("SELECT count(*) n FROM cases").get().n;
-  const items = db.prepare("SELECT id, number, title, keywords FROM cases ORDER BY number LIMIT ? OFFSET ?").all(limit, offset);
+  const items = db.prepare("SELECT id, number, title, keywords, note FROM cases ORDER BY number LIMIT ? OFFSET ?").all(limit, offset);
   return { total, items: items.map((r) => ({ ...r, kind: "case" })) };
 }
 

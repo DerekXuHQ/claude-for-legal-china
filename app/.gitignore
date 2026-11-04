@@ -1,6 +1,7 @@
 .venv/
-data/
 __pycache__/
-node_modules/
+data/
 dist/
+eval/results/
+node_modules/
 resources/base.db.gz

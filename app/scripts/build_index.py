@@ -91,7 +91,7 @@ def schema(db: sqlite3.Connection) -> None:
             province TEXT, topics TEXT);
         CREATE INDEX idx_art_doc ON articles(doc_id, article_no);
         CREATE TABLE cases(rowid INTEGER PRIMARY KEY, id TEXT UNIQUE, number INT, title TEXT, keywords TEXT,
-            points TEXT, laws TEXT, facts TEXT, result TEXT, reasoning TEXT, url TEXT, text TEXT);
+            points TEXT, laws TEXT, facts TEXT, result TEXT, reasoning TEXT, url TEXT, text TEXT, note TEXT DEFAULT '');
         CREATE TABLE refs(rowid INTEGER PRIMARY KEY, id TEXT UNIQUE, kind TEXT, plugin TEXT, path TEXT, title TEXT, heading TEXT, text TEXT);
         CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
         """
@@ -144,7 +144,13 @@ def load_laws(db: sqlite3.Connection) -> None:
                 if not t:
                     continue
                 title, level, status, is_cur, prov, topics = t
-                rows.append((a["id"], a["doc_id"], title, a["article_no"], a["article_no_cn"], a["chapter"] or "",
+                # 数据集把「第X条之一」与「第X条」标成同一个编号，入库时会被当成重复丢掉；按正文开头的条号区分
+                art_cn, art_id = a["article_no_cn"], a["id"]
+                head = re.match(r"^(第[" + CN_NUM + r"]+条之[" + CN_NUM + r"]+)", a["text"] or "")
+                if head and head.group(1) != art_cn:
+                    art_cn = head.group(1)
+                    art_id = f'{a["doc_id"]}:{art_cn}'
+                rows.append((art_id, a["doc_id"], title, a["article_no"], art_cn, a["chapter"] or "",
                              a["section"] or "", a["text"], level, status, is_cur, prov, topics))
             db.executemany(
                 "INSERT OR IGNORE INTO articles(id,doc_id,title,article_no,article_cn,chapter,section,text,level,status,is_current,province,topics) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -214,6 +220,11 @@ def load_cases(db: sqlite3.Connection) -> None:
              s.get("基本案情", ""), s.get("裁判结果", ""), s.get("裁判理由", ""), c["url"], c["text"]),
         )
         seen += 1
+    # 最高法通知不再参照的指导性案例（裁判本身仍然有效）
+    for nos, notice in [((9, 20), "最高人民法院《关于部分指导性案例不再参照的通知》（法〔2020〕343号）：自2021年1月1日起不再参照"),
+                        ((123, 136, 139, 204), "最高人民法院《关于部分指导性案例不再参照的通知》（法〔2026〕119号）：自2026年8月15日起不再参照")]:
+        for n in nos:
+            db.execute("UPDATE cases SET note = ? WHERE number = ?", (notice + "。该案例的裁判以及参照它作出的裁判仍然有效。", n))
     print(f"指导性案例 {seen} 件", flush=True)
 
 
@@ -299,6 +310,9 @@ def main() -> None:
     schema(db)
     load_laws(db)
     load_extras(db)
+    # 数据集里的刑法是修正案（十一）之后的文本，修正案（十二）未并入正文
+    db.execute("UPDATE docs SET note = ? WHERE title = '中华人民共和国刑法' AND is_current = 1",
+               ("本文本为《刑法修正案（十一）》之后的版本。《刑法修正案（十二）》（2023年12月29日通过，2024年3月1日起施行）修改了第一百六十五条、第一百六十六条、第一百六十九条、第三百八十七条、第三百九十条、第三百九十一条、第三百九十三条，涉及这些条文的以修正案（十二）原文为准。",))
     load_cases(db)
     if not load_guides(db):
         load_refs(db)

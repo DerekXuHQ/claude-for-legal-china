@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "main": "main.mjs",
+  "main": "boot.mjs",
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.mjs",
@@ -17,7 +17,10 @@
     "dist:win": "scripts/build-win.sh"
   },
   "dependencies": {
-    "openai": "7.50.0"
+    "docx": "^9.15.2",
+    "mammoth": "^1.13.0",
+    "openai": "7.50.0",
+    "pdfjs-dist": "^5.7.284"
   },
   "devDependencies": {
     "electron": "44.7.0",
@@ -28,6 +31,8 @@
     "productName": "中国法律检索",
     "copyright": "Apache-2.0",
     "files": [
+      "boot.mjs",
+      "shell/**",
       "main.mjs",
       "server/**",
       "renderer/**",
@@ -61,7 +66,8 @@
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
         "CFBundleDisplayName": "中国法律检索",
-        "LSApplicationCategoryType": "public.app-category.reference"
+        "LSApplicationCategoryType": "public.app-category.reference",
+        "NSMicrophoneUsageDescription": "语音输入时使用麦克风，把你说的话转成文字。"
       }
     },
     "dmg": {
@@ -98,5 +104,6 @@
     "asarUnpack": [
       "server/**"
     ]
-  }
+  },
+  "updateSequence": 0
 }

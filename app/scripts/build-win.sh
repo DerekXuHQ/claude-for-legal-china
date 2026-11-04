@@ -4,6 +4,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 [ -f resources/base.db.gz ] || { echo "缺少 resources/base.db.gz，先运行 npm run data"; exit 1; }
+node scripts/stamp.mjs
 out=$(mktemp -d /private/tmp/legalchina-win.XXXXXX)
 ./node_modules/.bin/electron-builder --win nsis --x64 --arm64 --config.directories.output="$out" "$@"
 mkdir -p dist

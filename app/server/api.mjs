@@ -4,11 +4,16 @@ import { readFileSync, writeFileSync, existsSync, chmodSync, statSync } from "no
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import * as search from "./search.mjs";
-import { ask, listModels, DEFAULT_BASE_URL } from "./agent.mjs";
+import { ask, newConversation } from "./ai/ask.mjs";
+import { listModels, DEFAULT_BASE_URL, complete, client } from "./ai/models.mjs";
+import { extractText } from "./ai/docs.mjs";
+import { markdownToDocx } from "./ai/export.mjs";
+import { toFile } from "openai";
+import * as matters from "./matters.mjs";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png" };
 export const DEFAULT_SETTINGS = {
-  base_url: DEFAULT_BASE_URL, api_key: "", model: "", depth: "medium",
+  base_url: DEFAULT_BASE_URL, api_key: "", model: "", depth: "medium", review_model: "auto", transcribe_model: "",
   auto_update: true, update_interval_days: 7,
 };
 
@@ -25,7 +30,14 @@ export const DEFAULT_SETTINGS = {
  */
 export function createServer(ctx) {
   const token = randomUUID();
-  const conversations = new Map();
+  const dataDir = path.dirname(ctx.settingsPath);
+  let tablesReady = false;
+  const udb = () => {
+    const db = ctx.userDb();
+    if (db && !tablesReady) { matters.ensureMatterTables(db); tablesReady = true; }
+    return db;
+  };
+  const running = new Map(); // matterId -> AbortController
   const modelCache = { key: "", at: 0, models: [] };
 
   const loadSettings = () => {
@@ -54,10 +66,10 @@ export function createServer(ctx) {
     res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Content-Length": body.length, "Cache-Control": "no-store" });
     res.end(body);
   };
-  const readBody = (req) => new Promise((resolve, reject) => {
+  const readBody = (req, limit = 2e6) => new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
-    req.on("data", (c) => { size += c.length; if (size > 2e6) { reject(new Error("请求太大")); req.destroy(); } else chunks.push(c); });
+    req.on("data", (c) => { size += c.length; if (size > limit) { reject(new Error("请求太大")); req.destroy(); } else chunks.push(c); });
     req.on("end", () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf-8") || "{}")); } catch (e) { reject(e); } });
     req.on("error", reject);
   });
@@ -94,6 +106,7 @@ export function createServer(ctx) {
         return send(res, 200, { items, last_check: last, confirmed, running: ctx.updateStatus() });
       }
       if (p === "/api/updates/status") return send(res, 200, ctx.updateStatus());
+      if (p === "/api/app-update") return send(res, 200, ctx.appUpdate?.status() || { status: "unavailable" });
       if (p.startsWith("/api/updates/")) {
         const row = ctx.userDb()?.prepare("SELECT * FROM update_log WHERE id = ?").get(Number(p.split("/").pop()));
         return row ? send(res, 200, { ...row, diff: row.diff ? JSON.parse(row.diff) : null }) : send(res, 404, { error: "未找到" });
@@ -148,6 +161,18 @@ export function createServer(ctx) {
         }
       }
       if (p === "/api/bookmarks") return send(res, 200, ctx.userDb()?.prepare("SELECT * FROM bookmarks ORDER BY created DESC").all() || []);
+      if (p === "/api/matters") return send(res, 200, matters.listMatters(udb()));
+      if (p.startsWith("/api/matters/")) {
+        const m = matters.getMatter(udb(), p.split("/")[3]);
+        return m ? send(res, 200, { id: m.id, title: m.title, task: m.task, display: m.display, files: m.files, pending: !!m.state.pending, running: running.has(m.id) }) : send(res, 404, { error: "未找到" });
+      }
+      if (p.startsWith("/api/files/")) {
+        const f = matters.filePath(udb(), dataDir, p.split("/").pop());
+        if (!f) return send(res, 404, { error: "未找到" });
+        const body = readFileSync(f.path);
+        res.writeHead(200, { "Content-Type": f.mime || "application/octet-stream", "Content-Length": body.length });
+        return res.end(body);
+      }
       return send(res, 404, { error: "未找到" });
     }
 
@@ -158,6 +183,12 @@ export function createServer(ctx) {
         return send(res, 200, ctx.startUpdate(b.mode === "full" ? "full" : "incremental"));
       }
       if (p === "/api/updates/stop") { ctx.stopUpdate(); return send(res, 200, { ok: true }); }
+      if (p === "/api/app-update/check") return send(res, 200, (await ctx.appUpdate?.check()) || { status: "unavailable" });
+      if (p === "/api/app-update/download") {
+        ctx.appUpdate?.download();  // 在后台下载，界面轮询状态
+        return send(res, 200, { ok: true });
+      }
+      if (p === "/api/app-update/restart") { send(res, 200, { ok: true }); setTimeout(() => ctx.appUpdate?.restart(), 300); return; }
       if (p === "/api/bookmarks") {
         const b = await readBody(req);
         ctx.userDb().prepare(`INSERT INTO bookmarks(kind, ref_id, title, subtitle, snippet, note, created) VALUES(?,?,?,?,?,?,?)
@@ -166,53 +197,165 @@ export function createServer(ctx) {
         return send(res, 200, { ok: true });
       }
       if (p === "/api/ask") return askHandler(req, res);
+      if (p === "/api/matters") {
+        const b = await readBody(req);
+        return send(res, 200, { id: matters.createMatter(udb(), String(b.title || "")) });
+      }
+      if (/^\/api\/matters\/[^/]+\/rename$/.test(p)) {
+        const b = await readBody(req);
+        matters.saveMatter(udb(), p.split("/")[3], { title: String(b.title || "").trim() || "未命名事项" });
+        return send(res, 200, { ok: true });
+      }
+      if (p === "/api/upload") return uploadHandler(req, res);
+      if (p === "/api/transcribe") {
+        const b = await readBody(req, 30e6);
+        const settings = loadSettings();
+        if (!settings.transcribe_model) return send(res, 400, { error: "还没有配置语音转文字模型" });
+        try {
+          const r = await client(settings).audio.transcriptions.create({ model: settings.transcribe_model, file: await toFile(Buffer.from(String(b.data || ""), "base64"), String(b.name || "audio.webm")) });
+          return send(res, 200, { text: r.text || "" });
+        } catch (err) {
+          return send(res, 400, { error: String(err?.message || err).slice(0, 300) });
+        }
+      }
+      if (p === "/api/export") {
+        const b = await readBody(req);
+        const buf = await markdownToDocx(String(b.title || "法律助理产出"), String(b.markdown || ""));
+        res.writeHead(200, { "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "Content-Length": buf.length });
+        return res.end(buf);
+      }
+      if (/^\/api\/matters\/[^/]+\/stop$/.test(p)) {
+        running.get(p.split("/")[3])?.abort();
+        return send(res, 200, { ok: true });
+      }
       return send(res, 404, { error: "未找到" });
     }
 
     if (req.method === "DELETE") {
       if (p.startsWith("/api/bookmarks/")) { ctx.userDb().prepare("DELETE FROM bookmarks WHERE id = ?").run(Number(p.split("/").pop())); return send(res, 200, { ok: true }); }
-      if (p.startsWith("/api/conversation/")) { conversations.delete(p.split("/").pop()); return send(res, 200, { ok: true }); }
+      if (p.startsWith("/api/matters/")) { matters.deleteMatter(udb(), dataDir, p.split("/")[3]); return send(res, 200, { ok: true }); }
     }
     return send(res, 404, { error: "未找到" });
+  }
+
+  // 上传：文档取文字；图片用视觉模型识别文字和内容；音频、视频转成文字
+  async function uploadHandler(req, res) {
+    const b = await readBody(req, 60e6);
+    const settings = loadSettings();
+    const name = String(b.name || "文件").slice(0, 200);
+    const mime = String(b.mime || "");
+    const matterId = String(b.matter_id || "");
+    if (!matters.getMatter(udb(), matterId)) return send(res, 404, { error: "事项不存在" });
+    const buffer = Buffer.from(String(b.data || ""), "base64");
+    try {
+      let kind = "text", text = "";
+      if (/^image\//.test(mime) || /\.(png|jpe?g|gif|webp|heic|bmp)$/i.test(name)) {
+        kind = "image";
+        const model = String(b.model || settings.model || "");
+        if (!settings.api_key || !model) throw new Error("识别图片需要先在「设置」里配好 API key 并选择模型");
+        const r = await complete(settings, {
+          model, effort: "low",
+          messages: [{ role: "user", content: [
+            { type: "text", text: "这是用户上传给律师助理的图片。请把图中所有文字完整、准确地转录出来（保持原有分段；聊天截图要保留每句话的说话人和时间）。然后用一两句话说明这是什么材料（如合同某页、聊天记录、通知书、收据），以及图中非文字的关键信息（印章、签名、手写批注等）。不要分析法律问题。" },
+            { type: "image_url", image_url: { url: `data:${mime || "image/png"};base64,${buffer.toString("base64")}` } },
+          ] }],
+        });
+        text = r.choices?.[0]?.message?.content || "";
+      } else if (/^(audio|video)\//.test(mime) || /\.(mp3|m4a|wav|aac|ogg|webm|mp4|mov|mpeg|mpga)$/i.test(name)) {
+        kind = /^video\//.test(mime) || /\.(mp4|mov)$/i.test(name) ? "video" : "audio";
+        if (!settings.transcribe_model) throw new Error("还没有配置语音转文字模型（设置 → 语音转文字模型）。也可以用系统听写：Mac 连按两下 Fn，Windows 按 Win+H。");
+        const r = await client(settings).audio.transcriptions.create({ model: settings.transcribe_model, file: await toFile(buffer, name) });
+        text = r.text || "";
+      } else {
+        text = await extractText(name, buffer);
+      }
+      const f = matters.addFile(udb(), dataDir, matterId, { name, kind, mime, text, buffer });
+      matters.saveMatter(udb(), matterId, {});
+      return send(res, 200, { ...f, preview: text.slice(0, 200) });
+    } catch (err) {
+      return send(res, 400, { error: String(err?.message || err).slice(0, 400) });
+    }
   }
 
   async function askHandler(req, res) {
     const body = await readBody(req);
     const settings = loadSettings();
+    const matterId = String(body.matter_id || "");
+    const m = matters.getMatter(udb(), matterId);
     const question = String(body.question || "").trim();
     const region = String(body.region || "").trim();
     const model = typeof body.model === "string" && body.model ? body.model : settings.model;
     const depth = ["low", "medium", "high"].includes(body.depth) ? body.depth : settings.depth;
     if (model !== settings.model || depth !== settings.depth) saveSettings({ model, depth });
-    const convId = typeof body.conversation_id === "string" && body.conversation_id ? body.conversation_id : randomUUID();
     res.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache" });
     const ctrl = new AbortController();
-    res.on("close", () => { if (!res.writableEnded) ctrl.abort(); });
     let answer = "";
-    const steps = [];
+    const out = { role: "assistant", task: "", steps: [], text: "", intake: null, citations: null, answer_id: "", error: "" };
     const emit = (ev) => {
       if (ev.type === "text") answer += ev.delta;
       else if (ev.type === "text_reset") answer = "";
-      else if (ev.type === "step") steps.push(ev.text);
+      else if (ev.type === "step" || ev.type === "stage") out.steps.push(ev.text);
+      else if (ev.type === "route") out.task = ev.name;
+      else if (ev.type === "intake") out.intake = { questions: ev.questions, assumptions: ev.assumptions };
+      else if (ev.type === "citations") out.citations = { checked: ev.checked, linked: ev.linked, unverified: ev.unverified };
+      else if (ev.type === "error") out.error = ev.message;
       if (!res.writableEnded) res.write(`data: ${JSON.stringify(ev)}\n\n`);
     };
+    const intakeAnswers = body.intake_answers && typeof body.intake_answers === "object" ? body.intake_answers : null;
+    const skipIntake = !!body.skip_intake;
+    const fileIds = Array.isArray(body.file_ids) ? body.file_ids.map(String) : [];
     try {
       if (!ctx.status().ready) emit({ type: "error", message: "资料库还在准备中，请稍候。" });
-      else if (!question) emit({ type: "error", message: "问题不能为空" });
+      else if (!m) emit({ type: "error", message: "事项不存在" });
+      else if (!question && !intakeAnswers && !skipIntake && !fileIds.length) emit({ type: "error", message: "问题不能为空" });
       else if (!settings.api_key) emit({ type: "error", message: "还没有配置 API key，请点右上角「设置」。" });
       else if (!model) emit({ type: "error", message: "请先在输入框下方选择一个模型。" });
+      else if (running.has(matterId)) emit({ type: "error", message: "这个事项正在处理上一条消息，请稍候。" });
       else {
-        const history = conversations.get(convId) || [];
-        conversations.set(convId, await ask(settings, history, question, region, emit, ctrl.signal, { model, depth }));
-        const id = randomUUID().replace(/-/g, "").slice(0, 12);
-        ctx.userDb().prepare("INSERT INTO answers VALUES(?,?,?,?,?,?,?)").run(id, question, region, answer, JSON.stringify(steps), model, Date.now() / 1000);
-        emit({ type: "done", answer_id: id, conversation_id: convId });
+        running.set(matterId, ctrl);
+        const display = m.display;
+        const files = m.files.filter((f) => fileIds.includes(f.id)).map((f) => ({ id: f.id, name: f.name, kind: f.kind }));
+        const userEntry = { role: "user", text: question, files, intake_answers: intakeAnswers, skip_intake: skipIntake, at: Date.now() };
+        // 回答追问时，在上一条助理消息上记下用户的回答
+        if (intakeAnswers || skipIntake) {
+          const last = [...display].reverse().find((d) => d.role === "assistant" && d.intake);
+          if (last) last.intake.answered = intakeAnswers || "skipped";
+        }
+        if (question || files.length) display.push(userEntry);
+        const conv = { history: [], route: null, pending: null, reviewed: false, ...m.state };
+        const all = matters.filesForAsk(udb(), matterId);
+        conv.attachments = all.filter((f) => !fileIds.includes(f.id)).map((f) => ({ name: f.name, text: f.text }));
+        const attachments = all.filter((f) => fileIds.includes(f.id)).map((f) => ({ name: f.name, text: f.text }));
+        const qText = question || (files.length ? `请处理我上传的文件：${files.map((f) => f.name).join("、")}` : "");
+        const r = await ask(settings, {
+          conv, question: qText, region, attachments, model, depth, db: search.getDb(), emit, signal: ctrl.signal,
+          intakeAnswers, skipIntake, available: modelCache.models,
+        });
+        out.text = r.text || answer;
+        if (!r.intake) {
+          const id = randomUUID().replace(/-/g, "").slice(0, 12);
+          ctx.userDb().prepare("INSERT INTO answers VALUES(?,?,?,?,?,?,?)").run(id, (m.title !== "新事项" ? m.title + "：" : "") + (question || r.route?.summary || ""), region, out.text, JSON.stringify(out.steps), model, Date.now() / 1000);
+          out.answer_id = id;
+        }
+        display.push({ ...out, at: Date.now(), model });
+        delete conv.attachments;
+        const title = m.title === "新事项" ? (r.route?.summary || question).slice(0, 40) : undefined;
+        matters.saveMatter(udb(), matterId, { state: conv, display, task: r.route?.name || m.task, title });
+        emit({ type: "done", answer_id: out.answer_id, intake: !!r.intake, title });
       }
     } catch (err) {
       if (!ctrl.signal.aborted) {
         const status = err?.status ? `（HTTP ${err.status}）` : "";
         emit({ type: "error", message: `${err?.name || "Error"}${status}：${String(err?.message || err).slice(0, 500)}` });
       }
+      if (m) {
+        const display = matters.getMatter(udb(), matterId).display;
+        if (question) display.push({ role: "user", text: question, files: [], at: Date.now() });
+        display.push({ ...out, text: answer, error: out.error || (ctrl.signal.aborted ? "已停止" : "出错"), at: Date.now() });
+        matters.saveMatter(udb(), matterId, { display });
+      }
+    } finally {
+      running.delete(matterId);
     }
     res.end();
   }
