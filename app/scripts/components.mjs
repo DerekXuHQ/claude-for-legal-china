@@ -18,10 +18,15 @@ export function codeFiles() {
 }
 
 function prodPackages() {
-  const out = execFileSync("npm", ["ls", "--omit=dev", "--all", "--parseable", "--long"], { cwd: APP, encoding: "utf8" });
-  // npm 会把路径里像密钥的片段打码，所以只取 node_modules 之后的部分，再拼回本项目目录
-  return out.split("\n").slice(1).filter(Boolean).map((l) => {
-    const [raw, spec] = l.split(":");
+  // Windows 上 npm 是 npm.cmd，新版 Node 要通过 shell 才能启动它
+  const win = process.platform === "win32";
+  const out = execFileSync(win ? "npm.cmd" : "npm", ["ls", "--omit=dev", "--all", "--parseable", "--long"], { cwd: APP, encoding: "utf8", shell: win, maxBuffer: 50e6 });
+  // npm 会把路径里像密钥的片段打码，所以只取 node_modules 之后的部分，再拼回本项目目录。
+  // 每行是「路径:包名@版本」；Windows 路径本身带「D:」，所以从 node_modules 之后找冒号
+  return out.split(/\r?\n/).slice(1).filter(Boolean).map((l) => {
+    const m = l.match(/^(.*[\\/]node_modules[\\/][^:]*):([^:]+)/);
+    if (!m) return null;
+    const [, raw, spec] = m;
     const i = raw.indexOf(`${path.sep}node_modules${path.sep}`);
     return i < 0 ? null : { dir: path.join(APP, raw.slice(i + 1)), spec };
   }).filter(Boolean);

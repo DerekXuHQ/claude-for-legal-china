@@ -28,14 +28,14 @@ env:
 
 jobs:
   mac:
-    runs-on: macos-latest
+    runs-on: macos-15-intel  # Apple 芯片机器常排不上队；Intel 机器同样能打两种芯片的安装包
     timeout-minutes: 60
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -62,8 +62,8 @@ jobs:
         working-directory: app
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
