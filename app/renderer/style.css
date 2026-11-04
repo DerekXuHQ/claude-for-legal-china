@@ -394,7 +394,7 @@ details.steps[open] > summary .chev { transform: rotate(180deg); }
 .composer { position: relative; max-width: 800px; margin: 0 auto; border: 1px solid var(--line); border-radius: 20px; background: var(--bg); padding: 10px 10px 8px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s; }
 .composer:focus-within { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent), var(--shadow); }
 .composer #attach-chips { margin: 0 0 2px; }
-.composer textarea { width: 100%; resize: none; border: 0; background: none; outline: none; padding: 4px 2px; min-height: 28px; max-height: 260px; line-height: 1.65; }
+.composer textarea { width: 100%; resize: none; border: 0; background: none; outline: none; padding: 4px 2px; min-height: 28px; max-height: 190px; line-height: 1.65; overflow-y: auto; }
 .composer-bar { display: flex; align-items: center; gap: 2px; margin-left: -6px; }
 .pill { height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid transparent; background: none; border-radius: 999px; color: var(--muted); cursor: pointer; font-size: 13px; white-space: nowrap; max-width: 240px; transition: background .15s, color .15s, border-color .15s; }
 .pill span { overflow: hidden; text-overflow: ellipsis; }
@@ -537,3 +537,14 @@ textarea.dictating::placeholder { color: var(--accent); }
 .starter b, .starter span:not(.s-ic) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .starter { min-width: 0; }
 @container (max-width: 520px) { .starters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 设置 → 快捷键 */
+.keys-opts { display: grid; gap: 8px; }
+.keys-list { list-style: none; margin: 8px 0 4px; padding: 0; display: grid; gap: 4px; }
+.keys-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.keys-list li .k-label { flex: 1 1 200px; min-width: 0; }
+.keys-list li .k-label em { font-style: normal; color: var(--muted); font-size: 12px; margin-left: 6px; }
+.keys-list .k-btn { min-width: 96px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); cursor: pointer; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.keys-list .k-btn.rec { border-color: var(--accent); color: var(--accent); }
+.keys-list .k-reset { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; }
+.keys-list .k-err { color: var(--accent); font-size: 12px; flex: 0 0 100%; }

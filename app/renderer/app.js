@@ -33,7 +33,8 @@ function showView(v) {
   $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
   $$(".view").forEach((s) => s.classList.toggle("active", s.id === "view-" + v));
   if (v === "saved") renderSaved();
-  if (v === "ask") { $("#question").focus(); if (!state.matter) loadMatters().then((l) => l[0] ? openMatter(l[0].id) : renderMatter(null)); }
+  // 第一次进法律助理：打开最近的事项；之后切回来保持原样（包括还没发消息的新事项页）
+  if (v === "ask") { $("#question").focus(); if (!state.matter && !state.askOpened) { state.askOpened = true; loadMatters().then((l) => { if (state.matter || state.newMatterShown) return; l[0] ? openMatter(l[0].id) : renderMatter(null); }); } }
   if (v === "updates") { renderUpdates(); $("#upd-dot").hidden = true; }
 }
 
@@ -481,6 +482,8 @@ $("#matter-list").addEventListener("click", async (e) => {
 
 // 新事项：先只显示起始页，第一次发送或上传时才真正建事项（不留下一堆空的「新事项」）
 $("#new-matter").addEventListener("click", () => {
+  state.askOpened = true;
+  state.newMatterShown = true; // 正在异步打开的「最近事项」不要再盖掉新事项页
   state.matter = null;
   state.pendingFiles = [];
   renderChips();
@@ -763,6 +766,8 @@ function dictWrite(s, text) {
   q.value = s.written = value;
   const at = s.before.length + piece.length;
   if (document.activeElement === q) q.setSelectionRange(at, at);
+  composerChanged();
+  if (!s.after) q.scrollTop = q.scrollHeight;
 }
 function dictStopCapture(s) {
   cancelAnimationFrame(s.raf);
@@ -844,6 +849,7 @@ function dictCancel() {
   if (s.id) api(`/api/dictation/${s.id}/cancel`, { method: "POST" }).catch(() => {});
   $("#question").value = s.original;
   dictEnd(s);
+  composerChanged();
 }
 $("#mic-btn").addEventListener("mousedown", (e) => e.preventDefault()); // 不抢输入框光标
 $("#mic-btn").addEventListener("click", () => { if (dict.s) { dict.s.node ? dictStop() : dictCancel(); } else dictStart(); });
@@ -871,7 +877,10 @@ async function audioFileToWav16k(file) {
 
 /* 发送 */
 $("#question").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#ask-form").requestSubmit(); }
+  if (e.key !== "Enter" || e.isComposing) return;
+  const mod = KEYS.isMac() ? e.metaKey : e.ctrlKey;
+  const go = KEYS.sendKey() === "mod-enter" ? mod : !e.shiftKey && !mod;
+  if (go) { e.preventDefault(); $("#ask-form").requestSubmit(); }
 });
 $("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); send({}); });
 $("#stop-btn").addEventListener("click", () => state.matter && api(`/api/matters/${state.matter.id}/stop`, { method: "POST", body: "{}" }));
@@ -1017,7 +1026,7 @@ async function loadModels() {
 function composerChanged() {
   const q = $("#question");
   q.style.height = "auto";
-  q.style.height = Math.min(q.scrollHeight, 260) + "px";
+  q.style.height = Math.min(q.scrollHeight, 190) + "px";
   $("#ask-btn").disabled = !(q.value.trim() || state.pendingFiles.some((f) => f.status === "ok"));
 }
 $("#question").addEventListener("input", composerChanged);
@@ -1542,3 +1551,79 @@ $("#au-action").addEventListener("click", async () => {
 pollAppUpdate();
 
 init().catch((err) => { $("#db-stats").textContent = "初始化失败：" + err.message; });
+
+
+/* ---------- 快捷键 ---------- */
+let keyRecording = null;
+document.addEventListener("keydown", (e) => {
+  if (keyRecording || e.isComposing || e.repeat) { if (e.repeat && KEYS.matches(e, KEYS.load().dictate)) e.preventDefault(); return; }
+  const k = KEYS.load();
+  if (KEYS.matches(e, k.dictate)) {
+    e.preventDefault();
+    if (!$("#view-ask").classList.contains("active")) showView("ask");
+    if (dict.s) { if (KEYS.dictMode() !== "hold") { dict.s.node ? dictStop() : dictCancel(); } return; }
+    state.dictHoldAt = Date.now();
+    $("#question").focus();
+    dictStart();
+    return;
+  }
+  if (KEYS.matches(e, k.newMatter)) { e.preventDefault(); state.askOpened = true; showView("ask"); $("#new-matter").click(); return; }
+  if (KEYS.matches(e, k.focusAsk)) { e.preventDefault(); showView("ask"); $("#question").focus(); return; }
+  if (KEYS.matches(e, k.search)) { e.preventDefault(); showView("search"); $("#q")?.focus(); $("#q")?.select(); return; }
+  if (KEYS.matches(e, k.settings)) { e.preventDefault(); $("#open-settings").click(); }
+}, true);
+// 按住说话：松开快捷键（主键或任一修饰键）就结束
+document.addEventListener("keyup", (e) => {
+  if (KEYS.dictMode() !== "hold" || !dict.s || keyRecording) return;
+  const combo = KEYS.load().dictate;
+  if (!combo) return;
+  const parts = combo.split("+"), main = parts.at(-1);
+  const modNames = { Mod: KEYS.isMac() ? "Meta" : "Control", Ctrl: "Control", Alt: "Alt", Shift: "Shift", Win: "Meta" };
+  const mainUp = KEYS.comboOf({ key: e.key, code: e.code, metaKey: false, ctrlKey: false, altKey: false, shiftKey: false }) === main;
+  if (!mainUp && !parts.slice(0, -1).some((m) => modNames[m] === e.key)) return;
+  if (dict.s.node) dictStop();
+  else if (Date.now() - (state.dictHoldAt || 0) < 350) dictCancel();
+  else { const s0 = dict.s, t0 = Date.now(); const w = setInterval(() => { if (dict.s !== s0) return clearInterval(w); if (s0.node) { clearInterval(w); dictStop(); } else if (Date.now() - t0 > 15000) { clearInterval(w); dictCancel(); } }, 100); }
+}, true);
+
+function renderKeys() {
+  const keys = KEYS.load(), base = KEYS.defaults();
+  $("#send-key").value = KEYS.sendKey();
+  $("#dict-mode").value = KEYS.dictMode();
+  $("#keys-list").innerHTML = KEYS.ACTIONS.map((a) => `<li data-k="${a.id}"><span class="k-label">${esc(a.label)}<em>${esc(a.where)}</em></span>
+    <button type="button" class="k-btn">${esc(KEYS.labelOf(keys[a.id]))}</button>
+    ${keys[a.id] !== base[a.id] ? `<button type="button" class="k-reset">恢复默认</button>` : ""}</li>`).join("");
+  updateComposerHint();
+}
+function updateComposerHint() {
+  const k = KEYS.load();
+  const send = KEYS.sendKey() === "mod-enter" ? `${KEYS.isMac() ? "⌘" : "Ctrl＋"}回车发送` : "回车发送，Shift＋回车换行";
+  $("#ask-btn").title = `发送（${send}）`;
+  $("#mic-btn").title = `语音输入${k.dictate ? `（${KEYS.labelOf(k.dictate)}）` : ""}`;
+}
+$("#send-key").addEventListener("change", (e) => { KEYS.setSendKey(e.target.value); updateComposerHint(); });
+$("#dict-mode").addEventListener("change", (e) => { KEYS.setDictMode(e.target.value); });
+$("#keys-list").addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-k]");
+  if (!li) return;
+  const id = li.dataset.k;
+  if (e.target.closest(".k-reset")) { const keys = KEYS.load(); keys[id] = KEYS.defaults()[id]; KEYS.save(keys); renderKeys(); return; }
+  const btn = e.target.closest(".k-btn");
+  if (!btn) return;
+  btn.classList.add("rec"); btn.textContent = "请按下组合键…";
+  $(".k-err", li)?.remove();
+  keyRecording = (ev) => {
+    ev.preventDefault(); ev.stopPropagation();
+    if (ev.key === "Escape") { stopRecording(); renderKeys(); return; }
+    const combo = KEYS.comboOf(ev);
+    if (!combo) return; // 只按了修饰键，继续等
+    const keys = KEYS.load();
+    const chk = KEYS.checkCombo(combo, { action: id, current: keys });
+    stopRecording();
+    if (!chk.ok) { renderKeys(); $(`li[data-k="${id}"]`).insertAdjacentHTML("beforeend", `<span class="k-err">${esc(chk.reason)}</span>`); return; }
+    keys[id] = combo; KEYS.save(keys); renderKeys();
+  };
+  window.addEventListener("keydown", keyRecording, true);
+});
+function stopRecording() { if (keyRecording) window.removeEventListener("keydown", keyRecording, true); keyRecording = null; }
+renderKeys();

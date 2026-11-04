@@ -299,6 +299,13 @@
       <select name="transcribe_model"><option>gpt-live-transcribe</option></select>
     </label>
     <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。主力模型和分析深度在法律助理的输入框下方选。</p>
+    <h3 style="margin-top:8px">快捷键</h3>
+    <div class="keys-opts">
+      <label>发送消息 <select id="send-key"><option value="enter">回车发送，Shift＋回车换行</option><option value="mod-enter">⌘/Ctrl＋回车发送，回车换行</option></select></label>
+      <label>听写方式 <select id="dict-mode"><option value="toggle">按一下开始，再按一下结束</option><option value="hold">按住说话，松开结束</option></select></label>
+    </div>
+    <ul class="keys-list" id="keys-list"></ul>
+    <p class="muted small">点一个快捷键，再按下新的组合键即可修改；Esc 取消。设置只保存在这台电脑上。</p>
     <h3 style="margin-top:8px">版本</h3>
     <div class="row"><span class="small muted" id="au-version"></span><button type="button" class="ghost" id="au-check">检查更新</button></div>
     <h3 style="margin-top:8px">法规更新</h3>
@@ -342,6 +349,7 @@
 </div>
 
 <div id="toast" class="toast" hidden></div>
+<script src="shortcuts.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
