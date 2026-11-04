@@ -3,6 +3,7 @@ import { runAgent, SYSTEM_PROMPT, DEPTH } from "./agent.mjs";
 import { routeTask, intakeQuestions } from "./router.mjs";
 import { getTask } from "./tasks.mjs";
 import { runReview } from "./review.mjs";
+import { runConsult } from "./consult.mjs";
 import { verifyCitations } from "./verify.mjs";
 import { pickReviewModel } from "./models.mjs";
 
@@ -28,7 +29,7 @@ function answersText(questions, answers) {
  * @param {object} [p.intakeAnswers] 对上一轮追问的回答
  * @param {boolean} [p.skipIntake]  跳过追问，按现有信息作答
  */
-export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, emit, signal }) {
+export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, emit, signal, pipeline = process.env.CLS_PIPELINE || "agent" }) {
   const cfg = DEPTH[depth] || DEPTH.medium;
   conv.attachments.push(...attachments);
   let route, facts = "", userQuestion = question;
@@ -85,7 +86,7 @@ export async function ask(settings, { conv, question, region, attachments = [], 
       `## 问题\n${userQuestion}`,
     ].filter(Boolean).join("\n\n");
     emit({ type: "stage", text: `按「${task.name}」的方法检索分析` });
-    const r = await runAgent(settings, {
+    const r = pipeline === "consult" ? await runConsult(settings, { model, system, content, history: conv.history, emit, signal }) : await runAgent(settings, {
       model, effort: cfg.effort, system, steps: cfg.steps, emit, signal,
       messages: [...conv.history, { role: "user", content }],
     });

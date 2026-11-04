@@ -290,3 +290,15 @@ button.small-btn { padding: 5px 12px; font-size: 13px; }
 #app-update .bar { margin: 12px 0 4px; }
 #au-body p { margin: 6px 0; }
 #au-body pre { white-space: pre-wrap; font-family: inherit; background: var(--chip); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+
+/* 听写（同 CopyDeck）：输入框边框染色，话筒变成「波形＋正在听」 */
+textarea.dictating, textarea.dictating:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+textarea.dictating::placeholder { color: var(--accent); }
+#mic-btn.rec, #mic-btn.connecting { width: auto; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+#mic-btn.connecting { color: var(--accent); border-color: var(--accent); }
+.dict-label { font-size: 12px; white-space: nowrap; }
+.dict-wave { display: inline-flex; align-items: center; gap: 2px; height: 14px; }
+.dict-wave i { display: block; width: 2px; border-radius: 1px; background: currentColor; height: calc(3px + var(--lv, 0) * 11px * var(--k, 1)); transition: height .08s linear; }
+.dict-wave i:nth-child(1) { --k: .55; } .dict-wave i:nth-child(2) { --k: 1; } .dict-wave i:nth-child(3) { --k: .8; } .dict-wave i:nth-child(4) { --k: .45; }
+#toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(10px); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 100; max-width: 80vw; }
+#toast.show { opacity: 1; transform: translateX(-50%); }

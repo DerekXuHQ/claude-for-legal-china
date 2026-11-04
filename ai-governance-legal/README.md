@@ -31,7 +31,7 @@
 | `/ai-governance-legal:vendor-ai-review [vendor/file]` | 对照你的立场审查 AI 供应商协议 |
 | `/ai-governance-legal:reg-gap-analysis [regulation]` | 对比新法规或指引与当前政策/实践的差异 |
 | `/ai-governance-legal:policy-monitor` | 每周扫描 AI 政策偏差，或针对拟议新实践直接查询 |
-| `/ai-governance-legal:policy-starter` | 从已发布的示范政策（生成式人工智能服务管理办法、科技伦理审查办法、算法推荐管理规定、行业自律公约）起草 AI 使用政策初稿，适配你的实务画像——供律师审阅的草案，非最终政策 |
+| `/ai-governance-legal:policy-starter` | 从已发布的示范政策（生成式人工智能服务管理暂行办法、科技伦理审查办法、算法推荐管理规定、行业自律公约）起草 AI 使用政策初稿，适配你的实务画像——供律师审阅的草案，非最终政策 |
 | `/ai-governance-legal:matter-workspace` | 管理事项工作区（仅多客户私人执业）— 新建、列表、切换、关闭、无 |
 
 ## 技能

@@ -36,15 +36,23 @@ function intakeRows(body) {
     .map(([fact, ask, why, required]) => ({ fact, ask, why, required: /是|必需|必须/.test(required || "") }));
 }
 
+const STRATEGY = () => { const p = path.join(DIR, "_strategy.md"); return existsSync(p) ? readFileSync(p, "utf-8").trim() : ""; };
+const GOAL_ROW = { fact: "处理目标", ask: "这件事您想怎么收场：尽快花钱了结 / 据理力争、一分不多给（不想开先例）/ 先谈，谈不拢再打？能接受的大致金额或底线是多少？", why: "决定打法：和解方案还是全程应诉，谈判开价和底线", required: true };
+
 export function loadTasks() {
   if (cache) return cache;
   cache = new Map();
   if (!existsSync(DIR)) return cache;
   for (const f of readdirSync(DIR)) {
-    if (!f.endsWith(".md") || f === "README.md" || f === "contract-checklists.md") continue;
-    const { meta, body } = parse(readFileSync(path.join(DIR, f), "utf-8"));
+    if (!f.endsWith(".md") || f === "README.md" || f === "contract-checklists.md" || f.startsWith("_")) continue;
+    const { meta, body: own } = parse(readFileSync(path.join(DIR, f), "utf-8"));
     const id = meta.id || f.replace(/\.md$/, "");
-    cache.set(id, { id, name: meta.name || id, when: meta.when || "", examples: Array.isArray(meta.examples) ? meta.examples : [], body, intake: intakeRows(body) });
+    // 争议类（frontmatter 写 strategy: yes）：附上共用的「策略与打法」，追问里加上「处理目标」
+    const strategy = /^(yes|true|是)$/i.test(String(meta.strategy || ""));
+    const body = strategy ? `${own}\n\n${STRATEGY()}` : own;
+    const intake = intakeRows(own);
+    if (strategy) intake.unshift(GOAL_ROW);
+    cache.set(id, { id, name: meta.name || id, when: meta.when || "", examples: Array.isArray(meta.examples) ? meta.examples : [], body, intake, strategy });
   }
   return cache;
 }

@@ -211,8 +211,8 @@
     <label>复核模型 <span class="muted">（合同、方案审查时用另一家的模型交叉复核）</span>
       <select name="review_model"><option value="auto">自动选择另一家族的强模型</option></select>
     </label>
-    <label>语音转文字模型 <span class="muted">（上传录音、视频和语音输入用；留空则用系统听写）</span>
-      <select name="transcribe_model"><option value="">不使用</option></select>
+    <label>语音转文字模型 <span class="muted">（话筒听写、上传的录音和视频都用它；默认 gpt-live-transcribe）</span>
+      <select name="transcribe_model"><option>gpt-live-transcribe</option></select>
     </label>
     <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。主力模型和分析深度在法律助理的输入框下方选。</p>
     <h3 style="margin-top:8px">版本</h3>

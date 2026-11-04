@@ -16,6 +16,7 @@ const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ?
 const model = arg("model", "gpt-6-luna"), depth = arg("depth", "medium"), judge = arg("judge", "claude-opus-5-5");
 const only = arg("only", "") ? arg("only").split(",") : null;
 const concurrency = Number(arg("concurrency", 3));
+const pipeline = arg("pipeline", "agent");
 
 const dataDir = arg("data", path.join(os.homedir(), "Library/Application Support/中国法律检索/data"));
 const settings = JSON.parse(readFileSync(path.join(dataDir, "settings.json"), "utf-8"));
@@ -36,7 +37,7 @@ async function runCase(c) {
   const conv = newConversation();
   const steps = [];
   const r = await ask(settings, {
-    conv, question: c.question, region: c.region, attachments: ctx.attachments, model, depth, available, db,
+    conv, question: c.question, region: c.region, attachments: ctx.attachments, model, depth, available, db, pipeline,
     skipIntake: true, emit: (ev) => {
       if (ev.type === "step" || ev.type === "stage") {
         steps.push(ev.text);
@@ -48,7 +49,7 @@ async function runCase(c) {
   const score = await completeJSON(settings, {
     model: judge, effort: "medium",
     system: `你是资深中国执业律师，负责给法律助理的工作打分。按评分要点逐项判断，严格但公正。只输出 JSON：
-{"identify": 0-10 (must_identify 命中程度和正确性), "cite": 0-10 (must_cite 是否引用、引用是否准确支持结论), "ask": 0-10 (追问问题加上答案中写明的假设，是否覆盖 must_ask), "errors": ["答案中出现的 must_not 错误或其他实质性法律错误"], "usefulness": 0-10 (能否直接拿去用：结论明确、可执行、有金额/期限/文书), "overall": 0-10, "comment": "两三句评语"}`,
+{"identify": 0-10 (must_identify 命中程度和正确性), "cite": 0-10 (must_cite 是否引用、引用是否准确支持结论), "ask": 0-10 (追问问题加上答案中写明的假设，是否覆盖 must_ask), "errors": ["答案中出现的 must_not 错误或其他实质性法律错误"], "usefulness": 0-10 (能否直接拿去用：结论明确、可执行、有金额/期限/文书), "strategy": 0-10 (是否站在用户一方、按用户目标给出合法的打法：对方诉求逐项拆解、双方筹码、证据补强、谈判方案、升级路径与成本；纯咨询类问题按是否给出实际可操作的下一步打分), "overall": 0-10, "comment": "两三句评语"}`,
     user: `## 题目\n地区：${c.region || "未说明"}\n${c.question}\n${c.attachment ? "\n## 附件\n" + c.attachment : ""}\n\n## 评分要点\nmust_identify：${c.must_identify.join("；")}\nmust_cite：${c.must_cite.join("；")}\nmust_ask：${c.must_ask.join("；")}\nmust_not：${c.must_not.join("；")}\n优秀答案：${c.notes}\n\n## 助理的分流\n任务：${route.task}（期望 ${c.task}）\n追问的问题：${intake.questions.map((q) => q.question).join("；") || "（未追问）"}\n\n## 助理的答案\n${r.text}`,
   });
   return { id: c.id, task: c.task, routed: route.task, intake: intake.questions.map((q) => q.question), seconds, steps: steps.length, answer: r.text, score };
@@ -62,7 +63,7 @@ await Promise.all(Array.from({ length: Math.min(concurrency, cases.length) }, as
     try {
       const r = await runCase(c);
       results.push(r);
-      console.log(`${c.id}\t${r.routed === c.task ? "分流✓" : "分流✗ " + r.routed}\t总分 ${r.score.overall}\t要点 ${r.score.identify} 引用 ${r.score.cite} 追问 ${r.score.ask} 可用 ${r.score.usefulness}\t${r.seconds}s\t错误 ${r.score.errors?.length || 0}`);
+      console.log(`${c.id}\t${r.routed === c.task ? "分流✓" : "分流✗ " + r.routed}\t总分 ${r.score.overall}\t要点 ${r.score.identify} 引用 ${r.score.cite} 追问 ${r.score.ask} 可用 ${r.score.usefulness} 策略 ${r.score.strategy}\t${r.seconds}s\t错误 ${r.score.errors?.length || 0}`);
     } catch (err) {
       console.log(`${c.id}\t出错：${String(err.message || err).slice(0, 200)}`);
       results.push({ id: c.id, error: String(err.message || err) });
@@ -72,11 +73,11 @@ await Promise.all(Array.from({ length: Math.min(concurrency, cases.length) }, as
 
 const ok = results.filter((r) => r.score);
 const avg = (k) => (ok.reduce((s, r) => s + (Number(r.score[k]) || 0), 0) / (ok.length || 1)).toFixed(2);
-const summary = { model, depth, judge, cases: results.length, routed_ok: ok.filter((r) => r.routed === r.task).length,
-  overall: avg("overall"), identify: avg("identify"), cite: avg("cite"), ask: avg("ask"), usefulness: avg("usefulness"),
+const summary = { model, depth, pipeline, judge, cases: results.length, routed_ok: ok.filter((r) => r.routed === r.task).length,
+  overall: avg("overall"), identify: avg("identify"), cite: avg("cite"), ask: avg("ask"), usefulness: avg("usefulness"), strategy: avg("strategy"),
   avg_seconds: Math.round(ok.reduce((s, r) => s + r.seconds, 0) / (ok.length || 1)), errors: ok.reduce((s, r) => s + (r.score.errors?.length || 0), 0) };
 console.log("\n汇总", JSON.stringify(summary));
 const outDir = path.join(here, "..", "eval", "results");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-writeFileSync(path.join(outDir, `${stamp}-${model}-${depth}.json`), JSON.stringify({ summary, results }, null, 1));
+writeFileSync(path.join(outDir, `${stamp}-${model}-${depth}-${pipeline}.json`), JSON.stringify({ summary, results }, null, 1));

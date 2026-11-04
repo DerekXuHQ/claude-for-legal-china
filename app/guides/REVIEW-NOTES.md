@@ -4,17 +4,19 @@
 
 | 领域 | 已改正 | 原文无误 | 无法核实（保留〔待核〕） |
 |---|---|---|---|
-| 刑事 | 12 | 0 | 3 |
+| 刑事 | 15 | 0 | 0 |
 | 民事诉讼与执行 | 15 | 1 | 0 |
-| 劳动用工 | 9 | 0 | 1 |
-| 公司、知识产权、采购 | 18 | 0 | 1 |
-| 个人信息、AI 治理、合同 | 15 | 0 | 5 |
+| 劳动用工 | 10 | 0 | 0 |
+| 公司、知识产权、采购 | 19 | 0 | 0 |
+| 个人信息、AI 治理、合同 | 23 | 0 | 0 |
 
-**仍待核实的**：资料库里没有对应规范性文件，没有凭记忆改，原处标「〔待核〕」：
-- 最高法、最高检《关于常见犯罪的量刑指导意见》相关的三处（文件名称写法、「累罚」、自首等量刑比例）；
-- 《企业职工患病或非因工负伤医疗期规定》的年份；
-- 专利号中类型代码的识别规则；
-- 《生成式人工智能服务管理暂行办法》《互联网信息服务算法推荐管理规定》的条号冲突，以及 CMP 执法案例的说法。
+**原来无法核实的 10 条，已于 2026-11-04 对照官方网站核实并改正**（资料库里没有这些规范性文件，改为查最高人民法院、国家网信办、国家知识产权局、中国政府网的原文）：
+- 最高法、最高检《关于常见犯罪的量刑指导意见（试行）》相关的三处（文件名称写法、「累罚」、自首等量刑比例）；
+- 《企业职工患病或非因工负伤医疗期规定》的文号和年份；
+- 专利申请号中类型代码的识别规则；
+- 《生成式人工智能服务管理暂行办法》《互联网信息服务算法推荐管理规定》的条号冲突（4条），以及 CMP 执法案例的说法。
+
+量刑指导意见的全文，最高人民法院、最高人民检察院网站上没有找到（最高检站内搜索返回 403，没有再访问），比例是对照晋江市人民政府网站转载的全文核对的，文号和施行日期以最高人民法院网站的发布稿为准。目前没有仍待核实的条目。
 
 另：数据安全法、个人信息保护法、网络安全法在资料库里还没有和官方网站逐条核对（中国人大网列表页后段拒绝自动访问），相关改正以资料库现行文本为准。
 
@@ -35,15 +37,15 @@
 | criminal-legal/investigation-stage-docs | 「第95条：辩护人有权申请羁押必要性审查」 | 已改正：第95条按原文改为检察院在逮捕后依职权审查；申请权另引人民检察院刑事诉讼规则第574条。说明部分和申请书正文两处依据也补上了规则第574条 | 刑事诉讼法第95条；人民检察院刑事诉讼规则第574条 | 指引 + 插件 SKILL.md（指引末尾的条文清单也补了第34、91、97条） |
 | criminal-legal/investigation-stage-docs | 「五大核心原则」只列了四项 | 已改正：改为「从证据、程序、定性、量刑四个方面」。「五大核心原则」在本插件里指的是工作原则（见 client-communication），不是辩点的分类 | 内部一致性问题，不涉及法条 | 指引 + 插件 SKILL.md |
 | criminal-legal/non-prosecution-opinion | 「量情情节」 | 已改正：改为「量刑情节」（每个文件2处） | 错别字 | 指引 + 插件 SKILL.md |
-| criminal-legal/plea-negotiation | 量刑指导意见的写法前后不一致（法发〔2021〕21号 与「2021年修订」） | 无法核实，保留〔待核〕：资料库里没有这份量刑指导意见，没有凭记忆统一写法。两处原文本来就带〔待核〕/【待元典验证】 | 资料库中无 | 未改 |
+| criminal-legal/plea-negotiation | 量刑指导意见的写法前后不一致（法发〔2021〕21号 与「2021年修订」） | 已改正：统一为最高人民法院、最高人民检察院《关于常见犯罪的量刑指导意见（试行）》（法发〔2021〕21号，2021年7月1日起实施），「2021年修订」的写法删去；基准刑评估表的比例逐项核对无误，去掉〔待核〕；累犯一行补上「应当增加基准刑10%–40%，一般不少于3个月」 | 意见第三部分第（六）（七）（九）（十四）（十五）项；来源：https://www.court.gov.cn/zixun/xiangqing/312301.html（文号、施行日期）；https://www.jinjiang.gov.cn/ztzl/jjgazl/flfg/202107/t20210706_2583807.htm（晋江市人民政府网站转载的意见全文） | 指引 + 插件 SKILL.md |
 | criminal-legal/sentencing | 示例「交通肇事致轻伤」 | 已改正：改为「交通肇事致一人重伤（负事故主要责任且酒后驾驶）」。致人轻伤不构成交通肇事罪 | 刑法第133条；最高人民法院关于审理交通肇事刑事案件具体应用法律若干问题的解释第2条第二款 | 指引 + 插件 SKILL.md |
-| criminal-legal/sentencing | 「累罚」含义不明 | 无法核实，保留〔待核〕：在原文后加了〔待核〕。从严情节的列举出自量刑指导意见，资料库里没有 | 资料库中无 | 指引 + 插件 SKILL.md（只加了标记） |
+| criminal-legal/sentencing | 「累罚」含义不明 | 已改正：意见里没有「累罚」，从严情节按意见改为「累犯、前科、犯罪对象为弱势人员、灾害期间故意犯罪」；示例里「兼具时整体可减少60%以下」改为按原文写明是兼具自首、重大坦白、退赃退赔、赔偿谅解、刑事和解等情节的，去掉〔待核〕 | 意见第三部分第（十四）至（十八）项；来源：https://www.court.gov.cn/zixun/xiangqing/312301.html（文号、施行日期）；https://www.jinjiang.gov.cn/ztzl/jjgazl/flfg/202107/t20210706_2583807.htm（晋江市人民政府网站转载的意见全文） | 指引 + 插件 SKILL.md |
 | criminal-legal/defense-statement | 「依据《刑法》及相关司法解释，谅解情节应当从轻处罚」 | 已改正：改为取得谅解属于影响量刑的酌定情节，「可以酌情从轻处罚」；双方依法达成和解协议的，「应当从轻处罚」。刑法里没有关于谅解的规定 | 最高人民法院关于适用《中华人民共和国刑事诉讼法》的解释第276条、第596条；刑事诉讼法第288条、第290条 | 指引 + 插件 SKILL.md |
-| criminal-legal/defense-plan | 自首、从犯、未遂、立功的量刑比例 | 无法核实，保留〔待核〕：比例出自量刑指导意见，资料库里没有。原文已经标了〔待核〕和 [模型知识 — 需验证] | 资料库中无 | 未改 |
+| criminal-legal/defense-plan | 自首、从犯、未遂、立功的量刑比例 | 已改正（比例本身无误，改的是标注）：自首40%以下、从犯20%–50%、未遂50%以下、一般立功20%以下、重大立功20%–50%均与原文一致，删去「经验参考」和〔待核〕/[模型知识 — 需验证]，注明来源，保留「以办案地细则为准」 | 意见第三部分第（四）（五）（六）（九）项；来源：https://www.court.gov.cn/zixun/xiangqing/312301.html（文号、施行日期）；https://www.jinjiang.gov.cn/ztzl/jjgazl/flfg/202107/t20210706_2583807.htm（晋江市人民政府网站转载的意见全文） | 指引 + 插件 SKILL.md |
 | criminal-legal/case-file-notes | 「讯问笔录必备字段（第4、5部分必检）」与12部分结构对不上 | 已改正：改为第3、4部分。讯问笔录在第三部分（受援人供述）和第四部分（同案犯供述），第五部分是被害人陈述 | 本技能的12部分结构 | 指引 + 插件 SKILL.md |
 | criminal-legal/case-file-notes | 「需核对原件」的使用规则前后冲突 | 指引原文无误：指引已统一为自用版可记「原件待核」、提交版禁用。插件已改正：插件里还有3处要求写「需核对原件」，与它自己的提交版禁词规则冲突，现统一为：页码定不了写「卷内目录第 X 页」，签名等事实在分部底稿里标「原件待核」，OCR 风险提示只写在自用版/工作底稿里 | 本技能的提交版禁词规则（SKILL.md 第104、224行；references/submission-version-standard.md） | 只改插件 SKILL.md |
 
-数量：已改正 11 条（其中 case-file-notes「需核对原件」一条只改了插件，指引本身没问题）；无法核实、保留〔待核〕3 条；原文无误 0 条。
+数量：已改正 15 条（含原来无法核实、2026-11-04 对照官网改正的 3 条，以及表后补记的一条；case-file-notes「需核对原件」一条只改了插件，指引本身没问题）；无法核实 0 条；原文无误 0 条。
 app/guides/criminal-legal/investigation-stage-docs | 不批准逮捕意见书依据引第87条、第90条 | 已改正 | 刑事诉讼法第88条第二款（审查批捕听取辩护律师意见） | 指引与 SKILL.md
 
 ## 民事诉讼与执行
@@ -75,7 +77,7 @@ legal-clinic/client-letter、status | 「学生实践规则」「认证法律实
 ---|---|---|---|---
 employment-legal/ref-labor-core-rules | 2.4 表第40条一律写 N+1，与「代通知金才 +1」矛盾（同类错误还见于速查表「无过失性解除」行、7.5 节「需支付 N + 1 或代通知金」） | 已改正：经济补偿为 N，未提前 30 日书面通知、改为额外支付 1 个月工资的，另付 1 个月 | 《劳动合同法》第40条、第46条第（三）项 | app/guides/employment-legal/ref-labor-core-rules.md；employment-legal/references/labor-core-rules.md
 employment-legal/ref-labor-core-rules | 7.4 浙江奖励假「30天（2021年修正后为60天）」表述不清 | 已改正：一孩延长产假60天，二孩、三孩延长产假90天；其他省份仍标待核 | 《浙江省人口与计划生育条例》（2021-11-25）第22条第（一）项 | 同上两文件
-employment-legal/ref-labor-core-rules | 医疗期规定年份前后不一（7.5 写劳部发〔1994〕479号，附录四写1995年） | 无法核实，保留〔待核〕：资料库无该规章；附录四统一写文号，指引加〔待核〕，插件加 `[需核实]` | 资料库未收录《企业职工患病或非因工负伤医疗期规定》 | 同上两文件
+employment-legal/ref-labor-core-rules | 医疗期规定年份前后不一（7.5 写劳部发〔1994〕479号，附录四写1995年） | 已改正：文号劳部发〔1994〕479号无误，1994年12月1日公布、1995年1月1日起施行（「1995年」是施行年份）。附录四写明公布和施行日期，去掉〔待核〕/`[需核实]` | 中国政府网原文 https://www.gov.cn/zhengce/2022-08/31/content_5711269.htm（第九条施行日期） | 同上两文件
 employment-legal/ref-labor-core-rules | 附录四「劳动争议解释（一）第45条（加付赔偿金）」正文无对应 | 已改正：删去该项。第45条讲用人单位迫使劳动者解除合同，不是加付赔偿金；加付赔偿金在《劳动合同法》第85条（正文 3.5 节已有） | 《劳动争议解释（一）》第45条；《劳动合同法》第85条 | 同上两文件
 employment-legal/hiring-review | 竞业限制范围、地域、期限的约定引「第24条第2款」，应为第1款 | 已改正（只改这一处；「期限不得超过二年（第24条第2款）」原文无误，未动） | 《劳动合同法》第24条第1款 | app/guides/employment-legal/hiring-review.md；employment-legal/skills/hiring-review/SKILL.md
 employment-legal/labor-contract | 竞业补偿「在职后按月支付」应为「离职后」 | 已改正（每个文件 2 处：高管增强条款、合规自查表） | 《劳动合同法》第23条第2款（解除或者终止劳动合同后按月给予经济补偿） | app/guides/employment-legal/labor-contract.md；employment-legal/skills/labor-contract/SKILL.md
@@ -84,7 +86,7 @@ employment-legal/labor-contract | 「获准辞职」列入用人单位即时解�
 employment-legal/severance-calc | 「超过6个月不满1年按1年计」，法条为「六个月以上」 | 已改正为「6 个月以上不满 1 年的（含满 6 个月），按 1 年计」 | 《劳动合同法》第47条第1款 | app/guides/employment-legal/severance-calc.md；employment-legal/skills/severance-calc/SKILL.md
 employment-legal/leave-tracker | 年休假「一般不跨年结转」，没写单位确有必要的可以跨一个年度 | 已改正：「一般不跨年度安排；单位因生产、工作特点确有必要的，可跨 1 个年度安排」 | 《职工带薪年休假条例》第5条第2款 | app/guides/employment-legal/leave-tracker.md；employment-legal/skills/leave-tracker/SKILL.md
 
-合计：10 条中，已改正 9 条（labor-contract「第五节」一条只改了插件，指引原文无误），无法核实保留〔待核〕1 条，判定原文无误 0 条。
+合计：10 条中，已改正 10 条（labor-contract「第五节」一条只改了插件，指引原文无误；医疗期一条于 2026-11-04 对照中国政府网核实），无法核实 0 条，判定原文无误 0 条。
 
 ## 公司、知识产权、采购
 
@@ -108,7 +110,7 @@ ip-legal/ip-clause-review | 「发明人认定错误是专利无效事由」〔�
 ip-legal/invention-intake | 宽限期混写12个月和6个月 | 已改正（插件原文第31、56、267行的「十二个月」统一为六个月；指引已是六个月，未动） | 《专利法》第24条 | ip-legal/skills/invention-intake/SKILL.md
 ip-legal/invention-intake | 第24条只列三种情形 | 已改正（补「国家出现紧急状态或者非常情况时为公共利益目的首次公开」） | 《专利法》第24条第1项 | app/guides/ip-legal/invention-intake.md；ip-legal/skills/invention-intake/SKILL.md
 ip-legal/cease-desist | 警告函依据列专利法第65条，赔偿在第71条 | 已改正（第65条本身无误，是侵权纠纷解决条款；补列第71条） | 《专利法》第65条、第71条 | app/guides/ip-legal/cease-desist.md；ip-legal/skills/cease-desist/SKILL.md
-ip-legal/fto-triage 与 infringement-triage | 专利号类型识别规则互相矛盾（fto 写「前缀为'外观设计'」，infringement 写「以类型代码1/2/3开头」） | 无法核实，保留〔待核〕（资料库没有专利申请号编码标准；fto 原文的「前缀为外观设计」改成「以专利证书或专利登记簿记载的专利类型为准」并标 `[需核实]`；infringement 保留原文，加〔待核〕/`[需核实]` 和同样的兜底说明） | 资料库无相关规范 | ip-legal/skills/fto-triage/SKILL.md；app/guides/ip-legal/infringement-triage.md；ip-legal/skills/infringement-triage/SKILL.md
+ip-legal/fto-triage 与 infringement-triage | 专利号类型识别规则互相矛盾（fto 写「前缀为'外观设计'」，infringement 写「以类型代码1/2/3开头」） | 已改正：两种说法都不对。2003年10月1日起申请号为12位，前4位是年份，类型代码是第5位的申请种类号（1发明、2实用新型、3外观设计，8、9为进入中国国家阶段的PCT发明、PCT实用新型），后7位流水号，另有校验位；2003年9月30日以前的8位申请号不升位，不按此判断。fto、infringement 两处都按此改写，保留「以专利证书或专利登记簿为准」的兜底，去掉〔待核〕/`[需核实]` | 《专利申请号标准》（国家知识产权局令第32号）第4.1、4.3条 https://www.cnipa.gov.cn/art/2003/7/14/art_526_145959.html ；国家知识产权局第92号公告第四条 https://www.cnipa.gov.cn/art/2013/10/23/art_74_27982.html | app/guides/ip-legal/fto-triage.md；ip-legal/skills/fto-triage/SKILL.md；app/guides/ip-legal/infringement-triage.md；ip-legal/skills/infringement-triage/SKILL.md
 
 ## 发现但未改（不在待核清单内）
 
@@ -117,7 +119,7 @@ ip-legal/fto-triage 与 infringement-triage | 专利号类型识别规则互相�
 
 ## 统计
 
-共19条：已改正 18 条，原文无误 0 条（cease-desist 的第65条本身没错，补列第71条后计入已改正），无法核实保留〔待核〕1 条。
+共19条：已改正 19 条（专利申请号一条于 2026-11-04 对照国家知识产权局网站核实），原文无误 0 条（cease-desist 的第65条本身没错，补列第71条后计入已改正），无法核实 0 条。
 
 ## 个人信息、AI 治理、合同
 
@@ -129,14 +131,17 @@ privacy-legal/ref-pipil-core-provisions（1.2） | 合法性基础第2项漏「�
 privacy-legal/ref-pipil-core-provisions（1.5） | 标题写第44-47条，内容写到第48、49条 | 已改正：标题改为「第44-49条」 | 个人信息保护法第44-49条 | 同上
 privacy-legal/dpa-review | 第57条写「通知网信办」 | 已改正：「通知履行个人信息保护职责的部门和个人」 | 个人信息保护法第57条 | app/guides/privacy-legal/dpa-review.md；privacy-legal/skills/dpa-review/SKILL.md
 privacy-legal/pia-generation 与 use-case-triage | 第55条情形数「四类」与「四类+兜底」不一致 | 已改正：第55条共5项（4项具体情形加1项兜底）。指引原文（「第55条情形」「四类+兜底」）无误；插件里的两处「四类情形」改为「四类情形+兜底」 | 个人信息保护法第55条 | privacy-legal/skills/pia-generation/SKILL.md；privacy-legal/skills/use-case-triage/SKILL.md
-privacy-legal/policy-monitor | 「网信办和市场监管部门已对 CMP 配置错误采取执法行动」没有出处 | 无法核实，保留〔待核〕：执法案例不在资料库里，原文保留，句末加〔待核〕 | 资料库无 | app/guides/privacy-legal/policy-monitor.md；privacy-legal/skills/policy-monitor/SKILL.md
+privacy-legal/policy-monitor | 「网信办和市场监管部门已对 CMP 配置错误采取执法行动」没有出处 | 已改写：国家网信办公开通报里没有查到专门针对 Cookie/CMP 的执法案例，原句删去。改为引用《App违法违规收集使用个人信息行为认定方法》（国信办秘字〔2019〕191号）「以默认选择同意隐私政策等非明示方式征求用户同意」属于未经同意收集使用，以及2022年11月国家网信办查处80款App中的「默认勾选隐私政策」，作为评估 CMP 默认勾选的参照 | https://www.cac.gov.cn/2019-12/27/c_1578986455686625.htm ；https://www.cac.gov.cn/2022-11/03/c_1669106604621340.htm | app/guides/privacy-legal/policy-monitor.md；privacy-legal/skills/policy-monitor/SKILL.md
 regulatory-legal/ref-admin-law-core（2.1） | 行政复议法第11条只列12项 | 已改正：按2023年修订文本改为15项（补赔偿决定、工伤认定、政府信息公开；履职、给付、行政协议各项按原文改写；兜底项改为「其他行政行为」） | 行政复议法（2023）第11条 | app/guides/regulatory-legal/ref-admin-law-core.md；regulatory-legal/references/admin-law-core.md
 regulatory-legal/ref-admin-law-core（期限表） | 政府信息公开写「可延长20日」 | 已改正：「可延长20个工作日」 | 政府信息公开条例第33条第2款 | 同上
 regulatory-legal/ref-admin-law-core（4.2） | 「当当场」笔误 | 已改正：「应当当场」 | 行政许可法第32条第1款第4项 | 同上
-ai-governance-legal（多篇）：生成式 AI 安全评估条号 | 多数篇目写第17条，ref-ai-governance-core 写第16条（1.5、8.x 触发条件） | 无法核实，保留〔待核〕：资料库里没有部门规章，各处冲突的条号后面加〔待核〕，条号没动 | 资料库无 | 指引：ai-inventory、aia-generation、vendor-ai-review、ref-ai-governance-core；插件：skills/ai-inventory、aia-generation、vendor-ai-review/SKILL.md，references/ai-governance-core.md
-ai-governance-legal（多篇）：内容标识条号 | ref-ai-governance-core 写第12条，policy-starter、use-case-triage 写第15条 | 无法核实，保留〔待核〕：ref-core 1.3 节标题和 9.3 表加〔待核〕；指引里第15条原来已标〔待核〕，插件 policy-starter（2处）和 use-case-triage 补标 | 资料库无 | 指引：ref-ai-governance-core；插件：references/ai-governance-core.md，skills/policy-starter、use-case-triage/SKILL.md
-ai-governance-legal（多篇）：罚则条号 | 各篇都写生成式 AI 办法第21条（金额1-10万元）、算法推荐规定第31条；指引 reg-gap-analysis 已标〔待核〕，插件没标 | 无法核实，保留〔待核〕：插件 reg-gap-analysis 补标〔待核〕 | 资料库无 | ai-governance-legal/skills/reg-gap-analysis/SKILL.md
-ai-governance-legal（多篇）：算法推荐透明度条号 | ref-ai-governance-core 写第7条，ai-inventory、policy-starter 写第16条（ref-core 又把第16条写成「影响网络舆论」） | 无法核实，保留〔待核〕：ref-core 2.3 和 9.3 的第7条、ai-inventory 和 policy-starter 的第16条后面加〔待核〕 | 资料库无 | 指引：ref-ai-governance-core、ai-inventory、policy-starter；插件：对应 SKILL.md 和 references/ai-governance-core.md
+ai-governance-legal（多篇）：生成式 AI 安全评估条号 | 多数篇目写第17条，ref-ai-governance-core 写第16条（1.5、8.x 触发条件） | 已改正：第17条对（安全评估＋算法备案）。ai-inventory、aia-generation、vendor-ai-review 去掉〔待核〕；ref-core 1.5 改为第17条，备案填报内容改引算法推荐规定第24条，并说明第16条是部门监管职责；9.1 的第16条改为第17条 | 生成式AI暂行办法第16、17条；算法推荐规定第24条。来源：https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm ；https://www.cac.gov.cn/2022-01/04/c_1642894606364259.htm | 指引：ai-inventory、aia-generation、vendor-ai-review、ref-ai-governance-core；插件：skills/ai-inventory、aia-generation、vendor-ai-review/SKILL.md，references/ai-governance-core.md
+ai-governance-legal（多篇）：内容标识条号 | ref-ai-governance-core 写第12条，policy-starter、use-case-triage 写第15条 | 已改正：第12条对，第15条是投诉举报机制。policy-starter（2处）、use-case-triage 的「第15条（内容标识）」改为第12条，法律依据清单同步；ref-core 1.3、9.3 去掉〔待核〕，补上《人工智能生成合成内容标识办法》条号（显式第4条、隐式第5条、平台第6条、用户第10条、罚则第13条） | 生成式AI暂行办法第12条、第15条；标识办法第4-6、10、13条。来源：https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm ；https://www.cac.gov.cn/2025-03/14/c_1743654684782215.htm | 指引：ref-ai-governance-core；插件：references/ai-governance-core.md，skills/policy-starter、use-case-triage/SKILL.md
+ai-governance-legal（多篇）：罚则条号 | 各篇都写生成式 AI 办法第21条（金额1-10万元）、算法推荐规定第31条；指引 reg-gap-analysis 已标〔待核〕，插件没标 | 已改正：生成式AI暂行办法第21条没有罚款数额，只有「依法律、行政法规处罚；没有规定的警告、通报批评、责令限期改正；拒不改正或情节严重的责令暂停提供相关服务」，「处一万元以上十万元以下罚款」删去；原来写成第22条的治安、刑事责任实为第21条第2款（第四章「监督检查和法律责任」到第21条为止）。算法推荐规定第31条（警告、通报批评、责令限期改正，拒不改正或情节严重的暂停信息更新并处1万-10万元罚款）无误，ref-core 2.7 补上适用的条号范围 | 生成式AI暂行办法第21条；算法推荐规定第31条。来源：https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm ；https://www.cac.gov.cn/2022-01/04/c_1642894606364259.htm | 指引 + 插件：reg-gap-analysis、ref-ai-governance-core
+ai-governance-legal（多篇）：算法推荐透明度条号 | ref-ai-governance-core 写第7条，ai-inventory、policy-starter 写第16条（ref-core 又把第16条写成「影响网络舆论」） | 已改正：第16条对（告知并公示基本原理、目的意图和主要运行机制），第7条是算法安全主体责任。ref-core 2.3、9.3 改为第16条；ai-inventory、policy-starter 去掉〔待核〕，policy-starter「告知+关闭选项」拆为第16条、第17条。顺带改正 ref-core 2.3 选择权引的第12条（应为第17条第1款），删去没有出处的「不得因关闭降低服务质量」，补第17条第2、3款；2.6「影响网络舆论」由第16条改为第14条 | 算法推荐规定第7、12、14、16、17条。来源：https://www.cac.gov.cn/2022-01/04/c_1642894606364259.htm | 指引：ref-ai-governance-core、ai-inventory、policy-starter；插件：对应 SKILL.md 和 references/ai-governance-core.md
+ai-governance-legal/use-case-triage | 算法歧视引「算法推荐规定第10条」 | 已改正：第10条是用户模型和标签管理。改为生成式AI暂行办法第4条第（二）项（防止民族、信仰、国别、地域、性别、年龄、职业、健康等歧视）和算法推荐规定第21条（对消费者在交易价格等交易条件上的不合理差别待遇），去掉〔待核〕；法律依据清单删去第10条 | 生成式AI暂行办法第4条；算法推荐规定第10条、第21条。来源：https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm ；https://www.cac.gov.cn/2022-01/04/c_1642894606364259.htm | app/guides/ai-governance-legal/use-case-triage.md；ai-governance-legal/skills/use-case-triage/SKILL.md
+指引和插件（多篇）：规章名称 | 写作《生成式人工智能服务管理办法》 | 已改正：统一为正式名称《生成式人工智能服务管理暂行办法》，19 个文件共 61 处（含 ai-governance-legal 的 CLAUDE.md、README.md 和 marketplace.json 的插件描述；commercial-legal/saas-msa-review、privacy-legal/reg-gap-analysis 也有）。.agents/.dsh/.workbuddy 适配层没动，需重新生成 | 国家网信办网站发布的办法全文 https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm | app/guides 下 8 篇；ai-governance-legal、commercial-legal、privacy-legal 插件文件；.claude-plugin/marketplace.json
+ai-governance-legal（多篇）：深度合成管理规定条号 | ref-core 第三节：训练数据引第9条、信息安全管理引第19条、辟谣引第21条，罚则列了不存在的罚款项；aia-generation 把第15条写成所有深度合成服务都要安全评估；ai-inventory 和 9.3 表把显著标识写成第16条 | 已改正：实名认证第9条，辟谣第11条，训练数据第14条，工具安全评估第15条，技术标识第16条，显著标识第17条，禁止删改标识第18条，备案第19条，新功能上线安全评估第20条，监督检查第21条，罚则第22条（本规定不设罚款数额，依法律、行政法规处罚）；信息安全主体责任为第7条。ref-core 第三节重写并去掉〔待核〕，aia-generation 改为第15条＋第20条，ai-inventory 和 9.3 改为第16、17条。reg-gap-analysis 引的第2条（适用范围）无误 | 《互联网信息服务深度合成管理规定》第2、7-9、11、14-22条。来源：https://www.cac.gov.cn/2022-12/11/c_1672221949354811.htm | 指引：ref-ai-governance-core、aia-generation、ai-inventory；插件：references/ai-governance-core.md，skills/aia-generation、ai-inventory/SKILL.md
 ai-governance-legal/ref-ai-governance-core（10.3） | 数据安全法一行写「50-500万元」，条文里没有这个档次 | 已改正：拒不改正或严重后果 50-200万元（第45条），违规向境外提供重要数据情节严重的 100-1000万元（第46条）。同表网络安全法第61条一行已核对，无误 | 数据安全法第45条、第46条；网络安全法（2025修正）第61条 | app/guides/ai-governance-legal/ref-ai-governance-core.md；ai-governance-legal/references/ai-governance-core.md
 ai-governance-legal/ref-currency-watch | 时效监测清单没有反映网络安全法2025年修正 | 已改正：补上「2025年10月28日修正，修正后版本2026年1月1日起施行（条文重新编号，新增第20条人工智能条款，罚则提高）」，等保义务标第23条。「最近核实」日期没改，因为只核了这一条 | 关于修改网络安全法的决定；网络安全法（2025）第20条、第23条 | app/guides/ai-governance-legal/ref-currency-watch.md；ai-governance-legal/references/currency-watch.md
 commercial-legal/ref-contract-law-core（附二） | 附二仍把重大误解写成合同编通则解释第3条；条号区间也不对 | 已改正：第3条是合同成立的认定（重大误解指向总则编解释第十九条）；第11条是「缺乏判断能力」（不是电子合同提示，电子合同在第10条第3款）；原来的「32-42违约金」「53-61解除」「62-68违约责任」改为按原文分段：32情势变更、33-46代位权和撤销权、52-54解除、55-58抵销、59违约方请求终止、60-63损害赔偿、64-66违约金、67-68定金 | 合同编通则解释第3、10、11、32-68条；总则编解释第十九条 | app/guides/commercial-legal/ref-contract-law-core.md；commercial-legal/references/contract-law-core.md
@@ -147,7 +152,8 @@ corporate-legal/legal-opinion | 法律意见书模板的免责声明写「不构
 
 附注：
 - 资料库里的数据安全法、个人信息保护法、网络安全法正文标的是 official=0，也就是还没有和官网核对过。上面的改正以资料库条文为准；pipil-core 原有的「金额尚未对照官方文本复核〔待核〕」提示保留没删。
-- 《生成式人工智能服务管理暂行办法》《算法推荐管理规定》《深度合成管理规定》都是部门规章，资料库里没有，所以条号一处都没改，只标了〔待核〕。
+- 《生成式人工智能服务管理暂行办法》《算法推荐管理规定》是部门规章，资料库里没有；2026-11-04 改为对照国家网信办网站全文核实，上面四条已改正。ref-core 1.4 表「第14条 实名认证」也一并改正（第14条是违法内容处置）。《深度合成管理规定》随后也对照国家网信办网站全文核对，条号已改正（见上表）。
+- 已改正：use-case-triage「社会信用评估」原引生成式AI暂行办法第4条〔待核〕，第4条没有提到社会信用评分。改为《个人信息保护法》第24条（自动化决策）、第55条第（二）项（影响评估），按资料库条文核对。
 - use-case-triage 示例行「大规模敏感个人信息（第55条第1项）」：第1项本身没有「大规模」的限定，但这一行不算错，没改。
 
 ## 《反不正当竞争法》条号统一（2019 → 2025）

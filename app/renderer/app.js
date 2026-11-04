@@ -558,13 +558,14 @@ $("#file-input").addEventListener("change", async (e) => {
     state.pendingFiles.push(chip);
     renderChips();
     try {
-      const data = await new Promise((ok, bad) => {
+      const media = /^(audio|video)\//.test(f.type) || /\.(mp3|m4a|wav|aac|ogg|webm|mp4|mov|flac|opus)$/i.test(f.name);
+      const data = media ? await audioFileToWav16k(f).catch(() => { throw new Error("读不出这个文件里的声音（可以先导出成 m4a、mp3 或 wav 再上传）"); }) : await new Promise((ok, bad) => {
         const r = new FileReader();
         r.onload = () => ok(String(r.result).split(",")[1] || "");
         r.onerror = () => bad(r.error);
         r.readAsDataURL(f);
       });
-      const res = await api("/api/upload", { method: "POST", body: JSON.stringify({ matter_id: matterId, name: f.name, mime: f.type, data, model: $("#ask-model").value }) });
+      const res = await api("/api/upload", { method: "POST", body: JSON.stringify({ matter_id: matterId, name: f.name, mime: media ? (f.type || "audio/wav") : f.type, data, model: $("#ask-model").value }) });
       Object.assign(chip, res, { status: "ok" });
     } catch (err) {
       Object.assign(chip, { status: "error", error: err.message });
@@ -582,37 +583,142 @@ function renderChips() {
   $$("[data-rm]", $("#attach-chips")).forEach((b) => b.addEventListener("click", () => { state.pendingFiles.splice(Number(b.dataset.rm), 1); renderChips(); }));
 }
 
-/* 语音输入：配置了语音转文字模型就录音转写；否则提示用系统听写 */
-let recorder = null;
-$("#mic-btn").addEventListener("click", async () => {
-  if (recorder) { recorder.stop(); return; }
-  const s = await api("/api/settings");
-  if (!s.transcribe_model) {
-    alert("还没有配置语音转文字模型。可以直接用系统听写：Mac 在输入框里连按两下 Fn（地球键），Windows 按 Win+H。\n\n如果你的接口支持语音转文字，可以在「设置 → 语音转文字模型」里选。");
-    $("#question").focus();
-    return;
-  }
+/* 听写（照搬 CopyDeck）：按话筒开始，说的话边说边写进输入框光标处；再按一次结束，字留在框里不自动发送；Esc 取消并恢复原样。
+   麦克风 24kHz → AudioWorklet 每 200ms 一块 PCM16 → 本地服务转给网关的实时转写（gpt-live-transcribe）。 */
+const dict = { s: null };
+const MIC_ICON = "🎤";
+function dictButton(state) {
+  const b = $("#mic-btn");
+  b.classList.toggle("rec", state === "recording" || state === "finishing");
+  b.classList.toggle("connecting", state === "connecting");
+  b.disabled = state === "finishing";
+  b.innerHTML = state === "recording" ? `<span class="dict-wave"><i></i><i></i><i></i><i></i></span><span class="dict-label">正在听</span>`
+    : state === "finishing" ? `<span class="dict-label">收尾中</span>` : state === "connecting" ? `<span class="dict-label">准备中</span>` : MIC_ICON;
+  b.title = state === "recording" ? "正在听，点一下结束；Esc 取消" : "语音输入（听写）";
+  const q = $("#question");
+  q.classList.toggle("dictating", state !== "idle");
+  if (state === "recording") { q.dataset.ph ??= q.placeholder; q.placeholder = "正在听…说完再点一下话筒结束，Esc 取消"; }
+  else if (state === "idle" && q.dataset.ph != null) { q.placeholder = q.dataset.ph; delete q.dataset.ph; }
+}
+// 识别出的整段文字写进输入框：只替换这次听写写进去的那部分（流式结果改口也不会重复）
+function dictWrite(s, text) {
+  const q = $("#question");
+  if (q.value !== s.written) { const c = q.selectionEnd ?? q.value.length; s.before = q.value.slice(0, c); s.after = q.value.slice(c); s.consumed = s.text.length; }
+  const piece = text.length > s.consumed ? text.slice(s.consumed) : "";
+  s.text = text;
+  const value = s.before + piece + s.after;
+  if (value === q.value) return;
+  q.value = s.written = value;
+  const at = s.before.length + piece.length;
+  if (document.activeElement === q) q.setSelectionRange(at, at);
+}
+function dictStopCapture(s) {
+  cancelAnimationFrame(s.raf);
+  clearTimeout(s.timer);
+  s.stream?.getTracks().forEach((t) => t.stop());
+  s.source?.disconnect(); s.node?.disconnect(); s.ctx?.close().catch(() => {});
+}
+function dictEnd(s) { dictStopCapture(s); if (dict.s === s) dict.s = null; dictButton("idle"); }
+function dictFail(s, err) {
+  if (s.cancelled) return;
+  s.cancelled = true;
+  if (s.id) api(`/api/dictation/${s.id}/cancel`, { method: "POST" }).catch(() => {});
+  dictEnd(s);
+  const msg = err?.name === "NotAllowedError" ? "请在系统设置里允许「中国法律检索」使用麦克风。" : err?.message || String(err);
+  toast("听写失败：" + msg);
+}
+async function dictStart() {
+  const q = $("#question");
+  const s = dict.s = { before: q.value.slice(0, q.selectionStart ?? q.value.length), after: q.value.slice(q.selectionEnd ?? q.value.length), original: q.value, consumed: 0, text: "", written: q.value, queue: Promise.resolve() };
+  dictButton("connecting");
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const chunks = [];
-    recorder = new MediaRecorder(stream);
-    recorder.ondataavailable = (e) => chunks.push(e.data);
-    recorder.onstop = async () => {
-      stream.getTracks().forEach((t) => t.stop());
-      recorder = null;
-      $("#mic-btn").classList.remove("rec");
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.readAsDataURL(blob); });
-      try {
-        const res = await api("/api/transcribe", { method: "POST", body: JSON.stringify({ name: "dictation.webm", mime: "audio/webm", data }) });
-        $("#question").value += res.text || "";
-        $("#question").focus();
-      } catch (err) { alert("语音转文字失败：" + err.message); }
+    const [conn, stream] = await Promise.all([
+      api("/api/dictation/start", { method: "POST", body: "{}" }),
+      navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }),
+    ]);
+    s.id = conn.id; s.stream = stream;
+    if (s.cancelled) { dictStopCapture(s); api(`/api/dictation/${s.id}/cancel`, { method: "POST" }).catch(() => {}); return; }
+    s.ctx = new AudioContext({ sampleRate: 24000 });
+    await s.ctx.audioWorklet.addModule("dictation-worklet.js");
+    s.node = new AudioWorkletNode(s.ctx, "dictation-capture");
+    s.source = s.ctx.createMediaStreamSource(stream);
+    s.analyser = s.ctx.createAnalyser(); s.analyser.fftSize = 512; s.source.connect(s.analyser);
+    const broken = (err) => { if (!s.cancelled && !s.ending) dictFail(s, err); };
+    const push = (r) => { if (!s.cancelled && r?.text != null) dictWrite(s, r.text); };
+    s.node.port.onmessage = (e) => {
+      if (e.data === "flushed") { s.flushDone?.(); return; }
+      if (s.cancelled) return;
+      if (e.data === "boundary") { s.queue = s.queue.then(() => api(`/api/dictation/${s.id}/boundary`, { method: "POST" })).then(push); s.queue.catch(broken); return; }
+      const bytes = new Uint8Array(e.data);
+      let raw = "";
+      for (let i = 0; i < bytes.length; i += 8192) raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
+      const audio = btoa(raw);
+      s.queue = s.queue.then(() => api(`/api/dictation/${s.id}/append`, { method: "POST", body: JSON.stringify({ audio }) })).then(push);
+      s.queue.catch(broken);
     };
-    recorder.start();
-    $("#mic-btn").classList.add("rec");
-  } catch (err) { alert("无法使用麦克风：" + err.message); recorder = null; }
-});
+    s.source.connect(s.node); s.node.connect(s.ctx.destination);
+    await s.ctx.resume();
+    if (s.cancelled) { dictStopCapture(s); return; }
+    dictButton("recording");
+    const buf = new Float32Array(s.analyser.fftSize);
+    const tick = () => { if (dict.s !== s || s.cancelled) return; s.analyser.getFloatTimeDomainData(buf); let p = 0; for (const x of buf) p += x * x; $("#mic-btn").style.setProperty("--lv", Math.min(1, Math.sqrt(p / buf.length) * 8).toFixed(2)); s.raf = requestAnimationFrame(tick); };
+    tick();
+    q.focus();
+    s.timer = setTimeout(() => { toast("听写最长 3 分钟，已经帮你结束了。"); dictStop(); }, 180000);
+  } catch (err) { dictFail(s, err); }
+}
+async function dictStop() {
+  const s = dict.s;
+  if (!s || s.cancelled || s.ending) return;
+  if (!s.node) { dictCancel(); return; }
+  s.ending = true; dictButton("finishing"); clearTimeout(s.timer);
+  try {
+    await new Promise((ok, bad) => { const t = setTimeout(() => bad(new Error("音频收尾超时")), 2000); s.flushDone = () => { clearTimeout(t); ok(); }; s.node.port.postMessage("flush"); });
+    dictStopCapture(s);
+    await s.queue;
+    const r = await api(`/api/dictation/${s.id}/finish`, { method: "POST" });
+    if (!s.cancelled) dictWrite(s, r.text || "");
+    if (!r.text && !s.text) toast("没有听到说话。");
+  } catch (err) { if (!s.cancelled) toast("听写失败：" + err.message); }
+  finally { s.cancelled = true; dictEnd(s); $("#question").focus(); }
+}
+function dictCancel() {
+  const s = dict.s;
+  if (!s) return;
+  s.cancelled = true;
+  if (s.id) api(`/api/dictation/${s.id}/cancel`, { method: "POST" }).catch(() => {});
+  $("#question").value = s.original;
+  dictEnd(s);
+}
+$("#mic-btn").addEventListener("mousedown", (e) => e.preventDefault()); // 不抢输入框光标
+$("#mic-btn").addEventListener("click", () => { if (dict.s) { dict.s.node ? dictStop() : dictCancel(); } else dictStart(); });
+window.addEventListener("keydown", (e) => { if (dict.s && e.key === "Escape" && !e.isComposing) { e.preventDefault(); e.stopImmediatePropagation(); dictCancel(); } }, true);
+function toast(msg) {
+  let t = $("#toast");
+  if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("show"), 4000);
+}
+
+/* 上传的录音、视频：在本机解码成 16kHz 单声道 WAV（视频只取音轨）再送去转写 */
+async function audioFileToWav16k(file) {
+  const ctx = new AudioContext();
+  let decoded;
+  try { decoded = await ctx.decodeAudioData(await file.arrayBuffer()); } finally { ctx.close().catch(() => {}); }
+  const frames = Math.ceil(decoded.duration * 16000);
+  const off = new OfflineAudioContext(1, frames, 16000);
+  const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
+  const pcm = (await off.startRendering()).getChannelData(0);
+  const out = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+  const str = (o, x) => [...x].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); out.setUint32(4, 36 + pcm.length * 2, true); str(8, "WAVEfmt "); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 1, true);
+  out.setUint32(24, 16000, true); out.setUint32(28, 32000, true); out.setUint16(32, 2, true); out.setUint16(34, 16, true); str(36, "data"); out.setUint32(40, pcm.length * 2, true);
+  for (let i = 0; i < pcm.length; i++) { const v = Math.max(-1, Math.min(1, pcm[i])); out.setInt16(44 + i * 2, Math.round(v * (v < 0 ? 32768 : 32767)), true); }
+  const bytes = new Uint8Array(out.buffer);
+  let raw = "";
+  for (let i = 0; i < bytes.length; i += 8192) raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(raw);
+}
 
 /* 发送 */
 $("#question").addEventListener("keydown", (e) => {
@@ -685,7 +791,7 @@ $("#open-settings").addEventListener("click", async () => {
   f.elements.api_key.value = s.api_key || "";
   f.elements.auto_update.checked = s.auto_update !== false;
   f.elements.update_interval_days.value = String(s.update_interval_days || 7);
-  state.settingsModels = { review: s.review_model || "auto", transcribe: s.transcribe_model || "" };
+  state.settingsModels = { review: s.review_model || "auto", transcribe: s.transcribe_model || "gpt-live-transcribe" };
   fillModelSelects(state.modelList || []);
   $("#models-status").textContent = "";
   $("#model-list").hidden = true;
@@ -722,12 +828,13 @@ $("#save-settings").addEventListener("click", async (e) => {
 /* ---------- 模型清单（AI 问答输入框下方） ---------- */
 function fillModelSelects(models) {
   const f = $("#settings-form");
-  const cur = state.settingsModels || { review: "auto", transcribe: "" };
+  const cur = state.settingsModels || { review: "auto", transcribe: "gpt-live-transcribe" };
   f.elements.review_model.innerHTML = `<option value="auto">自动选择另一家族的强模型</option>` + models.map((m) => `<option>${esc(m)}</option>`).join("");
   f.elements.review_model.value = models.includes(cur.review) ? cur.review : "auto";
   const tr = models.filter((m) => /transcri|whisper|audio|speech|asr/i.test(m));
-  f.elements.transcribe_model.innerHTML = `<option value="">不使用（用系统听写）</option>` + tr.map((m) => `<option>${esc(m)}</option>`).join("");
-  f.elements.transcribe_model.value = tr.includes(cur.transcribe) ? cur.transcribe : "";
+  const opts = [...new Set(["gpt-live-transcribe", ...tr])];
+  f.elements.transcribe_model.innerHTML = opts.map((m) => `<option>${esc(m)}</option>`).join("");
+  f.elements.transcribe_model.value = opts.includes(cur.transcribe) ? cur.transcribe : "gpt-live-transcribe";
 }
 
 function fillModels(r) {
