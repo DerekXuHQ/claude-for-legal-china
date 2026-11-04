@@ -110,5 +110,9 @@
     ]
   },
   "updateSequence": 15,
-  "depsId": "c9feb29bf264a6ca"
+  "depsId": "c9feb29bf264a6ca",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DerekXuHQ/claude-for-legal-china.git"
+  }
 }
