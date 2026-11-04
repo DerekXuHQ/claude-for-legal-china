@@ -422,7 +422,7 @@ let scenarioCat = null;
 async function loadScenarioCat() { if (!scenarioCat) scenarioCat = await api("/api/scenarios").catch(() => ({ groups: [], scenarios: [], pipelines: {} })); return scenarioCat; }
 function setScenario(id) {
   state.scenario = id || "";
-  $$(".sc-row").forEach((r) => r.classList.toggle("on", r.dataset.sc === state.scenario));
+  $$(".pk-item[data-sc]").forEach((r) => r.classList.toggle("on", r.dataset.sc === state.scenario));
   const q = $("#question");
   if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
   const sc = scenarioCat?.scenarios.find((x) => x.id === id);
@@ -434,26 +434,49 @@ function setScenario(id) {
     q.placeholder = sc.examples[0] ? `例如：${sc.examples[0]}` : q.dataset.defaultPh;
   } else q.placeholder = q.dataset.defaultPh;
 }
-function renderCatalog(box) {
+// 新事项页的选择器：左边「常用 + 15 个领域」，右边是鼠标所在领域的全部场景。悬停就切换，点一下就开工。
+function renderPicker(box) {
   const cat = scenarioCat;
-  if (!cat || !cat.groups.length) return;
-  const total = $("#sc-total");
-  if (total) total.textContent = `${cat.groups.length} 个领域 · ${cat.scenarios.length} 个场景，每个场景有专门的流程`;
-  let cur = state.scGroup && cat.groups.some((g) => g.key === state.scGroup) ? state.scGroup : cat.groups[0].key;
-  const draw = () => {
-    const items = cat.scenarios.filter((x) => x.group === cur);
-    box.innerHTML = `<div class="sc-tabs">${cat.groups.map((g) => `<button type="button" class="sc-tab ${g.key === cur ? "on" : ""}" data-g="${esc(g.key)}">${esc(g.name)}<em>${cat.scenarios.filter((x) => x.group === g.key).length}</em></button>`).join("")}</div>
-      <div class="sc-list">${items.map((x) => `<button type="button" class="sc-row ${state.scenario === x.id ? "on" : ""}" data-sc="${esc(x.id)}" title="${esc(`流程：${cat.pipelines[x.pipeline] || ""}\n常见说法：${x.examples.join("；")}`)}"><span>${esc(x.name)}</span></button>`).join("")}</div>`;
-    $$("[data-g]", box).forEach((t) => t.addEventListener("click", () => { cur = state.scGroup = t.dataset.g; draw(); }));
-    $$("[data-sc]", box).forEach((r) => r.addEventListener("click", () => {
-      const sc = cat.scenarios.find((x) => x.id === r.dataset.sc);
-      setScenario(sc.id);
-      $$(".sc-row", box).forEach((x) => x.classList.toggle("on", x === r));
-      $("#question").focus();
-      if (sc.needsDoc) $("#file-input").click();
-    }));
+  const groups = [{ key: "_common", name: "常用", count: STARTERS.length }, ...cat.groups.map((g) => ({ key: g.key, name: g.name.split(" / ")[0], count: cat.scenarios.filter((x) => x.group === g.key).length }))];
+  let cur = state.scGroup && groups.some((g) => g.key === state.scGroup) ? state.scGroup : "_common";
+  box.innerHTML = `<ul class="pk-groups">${groups.map((g) => `<li data-g="${esc(g.key)}" class="${g.key === cur ? "on" : ""}"><span>${esc(g.name)}</span><em>${g.count}</em></li>`).join("")}</ul><div class="pk-items"></div>`;
+  const items = $(".pk-items", box);
+  const drawItems = () => {
+    if (cur === "_common") {
+      items.innerHTML = STARTERS.map((st, i) => `<button type="button" class="pk-item ${st.scenario && st.scenario === state.scenario ? "on" : ""}" data-starter="${i}" title="${esc(st.desc)}">${ic(st.icon)}<span>${esc(st.title)}</span></button>`).join("");
+    } else {
+      items.innerHTML = cat.scenarios.filter((x) => x.group === cur).map((x) => `<button type="button" class="pk-item ${x.id === state.scenario ? "on" : ""}" data-sc="${esc(x.id)}" title="${esc(`${x.name}\n流程：${cat.pipelines[x.pipeline] || ""}\n常见说法：${x.examples.join("；")}`)}"><span>${esc(x.name.replace(/（[^）]*）$/, ""))}</span></button>`).join("");
+    }
   };
-  draw();
+  const select = (key) => {
+    if (key === cur) return;
+    cur = state.scGroup = key;
+    $$(".pk-groups li", box).forEach((li) => li.classList.toggle("on", li.dataset.g === cur));
+    drawItems();
+  };
+  $$(".pk-groups li", box).forEach((li) => {
+    li.addEventListener("mouseenter", () => select(li.dataset.g));
+    li.addEventListener("click", () => select(li.dataset.g));
+  });
+  items.addEventListener("click", (e) => {
+    const b = e.target.closest(".pk-item");
+    if (!b) return;
+    $$(".pk-item", items).forEach((x) => x.classList.toggle("on", x === b));
+    if (b.dataset.starter !== undefined) {
+      const st = STARTERS[Number(b.dataset.starter)];
+      setScenario(st.scenario);
+      $("#question").value = st.prompt;
+      composerChanged();
+      $("#question").focus();
+      if (st.upload) $("#file-input").click();
+      return;
+    }
+    const sc = cat.scenarios.find((x) => x.id === b.dataset.sc);
+    setScenario(sc.id);
+    $("#question").focus();
+    if (sc.needsDoc) $("#file-input").click();
+  });
+  drawItems();
 }
 
 async function loadMatters() {
@@ -529,28 +552,12 @@ function renderMatter(m) {
   state.renderedMatterId = m?.id || "";
   $("#matter-head").hidden = !m;
   if (!m || !m.display.length) {
-    if (m) { $("#matter-title").value = m.title; $("#matter-task").textContent = m.task || "待分类"; $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : ""; }
+    if (m) { $("#matter-title").value = m.title; $("#matter-task").textContent = m.task || ""; $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : ""; }
     log.innerHTML = `<div class="chat-intro">
-      <h2>今天要处理什么事？</h2>
-      <p>直接在下面描述你的事，助理会自动选对应的工作流程；也可以点下面的常见事项或场景，跳过描述、直接开工。</p>
-      <div class="starters">${STARTERS.map((s, i) => `<button class="starter" data-starter="${i}"><span class="s-ic">${ic(s.icon)}</span><b>${esc(s.title)}</b><span>${esc(s.desc)}</span></button>`).join("")}</div>
-      <div class="sc-head"><h3>按领域选场景</h3><span class="muted small" id="sc-total"></span></div>
-      <div id="sc-catalog" class="sc-catalog"></div>
+      <div class="intro-head"><h2>今天要处理什么事？</h2><span class="muted small">直接在下面描述，助理会自动选流程；或者在这里点一下，跳过描述直接开工。</span></div>
+      <div id="picker" class="picker"></div>
     </div>`;
-    $$("[data-starter]", log).forEach((b) => b.addEventListener("click", async () => {
-      const s = STARTERS[Number(b.dataset.starter)];
-      await loadScenarioCat();
-      setScenario(s.scenario);
-      $("#question").value = s.prompt;
-      composerChanged();
-      $("#question").focus();
-      if (s.upload) $("#file-input").click();
-    }));
-    loadScenarioCat().then(() => {
-      const box = $("#sc-catalog");
-      if (!box) return;
-      renderCatalog(box);
-    });
+    loadScenarioCat().then(() => { const box = $("#picker"); if (box) renderPicker(box); });
     log.scrollTop = 0;
     return;
   }

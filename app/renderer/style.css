@@ -548,3 +548,23 @@ textarea.dictating::placeholder { color: var(--accent); }
 .keys-list .k-btn.rec { border-color: var(--accent); color: var(--accent); }
 .keys-list .k-reset { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; }
 .keys-list .k-err { color: var(--accent); font-size: 12px; flex: 0 0 100%; }
+
+/* 新事项选择器：左边领域（悬停切换），右边该领域全部场景 */
+.chat-intro { padding-top: 2vh; }
+.intro-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.intro-head h2 { margin: 0; font-size: 17px; }
+.picker { display: grid; grid-template-columns: 168px 1fr; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); overflow: hidden; }
+.pk-groups { list-style: none; margin: 0; padding: 6px; border-right: 1px solid var(--line); background: var(--bg); }
+.pk-groups li { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; line-height: 1.5; color: var(--text); }
+.pk-groups li em { font-style: normal; font-size: 11px; color: var(--muted); }
+.pk-groups li:hover { background: var(--chip); }
+.pk-groups li.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.pk-groups li.on em { color: var(--accent); }
+.pk-items { padding: 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px; align-content: start; }
+.pk-item { display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left; border: 0; border-radius: 7px; background: none; padding: 6px 10px; cursor: pointer; font-size: 13px; color: var(--text); line-height: 1.45; }
+.pk-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pk-item .i { flex: none; width: 15px; height: 15px; color: var(--accent); }
+.pk-item:hover { background: var(--accent-soft); }
+.pk-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+#matter-task:empty { display: none; }
+@media (max-width: 720px) { .picker { grid-template-columns: 120px 1fr; } .pk-items { grid-template-columns: 1fr; } }
