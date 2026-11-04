@@ -17,10 +17,17 @@
 
 ## 官方网页来源，不冒充 MCP
 
-- [国家法律法规数据库](https://flk.npc.gov.cn/)：法规原文与版本核验。
-- [人民法院案例库](https://rmfyalk.court.gov.cn/)：指导性、参考案例的官方入口。
+- [国家法律法规数据库](https://flk.npc.gov.cn/)：法规原文与版本核验。robots.txt 声明禁止任何自动化工具、脚本、爬虫采集或复制网站数据（2026-11-03 读取），只能人工逐篇核对。
+- [国务院公报](https://www.gov.cn/gongbao/)、[最高人民法院公报](https://gongbao.court.gov.cn/)、全国人大常委会公报（中国人大网公报栏目，固定网址未确认）：法律、行政法规、规章和司法解释的标准文本，核验的最终依据。
+- [国家规章库](https://www.gov.cn/zhengce/xxgk/gjgzk/)：部门规章和地方政府规章（flk 不收规章）。
+- [最高人民法院·权威发布](https://www.court.gov.cn/fabu/gengduo/16.html)、[指导性案例](https://www.court.gov.cn/shenpan/gengduo/77.html)：新司法解释全文和指导性案例。
+- 法答网精选答问（在 [最高人民法院网站](https://www.court.gov.cn/) 站内搜索）：法官问答精选，**不是司法解释**，只作参考。
+- [国家互联网信息办公室](https://www.cac.gov.cn/)：数据、个人信息、算法与生成式 AI 规章和公告。
+- [人民法院案例库](https://rmfyalk.court.gov.cn/)：指导性、参考案例的官方入口。须注册登录；用户协议只允许查询、学习和研究，禁止复制发行、汇编、建立镜像网站和数据库交易（协议原文需登录查看，未逐字核对），不得批量收录。
 - [中国政府采购网](https://www.ccgp.gov.cn/)：政府采购公告与政策资料。
 - [国家企业信用信息公示系统](https://www.gsxt.gov.cn/)：企业公示信息。
+
+访问条款和自动化限制的详细说明见 [`references/official-law-sources.md`](references/official-law-sources.md)「访问条款与自动化限制」。
 
 这些是网页/数据库来源，本仓库没有为其核实到可直接使用的官方 MCP 接口。不能用猜测的 URL 拼成 `.mcp.json`。推送前复核已从默认声明移除飞书、e签宝和法大大三个未核实的历史端点；需要这些服务时，须先逐家核实官方 MCP 端点、认证、工具范围与客户授权，再在宿主中按需配置。其他既有协作服务声明也须分别验证，不表示本次完成可用性实测。
 
