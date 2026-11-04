@@ -69,10 +69,10 @@ ${arts.map((a) => `[${a.id}] ${a.article}：${a.text}`).join("\n")}`,
  * @param {object} p
  * @param {"contract_review"|"plan_review"} p.kind
  */
-export async function runReview(settings, { kind, doc, question, region, facts, mainModel, reviewModel, emit, signal, db, verify }) {
+export async function runReview(settings, { kind, task: scenarioTask, doc, question, region, facts, mainModel, reviewModel, emit, signal, db, verify }) {
   const isPlan = kind === "plan_review";
   const unit = isPlan ? "环节" : "条款";
-  const task = getTask(kind);
+  const task = scenarioTask || getTask(kind);
   const checklists = isPlan ? "" : contractChecklists();
   const ctx = [
     `## 用户的要求\n${question}`,

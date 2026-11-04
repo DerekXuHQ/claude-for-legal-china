@@ -10,6 +10,8 @@ import { extractText } from "./ai/docs.mjs";
 import { markdownToDocx } from "./ai/export.mjs";
 import { LiveDictation, transcribeWav, DEFAULT_SPEECH_MODEL } from "./ai/speech.mjs";
 import * as matters from "./matters.mjs";
+import { scenarioCatalog } from "./ai/tasks.mjs";
+import { PIPELINES } from "./ai/pipelines.mjs";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png" };
 export const DEFAULT_SETTINGS = {
@@ -148,6 +150,11 @@ export function createServer(ctx) {
         const getter = { article: search.getArticle, law: search.getDoc, case: search.getCase, ref: search.getGuide }[kind];
         const item = getter ? getter(id) : null;
         return item ? send(res, 200, item) : send(res, 404, { error: "未找到" });
+      }
+      if (p === "/api/scenarios") {
+        const cat = scenarioCatalog();
+        return send(res, 200, { groups: cat.groups, pipelines: Object.fromEntries(Object.entries(PIPELINES).map(([k, v]) => [k, v.name])),
+          scenarios: cat.scenarios.map((x) => ({ id: x.id, code: x.code, name: x.name, group: x.group, pipeline: x.pipeline, freq: x.freq, examples: x.examples, needsDoc: !!PIPELINES[x.pipeline]?.needsDoc || x.pipeline === "P5" })) });
       }
       if (p === "/api/models") {
         const s = loadSettings();
@@ -349,7 +356,7 @@ export function createServer(ctx) {
         const qText = question || (files.length ? `请处理我上传的文件：${files.map((f) => f.name).join("、")}` : "");
         const r = await ask(settings, {
           conv, question: qText, region, attachments, model, depth, db: search.getDb(), emit, signal: ctrl.signal,
-          intakeAnswers, skipIntake, available: modelCache.models,
+          intakeAnswers, skipIntake, available: modelCache.models, scenario: typeof body.scenario === "string" ? body.scenario : "",
         });
         out.text = r.text || answer;
         if (!r.intake) {

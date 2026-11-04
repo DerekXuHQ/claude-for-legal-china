@@ -2,6 +2,7 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PIPELINES, GROUP_DOMAIN } from "./pipelines.mjs";
 
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "tasks");
 let cache = null;
@@ -58,8 +59,51 @@ export function loadTasks() {
 }
 
 export function getTask(id) {
+  const sc = getScenario(id);
+  if (sc) return sc;
   const tasks = loadTasks();
   return tasks.get(id) || tasks.get("general") || { id: "general", name: "法律咨询", when: "", examples: [], body: "", intake: [] };
+}
+
+// ---- 场景目录：99 个具体场景（scenarios.json，由 scripts/build-scenarios.mjs 从调研文档生成）----
+let scenarioCache = null;
+export function scenarioCatalog() {
+  if (scenarioCache) return scenarioCache;
+  const p = path.join(path.dirname(DIR), "scenarios.json");
+  scenarioCache = existsSync(p) ? JSON.parse(readFileSync(p, "utf-8")) : { groups: [], scenarios: [] };
+  scenarioCache.byId = new Map(scenarioCache.scenarios.map((x) => [x.id, x]));
+  return scenarioCache;
+}
+
+const DOMAIN_BY_PIPE = { P1: "dispute_defense", P2: "claim_feasibility", P3: "claim_feasibility", P5: "contract_review", P6: "drafting", P7: "drafting", P8: "legality", P9: "admin_enforcement", P10: "criminal_risk", P11: "regulation_lookup", P12: "deadline", P13: "drafting" };
+const clipBody = (s, n) => (s.length > n ? s.slice(0, n) + "\n……" : s);
+
+/** 场景 = 工作流程步骤 + 场景卡片 + 策略（争议类）+ 领域手册。 */
+export function getScenario(id) {
+  const sc = scenarioCatalog().byId.get(id);
+  if (!sc) return null;
+  const P = PIPELINES[sc.pipeline] || PIPELINES.P8;
+  const domainId = ["B", "C", "N", "O"].includes(sc.group) ? DOMAIN_BY_PIPE[sc.pipeline] : GROUP_DOMAIN[sc.group];
+  const domain = loadTasks().get(domainId);
+  const card = [
+    `## 工作流程：${P.name}`, P.steps,
+    `## 这件事属于：${sc.name}（${sc.group_name}）`,
+    sc.examples.length ? `用户常见的说法：${sc.examples.map((x) => `「${x}」`).join("；")}` : "",
+    `**要弄清的事实**：${sc.facts.join("；")}`,
+    `**主要依据**（名称，条文要检索原文确认）：${sc.laws}`,
+    sc.goals ? `**客户的目标与可选立场**：${sc.goals}` : "",
+    sc.strategy ? `**合法的策略与筹码**：\n${sc.strategy}` : "",
+    sc.deliverables ? `**交付物**：${sc.deliverables}` : "",
+    P.strategy ? STRATEGY() : "",
+    domain ? `## 领域手册：${domain.name}\n${clipBody(domain.body.replace(/\n## 策略与打法[\s\S]*$/, ""), 9000)}` : "",
+  ].filter(Boolean).join("\n\n");
+  const intake = sc.facts.map((f) => ({ fact: f, ask: f, why: "", required: true }));
+  if (P.strategy && !sc.facts.some((f) => /目标|底线/.test(f))) intake.push(GOAL_ROW);
+  return {
+    id: sc.id, name: sc.name, code: sc.code, group: sc.group, pipeline: sc.pipeline, pipelineName: P.name,
+    runner: P.runner || "agent", needsDoc: !!P.needsDoc, strategy: !!P.strategy, scenario: true,
+    when: sc.workflow, examples: sc.examples, body: card, intake,
+  };
 }
 
 export function contractChecklists() {

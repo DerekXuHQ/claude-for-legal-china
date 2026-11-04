@@ -376,14 +376,55 @@ function bindCites(root) {
 state.matter = null;      // 当前事项
 state.pendingFiles = [];  // 已上传、还没随消息发出的文件
 
+// 首屏 12 个最常见的事（依据 docs/scenarios-research.md §5）；scenario 为空的交给助理按内容分到具体场景
 const STARTERS = [
-  { title: "审一份合同", desc: "上传合同，逐条找漏洞、给修改文字和谈判要点", prompt: "请帮我审查这份合同。我方是：", upload: true },
-  { title: "被起诉 / 收到律师函", desc: "上传起诉状、仲裁申请、律师函或处罚告知书", prompt: "我收到了附件里的文书，请帮我分析怎么应对。", upload: true },
-  { title: "我想告对方 / 追款", desc: "判断有没有依据、能不能开始、需要哪些证据", prompt: "我想起诉对方，情况是：" },
-  { title: "员工纠纷", desc: "辞退、补偿、N+1、加班费、竞业限制", prompt: "员工的情况是：" },
-  { title: "这个方案合不合法", desc: "上传营销活动、商业模式或制度方案", prompt: "请审查这个方案有没有违法或合规风险。", upload: true },
-  { title: "起草一份文书", desc: "律师函、催款函、解除通知、协议、决议", prompt: "请帮我起草一份：" },
+  { title: "员工要 2N+1", desc: "最多要赔多少、怎么谈能少赔、要不要硬扛", scenario: "employee_demands_2n_plus_1", prompt: "员工被辞退后要求 2N+1。情况是：" },
+  { title: "收到劳动仲裁", desc: "答辩期限、每一项请求怎么应对、要不要调解", scenario: "labor_arbitration_respondent", prompt: "我们收到了劳动仲裁申请书（已上传）。", upload: true },
+  { title: "想让一个员工走", desc: "能力不行或违纪，怎样合法、成本最低", scenario: "terminate_underperformer", prompt: "有个员工我想让他走，情况是：" },
+  { title: "协商离职协议", desc: "把钱和后续风险都写清楚", scenario: "negotiated_separation_agreement", prompt: "员工同意协商离职，请帮我写协商解除协议。情况是：" },
+  { title: "审一份合同", desc: "采购、销售、服务、租赁、经销……告诉我哪些必须改", scenario: "", prompt: "请帮我审查这份合同。我方是：", upload: true },
+  { title: "把对方模板改成对我有利", desc: "逐条修改并写好给对方的修改理由", scenario: "redraft_counterparty_template", prompt: "这是对方发来的合同模板，请改成对我方有利的版本。我方是：", upload: true },
+  { title: "客户欠款不付", desc: "先发函、先保全还是直接起诉", scenario: "receivable_collection", prompt: "客户欠我们款项一直不付，情况是：" },
+  { title: "赢了官司拿不到钱", desc: "找财产、申请执行、限高失信", scenario: "judgment_enforcement", prompt: "我们胜诉了但对方不履行，情况是：" },
+  { title: "顾客或家长要退费", desc: "会员卡、预付卡、学费，按规定该退多少", scenario: "", prompt: "顾客要求退费，情况是：" },
+  { title: "股东闹翻了", desc: "想退出或想让对方退出，有哪些办法", scenario: "shareholder_falling_out", prompt: "我们股东之间闹翻了，情况是：" },
+  { title: "广告文案、促销合不合规", desc: "改成合规版本", scenario: "ad_copy_review", prompt: "请看看这段广告文案或促销活动有没有违法风险：" },
+  { title: "收到监管通知或罚单", desc: "市场监管、税务、劳动监察：期限内该做什么", scenario: "", prompt: "我们收到了监管部门的通知（已上传）。", upload: true },
 ];
+state.scenario = "";   // 新事项里选定的场景
+let scenarioCat = null;
+async function loadScenarioCat() { if (!scenarioCat) scenarioCat = await api("/api/scenarios").catch(() => ({ groups: [], scenarios: [], pipelines: {} })); return scenarioCat; }
+function setScenario(id) {
+  state.scenario = id || "";
+  const q = $("#question");
+  if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
+  const sc = scenarioCat?.scenarios.find((x) => x.id === id);
+  const pill = $("#scenario-pill");
+  pill.hidden = !sc;
+  if (sc) {
+    pill.innerHTML = `场景：<b>${esc(sc.name)}</b> · ${esc(scenarioCat.pipelines[sc.pipeline] || "")}<button type="button" title="取消，让助理自己判断">×</button>`;
+    pill.querySelector("button").onclick = () => setScenario("");
+    q.placeholder = sc.examples[0] ? `例如：${sc.examples[0]}` : q.dataset.defaultPh;
+  } else q.placeholder = q.dataset.defaultPh;
+}
+function renderCatalog(box, query = "") {
+  const cat = scenarioCat;
+  if (!cat) return;
+  const k = query.trim();
+  const hit = (x) => !k || x.name.includes(k) || x.examples.some((e) => e.includes(k));
+  box.innerHTML = cat.groups.map((g) => {
+    const items = cat.scenarios.filter((x) => x.group === g.key && hit(x));
+    if (!items.length) return "";
+    return `<details class="sc-group"${k ? " open" : ""}><summary>${esc(g.name)} <span class="muted small">${items.length}</span></summary>
+      <div class="sc-items">${items.map((x) => `<button type="button" class="sc-item" data-sc="${esc(x.id)}" title="${esc(x.examples.join("\n"))}"><b>${esc(x.name)}</b><span>${esc(cat.pipelines[x.pipeline] || "")}${x.freq === "高" ? " · 常见" : ""}</span></button>`).join("")}</div></details>`;
+  }).join("") || `<p class="muted small">没有找到。直接在下面描述你的事，助理会判断用哪种流程。</p>`;
+  $$("[data-sc]", box).forEach((b) => b.addEventListener("click", () => {
+    const sc = cat.scenarios.find((x) => x.id === b.dataset.sc);
+    setScenario(sc.id);
+    $("#question").focus();
+    if (sc.needsDoc) $("#file-input").click();
+  }));
+}
 
 async function loadMatters() {
   const list = await api("/api/matters");
@@ -418,7 +459,9 @@ $("#new-matter").addEventListener("click", async () => {
 async function ensureMatter() {
   if (state.matter) return state.matter.id;
   const { id } = await api("/api/matters", { method: "POST", body: "{}" });
+  const keep = state.scenario; // 先选了场景、第一次上传或发送时才建事项：场景保留
   await openMatter(id);
+  if (keep) setScenario(keep);
   return id;
 }
 
@@ -426,6 +469,7 @@ async function openMatter(id) {
   const m = await api(`/api/matters/${id}`);
   state.matter = m;
   state.pendingFiles = [];
+  setScenario("");
   renderChips();
   renderMatter(m);
   loadMatters();
@@ -446,14 +490,25 @@ function renderMatter(m) {
       <h2>法律助理</h2>
       <p>把事情交给助理：它会先问清关键事实，再按这类事的专业做法查法条、案例和办案指引，给出判断、依据、下一步和可以直接用的文书。合同和方案审查会分段逐条审，再用另一家的模型复核。每件事单独保存，随时回来接着办。</p>
       <div class="starters">${STARTERS.map((s, i) => `<button class="starter" data-starter="${i}"><b>${esc(s.title)}</b><span>${esc(s.desc)}</span></button>`).join("")}</div>
+      <div class="sc-head"><h3>全部场景</h3><input type="search" id="sc-search" placeholder="搜场景，例如：竞业、预付卡、工伤、虚开、商标"></div>
+      <p class="small muted">每种场景有自己的办法：问哪些事实、查哪些规定、怎么打、交付什么。不知道选哪个，直接在下面描述，助理会判断。</p>
+      <div id="sc-catalog" class="sc-catalog"></div>
       <p class="small muted">可以上传 PDF、Word、图片（截图、照片会自动识别文字）、录音和视频。</p>
     </div>`;
-    $$("[data-starter]", log).forEach((b) => b.addEventListener("click", () => {
+    $$("[data-starter]", log).forEach((b) => b.addEventListener("click", async () => {
       const s = STARTERS[Number(b.dataset.starter)];
+      await loadScenarioCat();
+      setScenario(s.scenario);
       $("#question").value = s.prompt;
       $("#question").focus();
       if (s.upload) $("#file-input").click();
     }));
+    loadScenarioCat().then(() => {
+      const box = $("#sc-catalog");
+      if (!box) return;
+      renderCatalog(box);
+      $("#sc-search").addEventListener("input", (e) => renderCatalog(box, e.target.value));
+    });
     return;
   }
   $("#matter-title").value = m.title;
@@ -752,7 +807,7 @@ async function send({ intake_answers, skip_intake }) {
   let text = "";
   try {
     const res = await fetch("/api/ask", { method: "POST", headers: HEADERS, body: JSON.stringify({
-      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake,
+      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake, scenario: state.scenario,
       region: $("#ask-region").value, model: $("#ask-model").value, depth: $("#ask-depth").value }) });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
