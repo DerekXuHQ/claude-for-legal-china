@@ -162,7 +162,7 @@ ${ISSUE_FORMAT}`;
   emit({ type: "text_reset" });
   const table = issues.map((x, n) => `${n + 1}. [${x.risk}] ${x.ref}｜原文：${x.quote || "—"}｜问题：${x.issue}｜首选修改：${x.suggest || "—"}｜后备：${x.fallback || "—"}｜谈判：${x.negotiate || "—"}｜依据：${(x.basis || []).map((b) => `《${String(b.law).replace(/[《》]/g, "")}》${b.article}${b.link ? `[[art:${b.link}]]` : ""}`).join("；") || "—"}${x.reviewNote ? "｜复核：" + x.reviewNote : ""}`).join("\n");
   const { content } = await stream(settings, {
-    model: mainModel, effort: "medium", signal, onText: (delta) => emit({ type: "text", delta }),
+    model: mainModel, effort: "medium", signal, onText: (delta) => emit({ type: "text", delta }), onReset: () => emit({ type: "text_reset" }),
     messages: [{
       role: "system",
       content: `${SYSTEM_PROMPT}\n\n## 本次任务：${task.name}\n${task.body}\n\n## 你现在做的事\n根据已经完成的逐${unit}审查和复核结果，写出最终的审查意见。下面给了文件全文、审查发现和已核对的依据清单。引用原文时照抄全文里的句子；引用法条用 [[art:编号]]，编号只能来自依据清单或审查发现。不要再增加没有依据的新问题，不要声称没有拿到原文。`,

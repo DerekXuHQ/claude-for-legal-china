@@ -25,8 +25,26 @@ export async function complete(settings, { model, messages, effort, tools, signa
   return { choices: [{ message: { role: "assistant", content: r.content, ...(r.calls.length ? { tool_calls: r.calls } : {}) } }] };
 }
 
-/** 流式补全：文字增量通过 onText 推出；返回完整文字和工具调用。 */
-export async function stream(settings, { model, messages, effort, tools, signal, onText }) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const retryable = (err) => !err?.status || err.status === 429 || err.status >= 500;
+
+/**
+ * 流式补全：文字增量通过 onText 推出；返回完整文字和工具调用。
+ * 网关断开、超时、5xx、429 时自动重试（最多 3 次）；重试前通过 onReset 让调用方清掉已经推出的半截文字。
+ */
+export async function stream(settings, opts) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await streamOnce(settings, opts);
+    } catch (err) {
+      if (opts.signal?.aborted || attempt >= 3 || !retryable(err)) throw err;
+      opts.onReset?.();
+      await sleep([2000, 6000, 15000][attempt]);
+    }
+  }
+}
+
+async function streamOnce(settings, { model, messages, effort, tools, signal, onText }) {
   const api = client(settings);
   const params = { model, messages, stream: true, ...(tools ? { tools } : {}) };
   if (effort && !noEffort.has(model)) params.reasoning_effort = effort;

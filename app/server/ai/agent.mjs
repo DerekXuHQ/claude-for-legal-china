@@ -212,7 +212,7 @@ export async function runAgent(settings, { model, effort, system, messages, step
   for (let step = 0; step < steps; step++) {
     let turn;
     if (doStream) {
-      turn = await stream(settings, { model, messages: msgs, effort, tools, signal, onText: (delta) => emit({ type: "text", delta }) });
+      turn = await stream(settings, { model, messages: msgs, effort, tools, signal, onText: (delta) => emit({ type: "text", delta }), onReset: () => emit({ type: "text_reset" }) });
     } else {
       const r = await complete(settings, { model, messages: msgs, effort, tools, signal });
       const m = r.choices?.[0]?.message || {};
@@ -233,7 +233,7 @@ export async function runAgent(settings, { model, effort, system, messages, step
   // 步数用完：要求直接根据已有资料作答
   msgs.push({ role: "user", content: "检索次数已到上限。请不要再调用工具，直接根据已经查到的资料给出完整回答；没查到的部分明确说明。" });
   const r = doStream
-    ? await stream(settings, { model, messages: msgs, effort, signal, onText: (delta) => emit({ type: "text", delta }) })
+    ? await stream(settings, { model, messages: msgs, effort, signal, onText: (delta) => emit({ type: "text", delta }), onReset: () => emit({ type: "text_reset" }) })
     : { content: (await complete(settings, { model, messages: msgs, effort, signal })).choices?.[0]?.message?.content || "" };
   msgs.push({ role: "assistant", content: r.content || "" });
   return { messages: msgs.slice(1), text: r.content || "" };
