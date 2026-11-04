@@ -1,7 +1,7 @@
 {
   "name": "china-law-search",
   "productName": "中国法律检索",
-  "version": "1.0.0",
+  "version": "1.0.76",
   "description": "中国大陆法律法规本地检索与 AI 问答",
   "author": "DerekXuHQ",
   "license": "Apache-2.0",

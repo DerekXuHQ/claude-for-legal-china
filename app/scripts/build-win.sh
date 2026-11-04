@@ -7,5 +7,6 @@ cd "$(dirname "$0")/.."
 out=$(mktemp -d /private/tmp/legalchina-win.XXXXXX)
 ./node_modules/.bin/electron-builder --win nsis --x64 --arm64 --config.directories.output="$out" "$@"
 mkdir -p dist
-cp "$out"/*.exe dist/
+# 同时打两种芯片时 electron-builder 还会多出一个合并安装包（不带芯片名），不需要
+cp "$out"/*-win-x64-setup.exe "$out"/*-win-arm64-setup.exe dist/
 echo "安装包在 dist/："; ls -lh dist/*.exe
