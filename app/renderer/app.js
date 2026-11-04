@@ -57,6 +57,7 @@ async function init() {
   $("#db-stats").textContent = `本地资料：法律 ${c["法律"] || 0} 部 · 司法解释 ${c["司法解释"] || 0} 件 · 行政法规 ${c["行政法规"] || 0} 部 · 地方性法规 ${c["地方性法规"] || 0} 部 · 现行条文 ${m.articles} 条 · 指导性案例 ${m.cases} 件 · 实务资料 ${m.refs} 段。其中已与官方网站核对：法律 ${o["法律"] || 0} 部、行政法规 ${o["行政法规"] || 0} 部、司法解释 ${o["司法解释"] || 0} 件。数据包 ${state.app?.data?.version || ""}${m.official_checked ? "，官方核对于 " + m.official_checked : ""}。`;
   if (!m.configured) $("#open-settings").classList.replace("ghost", "primary");
   await loadBookmarks();
+  loadModels();
   pollUpdates();
 }
 
@@ -339,7 +340,7 @@ $("#ask-form").addEventListener("submit", async (e) => {
   let text = "", answerId = null;
   try {
     const res = await fetch("/api/ask", { method: "POST", headers: HEADERS,
-      body: JSON.stringify({ question, region: $("#ask-region").value, conversation_id: state.conversationId }) });
+      body: JSON.stringify({ question, region: $("#ask-region").value, model: $("#ask-model").value, depth: $("#ask-depth").value, conversation_id: state.conversationId }) });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
@@ -382,26 +383,57 @@ $("#ask-form").addEventListener("submit", async (e) => {
 $("#open-settings").addEventListener("click", async () => {
   const s = await api("/api/settings");
   const f = $("#settings-form");
-  for (const k of ["provider", "base_url", "api_key", "model", "effort"]) f.elements[k].value = s[k] ?? "";
-  f.elements.extra_headers.value = s.extra_headers && Object.keys(s.extra_headers).length ? JSON.stringify(s.extra_headers, null, 2) : "";
+  f.elements.base_url.value = s.base_url || "";
+  f.elements.api_key.value = s.api_key || "";
   f.elements.auto_update.checked = s.auto_update !== false;
   f.elements.update_interval_days.value = String(s.update_interval_days || 7);
+  $("#models-status").textContent = "";
+  $("#model-list").hidden = true;
   $("#settings").showModal();
 });
+
+async function saveSettings() {
+  const f = $("#settings-form");
+  await api("/api/settings", { method: "POST", body: JSON.stringify({
+    base_url: f.elements.base_url.value.trim(), api_key: f.elements.api_key.value.trim(),
+    auto_update: f.elements.auto_update.checked, update_interval_days: Number(f.elements.update_interval_days.value) }) });
+}
+
+$("#test-models").addEventListener("click", async () => {
+  $("#models-status").textContent = "连接中…";
+  await saveSettings();
+  const r = await api("/api/models?refresh=1");
+  if (r.error) { $("#models-status").textContent = r.error; $("#model-list").hidden = true; return; }
+  $("#models-status").textContent = `已连接，可用模型 ${r.models.length} 个`;
+  $("#model-list").innerHTML = r.models.map((m) => `<li>${esc(m)}</li>`).join("");
+  $("#model-list").hidden = false;
+  fillModels(r);
+});
+
 $("#save-settings").addEventListener("click", async (e) => {
   e.preventDefault();
-  const f = $("#settings-form");
-  let headers = {};
-  if (f.elements.extra_headers.value.trim()) {
-    try { headers = JSON.parse(f.elements.extra_headers.value); } catch { alert("附加请求头不是有效的 JSON"); return; }
-  }
-  await api("/api/settings", { method: "POST", body: JSON.stringify({
-    provider: f.elements.provider.value, base_url: f.elements.base_url.value.trim(), api_key: f.elements.api_key.value.trim(),
-    model: f.elements.model.value.trim(), effort: f.elements.effort.value, extra_headers: headers,
-    auto_update: f.elements.auto_update.checked, update_interval_days: Number(f.elements.update_interval_days.value) }) });
+  await saveSettings();
   $("#settings").close();
-  $("#open-settings").classList.replace("primary", "ghost");
+  const r = await loadModels();
+  $("#open-settings").classList.replace(r.models?.length ? "primary" : "ghost", r.models?.length ? "ghost" : "primary");
 });
+
+/* ---------- 模型清单（AI 问答输入框下方） ---------- */
+function fillModels(r) {
+  const sel = $("#ask-model");
+  if (!r.models?.length) {
+    sel.innerHTML = `<option value="">${r.error ? "模型：未连接" : "模型：请先在设置里填 key"}</option>`;
+    return;
+  }
+  const keep = sel.value || r.model;
+  sel.innerHTML = r.models.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  sel.value = r.models.includes(keep) ? keep : r.models[0];
+  if (r.depth) $("#ask-depth").value = r.depth;
+}
+async function loadModels() {
+  try { const r = await api("/api/models"); fillModels(r); return r; }
+  catch (err) { fillModels({ error: err.message }); return {}; }
+}
 
 /* ---------- 版本对比 ---------- */
 function charDiff(a, b) {
@@ -461,7 +493,7 @@ $$("#upd-filter button").forEach((b) => b.addEventListener("click", () => {
 }));
 $("#upd-run").addEventListener("click", () => runUpdate("incremental"));
 $("#upd-full").addEventListener("click", () => {
-  if (confirm("全面核对会逐部重新读取三个官方网站上的法律、行政法规和司法解释，约 30 分钟，期间可以正常使用。开始吗？")) runUpdate("full");
+  if (confirm("全面核对会把三个官方网站上的全部法律、行政法规和司法解释逐部重新读一遍，和本地文本逐条比对，约 30 分钟，期间可以照常使用。开始吗？")) runUpdate("full");
 });
 $("#upd-stop").addEventListener("click", () => api("/api/updates/stop", { method: "POST", body: "{}" }));
 
@@ -490,7 +522,7 @@ function showProgress(s) {
   $("#upd-progress").hidden = !s.running;
   $("#upd-run").disabled = $("#upd-full").disabled = !!s.running;
   $("#upd-stop").hidden = !s.running;
-  if (s.running) $("#upd-progress-text").textContent = `${s.mode === "full" ? "全面核对" : "检查更新"}：${s.phase || ""} · 已看 ${s.checked} 条，已读取 ${s.fetched} 份，发现变化 ${s.changes} 处${s.errors ? `，出错 ${s.errors}` : ""}${s.current ? " · " + s.current : ""}`;
+  if (s.running) $("#upd-progress-text").textContent = `${s.mode === "full" ? "全面核对" : "检查新发布"}：${s.phase || ""} · 已看 ${s.checked} 条，已读取 ${s.fetched} 份，发现变化 ${s.changes} 处${s.errors ? `，出错 ${s.errors}` : ""}${s.current ? " · " + s.current : ""}`;
 }
 
 async function renderUpdates() {
@@ -504,7 +536,7 @@ async function renderUpdates() {
     return `<li data-upd="${x.id}"><div class="r-title">${esc(x.title)}</div>
       <div class="r-meta"><span class="badge ${cls}">${esc(label)}</span><span class="badge">${esc(SOURCE[x.source] || x.source)}</span><span class="badge">${esc(new Date(x.at).toLocaleDateString("zh-CN"))}</span></div>
       <div class="r-snip">${esc(x.summary)}</div></li>`;
-  }).join("") : `<p class="muted">${r.items.length ? "这一类没有记录。" : "还没有更新记录。点「立即检查」看看官方网站有没有新公布的法规。"}</p>`;
+  }).join("") : `<p class="muted">${r.items.length ? "这一类没有记录。" : "还没有更新记录。点「检查新发布」看看官方网站有没有新公布的法规。"}</p>`;
 }
 
 $("#upd-list").addEventListener("click", async (e) => {

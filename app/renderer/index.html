@@ -75,6 +75,12 @@
           <textarea id="question" rows="3" placeholder="描述你的情况和问题…（Enter 发送，Shift+Enter 换行）"></textarea>
           <div class="ask-row">
             <select id="ask-region"><option value="">地区：未指定</option></select>
+            <select id="ask-model" title="模型"><option value="">模型：读取中…</option></select>
+            <select id="ask-depth" title="分析深度">
+              <option value="low">快速</option>
+              <option value="medium" selected>标准</option>
+              <option value="high">深入</option>
+            </select>
             <button type="button" id="new-chat" class="ghost">新对话</button>
             <button type="submit" class="primary" id="ask-btn">发送</button>
           </div>
@@ -96,9 +102,17 @@
             <p class="muted small" id="upd-info"></p>
           </div>
           <div class="upd-actions">
-            <button class="primary" id="upd-run">立即检查</button>
-            <button class="ghost" id="upd-full" title="翻完三个官方网站的全部列表，逐部核对，约 30 分钟">全面核对</button>
             <button class="ghost" id="upd-stop" hidden>停止</button>
+          </div>
+        </div>
+        <div class="upd-modes">
+          <div class="upd-mode">
+            <button class="primary" id="upd-run">检查新发布</button>
+            <p class="small muted">只看三个官方网站最近发布的内容，找有没有新法规、新版本、新案例。几分钟。app 每周自动做一次。</p>
+          </div>
+          <div class="upd-mode">
+            <button class="ghost" id="upd-full">全面核对</button>
+            <p class="small muted">把三个网站上的全部法规逐部重新读一遍，和本地现有文本逐条比对，找出入并改正。约 30 分钟，期间可以照常使用。</p>
           </div>
         </div>
         <div id="upd-progress" class="upd-progress" hidden><div class="bar"><i></i></div><div class="small muted" id="upd-progress-text"></div></div>
@@ -149,33 +163,19 @@
 <dialog id="settings">
   <form method="dialog" id="settings-form">
     <h3>AI 设置</h3>
-    <label>接口类型
-      <select name="provider">
-        <option value="anthropic">Anthropic（Claude；也可经 Portkey 等网关）</option>
-        <option value="openai">OpenAI 兼容接口（DeepSeek、Portkey OpenAI 路由等）</option>
-      </select>
-    </label>
-    <label>接口地址 <span class="muted">（直连 Anthropic 留空）</span>
-      <input name="base_url" placeholder="例如 https://api.portkey.ai 或 https://api.deepseek.com">
+    <p class="muted small">接口使用 OpenAI 兼容格式。默认是 Portkey；也可以改成 OpenAI、DeepSeek 等任何兼容服务的地址。</p>
+    <label>接口地址
+      <input name="base_url" placeholder="https://api.portkey.bond/v1">
     </label>
     <label>API key
-      <input name="api_key" type="password" autocomplete="off" placeholder="只保存在这台电脑上">
+      <input name="api_key" type="password" autocomplete="off" placeholder="粘贴你的 API key">
     </label>
-    <label>模型
-      <input name="model" placeholder="claude-opus-5-5">
-    </label>
-    <label>分析深度 <span class="muted">（仅 Anthropic 接口）</span>
-      <select name="effort">
-        <option value="low">低：快、省</option>
-        <option value="medium">中（默认）</option>
-        <option value="high">高：更深入</option>
-        <option value="xhigh">很高</option>
-      </select>
-    </label>
-    <label>附加请求头 <span class="muted">（JSON，可选；Portkey 填 x-portkey-api-key 等）</span>
-      <textarea name="extra_headers" rows="3" placeholder='{"x-portkey-api-key": "...", "x-portkey-provider": "anthropic"}'></textarea>
-    </label>
-    <p class="muted small">API key 只保存在这台电脑的 app 数据文件夹里（仅本人可读），只会发给你填写的接口地址。</p>
+    <div class="row">
+      <button type="button" class="ghost" id="test-models">连接并读取模型清单</button>
+      <span class="small muted" id="models-status"></span>
+    </div>
+    <ul class="model-list" id="model-list" hidden></ul>
+    <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。用哪个模型、分析多深，在 AI 问答的输入框下方选。</p>
     <h3 style="margin-top:8px">法规更新</h3>
     <label class="check"><input type="checkbox" name="auto_update"> 自动检查官方网站的法规更新</label>
     <label>检查间隔

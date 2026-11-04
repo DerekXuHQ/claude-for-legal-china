@@ -4,11 +4,11 @@ import { readFileSync, writeFileSync, existsSync, chmodSync, statSync } from "no
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import * as search from "./search.mjs";
-import { ask } from "./agent.mjs";
+import { ask, listModels, DEFAULT_BASE_URL } from "./agent.mjs";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png" };
 export const DEFAULT_SETTINGS = {
-  provider: "anthropic", base_url: "", api_key: "", model: "claude-opus-5-5", effort: "medium", extra_headers: {}, fallback: true,
+  base_url: DEFAULT_BASE_URL, api_key: "", model: "", depth: "medium",
   auto_update: true, update_interval_days: 7,
 };
 
@@ -26,10 +26,15 @@ export const DEFAULT_SETTINGS = {
 export function createServer(ctx) {
   const token = randomUUID();
   const conversations = new Map();
+  const modelCache = { key: "", at: 0, models: [] };
 
   const loadSettings = () => {
     const s = { ...DEFAULT_SETTINGS };
-    if (existsSync(ctx.settingsPath)) Object.assign(s, JSON.parse(readFileSync(ctx.settingsPath, "utf-8")));
+    if (existsSync(ctx.settingsPath)) {
+      const saved = JSON.parse(readFileSync(ctx.settingsPath, "utf-8"));
+      for (const k of Object.keys(DEFAULT_SETTINGS)) if (k in saved) s[k] = saved[k];
+    }
+    if (!s.base_url) s.base_url = DEFAULT_BASE_URL;
     return s;
   };
   const saveSettings = (patch) => {
@@ -96,7 +101,7 @@ export function createServer(ctx) {
       if (!ready) return send(res, 503, { error: "资料库还在准备中" });
       if (p === "/api/meta") {
         const s = loadSettings();
-        return send(res, 200, { ...search.meta(), configured: !!s.api_key || (s.provider === "openai" && !!s.base_url) });
+        return send(res, 200, { ...search.meta(), configured: !!s.api_key });
       }
       if (p === "/api/search") {
         const limit = Math.min(Number(q.limit) || 20, 100), offset = Number(q.offset) || 0, text = q.q || "";
@@ -120,6 +125,19 @@ export function createServer(ctx) {
         const getter = { article: search.getArticle, law: search.getDoc, case: search.getCase, ref: search.getRef }[kind];
         const item = getter ? getter(id) : null;
         return item ? send(res, 200, item) : send(res, 404, { error: "未找到" });
+      }
+      if (p === "/api/models") {
+        const s = loadSettings();
+        if (!s.api_key) return send(res, 200, { models: [], error: "还没有填写 API key" });
+        const key = s.base_url + "|" + s.api_key;
+        if (q.refresh !== "1" && modelCache.key === key && Date.now() - modelCache.at < 600000) return send(res, 200, { models: modelCache.models, model: s.model, depth: s.depth });
+        try {
+          const models = await listModels(s);
+          Object.assign(modelCache, { key, at: Date.now(), models });
+          return send(res, 200, { models, model: s.model, depth: s.depth });
+        } catch (err) {
+          return send(res, 200, { models: [], error: `读取模型清单失败${err?.status ? "（HTTP " + err.status + "）" : ""}：${String(err?.message || err).slice(0, 200)}` });
+        }
       }
       if (p === "/api/bookmarks") return send(res, 200, ctx.userDb()?.prepare("SELECT * FROM bookmarks ORDER BY created DESC").all() || []);
       return send(res, 404, { error: "未找到" });
@@ -155,6 +173,9 @@ export function createServer(ctx) {
     const settings = loadSettings();
     const question = String(body.question || "").trim();
     const region = String(body.region || "").trim();
+    const model = typeof body.model === "string" && body.model ? body.model : settings.model;
+    const depth = ["low", "medium", "high"].includes(body.depth) ? body.depth : settings.depth;
+    if (model !== settings.model || depth !== settings.depth) saveSettings({ model, depth });
     const convId = typeof body.conversation_id === "string" && body.conversation_id ? body.conversation_id : randomUUID();
     res.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache" });
     const ctrl = new AbortController();
@@ -170,12 +191,13 @@ export function createServer(ctx) {
     try {
       if (!ctx.status().ready) emit({ type: "error", message: "资料库还在准备中，请稍候。" });
       else if (!question) emit({ type: "error", message: "问题不能为空" });
-      else if (!settings.api_key && settings.provider === "anthropic") emit({ type: "error", message: "还没有配置 API key，请点右上角「设置」。" });
+      else if (!settings.api_key) emit({ type: "error", message: "还没有配置 API key，请点右上角「设置」。" });
+      else if (!model) emit({ type: "error", message: "请先在输入框下方选择一个模型。" });
       else {
         const history = conversations.get(convId) || [];
-        conversations.set(convId, await ask(settings, history, question, region, emit, ctrl.signal));
+        conversations.set(convId, await ask(settings, history, question, region, emit, ctrl.signal, { model, depth }));
         const id = randomUUID().replace(/-/g, "").slice(0, 12);
-        ctx.userDb().prepare("INSERT INTO answers VALUES(?,?,?,?,?,?,?)").run(id, question, region, answer, JSON.stringify(steps), settings.model, Date.now() / 1000);
+        ctx.userDb().prepare("INSERT INTO answers VALUES(?,?,?,?,?,?,?)").run(id, question, region, answer, JSON.stringify(steps), model, Date.now() / 1000);
         emit({ type: "done", answer_id: id, conversation_id: convId });
       }
     } catch (err) {

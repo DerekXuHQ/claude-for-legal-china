@@ -1,6 +1,6 @@
 # AI for Legal China：数据来源与第三方许可
 
-本 app 以 Apache-2.0 许可发布，源码见 <https://github.com/DerekXuHQ/claude-for-legal-china>。仅供参考，不构成法律意见。AI 问答可以接入 Claude、DeepSeek 等模型；Claude 是 Anthropic, PBC 的商标。
+本 app 以 Apache-2.0 许可发布，源码见 <https://github.com/DerekXuHQ/claude-for-legal-china>。仅供参考，不构成法律意见。
 
 ## 法规与案例数据
 
@@ -22,7 +22,6 @@ app 访问官方网站时：只读取公开栏目，同一网站两次请求至�
 | 组件 | 许可 |
 |---|---|
 | Electron | MIT |
-| @anthropic-ai/sdk | MIT |
 | openai（Node SDK） | Apache-2.0 |
 | SQLite（随 Electron / Node.js 提供） | Public Domain |
 

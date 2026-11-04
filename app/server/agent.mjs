@@ -1,9 +1,5 @@
 // AI 检索代理：在本地资料库里多轮检索，然后按固定结构给出参考意见。
-//
-// 两种接口：
-// - anthropic：Anthropic 官方 SDK。可改接口地址和附加请求头，因此也能经 Portkey 等网关调用 Claude。
-// - openai：OpenAI 兼容接口（DeepSeek、Portkey 的 OpenAI 路由等）。
-import Anthropic from "@anthropic-ai/sdk";
+// 只接 OpenAI 兼容接口（默认是 Portkey 网关），同一个 key 下的各家模型都通过它调用。
 import OpenAI from "openai";
 import * as search from "./search.mjs";
 
@@ -218,91 +214,70 @@ function stepText(name, args) {
 }
 
 const userText = (q, region) => (region ? `[用户所在或关注的地区：${region}]\n\n${q}` : q);
-const FALLBACK_MODELS = new Set(["claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-sonnet-5-5"]);
+export const DEFAULT_BASE_URL = "https://api.portkey.bond/v1";
 
-/* ---------------- Anthropic ---------------- */
+// 分析深度：控制检索轮数和回答详略；支持 reasoning_effort 的模型同时调整推理强度
+const DEPTH = {
+  low: { steps: 6, effort: "low", note: "\n\n## 本次要求\n快速作答：检索两到四次即可，回答精简，只写最关键的规定和建议。" },
+  medium: { steps: 14, effort: null, note: "" },
+  high: { steps: 22, effort: "high", note: "\n\n## 本次要求\n深入分析：多换几种检索词，逐条核对条文原文和版本，覆盖例外情形、地方差异和相关案例，回答写完整。" },
+};
 
-async function runAnthropic(settings, history, question, region, emit, signal) {
-  const client = new Anthropic({
-    apiKey: settings.api_key || null,
-    // 留空时显式用官方地址，避免被环境变量 ANTHROPIC_BASE_URL 意外改写
-    baseURL: settings.base_url || "https://api.anthropic.com",
-    defaultHeaders: settings.extra_headers && Object.keys(settings.extra_headers).length ? settings.extra_headers : undefined,
-  });
-  const model = settings.model || "claude-opus-5-5";
-  // 服务端拒答回退只在直连 Anthropic 且模型支持时开启
-  const useFallback = settings.fallback !== false && !settings.base_url && FALLBACK_MODELS.has(model);
-  const tools = TOOLS.map((t) => ({ ...t, eager_input_streaming: true }));
-  const messages = [...history, { role: "user", content: userText(question, region) }];
-  const base = {
-    model, max_tokens: 64000, system: SYSTEM_PROMPT, tools, messages,
-    cache_control: { type: "ephemeral" }, output_config: { effort: settings.effort || "medium" },
-  };
-  let jsonRetries = 0;
-  for (let step = 0; step < MAX_STEPS; step++) {
-    const stream = useFallback
-      ? client.beta.messages.stream({ ...base, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" }, { signal })
-      : client.messages.stream(base, { signal });
-    stream.on("text", (delta) => emit({ type: "text", delta }));
-    let msg;
-    try {
-      msg = await stream.finalMessage();
-      jsonRetries = 0;
-    } catch (err) {
-      // 只有工具参数 JSON 完全无法解析时才重发本轮；接口错误直接抛出
-      if (err instanceof Anthropic.APIError || signal?.aborted || jsonRetries++ >= 2) throw err;
-      emit({ type: "text_reset" });
-      continue;
-    }
-    if (msg.stop_reason === "refusal") {
-      emit({ type: "error", message: "模型拒绝回答这个问题。可以换一种问法再试。" });
-      return messages;
-    }
-    messages.push({ role: "assistant", content: msg.content });
-    if (msg.stop_reason === "pause_turn") continue;
-    const uses = msg.content.filter((b) => b.type === "tool_use");
-    if (!uses.length) return messages;
-    if (msg.stop_reason === "max_tokens") {
-      emit({ type: "error", message: "输出被截断，请缩小问题范围后重试。" });
-      messages.pop();
-      return messages;
-    }
-    const results = uses.map((b) => {
-      emit({ type: "step", text: stepText(b.name, b.input) });
-      try {
-        return { type: "tool_result", tool_use_id: b.id, content: runTool(b.name, b.input) };
-      } catch (e) {
-        // 参数有误时把错误交回模型，让它修正后重试
-        return { type: "tool_result", tool_use_id: b.id, content: JSON.stringify({ error: String(e.message || e) }), is_error: true };
-      }
-    });
-    messages.push({ role: "user", content: results });
-    emit({ type: "text_reset" });
-  }
-  emit({ type: "error", message: "检索步骤过多，已停止。可以把问题拆小一点再问。" });
-  return messages;
+function client(settings) {
+  return new OpenAI({ apiKey: settings.api_key || "none", baseURL: settings.base_url || DEFAULT_BASE_URL, maxRetries: 1 });
 }
 
-/* ---------------- OpenAI 兼容 ---------------- */
+/** 读取这个 key 能用的模型清单。 */
+export async function listModels(settings, signal) {
+  const ids = [];
+  for await (const m of client(settings).models.list({ signal })) ids.push(m.id);
+  return [...new Set(ids)].sort((a, b) => a.localeCompare(b));
+}
 
-async function runOpenAI(settings, history, question, region, emit, signal) {
-  const client = new OpenAI({
-    apiKey: settings.api_key || "none",
-    baseURL: settings.base_url || undefined,
-    defaultHeaders: settings.extra_headers && Object.keys(settings.extra_headers).length ? settings.extra_headers : undefined,
-  });
-  const tools = TOOLS.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }));
-  const messages = [{ role: "system", content: SYSTEM_PROMPT }, ...history, { role: "user", content: userText(question, region) }];
-  for (let step = 0; step < MAX_STEPS; step++) {
-    const resp = await client.chat.completions.create({ model: settings.model, messages, tools }, { signal });
-    const msg = resp.choices[0].message;
-    const calls = msg.tool_calls || [];
-    messages.push({ role: "assistant", content: msg.content || "", ...(calls.length ? { tool_calls: calls } : {}) });
-    if (!calls.length) {
-      emit({ type: "text", delta: msg.content || "" });
-      return messages.slice(1);
+const noEffort = new Set(); // 不支持 reasoning_effort 的模型，本次运行内记住，不再发送
+
+async function streamTurn(api, params, emit, signal) {
+  const stream = await api.chat.completions.create({ ...params, stream: true }, { signal });
+  let content = "";
+  const calls = [];
+  for await (const chunk of stream) {
+    const d = chunk.choices?.[0]?.delta;
+    if (!d) continue;
+    if (d.content) { content += d.content; emit({ type: "text", delta: d.content }); }
+    for (const tc of d.tool_calls || []) {
+      const c = (calls[tc.index ?? 0] ||= { id: "", type: "function", function: { name: "", arguments: "" } });
+      if (tc.id) c.id = tc.id;
+      if (tc.function?.name) c.function.name += tc.function.name;
+      if (tc.function?.arguments) c.function.arguments += tc.function.arguments;
     }
-    for (const c of calls) {
+  }
+  return { content, calls: calls.filter(Boolean) };
+}
+
+export async function ask(settings, history, question, region, emit, signal, { model, depth = "medium" } = {}) {
+  const api = client(settings);
+  const cfg = DEPTH[depth] || DEPTH.medium;
+  const tools = TOOLS.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }));
+  const messages = [{ role: "system", content: SYSTEM_PROMPT + cfg.note }, ...history, { role: "user", content: userText(question, region) }];
+  for (let step = 0; step < cfg.steps; step++) {
+    const params = { model, messages, tools };
+    if (cfg.effort && !noEffort.has(model)) params.reasoning_effort = cfg.effort;
+    let turn;
+    try {
+      turn = await streamTurn(api, params, emit, signal);
+    } catch (err) {
+      // 模型不支持 reasoning_effort 时去掉再试一次
+      if (params.reasoning_effort && err?.status === 400 && !signal?.aborted) {
+        noEffort.add(model);
+        emit({ type: "text_reset" });
+        step--;
+        continue;
+      }
+      throw err;
+    }
+    messages.push({ role: "assistant", content: turn.content || "", ...(turn.calls.length ? { tool_calls: turn.calls } : {}) });
+    if (!turn.calls.length) return messages.slice(1);
+    for (const c of turn.calls) {
       let args = null;
       try { args = JSON.parse(c.function.arguments || "{}"); } catch { /* 交给 runTool 报错 */ }
       emit({ type: "step", text: stepText(c.function.name, args) });
@@ -310,13 +285,8 @@ async function runOpenAI(settings, history, question, region, emit, signal) {
       try { content = runTool(c.function.name, args); } catch (e) { content = JSON.stringify({ error: String(e.message || e) }); }
       messages.push({ role: "tool", tool_call_id: c.id, content });
     }
+    emit({ type: "text_reset" });
   }
-  emit({ type: "error", message: "检索步骤过多，已停止。可以把问题拆小一点再问。" });
+  emit({ type: "error", message: "检索步骤过多，已停止。可以把问题拆小一点，或把分析深度调高。" });
   return messages.slice(1);
-}
-
-export function ask(settings, history, question, region, emit, signal) {
-  return settings.provider === "openai"
-    ? runOpenAI(settings, history, question, region, emit, signal)
-    : runAnthropic(settings, history, question, region, emit, signal);
 }

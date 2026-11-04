@@ -126,8 +126,10 @@ mark { background: var(--mark); color: inherit; border-radius: 2px; }
 .ask-box { border-top: 1px solid var(--line); padding: 12px 20px; background: var(--panel); }
 .ask-box textarea { width: 100%; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--bg); outline: none; }
 .ask-box textarea:focus { border-color: var(--accent); }
-.ask-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
-.ask-row select { margin-right: auto; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.ask-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.ask-row button { white-space: nowrap; }
+#new-chat { margin-left: auto; }
+.ask-row select { padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 
 .foot { font-size: 12px; color: var(--muted); text-align: center; padding: 6px 16px; border-top: 1px solid var(--line); background: var(--panel); }
 
@@ -156,6 +158,13 @@ dialog input, dialog select, dialog textarea { padding: 7px 10px; border: 1px so
 .upd-head p { margin: 2px 0 0; }
 .upd-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .upd-progress { margin: 4px 0 12px; }
+.upd-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 12px; }
+.upd-mode { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel); }
+.upd-mode p { margin: 6px 0 0; }
+.model-list { list-style: none; margin: 0; padding: 6px 10px; max-height: 180px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: var(--bg); }
+.model-list li { padding: 2px 0; }
+#ask-model { max-width: 220px; min-width: 0; }
+#ask-region { max-width: 150px; }
 .upd-progress .bar { margin: 6px 0 4px; }
 .upd-progress .bar i { width: 100%; animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
@@ -176,3 +185,5 @@ del { color: var(--old); }
   .pane-right { border-top: 1px solid var(--line); }
   .top { flex-wrap: wrap; gap: 10px; }
 }
+
+dialog label.check { flex-direction: row; align-items: center; gap: 6px; }
