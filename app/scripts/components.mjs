@@ -34,7 +34,10 @@ function prodPackages() {
 
 /** 依赖库的版本标识：生产依赖的「包名@版本」排序后取哈希。依赖没变，标识就不变。 */
 export function depsId() {
-  const specs = [...new Set(prodPackages().map((p) => p.spec))].sort();
+  // 只对应某个系统或芯片的原生包（如 @napi-rs/canvas-darwin-arm64）不计入：不同机器上打包装的不一样，
+  // 计入的话同一份代码在不同机器上算出不同标识，装好的 app 会以为缺依赖库、白白再下载一遍
+  const PLATFORM_PKG = /-(darwin|win32|linux|android|freebsd|openbsd|sunos)(-|@|$)/;
+  const specs = [...new Set(prodPackages().map((p) => p.spec).filter((s) => !PLATFORM_PKG.test(s)))].sort();
   return createHash("sha256").update(specs.join("\n")).digest("hex").slice(0, 16);
 }
 

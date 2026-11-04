@@ -177,6 +177,37 @@ function emlToText(buffer) {
   return [...hdr, "", best ? (best.html ? htmlToText(best.text) : best.text) : ""].join("\n");
 }
 
+// pdf.js 在 Node 里要 DOMMatrix，默认从原生模块 @napi-rs/canvas 取；可是安装包里的原生模块只对应打包那台机器的芯片
+// （在 Mac 上打的 Windows 安装包里是 Mac 的版本），装错了就整个读不了 PDF。取文字只需要二维变换，这里自带一个纯 JS 的，
+// 不依赖原生模块，所有平台都一样。
+class Matrix2D {
+  constructor(init) {
+    const m = Array.isArray(init) || ArrayBuffer.isView(init) ? [...init] : init && typeof init === "object" ? [init.a, init.b, init.c, init.d, init.e, init.f] : [1, 0, 0, 1, 0, 0];
+    [this.a, this.b, this.c, this.d, this.e, this.f] = m.length === 16 ? [m[0], m[1], m[4], m[5], m[12], m[13]] : m.length >= 6 ? m : [1, 0, 0, 1, 0, 0];
+  }
+  get m11() { return this.a; } get m12() { return this.b; } get m21() { return this.c; } get m22() { return this.d; } get m41() { return this.e; } get m42() { return this.f; }
+  get is2D() { return true; }
+  get isIdentity() { return this.a === 1 && this.b === 0 && this.c === 0 && this.d === 1 && this.e === 0 && this.f === 0; }
+  static #mul(p, q) { return [p.a * q.a + p.c * q.b, p.b * q.a + p.d * q.b, p.a * q.c + p.c * q.d, p.b * q.c + p.d * q.d, p.a * q.e + p.c * q.f + p.e, p.b * q.e + p.d * q.f + p.f]; }
+  #set(v) { [this.a, this.b, this.c, this.d, this.e, this.f] = v; return this; }
+  multiplySelf(o) { return this.#set(Matrix2D.#mul(this, new Matrix2D(o))); }
+  preMultiplySelf(o) { return this.#set(Matrix2D.#mul(new Matrix2D(o), this)); }
+  multiply(o) { return new Matrix2D(this).multiplySelf(o); }
+  translateSelf(x = 0, y = 0) { return this.multiplySelf([1, 0, 0, 1, x, y]); }
+  translate(x, y) { return new Matrix2D(this).translateSelf(x, y); }
+  scaleSelf(sx = 1, sy = sx) { return this.multiplySelf([sx, 0, 0, sy, 0, 0]); }
+  scale(sx, sy) { return new Matrix2D(this).scaleSelf(sx, sy); }
+  invertSelf() {
+    const det = this.a * this.d - this.b * this.c;
+    if (!det) return this.#set([NaN, NaN, NaN, NaN, NaN, NaN]);
+    return this.#set([this.d / det, -this.b / det, -this.c / det, this.a / det, (this.c * this.f - this.d * this.e) / det, (this.b * this.e - this.a * this.f) / det]);
+  }
+  inverse() { return new Matrix2D(this).invertSelf(); }
+  transformPoint(p = {}) { const x = p.x || 0, y = p.y || 0; return { x: this.a * x + this.c * y + this.e, y: this.b * x + this.d * y + this.f, z: 0, w: 1 }; }
+  toFloat32Array() { return Float32Array.of(this.a, this.b, 0, 0, this.c, this.d, 0, 0, 0, 0, 1, 0, this.e, this.f, 0, 1); }
+}
+if (!globalThis.DOMMatrix) globalThis.DOMMatrix = Matrix2D;
+
 async function readPdf(buffer) {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   // 中文 PDF 常用 Adobe-GB1 / CNS1 预置编码表，不给 cMapUrl 时这类字会读成空白或乱码
