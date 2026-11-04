@@ -2,6 +2,14 @@
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ic = (name, cls = "") => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+let toastTimer = null;
+function toast(msg, ms = 4500) {
+  const t = $("#toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+}
 
 const state = {
   type: "all", q: "", offset: 0, selected: null,
@@ -21,6 +29,7 @@ async function api(path, opts = {}) {
 /* ---------- 视图切换 ---------- */
 $$(".tab").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
 function showView(v) {
+  document.body.dataset.view = v;
   $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
   $$(".view").forEach((s) => s.classList.toggle("active", s.id === "view-" + v));
   if (v === "saved") renderSaved();
@@ -51,12 +60,13 @@ async function init() {
     $("#f-province").insertAdjacentHTML("beforeend", `<option>${esc(p)}</option>`);
     $("#ask-region").insertAdjacentHTML("beforeend", `<option>${esc(p)}</option>`);
   }
+  renderRegionOptions();
   for (const t of m.topics || []) $("#f-topic").insertAdjacentHTML("beforeend", `<option>${esc(t)}</option>`);
   state.meta = m;
   const c = m.counts || {};
   const o = m.official || {};
   $("#db-stats").textContent = `本地资料：法律 ${c["法律"] || 0} 部 · 司法解释 ${c["司法解释"] || 0} 件 · 行政法规 ${c["行政法规"] || 0} 部 · 地方性法规 ${c["地方性法规"] || 0} 部 · 现行条文 ${m.articles} 条 · 指导性案例 ${m.cases} 件。其中已与官方网站核对：法律 ${o["法律"] || 0} 部、行政法规 ${o["行政法规"] || 0} 部、司法解释 ${o["司法解释"] || 0} 件。数据包 ${state.app?.data?.version || ""}${m.official_checked ? "，官方核对于 " + m.official_checked : ""}。`;
-  if (!m.configured) $("#open-settings").classList.replace("ghost", "primary");
+  $("#open-settings").classList.toggle("attn", !m.configured);
   await loadBookmarks();
   initBrowse();
   loadModels();
@@ -155,14 +165,15 @@ async function openItem(kind, id, target, highlightArticle, nav) {
 function navHTML(nav, bottom) {
   if (!nav) return "";
   const unit = nav.unit || "部";
-  return `<div class="rd-nav ${bottom ? "bottom" : ""}"><button class="ghost" data-nav="-1" ${nav.index <= 0 ? "disabled" : ""}>‹ 上一${unit}</button>
+  return `<div class="rd-nav ${bottom ? "bottom" : ""}"><button class="ghost" data-nav="-1" ${nav.index <= 0 ? "disabled" : ""}>${ic("chevron-left")}上一${unit}</button>
     <span class="muted small">${nav.index + 1} / ${nav.total}</span>
-    <button class="ghost" data-nav="1" ${nav.index >= nav.total - 1 ? "disabled" : ""}>下一${unit} ›</button></div>`;
+    <button class="ghost" data-nav="1" ${nav.index >= nav.total - 1 ? "disabled" : ""}>下一${unit}${ic("chevron-right")}</button></div>`;
 }
 
+const starInner = (on) => `${ic(on ? "bookmark-fill" : "bookmark")}<span>${on ? "已收藏" : "收藏"}</span>`;
 function starBtn(kind, id) {
   const on = state.bookmarks.has(`${kind}:${id}`);
-  return `<button class="ghost star ${on ? "on" : ""}" data-star="${esc(kind)}|${esc(id)}">${on ? "★ 已收藏" : "☆ 收藏"}</button>`;
+  return `<button class="ghost star ${on ? "on" : ""}" data-star="${esc(kind)}|${esc(id)}">${starInner(on)}</button>`;
 }
 
 const ART_HEAD = /^(第[零〇一二三四五六七八九十百千]+条(?:之[零〇一二三四五六七八九十百千]+)?)[\s　]*/;
@@ -185,7 +196,7 @@ function detailHTML(it, hlArticle) {
   if (it.kind === "article") {
     return `<article class="reader">${headHTML(kickerOf(it), esc(it.title),
       badges(it) + (it.effective_date ? `<span class="badge">${esc(it.effective_date)} 起施行</span>` : ""),
-      `${starBtn("article", it.id)}<button class="ghost" data-open-law="${esc(it.doc_id)}" data-hl="${esc(it.id)}">读整部法规</button>`)}
+      `${starBtn("article", it.id)}<button class="ghost" data-open-law="${esc(it.doc_id)}" data-hl="${esc(it.id)}">${ic("book-open")}读整部法规</button>`)}
       ${it.note ? `<div class="d-note">${esc(it.note)}</div>` : ""}
       ${it.chapter ? `<h3 class="rd-ch">${esc(it.chapter)}</h3>` : ""}
       <div class="rd-body">${articleHTML({ id: it.id, article_cn: it.article, text: it.text })}</div>
@@ -289,7 +300,9 @@ async function toggleBookmark(btn, it) {
   await loadBookmarks();
   $$(`[data-star="${CSS.escape(btn.dataset.star)}"]`).forEach((b) => {
     const on = state.bookmarks.has(key);
-    b.classList.toggle("on", on); b.textContent = on ? "★ 已收藏" : "☆ 收藏";
+    b.classList.toggle("on", on);
+    if (b.classList.contains("icon-btn")) { b.innerHTML = ic(on ? "bookmark-fill" : "bookmark"); b.title = on ? "取消收藏" : "收藏"; }
+    else b.innerHTML = starInner(on);
   });
   if ($("#view-saved").classList.contains("active")) renderSaved();
 }
@@ -306,7 +319,7 @@ async function renderSaved() {
     <div class="r-title">${esc(b.title)}</div>
     <div class="r-meta"><span class="badge">${label[b.kind] || b.kind}</span>${b.subtitle ? `<span class="badge">${esc(b.subtitle)}</span>` : ""}<span class="badge">${new Date(b.created * 1000).toLocaleDateString("zh-CN")}</span></div>
     ${b.note ? `<div class="d-note">${esc(b.note)}</div>` : ""}<div class="r-snip">${esc(b.snippet)}</div></li>`).join("")
-    : `<p class="muted">还没有收藏。在检索结果或助理的产出里点「☆ 收藏」。</p>`;
+    : `<p class="muted">还没有收藏。在阅读页或助理的回答下面点「收藏」。</p>`;
 }
 $("#saved-list").addEventListener("click", (e) => {
   const li = e.target.closest("li");
@@ -317,11 +330,15 @@ $("#saved-list").addEventListener("click", (e) => {
 
 /* ---------- Markdown 与引用 ---------- */
 const CITE_LABEL = { art: "条文", law: "法规", case: "案例", ref: "资料" };
+const CITE_ICON = { art: "book-open", law: "book-open", case: "gavel", ref: "file-text" };
 function inline(s) {
   return s
+    // 正文已经写了「第X条」时直接把这几个字变成链接，不再重复一个同名标签
+    .replace(/(第[零〇一二三四五六七八九十百千]+条(?:之[零〇一二三四五六七八九十百千]+)?)\[\[art:([^\]]+?)\]\]/g, (all, label, id) =>
+      id.split(":").pop() === label ? `<button class="cite-inline" data-cite="art|${id}" title="点开看原文：${id}">${label}</button>` : all)
     .replace(/\[\[(art|law|case|ref):([^\]]+?)\]\]/g, (_, k, id) => {
       const short = k === "art" ? (id.split(":").pop()) : k === "case" ? id.replace(/^GC/, "指导案例") : CITE_LABEL[k];
-      return `<button class="cite" data-cite="${k}|${id}" title="${CITE_LABEL[k]} ${id}">${short}</button>`;
+      return `<button class="cite" data-cite="${k}|${id}" title="点开看原文：${CITE_LABEL[k]} ${id}">${ic(CITE_ICON[k])}${short}</button>`;
     })
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>");
@@ -333,7 +350,7 @@ function renderMD(md) {
   const flushTable = () => {
     if (!table.length) return;
     const rows = table.filter((r) => !/^\s*\|?\s*:?-{2,}/.test(r));
-    html += "<table>" + rows.map((r, i) => "<tr>" + r.replace(/^\s*\||\|\s*$/g, "").split("|").map((c) => i === 0 ? `<th>${inline(c.trim())}</th>` : `<td>${inline(c.trim())}</td>`).join("") + "</tr>").join("") + "</table>";
+    html += `<div class="table-wrap"><table>` + rows.map((r, i) => "<tr>" + r.replace(/^\s*\||\|\s*$/g, "").split("|").map((c) => i === 0 ? `<th>${inline(c.trim())}</th>` : `<td>${inline(c.trim())}</td>`).join("") + "</tr>").join("") + "</table></div>";
     table = [];
   };
   let code = null;
@@ -367,6 +384,7 @@ function bindCites(root) {
       const [k, id] = b.dataset.cite.split("|");
       const kind = { art: "article", law: "law", case: "case", ref: "ref" }[k];
       const pane = root.closest(".view").querySelector(".pane-right");
+      if (pane.dataset.pane) setCollapsed(pane.dataset.pane, false);
       openItem(kind, id, pane);
     });
   });
@@ -377,20 +395,20 @@ state.matter = null;      // 当前事项
 state.pendingFiles = [];  // 已上传、还没随消息发出的文件
 
 const STARTERS = [
-  { title: "审一份合同", desc: "上传合同，逐条找漏洞、给修改文字和谈判要点", prompt: "请帮我审查这份合同。我方是：", upload: true },
-  { title: "被起诉 / 收到律师函", desc: "上传起诉状、仲裁申请、律师函或处罚告知书", prompt: "我收到了附件里的文书，请帮我分析怎么应对。", upload: true },
-  { title: "我想告对方 / 追款", desc: "判断有没有依据、能不能开始、需要哪些证据", prompt: "我想起诉对方，情况是：" },
-  { title: "员工纠纷", desc: "辞退、补偿、N+1、加班费、竞业限制", prompt: "员工的情况是：" },
-  { title: "这个方案合不合法", desc: "上传营销活动、商业模式或制度方案", prompt: "请审查这个方案有没有违法或合规风险。", upload: true },
-  { title: "起草一份文书", desc: "律师函、催款函、解除通知、协议、决议", prompt: "请帮我起草一份：" },
+  { icon: "file-search", title: "审一份合同", desc: "上传合同，逐条找漏洞、给修改文字和谈判要点", prompt: "请帮我审查这份合同。我方是：", upload: true },
+  { icon: "gavel", title: "被起诉 / 收到律师函", desc: "上传起诉状、仲裁申请、律师函或处罚告知书", prompt: "我收到了附件里的文书，请帮我分析怎么应对。", upload: true },
+  { icon: "flag", title: "我想告对方 / 追款", desc: "判断有没有依据、能不能开始、需要哪些证据", prompt: "我想起诉对方，情况是：" },
+  { icon: "users", title: "员工纠纷", desc: "辞退、补偿、N+1、加班费、竞业限制", prompt: "员工的情况是：" },
+  { icon: "shield-check", title: "这个方案合不合法", desc: "上传营销活动、商业模式或制度方案", prompt: "请审查这个方案有没有违法或合规风险。", upload: true },
+  { icon: "pen", title: "起草一份文书", desc: "律师函、催款函、解除通知、协议、决议", prompt: "请帮我起草一份：" },
 ];
 
 async function loadMatters() {
   const list = await api("/api/matters");
   $("#matter-list").innerHTML = list.length ? list.map((m) => `<li data-id="${esc(m.id)}" class="${state.matter?.id === m.id ? "sel" : ""}">
       <div class="m-title">${esc(m.title)}</div>
-      <div class="m-meta">${m.task ? `<span>${esc(m.task)}</span>` : ""}<span>${new Date(m.updated * 1000).toLocaleDateString("zh-CN")}</span>${m.files ? `<span>📎${m.files}</span>` : ""}</div>
-      <button class="m-del" data-del="${esc(m.id)}" title="删除这个事项">×</button></li>`).join("")
+      <div class="m-meta">${m.task ? `<span>${esc(m.task)}</span>` : ""}<span>${new Date(m.updated * 1000).toLocaleDateString("zh-CN")}</span>${m.files ? `<span>${ic("paperclip")}${m.files}</span>` : ""}</div>
+      <button class="icon-btn m-del" data-del="${esc(m.id)}" title="删除这个事项">${ic("trash")}</button></li>`).join("")
     : `<li class="m-empty">还没有事项。点「新事项」开始。</li>`;
   return list;
 }
@@ -443,14 +461,15 @@ function renderMatter(m) {
   if (!m || !m.display.length) {
     if (m) { $("#matter-title").value = m.title; $("#matter-task").textContent = m.task || "待分类"; $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : ""; }
     log.innerHTML = `<div class="chat-intro">
-      <h2>法律助理</h2>
-      <p>把事情交给助理：它会先问清关键事实，再按这类事的专业做法查法条、案例和办案指引，给出判断、依据、下一步和可以直接用的文书。合同和方案审查会分段逐条审，再用另一家的模型复核。每件事单独保存，随时回来接着办。</p>
-      <div class="starters">${STARTERS.map((s, i) => `<button class="starter" data-starter="${i}"><b>${esc(s.title)}</b><span>${esc(s.desc)}</span></button>`).join("")}</div>
+      <h2>今天要处理什么事？</h2>
+      <p>助理会先问清关键事实，再查法条、案例和办案指引，给出判断、依据、下一步和可以直接用的文书。合同和方案会逐条审，并用另一家的模型复核。每件事单独保存，随时回来接着办。</p>
+      <div class="starters">${STARTERS.map((s, i) => `<button class="starter" data-starter="${i}"><span class="s-ic">${ic(s.icon)}</span><b>${esc(s.title)}</b><span>${esc(s.desc)}</span></button>`).join("")}</div>
       <p class="small muted">可以上传 PDF、Word、图片（截图、照片会自动识别文字）、录音和视频。</p>
     </div>`;
     $$("[data-starter]", log).forEach((b) => b.addEventListener("click", () => {
       const s = STARTERS[Number(b.dataset.starter)];
       $("#question").value = s.prompt;
+      composerChanged();
       $("#question").focus();
       if (s.upload) $("#file-input").click();
     }));
@@ -465,9 +484,10 @@ function renderMatter(m) {
   log.scrollTop = log.scrollHeight;
 }
 
+const FILE_ICON = { image: "image", audio: "headphones", video: "video" };
+const fileIcon = (f) => ic(FILE_ICON[f.kind] || "file-text");
 function fileChip(f) {
-  const icon = { image: "🖼", audio: "🎧", video: "🎬" }[f.kind] || "📄";
-  return `<span class="chip">${icon} ${esc(f.name)}</span>`;
+  return `<span class="chip" title="${esc(f.name)}">${fileIcon(f)}<span class="nm">${esc(f.name)}</span></span>`;
 }
 
 function entryEl(d, isLast) {
@@ -475,15 +495,16 @@ function entryEl(d, isLast) {
   if (d.role === "user") {
     el.className = "msg user";
     const answers = d.intake_answers ? Object.values(d.intake_answers).filter(Boolean) : [];
-    el.innerHTML = `${d.text ? `<div>${esc(d.text)}</div>` : ""}${d.files?.length ? `<div class="chips">${d.files.map(fileChip).join("")}</div>` : ""}${answers.length ? `<div class="small">补充：${esc(answers.join("；"))}</div>` : ""}${d.skip_intake ? `<div class="small muted">先按现有信息分析</div>` : ""}`;
+    el.innerHTML = userHTML(d.text, d.files) + (answers.length ? `<div class="bubble">补充：${esc(answers.join("；"))}</div>` : "") + (d.skip_intake ? `<div class="u-note">先按现有信息分析</div>` : "");
     return el;
   }
   el.className = "msg ai";
-  el.innerHTML = `${d.task ? `<div class="task-chip">${esc(d.task)}</div>` : ""}
-    ${d.steps?.length ? `<details class="steps"><summary>工作过程（${d.steps.length} 步）</summary>${d.steps.map((s) => `<div>${esc(s)}</div>`).join("")}</details>` : ""}
+  const unv = d.citations?.unverified || [];
+  el.innerHTML = `${aiHead(d.task)}
+    ${d.steps?.length ? stepsHTML(d.steps) : ""}
     <div class="md">${renderMD(d.text || "")}</div>
     ${d.intake ? intakeHTML(d.intake, isLast && !d.intake.answered) : ""}
-    ${d.citations && d.citations.checked ? `<div class="cite-line small ${d.citations.unverified?.length ? "warn" : "ok"}">引用核对：正文提到法条 ${d.citations.checked} 处，${d.citations.linked} 处已对上资料库原文${d.citations.unverified?.length ? `；${d.citations.unverified.length} 处资料库未核实：${esc(d.citations.unverified.join("、"))}` : ""}</div>` : ""}
+    ${d.citations && d.citations.checked ? `<div class="cite-line ${unv.length ? "warn" : "ok"}">${ic(unv.length ? "alert" : "circle-check")}<span>引用核对：正文提到法条 ${d.citations.checked} 处，${d.citations.linked} 处已对上资料库原文${unv.length ? `；${unv.length} 处资料库未核实：${esc(unv.join("、"))}` : ""}</span></div>` : ""}
     ${d.error ? `<p class="err">${esc(d.error)}</p>` : ""}
     <div class="msg-actions"></div>`;
   if (d.intake && isLast && !d.intake.answered) bindIntake(el, d.intake);
@@ -491,15 +512,25 @@ function entryEl(d, isLast) {
   return el;
 }
 
+function userHTML(text, files) {
+  return (text ? `<div class="bubble">${esc(text)}</div>` : "") + (files?.length ? `<div class="chips">${files.map(fileChip).join("")}</div>` : "");
+}
+function aiHead(task) {
+  return `<div class="ai-head"><span class="ai-avatar">${ic("scale")}</span><span class="ai-name">法律助理</span><span class="task-chip" ${task ? "" : "hidden"}>${esc(task || "")}</span></div>`;
+}
+function stepsHTML(steps) {
+  return `<details class="steps"><summary>${ic("list")}<span>工作过程 · ${steps.length} 步</span>${ic("chevron-down", "chev")}</summary><div class="steps-list">${steps.map((s) => `<div>${esc(s)}</div>`).join("")}</div></details>`;
+}
+
 function intakeHTML(intake, active) {
   const qs = intake.questions || [];
-  if (!active) return `<div class="intake done small muted">已回答助理的 ${qs.length} 个问题</div>`;
+  if (!active) return `<div class="intake done small muted">${ic("circle-check")}已回答助理的 ${qs.length} 个问题</div>`;
   return `<form class="intake">
-    <div class="intake-title">先确认几件事（会影响结论）：</div>
+    <div class="intake-title">${ic("message")}先确认几件事（会影响结论）</div>
     ${qs.map((q) => `<label class="iq"><span>${esc(q.question)}${q.required ? " <b class='req'>*</b>" : ""}${q.why ? `<em>${esc(q.why)}</em>` : ""}</span>
       ${q.options?.length ? `<div class="opts">${q.options.map((o) => `<button type="button" class="opt" data-key="${esc(q.key)}" data-val="${esc(o)}">${esc(o)}</button>`).join("")}</div>` : ""}
       <input name="${esc(q.key)}" placeholder="${q.options?.length ? "选一个，或直接填写" : "填写"}"></label>`).join("")}
-    <div class="intake-actions"><button type="submit" class="primary">提交，继续分析</button><button type="button" class="ghost" data-skip>先按现有信息分析</button></div>
+    <div class="intake-actions"><button type="submit" class="primary">${ic("arrow-up")}提交，继续分析</button><button type="button" class="ghost" data-skip>先按现有信息分析</button></div>
     ${intake.assumptions?.length ? `<div class="small muted">跳过的话，助理会假设：${esc(intake.assumptions.join("；"))}</div>` : ""}
   </form>`;
 }
@@ -522,13 +553,20 @@ function bindIntake(el, intake) {
 
 function addActions(el, d) {
   const acts = $(".msg-actions", el);
+  acts.insertAdjacentHTML("beforeend", `<button class="icon-btn" data-copy title="复制">${ic("copy")}</button>`);
   if (d.answer_id) {
-    acts.insertAdjacentHTML("beforeend", starBtn("answer", d.answer_id));
+    const on = state.bookmarks.has(`answer:${d.answer_id}`);
+    acts.insertAdjacentHTML("beforeend", `<button class="icon-btn ${on ? "on" : ""}" data-star="answer|${esc(d.answer_id)}" title="${on ? "取消收藏" : "收藏"}">${ic(on ? "bookmark-fill" : "bookmark")}</button>`);
     const it = { kind: "answer", id: d.answer_id, question: state.matter?.title || "", answer: d.text };
     $("[data-star]", acts).addEventListener("click", (ev) => toggleBookmark(ev.currentTarget, it));
   }
-  acts.insertAdjacentHTML("beforeend", `<button class="ghost" data-copy>复制</button><button class="ghost" data-word>导出 Word</button>`);
-  $("[data-copy]", acts).addEventListener("click", () => navigator.clipboard.writeText(plainText(d.text)));
+  acts.insertAdjacentHTML("beforeend", `<button class="icon-btn" data-word title="导出 Word">${ic("file-down")}</button>`);
+  $("[data-copy]", acts).addEventListener("click", async (ev) => {
+    const b = ev.currentTarget;
+    await navigator.clipboard.writeText(plainText(d.text));
+    b.innerHTML = ic("check"); b.title = "已复制";
+    setTimeout(() => { b.innerHTML = ic("copy"); b.title = "复制"; }, 1500);
+  });
   $("[data-word]", acts).addEventListener("click", () => exportWord(d));
 }
 
@@ -575,11 +613,11 @@ $("#file-input").addEventListener("change", async (e) => {
 
 function renderChips() {
   $("#attach-chips").innerHTML = state.pendingFiles.map((f, i) => {
-    const icon = { image: "🖼", audio: "🎧", video: "🎬" }[f.kind] || "📄";
     const st = f.status === "reading" ? `<em>识别中…</em>` : f.status === "error" ? `<em class="err" title="${esc(f.error)}">失败：${esc(f.error.slice(0, 40))}</em>` : `<em>${f.chars ? f.chars + " 字" : ""}</em>`;
-    return `<span class="chip ${f.status}">${icon} ${esc(f.name)} ${st}<button type="button" data-rm="${i}" title="移除">×</button></span>`;
+    return `<span class="chip ${f.status}" title="${esc(f.name)}">${fileIcon(f)}<span class="nm">${esc(f.name)}</span>${st}<button type="button" data-rm="${i}" title="移除">${ic("x")}</button></span>`;
   }).join("");
   $$("[data-rm]", $("#attach-chips")).forEach((b) => b.addEventListener("click", () => { state.pendingFiles.splice(Number(b.dataset.rm), 1); renderChips(); }));
+  composerChanged();
 }
 
 /* 语音输入：配置了语音转文字模型就录音转写；否则提示用系统听写 */
@@ -588,7 +626,7 @@ $("#mic-btn").addEventListener("click", async () => {
   if (recorder) { recorder.stop(); return; }
   const s = await api("/api/settings");
   if (!s.transcribe_model) {
-    alert("还没有配置语音转文字模型。可以直接用系统听写：Mac 在输入框里连按两下 Fn（地球键），Windows 按 Win+H。\n\n如果你的接口支持语音转文字，可以在「设置 → 语音转文字模型」里选。");
+    toast("还没有配置语音转文字模型。可以直接用系统听写：Mac 在输入框里连按两下 Fn（地球键），Windows 按 Win+H。\n如果接口支持语音转文字，可以在「设置 → 语音转文字模型」里选。", 7000);
     $("#question").focus();
     return;
   }
@@ -601,17 +639,20 @@ $("#mic-btn").addEventListener("click", async () => {
       stream.getTracks().forEach((t) => t.stop());
       recorder = null;
       $("#mic-btn").classList.remove("rec");
+      $("#mic-btn").title = "语音输入";
       const blob = new Blob(chunks, { type: "audio/webm" });
       const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.readAsDataURL(blob); });
       try {
         const res = await api("/api/transcribe", { method: "POST", body: JSON.stringify({ name: "dictation.webm", mime: "audio/webm", data }) });
         $("#question").value += res.text || "";
+        composerChanged();
         $("#question").focus();
-      } catch (err) { alert("语音转文字失败：" + err.message); }
+      } catch (err) { toast("语音转文字失败：" + err.message); }
     };
     recorder.start();
     $("#mic-btn").classList.add("rec");
-  } catch (err) { alert("无法使用麦克风：" + err.message); recorder = null; }
+    $("#mic-btn").title = "正在录音，点一下结束并转成文字";
+  } catch (err) { toast("无法使用麦克风：" + err.message); recorder = null; }
 });
 
 /* 发送 */
@@ -625,22 +666,22 @@ async function send({ intake_answers, skip_intake }) {
   if (state.asking) return;
   const question = intake_answers || skip_intake ? "" : $("#question").value.trim();
   const ready = state.pendingFiles.filter((f) => f.status === "ok");
-  if (state.pendingFiles.some((f) => f.status === "reading")) { alert("文件还在识别中，请稍等。"); return; }
+  if (state.pendingFiles.some((f) => f.status === "reading")) { toast("文件还在识别中，请稍等。"); return; }
   if (!question && !ready.length && !intake_answers && !skip_intake) return;
   const matterId = await ensureMatter();
   state.asking = true;
-  $("#ask-btn").disabled = true; $("#stop-btn").hidden = false;
-  if (!intake_answers && !skip_intake) $("#question").value = "";
+  $("#ask-btn").hidden = true; $("#stop-btn").hidden = false;
+  if (!intake_answers && !skip_intake) { $("#question").value = ""; composerChanged(); }
   const fileIds = ready.map((f) => f.id);
   state.pendingFiles = [];
   renderChips();
   $(".chat-intro")?.remove();
   $$("form.intake").forEach((f) => f.remove());
   const log = $("#chat-log");
-  if (question || fileIds.length) log.insertAdjacentHTML("beforeend", `<div class="msg user">${question ? `<div>${esc(question)}</div>` : ""}${ready.length ? `<div class="chips">${ready.map(fileChip).join("")}</div>` : ""}</div>`);
+  if (question || fileIds.length) log.insertAdjacentHTML("beforeend", `<div class="msg user">${userHTML(question, ready)}</div>`);
   const box = document.createElement("div");
   box.className = "msg ai";
-  box.innerHTML = `<div class="task-chip" hidden></div><div class="steps running"><div>理解问题</div></div><div class="md"></div>`;
+  box.innerHTML = `${aiHead("")}<div class="steps running">${ic("loader", "spin")}<span class="live">理解问题</span></div><div class="md"></div>`;
   log.appendChild(box);
   log.scrollTop = log.scrollHeight;
   let text = "";
@@ -660,7 +701,7 @@ async function send({ intake_answers, skip_intake }) {
         const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
         if (!chunk.startsWith("data: ")) continue;
         const ev = JSON.parse(chunk.slice(6));
-        if (ev.type === "step" || ev.type === "stage") $(".steps", box).insertAdjacentHTML("beforeend", `<div>${esc(ev.text)}</div>`);
+        if (ev.type === "step" || ev.type === "stage") $(".steps .live", box).textContent = ev.text;
         else if (ev.type === "route") { const c = $(".task-chip", box); c.hidden = false; c.textContent = ev.name; }
         else if (ev.type === "text") { text += ev.delta; $(".md", box).innerHTML = renderMD(text); }
         else if (ev.type === "text_reset") { text = ""; $(".md", box).innerHTML = ""; }
@@ -673,7 +714,8 @@ async function send({ intake_answers, skip_intake }) {
     $(".md", box).insertAdjacentHTML("beforeend", `<p class="err">连接出错：${esc(err.message)}</p>`);
   }
   state.asking = false;
-  $("#ask-btn").disabled = false; $("#stop-btn").hidden = true;
+  $("#ask-btn").hidden = false; $("#stop-btn").hidden = true;
+  composerChanged();
   await openMatter(matterId);
 }
 
@@ -716,7 +758,7 @@ $("#save-settings").addEventListener("click", async (e) => {
   await saveSettings();
   $("#settings").close();
   const r = await loadModels();
-  $("#open-settings").classList.replace(r.models?.length ? "primary" : "ghost", r.models?.length ? "ghost" : "primary");
+  $("#open-settings").classList.toggle("attn", !r.models?.length);
 });
 
 /* ---------- 模型清单（AI 问答输入框下方） ---------- */
@@ -734,7 +776,8 @@ function fillModels(r) {
   state.modelList = r.models || [];
   const sel = $("#ask-model");
   if (!r.models?.length) {
-    sel.innerHTML = `<option value="">${r.error ? "模型：未连接" : "模型：请先在设置里填 key"}</option>`;
+    sel.innerHTML = `<option value="">${r.error ? "未连接" : "请先在设置里填 key"}</option>`;
+    renderModelPicker();
     return;
   }
   // 只列能对话的模型（去掉图片生成、语音、测试用的）
@@ -743,11 +786,216 @@ function fillModels(r) {
   sel.innerHTML = chat.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
   sel.value = chat.includes(keep) ? keep : (chat.includes("gpt-6-luna") ? "gpt-6-luna" : chat[0]);
   if (r.depth) $("#ask-depth").value = r.depth;
+  renderModelPicker();
 }
 async function loadModels() {
   try { const r = await api("/api/models"); fillModels(r); return r; }
   catch (err) { fillModels({ error: err.message }); return {}; }
 }
+
+/* ---------- 输入框：自动增高、地区、模型与思考深度 ---------- */
+function composerChanged() {
+  const q = $("#question");
+  q.style.height = "auto";
+  q.style.height = Math.min(q.scrollHeight, 260) + "px";
+  $("#ask-btn").disabled = !(q.value.trim() || state.pendingFiles.some((f) => f.status === "ok"));
+}
+$("#question").addEventListener("input", composerChanged);
+
+function openPop(pop, btn) {
+  closePops();
+  if (!pop.classList.contains("wide")) pop.style.left = btn.offsetLeft + "px";
+  pop.hidden = false;
+  btn.classList.add("open");
+  const s = $(".pop-search", pop);
+  s.value = "";
+  filterPop(pop, "");
+  s.focus();
+  $(".pop-list li.on", pop)?.scrollIntoView({ block: "nearest" });
+}
+function closePops() {
+  $$(".popover").forEach((p) => { p.hidden = true; });
+  $$(".pill.open").forEach((b) => b.classList.remove("open"));
+}
+function filterPop(pop, q) {
+  q = q.trim().toLowerCase();
+  $$(".pop-list li", pop).forEach((li) => {
+    if (li.classList.contains("grp")) li.hidden = !!q;
+    else if (li.dataset.v !== undefined) li.hidden = !!q && !li.textContent.toLowerCase().includes(q) && !li.dataset.v.toLowerCase().includes(q);
+  });
+}
+document.addEventListener("mousedown", (e) => { if (!e.target.closest?.(".popover, .pill")) closePops(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePops(); });
+$$(".pop-search").forEach((inp) => {
+  inp.addEventListener("input", () => filterPop(inp.closest(".popover"), inp.value));
+  inp.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    $$(".pop-list li[data-v]", inp.closest(".popover")).find((li) => !li.hidden)?.click();
+  });
+});
+const togglePop = (pop, btn) => (pop.hidden ? openPop(pop, btn) : closePops());
+$("#region-btn").addEventListener("click", () => togglePop($("#region-pop"), $("#region-btn")));
+$("#model-btn").addEventListener("click", () => togglePop($("#model-pop"), $("#model-btn")));
+
+// 地区：直辖市排前面，其余按拼音
+const REGION_FIRST = ["北京市", "上海市", "天津市", "重庆市"];
+function renderRegionOptions() {
+  const sel = $("#ask-region");
+  const all = [...sel.options].map((o) => o.value).filter(Boolean);
+  const sorted = [...REGION_FIRST.filter((r) => all.includes(r)), ...all.filter((r) => !REGION_FIRST.includes(r)).sort((a, b) => a.localeCompare(b, "zh-CN"))];
+  const cur = sel.value;
+  $("#region-options").innerHTML = `<li data-v="" class="${cur ? "" : "on"}"><span>不指定地区</span>${ic("check", "ck")}</li>`
+    + sorted.map((r) => `<li data-v="${esc(r)}" class="${r === cur ? "on" : ""}"><span>${esc(r)}</span>${ic("check", "ck")}</li>`).join("");
+  $("#region-label").textContent = cur || "地区";
+  $("#region-btn").classList.toggle("set", !!cur);
+}
+$("#region-options").addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-v]");
+  if (!li) return;
+  $("#ask-region").value = li.dataset.v;
+  renderRegionOptions();
+  closePops();
+  $("#question").focus();
+});
+
+// 模型：按厂商分组；思考深度用滑块
+const DEPTHS = ["low", "medium", "high"];
+const DEPTH_LABEL = { low: "快速", medium: "标准", high: "深入" };
+function modelFamily(m) {
+  const s = m.toLowerCase();
+  if (s.startsWith("claude")) return "Claude";
+  if (/^(gpt|o\d|openai\/)/.test(s)) return "OpenAI";
+  if (s.includes("deepseek")) return "DeepSeek";
+  if (s.includes("grok") || s.startsWith("xai/")) return "xAI";
+  if (s.includes("kimi") || s.startsWith("moonshot/")) return "Kimi";
+  if (s.includes("glm") || s.startsWith("zai/")) return "智谱 GLM";
+  if (s.includes("qwen")) return "通义千问";
+  if (s.includes("gemini")) return "Gemini";
+  return "其他";
+}
+const shortModel = (m) => m.replace(/^[\w-]+\//, "");
+function renderModelPicker() {
+  const sel = $("#ask-model");
+  const models = [...sel.options].map((o) => o.value).filter(Boolean);
+  const cur = sel.value;
+  const groups = new Map();
+  for (const m of models) {
+    const f = modelFamily(m);
+    if (!groups.has(f)) groups.set(f, []);
+    groups.get(f).push(m);
+  }
+  $("#model-options").innerHTML = models.length
+    ? [...groups].map(([g, ms]) => `<li class="grp">${esc(g)}</li>` + ms.map((m) => `<li data-v="${esc(m)}" class="${m === cur ? "on" : ""}" title="${esc(m)}"><span>${esc(shortModel(m))}</span>${ic("check", "ck")}</li>`).join("")).join("")
+    : `<li class="none">${esc(sel.options[0]?.textContent || "没有可用模型")}。点右上角的设置连接接口。</li>`;
+  const depth = DEPTHS.includes($("#ask-depth").value) ? $("#ask-depth").value : "medium";
+  $("#depth-range").value = DEPTHS.indexOf(depth);
+  $("#depth-label").textContent = DEPTH_LABEL[depth];
+  $("#model-label").textContent = cur ? `${shortModel(cur)} · ${DEPTH_LABEL[depth]}` : (sel.options[0]?.textContent || "模型");
+  $("#model-btn").title = `模型：${cur || "未选择"}；思考深度：${DEPTH_LABEL[depth]}`;
+}
+$("#model-options").addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-v]");
+  if (!li) return;
+  $("#ask-model").value = li.dataset.v;
+  renderModelPicker();
+  closePops();
+  $("#question").focus();
+});
+$("#depth-range").addEventListener("input", (e) => {
+  $("#ask-depth").value = DEPTHS[Number(e.target.value)];
+  renderModelPicker();
+});
+
+/* ---------- 可调面板：拖动分隔条改宽度，法律助理两侧可以收起 ---------- */
+const PANE_MIN = 180;
+const MAIN_MIN = 380;
+const paneEl = (key) => $(`[data-pane="${key}"]`);
+const canCollapse = (key) => $$(`[data-toggle="${key}"]`).length > 0;
+function store(k, v) { try { if (v === "" || v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* 忽略 */ } }
+function recall(k) { try { return localStorage.getItem(k) || ""; } catch { return ""; } }
+
+function setCollapsed(key, on) {
+  const el = paneEl(key);
+  if (!el || (on && !canCollapse(key))) return;
+  el.classList.toggle("collapsed", on);
+  $$(`.gutter[data-for="${key}"]`).forEach((g) => g.classList.toggle("hidden", on));
+  $$(`[data-toggle="${key}"]`).forEach((b) => b.classList.toggle("on", !on));
+  store(`pane:${key}:collapsed`, on ? "1" : "0");
+}
+
+function initPanes() {
+  // 浏览、检索、收藏、法规更新：左栏和阅读区之间加分隔条
+  $$(".split").forEach((sp) => {
+    const left = $(".pane-left", sp);
+    const key = sp.closest(".view").id.replace("view-", "") + "-left";
+    left.dataset.pane = key;
+    const g = document.createElement("div");
+    g.className = "gutter";
+    g.dataset.for = key;
+    left.after(g);
+  });
+  $$(".gutter").forEach((g) => {
+    g.title = canCollapse(g.dataset.for) ? "拖动调整宽度，双击收起" : "拖动调整宽度，双击恢复默认";
+    g.addEventListener("pointerdown", startDrag);
+    g.addEventListener("dblclick", () => {
+      const key = g.dataset.for;
+      if (canCollapse(key)) setCollapsed(key, true);
+      else { paneEl(key).style.removeProperty("--w"); store(`pane:${key}:w`, ""); }
+    });
+  });
+  $$("[data-pane]").forEach((el) => {
+    const key = el.dataset.pane;
+    const w = recall(`pane:${key}:w`);
+    if (w) el.style.setProperty("--w", w);
+    // 原文面板默认收起，点开引用时自动展开
+    const saved = recall(`pane:${key}:collapsed`);
+    setCollapsed(key, saved ? saved === "1" : el.dataset.defaultCollapsed === "1");
+  });
+  $$("[data-toggle]").forEach((b) => b.addEventListener("click", () => {
+    const key = b.dataset.toggle;
+    setCollapsed(key, !paneEl(key).classList.contains("collapsed"));
+  }));
+}
+
+function startDrag(e) {
+  const g = e.currentTarget;
+  const key = g.dataset.for;
+  const pane = paneEl(key);
+  const box = pane.parentElement;
+  const rightSide = g.nextElementSibling === pane;
+  const startX = e.clientX;
+  const startW = pane.getBoundingClientRect().width;
+  // 其他固定宽度的栏占掉的空间
+  const others = $$(":scope > [data-pane]", box).filter((x) => x !== pane && !x.classList.contains("collapsed")).reduce((a, x) => a + x.getBoundingClientRect().width, 0);
+  const max = Math.max(PANE_MIN, box.clientWidth - others - MAIN_MIN);
+  g.setPointerCapture(e.pointerId);
+  g.classList.add("dragging");
+  document.body.classList.add("resizing");
+  let w = startW;
+  const move = (ev) => {
+    const raw = startW + (rightSide ? startX - ev.clientX : ev.clientX - startX);
+    if (raw < PANE_MIN * 0.55 && canCollapse(key)) { setCollapsed(key, true); end(); return; }
+    w = Math.round(Math.min(max, Math.max(PANE_MIN, raw)));
+    pane.style.setProperty("--w", w + "px");
+  };
+  const end = () => {
+    g.removeEventListener("pointermove", move);
+    g.removeEventListener("pointerup", end);
+    g.removeEventListener("pointercancel", end);
+    g.classList.remove("dragging");
+    document.body.classList.remove("resizing");
+    if (!pane.classList.contains("collapsed")) store(`pane:${key}:w`, w + "px");
+  };
+  g.addEventListener("pointermove", move);
+  g.addEventListener("pointerup", end);
+  g.addEventListener("pointercancel", end);
+}
+
+initPanes();
+renderRegionOptions();
+renderModelPicker();
+composerChanged();
 
 /* ---------- 版本对比 ---------- */
 function charDiff(a, b) {
@@ -993,7 +1241,7 @@ function openBrowseItem(i) {
 function applyTheme(t) {
   if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
   else delete document.documentElement.dataset.theme;
-  $("#theme").textContent = t === "dark" ? "☾" : t === "light" ? "☀" : "◐";
+  $("#theme").innerHTML = ic(t === "dark" ? "moon" : t === "light" ? "sun" : "monitor");
   $("#theme").title = { dark: "深色（点击切换为跟随系统）", light: "浅色（点击切换为深色）" }[t] || "跟随系统（点击切换为浅色）";
 }
 let theme = "";

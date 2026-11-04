@@ -24,5 +24,6 @@ app 访问官方网站时：只读取公开栏目，同一网站两次请求至�
 | Electron | MIT |
 | openai（Node SDK） | Apache-2.0 |
 | SQLite（随 Electron / Node.js 提供） | Public Domain |
+| Lucide 图标（界面图标，内嵌在 renderer/index.html，https://lucide.dev） | ISC |
 
 完整许可文本随各组件分发，位于安装包内的 node_modules 目录。
