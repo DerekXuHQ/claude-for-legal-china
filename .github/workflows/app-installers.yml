@@ -1,0 +1,72 @@
+# 桌面 app 安装包：app/ 有改动推到 main 后，GitHub 自动打四个安装包（Mac Apple 芯片 / Intel、Windows x64 / arm64），
+# 替换最新 Release 上的同名文件。本机不用再打包、上传。
+# 法规数据库不在 git 里：从 build-inputs 预发布下载（重建数据后运行 npm run upload-build-inputs 更新它）。
+# 在线更新（app 内自动下载的那部分）仍在本机发布：签名私钥只放在本机，不上传 GitHub。
+name: App installers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "!app/docs/**"
+      - "!app/eval/**"
+      - "!app/**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 连续推送时只打最新的一次
+concurrency:
+  group: app-installers
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Download legal database
+        run: |
+          mkdir -p resources
+          gh release download build-inputs --repo "$REPO" --dir resources --clobber -p base.db.gz -p data-version.json
+          ls -lh resources
+
+      - name: Build macOS (Apple silicon)
+        run: scripts/build-mac.sh
+
+      - name: Build macOS (Intel)
+        run: MAC_ARCH=x64 scripts/build-mac.sh
+
+      - name: Build Windows (x64 + arm64)
+        run: scripts/build-win.sh
+
+      - name: Replace installers on the latest release
+        run: |
+          tag=$(gh release view --repo "$REPO" --json tagName -q .tagName)
+          version=$(node -p 'require("./package.json").version')
+          echo "Release $tag, app version $version"
+          gh release upload "$tag" --repo "$REPO" --clobber \
+            "dist/ChinaLawSearch-$version-mac-arm64.dmg" \
+            "dist/ChinaLawSearch-$version-mac-x64.dmg" \
+            "dist/ChinaLawSearch-$version-win-x64-setup.exe" \
+            "dist/ChinaLawSearch-$version-win-arm64-setup.exe"
+          gh release view "$tag" --repo "$REPO" --json assets -q '.assets[]|"\(.name) \(.size) \(.updatedAt)"'

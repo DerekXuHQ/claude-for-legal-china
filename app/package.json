@@ -14,7 +14,8 @@
     "data": "scripts/build-data.sh",
     "dist:mac": "scripts/build-mac.sh",
     "dist:mac:intel": "MAC_ARCH=x64 scripts/build-mac.sh",
-    "dist:win": "scripts/build-win.sh"
+    "dist:win": "scripts/build-win.sh",
+    "upload-build-inputs": "gh release upload build-inputs --repo DerekXuHQ/claude-for-legal-china resources/base.db.gz resources/data-version.json --clobber"
   },
   "dependencies": {
     "docx": "^9.15.2",
@@ -108,6 +109,6 @@
       "server/**"
     ]
   },
-  "updateSequence": 14,
+  "updateSequence": 15,
   "depsId": "c9feb29bf264a6ca"
 }
