@@ -12,14 +12,20 @@
   --old: #8a8478;
   --mark: #fff1b8;
   --shadow: 0 1px 2px rgba(0,0,0,.04), 0 2px 8px rgba(0,0,0,.04);
+  --paper: #fffdf9;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #161514; --panel: #1f1e1c; --text: #ebe7df; --muted: #a39d93; --line: #34312d;
     --accent: #d77a6f; --accent-soft: #3a2623; --chip: #2b2926; --ok: #7cc28a; --warn: #e0a84a;
-    --old: #8f897f; --mark: #5a4a14; --shadow: none; color-scheme: dark;
+    --old: #8f897f; --mark: #5a4a14; --shadow: none; --paper: #1b1a18; color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #161514; --panel: #1f1e1c; --text: #ebe7df; --muted: #a39d93; --line: #34312d;
+    --accent: #d77a6f; --accent-soft: #3a2623; --chip: #2b2926; --ok: #7cc28a; --warn: #e0a84a;
+    --old: #8f897f; --mark: #5a4a14; --shadow: none; --paper: #1b1a18; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -187,3 +193,45 @@ del { color: var(--old); }
 }
 
 dialog label.check { flex-direction: row; align-items: center; gap: 6px; }
+
+/* 顶栏图标按钮 */
+button.icon { width: 34px; padding: 6px 0; font-size: 15px; }
+
+/* 目录列表 */
+.results.compact li { padding: 7px 10px; }
+.results.compact .r-title { font-weight: 500; }
+.results li.group { cursor: default; font-size: 13px; font-weight: 600; color: var(--muted); padding: 14px 10px 4px; border: 0; background: none; }
+.results li.group:hover { background: none; border-color: transparent; }
+#b-law-filters[hidden] { display: none; }
+
+/* 阅读视图 */
+.reader-pane { background: var(--paper); padding: 0; }
+.reader { max-width: 760px; margin: 0 auto; padding: 28px 40px 48px; }
+.rd-head { border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 16px; }
+.rd-kicker { font-size: 13px; color: var(--muted); letter-spacing: .05em; }
+.rd-head h1 { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "SimSun", serif; font-size: 26px; line-height: 1.4; margin: 4px 0 8px; font-weight: 700; }
+.rd-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.rd-history { font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; color: var(--muted); text-align: center; font-size: 14px; margin: 10px 0 16px; }
+.rd-versions .ver { white-space: nowrap; }
+.rd-toc { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 14px 0 22px; display: flex; flex-wrap: wrap; gap: 4px 14px; background: var(--panel); }
+.rd-toc-title { width: 100%; font-size: 12px; color: var(--muted); }
+.rd-toc a { color: var(--text); text-decoration: none; font-size: 14px; }
+.rd-toc a:hover { color: var(--accent); }
+.rd-body, .rd-prose { font-family: "Songti SC", "STSong", "Noto Serif CJK SC", "SimSun", serif; font-size: 17px; line-height: 1.95; }
+.rd-ch { font-family: "Heiti SC", "PingFang SC", sans-serif; text-align: center; font-size: 17px; margin: 30px 0 14px; letter-spacing: .1em; scroll-margin-top: 12px; }
+.rd-ch.left { text-align: left; letter-spacing: 0; color: var(--accent); font-size: 16px; margin: 24px 0 8px; }
+.rd-sec { text-align: center; font-size: 16px; margin: 18px 0 10px; color: var(--muted); font-weight: 500; }
+.rd-art { margin: 0 0 12px; padding: 2px 8px; border-radius: 6px; }
+.rd-art p, .rd-prose p { margin: 0 0 6px; text-indent: 2em; }
+.rd-art.hl { background: var(--mark); }
+.rd-no { font-family: "Heiti SC", "PingFang SC", sans-serif; font-weight: 700; margin-right: .6em; }
+.rd-art p:first-child { text-indent: 0; }
+.rd-prose.md p { text-indent: 0; }
+.rd-prose.md { font-size: 16px; }
+.rd-prose.md h2, .rd-prose.md h3 { font-family: "Heiti SC", "PingFang SC", sans-serif; }
+.rd-prose.md blockquote { border-left: 3px solid var(--line); margin: 8px 0; padding: 2px 12px; color: var(--muted); }
+.rd-nav { display: flex; align-items: center; justify-content: space-between; max-width: 760px; margin: 0 auto; padding: 12px 40px 0; }
+.rd-nav.bottom { padding: 0 40px 28px; }
+.rd-nav button:disabled { opacity: .35; cursor: default; }
+.reader .src-line { font-family: inherit; }
+.md pre.code { background: var(--chip); border-radius: 8px; padding: 8px 12px; font-size: 13px; white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; }

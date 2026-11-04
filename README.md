@@ -28,7 +28,7 @@
 
 本仓库是一套**面向中国法律实务的通用插件集**——以 16 个业务领域、202 个技能和 12 个领域 Agent 为主体，内嵌参考材料与数据连接器，并可按需接入外部法律检索服务。它不绑定单一 agent 环境：可安装为 [Claude Code](https://claude.com/product/claude-code) 插件，可通过一键脚本接入 [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness)、**Codex** 或 **WorkBuddy**（腾讯工作智能体），也可通过 [Claude Managed Agents API](https://docs.claude.com/en/api/managed-agents) 部署在你自己的工作流引擎后台。同一套 system prompt，同一套技能——你选择在哪里运行。
 
-### 桌面 app：AI for Legal China
+### 桌面 app：中国法律检索
 
 [`app/`](app/) 是一个桌面检索工具（Mac 和 Windows 安装包）：法律、司法解释、行政法规、地方性法规和最高法指导性案例都装在本机，按层级、地区、领域检索到条，可以收藏；另带一个会多轮检索的 AI 问答，接 Portkey 或其他 OpenAI 兼容接口，模型清单自动读取。
 

@@ -1,4 +1,4 @@
-# AI for Legal China：数据来源与第三方许可
+# 中国法律检索：数据来源与第三方许可
 
 本 app 以 Apache-2.0 许可发布，源码见 <https://github.com/DerekXuHQ/claude-for-legal-china>。仅供参考，不构成法律意见。
 

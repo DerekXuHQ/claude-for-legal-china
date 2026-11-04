@@ -237,15 +237,25 @@ def load_refs(db: sqlite3.Connection) -> None:
             n += 1
     for f in sorted(REPO.glob("*/skills/*/SKILL.md")):
         plugin, skill = f.parts[-4], f.parts[-2]
+        # 适配层（.agents 等）是技能的副本；legal-builder-hub 是管理技能的工具，不是办案内容
+        if plugin.startswith(".") or plugin == "legal-builder-hub":
+            continue
         if skill in ("cold-start-interview", "customize", "matter-workspace"):
             continue
         text = f.read_text(encoding="utf-8")
         m = re.search(r"^description:\s*(?:[>|]-?\s*\n)?((?:.*\n)*?)(?=^[a-z_-]+:|^---)", text, re.M)
         desc = re.sub(r"\s+", " ", m.group(1)).strip() if m else ""
         body = text.split("\n---\n", 1)[-1]
+        # 标题：正文的一级标题；是斜杠命令名或英文时，取描述的第一句
+        h1 = next((l[2:].strip() for l in body.splitlines() if l.startswith("# ")), "")
+        h1 = re.sub(r"[（(][a-z0-9-]+[)）]$", "", h1).strip()
+        if "已弃用" in h1 or "已弃用" in desc[:20]:
+            continue
+        if not h1 or h1.startswith("/") or not re.search(r"[\u4e00-\u9fff]", h1):
+            h1 = re.split(r"——|。|；|，当|。当", desc)[0].strip()[:40] or skill
         db.execute(
             "INSERT INTO refs(id,kind,plugin,path,title,heading,text) VALUES(?,?,?,?,?,?,?)",
-            (f"flow:{plugin}/{skill}", "处理流程", plugin, str(f.relative_to(REPO)), f"{plugin} / {skill}", desc[:200], body.strip()),
+            (f"flow:{plugin}/{skill}", "处理流程", plugin, str(f.relative_to(REPO)), h1, desc[:200], body.strip()),
         )
         n += 1
     print(f"实务资料与处理流程 {n} 段", flush=True)

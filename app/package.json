@@ -1,6 +1,6 @@
 {
-  "name": "ai-for-legal-china",
-  "productName": "AI for Legal China",
+  "name": "china-law-search",
+  "productName": "中国法律检索",
   "version": "1.0.0",
   "description": "中国大陆法律法规本地检索与 AI 问答",
   "author": "DerekXuHQ",
@@ -24,8 +24,8 @@
     "electron-builder": "26.15.3"
   },
   "build": {
-    "appId": "com.derekxuhq.aiforlegalchina",
-    "productName": "AI for Legal China",
+    "appId": "com.derekxuhq.chinalawsearch",
+    "productName": "中国法律检索",
     "copyright": "Apache-2.0",
     "files": [
       "main.mjs",
@@ -60,13 +60,13 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "extendInfo": {
-        "CFBundleDisplayName": "AI for Legal China",
+        "CFBundleDisplayName": "中国法律检索",
         "LSApplicationCategoryType": "public.app-category.reference"
       }
     },
     "dmg": {
-      "title": "AI for Legal China ${version}",
-      "artifactName": "AIForLegalChina-${version}-mac-${arch}.${ext}"
+      "title": "中国法律检索 ${version}",
+      "artifactName": "ChinaLawSearch-${version}-mac-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -79,7 +79,7 @@
         }
       ],
       "icon": "build/icon.png",
-      "legalTrademarks": "AI for Legal China"
+      "legalTrademarks": "中国法律检索"
     },
     "nsis": {
       "oneClick": false,
@@ -87,8 +87,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AI for Legal China",
-      "artifactName": "AIForLegalChina-${version}-win-${arch}-setup.${ext}",
+      "shortcutName": "中国法律检索",
+      "artifactName": "ChinaLawSearch-${version}-win-${arch}-setup.${ext}",
       "installerLanguages": [
         "zh_CN"
       ],

@@ -1,4 +1,4 @@
-// AI for Legal China：Electron 主进程。
+// 中国法律检索：Electron 主进程。
 // 启动本地检索服务（只监听 127.0.0.1），第一次运行时在后台准备资料库，定期检查官方网站的法规更新。
 import { app, BrowserWindow, Menu, shell, dialog } from "electron";
 import { Worker } from "node:worker_threads";
@@ -14,6 +14,16 @@ const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
 // 后台线程的脚本放在 asar 外面（package.json 的 asarUnpack），Worker 才能直接加载
 const UNPACKED = APP_DIR.replace(/app\.asar(?=$|[\\/])/, "app.asar.unpacked");
 const RES = app.isPackaged ? process.resourcesPath : path.join(APP_DIR, "resources");
+// 改名前的数据文件夹：设置、收藏和已建好的资料库原样搬过来
+for (const oldName of ["AI for Legal China", "Claude for Legal China"]) {
+  const oldDir = path.join(app.getPath("appData"), oldName);
+  if (existsSync(path.join(oldDir, "data")) && !existsSync(path.join(app.getPath("userData"), "data"))) {
+    mkdirSync(app.getPath("userData"), { recursive: true });
+    renameSync(path.join(oldDir, "data"), path.join(app.getPath("userData"), "data"));
+    rmSync(oldDir, { recursive: true, force: true });
+    break;
+  }
+}
 const DATA = path.join(app.getPath("userData"), "data");
 const LEGAL_DB = path.join(DATA, "legal.db");
 const USER_DB = path.join(DATA, "user.db");
@@ -139,7 +149,7 @@ function afterReady() {
 async function createWindow(port, token) {
   win = new BrowserWindow({
     width: 1380, height: 900, minWidth: 980, minHeight: 640,
-    title: "AI for Legal China", backgroundColor: "#f7f5f2", show: false,
+    title: "中国法律检索", backgroundColor: "#f7f5f2", show: false,
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false },
   });
   win.once("ready-to-show", () => win.show());
@@ -164,7 +174,7 @@ function buildMenu() {
     ...(isMac ? [{
       label: app.name,
       submenu: [
-        { role: "about", label: "关于 AI for Legal China" }, { type: "separator" },
+        { role: "about", label: "关于中国法律检索" }, { type: "separator" },
         { role: "hide", label: "隐藏" }, { role: "hideOthers", label: "隐藏其他" }, { role: "unhide", label: "全部显示" },
         { type: "separator" }, { role: "quit", label: "退出" },
       ],
@@ -198,7 +208,7 @@ function buildMenu() {
 }
 
 app.setAboutPanelOptions({
-  applicationName: "AI for Legal China",
+  applicationName: "中国法律检索",
   applicationVersion: app.getVersion(),
   copyright: "Apache-2.0。仅供参考，不构成法律意见。",
 });

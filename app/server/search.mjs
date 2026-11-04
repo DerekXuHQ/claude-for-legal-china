@@ -215,3 +215,93 @@ export function meta() {
     refs: db.prepare("SELECT count(*) n FROM refs").get().n,
   };
 }
+
+/* ---------------- 浏览（目录） ---------------- */
+
+const collator = new Intl.Collator("zh-Hans-CN-u-co-pinyin");
+const LEVEL_ORDER = { 法律: 0, 司法解释: 1, 行政法规: 2, 监察法规: 3, 地方性法规: 4 };
+const CURRENT = "(is_current = 1 OR status = '尚未生效')";
+
+function browseWhere({ level = "", province = "", topic = "" }) {
+  const where = [CURRENT], params = [];
+  if (level) { where.push("level = ?"); params.push(level); }
+  if (province === "全国") where.push("province = '全国'");
+  else if (province) { where.push("province = ?"); params.push(province); }
+  if (topic) { where.push("(',' || topics || ',') LIKE ?"); params.push(`%,${topic},%`); }
+  return { sql: where.join(" AND "), params };
+}
+
+/** 现行法规目录。排序：name 按拼音，date 按日期新到旧。 */
+export function browseLaws({ level = "", province = "", topic = "", sort = "name", offset = 0, limit = 200 } = {}) {
+  const w = browseWhere({ level, province, topic });
+  const rows = db.prepare(`SELECT id, title, level, status, province, version_date, effective_date, official, n_articles FROM docs WHERE ${w.sql}`).all(...w.params);
+  if (sort === "date") rows.sort((a, b) => (b.version_date || "").localeCompare(a.version_date || "") || collator.compare(a.title, b.title));
+  else rows.sort((a, b) => (LEVEL_ORDER[a.level] ?? 9) - (LEVEL_ORDER[b.level] ?? 9) || collator.compare(a.title.replace(/^中华人民共和国/, ""), b.title.replace(/^中华人民共和国/, "")));
+  return { total: rows.length, items: rows.slice(offset, offset + limit).map((r) => ({ ...r, kind: "law", official: !!r.official })) };
+}
+
+/** 各筛选项下的数量，用于目录左侧的分类。 */
+export function browseFacets({ level = "", province = "", topic = "" } = {}) {
+  const count = (col, filters) => {
+    const w = browseWhere(filters);
+    return Object.fromEntries(db.prepare(`SELECT ${col} k, count(*) n FROM docs WHERE ${w.sql} GROUP BY ${col}`).all(...w.params).map((r) => [r.k, r.n]));
+  };
+  const levels = count("level", { province, topic });
+  const provinces = count("province", { level, topic });
+  const topics = {};
+  const w = browseWhere({ level, province });
+  for (const r of db.prepare(`SELECT topics FROM docs WHERE ${w.sql}`).all(...w.params)) {
+    for (const t of (r.topics || "").split(",")) if (t) topics[t] = (topics[t] || 0) + 1;
+  }
+  return { levels, provinces, topics };
+}
+
+export function browseCases({ offset = 0, limit = 400 } = {}) {
+  const total = db.prepare("SELECT count(*) n FROM cases").get().n;
+  const items = db.prepare("SELECT id, number, title, keywords FROM cases ORDER BY number LIMIT ? OFFSET ?").all(limit, offset);
+  return { total, items: items.map((r) => ({ ...r, kind: "case" })) };
+}
+
+export const PLUGIN_LABEL = {
+  "commercial-legal": "商事合同", "corporate-legal": "公司与并购", "employment-legal": "劳动用工", "privacy-legal": "个人信息与数据",
+  "product-legal": "产品合规", "regulatory-legal": "监管合规", "ai-governance-legal": "人工智能治理", "litigation-legal": "诉讼仲裁",
+  "ip-legal": "知识产权", "criminal-legal": "刑事辩护", "law-student": "法学学习", "legal-clinic": "法律援助",
+  "legal-research-cn": "法律检索方法", "procurement-legal": "采购与招投标", "law-practice-cn": "律所实务", "仓库共享": "通用",
+};
+
+/** 办案指引目录：参考资料按文件合并成一篇，工作流程每个一篇；按领域分组。 */
+export function browseGuides() {
+  const rows = db.prepare("SELECT id, kind, plugin, path, title, heading FROM refs ORDER BY rowid").all();
+  const docs = new Map();
+  for (const r of rows) {
+    const key = r.kind === "实务要点" ? "doc:" + r.path : r.id;
+    if (!docs.has(key)) docs.set(key, { id: key, kind: r.kind === "实务要点" ? "要点" : "流程", plugin: r.plugin, title: r.title, path: r.path });
+  }
+  const groups = new Map();
+  for (const d of docs.values()) {
+    const label = PLUGIN_LABEL[d.plugin] || d.plugin;
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(d);
+  }
+  return [...groups].map(([label, items]) => ({ label, items: items.sort((a, b) => a.kind.localeCompare(b.kind) || collator.compare(a.title, b.title)) }))
+    .sort((a, b) => (a.label === "通用" ? -1 : b.label === "通用" ? 1 : collator.compare(a.label, b.label)));
+}
+
+/** 读一篇办案指引：参考资料按文件拼回全文。 */
+export function getGuide(id) {
+  if (id.startsWith("doc:")) {
+    const rows = db.prepare("SELECT * FROM refs WHERE path = ? AND kind = '实务要点' ORDER BY rowid").all(id.slice(4));
+    if (!rows.length) return null;
+    return { kind: "ref", id, kind_label: "要点", plugin: rows[0].plugin, plugin_label: PLUGIN_LABEL[rows[0].plugin] || rows[0].plugin, path: rows[0].path, title: rows[0].title, heading: "", text: rows.map((r) => r.text).join("\n\n") };
+  }
+  const r = getRef(id);
+  return r ? { ...r, kind_label: r.kind_label === "处理流程" ? "流程" : "要点", plugin_label: PLUGIN_LABEL[r.plugin] || r.plugin } : null;
+}
+
+/** 合并检索：名称匹配的法规排在前面，然后是条文匹配。 */
+export function searchAll(query, opts = {}) {
+  const arts = searchArticles(query, opts);
+  if (opts.offset) return arts;
+  const laws = searchLaws(query.replace(/\s+/g, ""), { ...opts, limit: 10, offset: 0 });
+  return { items: [...laws.items, ...arts.items], more: arts.more, title_hits: laws.items.length };
+}

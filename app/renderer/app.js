@@ -4,7 +4,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const state = {
-  type: "articles", q: "", offset: 0, selected: null,
+  type: "all", q: "", offset: 0, selected: null,
   bookmarks: new Map(), // "kind:ref_id" -> bookmark
   conversationId: null, asking: false, savedFilter: "",
 };
@@ -52,11 +52,13 @@ async function init() {
     $("#ask-region").insertAdjacentHTML("beforeend", `<option>${esc(p)}</option>`);
   }
   for (const t of m.topics || []) $("#f-topic").insertAdjacentHTML("beforeend", `<option>${esc(t)}</option>`);
+  state.meta = m;
   const c = m.counts || {};
   const o = m.official || {};
-  $("#db-stats").textContent = `本地资料：法律 ${c["法律"] || 0} 部 · 司法解释 ${c["司法解释"] || 0} 件 · 行政法规 ${c["行政法规"] || 0} 部 · 地方性法规 ${c["地方性法规"] || 0} 部 · 现行条文 ${m.articles} 条 · 指导性案例 ${m.cases} 件 · 实务资料 ${m.refs} 段。其中已与官方网站核对：法律 ${o["法律"] || 0} 部、行政法规 ${o["行政法规"] || 0} 部、司法解释 ${o["司法解释"] || 0} 件。数据包 ${state.app?.data?.version || ""}${m.official_checked ? "，官方核对于 " + m.official_checked : ""}。`;
+  $("#db-stats").textContent = `本地资料：法律 ${c["法律"] || 0} 部 · 司法解释 ${c["司法解释"] || 0} 件 · 行政法规 ${c["行政法规"] || 0} 部 · 地方性法规 ${c["地方性法规"] || 0} 部 · 现行条文 ${m.articles} 条 · 指导性案例 ${m.cases} 件。其中已与官方网站核对：法律 ${o["法律"] || 0} 部、行政法规 ${o["行政法规"] || 0} 部、司法解释 ${o["司法解释"] || 0} 件。数据包 ${state.app?.data?.version || ""}${m.official_checked ? "，官方核对于 " + m.official_checked : ""}。`;
   if (!m.configured) $("#open-settings").classList.replace("ghost", "primary");
   await loadBookmarks();
+  initBrowse();
   loadModels();
   pollUpdates();
 }
@@ -66,11 +68,11 @@ $("#search-form").addEventListener("submit", (e) => { e.preventDefault(); runSea
 $$("#f-type button").forEach((b) => b.addEventListener("click", () => {
   $$("#f-type button").forEach((x) => x.classList.toggle("on", x === b));
   state.type = b.dataset.v;
-  $(".law-only").style.display = ["articles", "laws"].includes(state.type) ? "" : "none";
-  $("#q").placeholder = { articles: "输入关键词，例如：劳动合同 解除 经济补偿", laws: "输入法规名称，例如：商标法", cases: "输入关键词，例如：商标 近似 混淆", refs: "输入关键词，例如：经济补偿 计算" }[state.type];
+  $(".law-only").style.display = state.type === "all" ? "" : "none";
+  $("#q").placeholder = { all: "法规名称或关键词，例如：商标法、劳动合同 解除 经济补偿", cases: "输入关键词，例如：商标 近似 混淆", refs: "输入关键词，例如：经济补偿 计算" }[state.type];
   if ($("#q").value.trim()) runSearch(true);
 }));
-["#f-level", "#f-province", "#f-topic", "#f-all"].forEach((s) => $(s).addEventListener("change", () => $("#q").value.trim() && runSearch(true)));
+["#f-level", "#f-province", "#f-topic"].forEach((s) => $(s).addEventListener("change", () => $("#q").value.trim() && runSearch(true)));
 $("#more").addEventListener("click", () => runSearch(false));
 
 async function runSearch(reset) {
@@ -79,15 +81,21 @@ async function runSearch(reset) {
   if (reset) { state.offset = 0; $("#results").innerHTML = ""; }
   state.q = q;
   const p = new URLSearchParams({ q, type: state.type, offset: state.offset, limit: 20,
-    level: $("#f-level").value, province: $("#f-province").value, topic: $("#f-topic").value, all: $("#f-all").checked ? "1" : "" });
+    level: $("#f-level").value, province: $("#f-province").value, topic: $("#f-topic").value });
   $("#result-info").textContent = "检索中…";
   try {
     const t0 = performance.now();
     const res = await api("/api/search?" + p);
     state.offset += res.items.length;
-    $("#results").insertAdjacentHTML("beforeend", res.items.map(resultHTML).join(""));
+    let html = res.items.map(resultHTML).join("");
+    if (reset && res.title_hits) {
+      const parts = res.items.map(resultHTML);
+      html = `<li class="group">名称匹配的法规</li>${parts.slice(0, res.title_hits).join("")}` +
+        (parts.length > res.title_hits ? `<li class="group">内容匹配的条文</li>${parts.slice(res.title_hits).join("")}` : "");
+    }
+    $("#results").insertAdjacentHTML("beforeend", html);
     $("#more").hidden = !res.more;
-    const n = $("#results").children.length;
+    const n = $$("#results li:not(.group)").length;
     $("#result-info").textContent = n ? `${res.more ? "前 " : "共 "}${n} 条结果 · ${Math.round(performance.now() - t0)} ms` : "没有找到结果。可以换个说法，或减少关键词、放宽筛选。";
   } catch (err) { $("#result-info").textContent = "检索出错：" + err.message; }
 }
@@ -118,29 +126,38 @@ function resultHTML(it) {
   if (it.kind === "article") title += `<span class="art">${esc(it.article)}</span>`;
   if (it.kind === "law") meta += it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : "";
   if (it.kind === "case") meta = it.keywords ? `<span class="badge">${esc(it.keywords.slice(0, 40))}</span>` : "";
-  if (it.kind === "ref") { title = esc(it.title) + (it.heading ? ` · ${esc(it.heading.slice(0, 40))}` : ""); meta = `<span class="badge">${esc(it.ref_kind)}</span>`; }
+  if (it.kind === "ref") { title = esc(it.title) + (it.heading ? ` · ${esc(it.heading.slice(0, 40))}` : ""); meta = `<span class="badge">${it.ref_kind === "处理流程" ? "流程" : "要点"}</span>`; }
   return `<li data-key="${esc(key)}"><div class="r-title">${title}</div><div class="r-meta">${meta}</div><div class="r-snip">${highlight(it.snippet || "", state.q)}</div></li>`;
 }
 
 $("#results").addEventListener("click", (e) => {
   const li = e.target.closest("li");
-  if (!li) return;
+  if (!li || li.classList.contains("group")) return;
   $$("#results li").forEach((x) => x.classList.toggle("sel", x === li));
   const [kind, id] = li.dataset.key.split("|");
   openItem(kind, id, $("#detail"));
 });
 
-/* ---------- 详情 ---------- */
-async function openItem(kind, id, target, highlightArticle) {
+/* ---------- 详情（阅读视图） ---------- */
+async function openItem(kind, id, target, highlightArticle, nav) {
   target.innerHTML = `<div class="empty">加载中…</div>`;
   try {
     const it = await api(`/api/item/${kind}/${encodeURIComponent(id)}`);
-    target.innerHTML = detailHTML(it, highlightArticle);
+    target.innerHTML = navHTML(nav) + detailHTML(it, highlightArticle) + navHTML(nav, true);
     target.scrollTop = 0;
-    const hl = $(".art-item.hl", target);
+    const hl = $(".rd-art.hl", target);
     if (hl) hl.scrollIntoView({ block: "center" });
     bindDetail(target, it);
+    if (nav) $$("[data-nav]", target).forEach((b) => b.addEventListener("click", () => nav.go(Number(b.dataset.nav))));
   } catch (err) { target.innerHTML = `<div class="empty err">${esc(err.message)}</div>`; }
+}
+
+function navHTML(nav, bottom) {
+  if (!nav) return "";
+  const unit = nav.unit || "部";
+  return `<div class="rd-nav ${bottom ? "bottom" : ""}"><button class="ghost" data-nav="-1" ${nav.index <= 0 ? "disabled" : ""}>‹ 上一${unit}</button>
+    <span class="muted small">${nav.index + 1} / ${nav.total}</span>
+    <button class="ghost" data-nav="1" ${nav.index >= nav.total - 1 ? "disabled" : ""}>下一${unit} ›</button></div>`;
 }
 
 function starBtn(kind, id) {
@@ -148,46 +165,78 @@ function starBtn(kind, id) {
   return `<button class="ghost star ${on ? "on" : ""}" data-star="${esc(kind)}|${esc(id)}">${on ? "★ 已收藏" : "☆ 收藏"}</button>`;
 }
 
+const ART_HEAD = /^(第[零〇一二三四五六七八九十百千]+条(?:之[零〇一二三四五六七八九十百千]+)?)[\s　]*/;
+function articleHTML(a, hl) {
+  const m = a.text.match(ART_HEAD);
+  const no = m ? m[1] : (a.article_cn && a.article_cn !== "全文" ? a.article_cn : "");
+  const paras = (m ? a.text.slice(m[0].length) : a.text).split("\n").filter((x) => x.trim());
+  const body = paras.map((p, i) => `<p>${i === 0 && no ? `<span class="rd-no">${esc(no)}</span>` : ""}${esc(p.trim())}</p>`).join("");
+  return `<div class="rd-art ${hl ? "hl" : ""}" data-art="${esc(a.id)}">${body}</div>`;
+}
+
+function headHTML(kicker, title, meta, actions) {
+  return `<header class="rd-head"><div class="rd-kicker">${kicker}</div><h1>${title}</h1>
+    <div class="r-meta">${meta}</div><div class="rd-actions">${actions}</div></header>`;
+}
+
+const kickerOf = (it) => esc([it.level, it.province && it.province !== "全国" ? it.province : ""].filter(Boolean).join(" · "));
+
 function detailHTML(it, hlArticle) {
   if (it.kind === "article") {
-    return `<div class="d-head"><div><h2>${esc(it.title)} <span style="color:var(--accent)">${esc(it.article)}</span></h2>
-      <div class="r-meta">${badges(it)}${it.chapter ? `<span class="badge">${esc(it.chapter)}</span>` : ""}${it.effective_date ? `<span class="badge">${esc(it.effective_date)} 起施行</span>` : ""}</div></div>
-      <div class="d-actions">${starBtn("article", it.id)}<button class="ghost" data-open-law="${esc(it.doc_id)}" data-hl="${esc(it.id)}">看整部法规</button></div></div>
+    return `<article class="reader">${headHTML(kickerOf(it), esc(it.title),
+      badges(it) + (it.effective_date ? `<span class="badge">${esc(it.effective_date)} 起施行</span>` : ""),
+      `${starBtn("article", it.id)}<button class="ghost" data-open-law="${esc(it.doc_id)}" data-hl="${esc(it.id)}">读整部法规</button>`)}
       ${it.note ? `<div class="d-note">${esc(it.note)}</div>` : ""}
-      <div class="d-text">${esc(it.text)}</div>
-      ${srcLine(it)}`;
+      ${it.chapter ? `<h3 class="rd-ch">${esc(it.chapter)}</h3>` : ""}
+      <div class="rd-body">${articleHTML({ id: it.id, article_cn: it.article, text: it.text })}</div>
+      ${srcLine(it)}</article>`;
   }
   if (it.kind === "law") {
-    let lastCh = null;
+    let lastCh = null, lastSec = null, chIdx = 0;
+    const toc = [];
     const arts = it.articles.map((a) => {
       let h = "";
-      if (a.chapter && a.chapter !== lastCh) { h += `<div class="ch">${esc(a.chapter)}${a.section ? " · " + esc(a.section) : ""}</div>`; lastCh = a.chapter; }
-      return h + `<div class="art-item ${a.id === hlArticle ? "hl" : ""}" data-art="${esc(a.id)}">${esc(a.text)}</div>`;
+      if (a.chapter && a.chapter !== lastCh) {
+        chIdx++;
+        toc.push({ id: `ch-${chIdx}`, label: a.chapter });
+        h += `<h3 class="rd-ch" id="ch-${chIdx}">${esc(a.chapter)}</h3>`;
+        lastCh = a.chapter;
+        lastSec = null;
+      }
+      if (a.section && a.section !== lastSec) { h += `<h4 class="rd-sec">${esc(a.section)}</h4>`; lastSec = a.section; }
+      return h + articleHTML(a, a.id === hlArticle);
     }).join("");
     const versions = (it.other_versions || []).map((v) => `<span class="ver"><button class="cite" data-open-law="${esc(v.id)}">${esc(v.version_date || "")} ${esc(v.status)}</button><button class="cite" data-compare="${esc(it.id)}|${esc(v.id)}" title="逐条对比这两个版本">对比</button></span>`).join(" ");
-    return `<div class="d-head"><div><h2>${esc(it.title)}</h2>
-      <div class="r-meta">${badges(it)}${it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : ""}${it.effective_date ? `<span class="badge">${esc(it.effective_date)} 起施行</span>` : ""}${it.issuer ? `<span class="badge">${esc(it.issuer)}</span>` : ""}</div></div>
-      <div class="d-actions">${starBtn("law", it.id)}</div></div>
+    const tocHTML = toc.length > 1 ? `<nav class="rd-toc"><div class="rd-toc-title">目录</div>${toc.map((t) => `<a href="#" data-jump="${t.id}">${esc(t.label)}</a>`).join("")}</nav>` : "";
+    const meta = badges(it) + (it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : "")
+      + (it.effective_date ? `<span class="badge">${esc(it.effective_date)} 起施行</span>` : "")
+      + `<span class="badge">${it.n_articles || it.articles.length} 条</span>`;
+    return `<article class="reader">${headHTML(kickerOf(it), esc(it.title), meta, starBtn("law", it.id))}
       ${it.note ? `<div class="d-note">${esc(it.note)}</div>` : ""}
-      ${it.history ? `<p class="muted small">${esc(it.history)}</p>` : ""}
-      ${versions ? `<p class="small">其他版本：${versions}</p>` : ""}
-      <div class="art-list">${arts}</div>${srcLine(it)}`;
+      ${it.history ? `<p class="rd-history">（${esc(it.history.replace(/^[（(]|[)）]$/g, ""))}）</p>` : ""}
+      ${versions ? `<p class="small rd-versions">其他版本：${versions}</p>` : ""}
+      ${tocHTML}
+      <div class="rd-body">${arts}</div>${srcLine(it)}</article>`;
   }
   if (it.kind === "case") {
+    const para = (v) => v.split("\n").filter((x) => x.trim()).map((x) => `<p>${esc(x.trim())}</p>`).join("");
     const sec = [["关键词", it.keywords], ["裁判要点", it.points], ["相关法条", it.laws], ["基本案情", it.facts], ["裁判结果", it.result], ["裁判理由", it.reasoning]]
-      .filter(([, v]) => v).map(([k, v]) => `<div class="d-section"><h4>${k}</h4><div class="d-text">${esc(v)}</div></div>`).join("");
-    return `<div class="d-head"><div><h2>${esc(it.title)}</h2><div class="r-meta"><span class="badge">最高人民法院指导性案例</span></div></div>
-      <div class="d-actions">${starBtn("case", it.id)}</div></div>${sec || `<div class="d-text">${esc(it.text)}</div>`}
-      <p class="d-src small muted">来源：<a href="${esc(it.url)}" target="_blank" rel="noopener">最高人民法院</a></p>`;
+      .filter(([, v]) => v).map(([k, v]) => `<h3 class="rd-ch left">${k}</h3><div class="rd-prose">${para(v)}</div>`).join("");
+    const title = it.title.replace(/^指导性?案例\s*\d+\s*号[：:\s]*/, "") || it.title;
+    return `<article class="reader">${headHTML("最高人民法院指导性案例" + (it.number ? ` · 第 ${it.number} 号` : ""), esc(title), "", starBtn("case", it.id))}
+      ${sec || `<div class="rd-prose">${para(it.text)}</div>`}
+      <p class="d-src small muted src-line">来源：<a href="${esc(it.url)}" target="_blank" rel="noopener">最高人民法院</a></p></article>`;
   }
   if (it.kind === "ref") {
-    return `<div class="d-head"><div><h2>${esc(it.title)}</h2><div class="r-meta"><span class="badge">${esc(it.kind_label || it.kind)}</span><span class="badge">${esc(it.plugin)}</span></div></div>
-      <div class="d-actions">${starBtn("ref", it.id)}</div></div><div class="md">${renderMD(it.text)}</div>
-      <p class="muted small">来源：本仓库 ${esc(it.path)}</p>`;
+    const kindLabel = it.kind_label === "流程" || it.kind_label === "处理流程" ? "工作流程" : "实务要点";
+    return `<article class="reader">${headHTML(`办案指引 · ${esc(it.plugin_label || it.plugin)} · ${kindLabel}`, esc(it.title), "", starBtn("ref", it.id))}
+      <div class="md rd-prose">${renderMD(it.text.replace(/^#\s+.*\n/, ""))}</div>
+      <p class="muted small src-line">来源：本项目 ${esc(it.path)}</p></article>`;
   }
   if (it.kind === "answer") {
-    return `<div class="d-head"><div><h2>${esc(it.question)}</h2><div class="r-meta">${it.region ? `<span class="badge">${esc(it.region)}</span>` : ""}<span class="badge">${esc(it.model)}</span><span class="badge">${new Date(it.created * 1000).toLocaleString("zh-CN")}</span></div></div>
-      <div class="d-actions">${starBtn("answer", it.id)}</div></div><div class="md">${renderMD(it.answer)}</div>`;
+    const meta = (it.region ? `<span class="badge">${esc(it.region)}</span>` : "") + `<span class="badge">${esc(it.model)}</span><span class="badge">${new Date(it.created * 1000).toLocaleString("zh-CN")}</span>`;
+    return `<article class="reader">${headHTML("AI 回答", esc(it.question), meta, starBtn("answer", it.id))}
+      <div class="md rd-prose">${renderMD(it.answer)}</div></article>`;
   }
   return `<pre>${esc(JSON.stringify(it, null, 2))}</pre>`;
 }
@@ -206,6 +255,7 @@ function bindDetail(target, it) {
   $$("[data-star]", target).forEach((b) => b.addEventListener("click", () => toggleBookmark(b, it)));
   $$("[data-open-law]", target).forEach((b) => b.addEventListener("click", () => openItem("law", b.dataset.openLaw, target, b.dataset.hl)));
   $$("[data-compare]", target).forEach((b) => b.addEventListener("click", () => { const [a, c] = b.dataset.compare.split("|"); openCompare(a, c, target); }));
+  $$("[data-jump]", target).forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); $("#" + a.dataset.jump, target)?.scrollIntoView({ block: "start", behavior: "smooth" }); }));
   bindCites(target);
 }
 
@@ -250,7 +300,7 @@ $$("#saved-filter button").forEach((b) => b.addEventListener("click", () => {
 
 async function renderSaved() {
   const list = (await loadBookmarks()).filter((b) => !state.savedFilter || b.kind === state.savedFilter);
-  const label = { article: "条文", law: "法规", case: "案例", ref: "实务资料", answer: "AI 回答" };
+  const label = { article: "条文", law: "法规", case: "案例", ref: "办案指引", answer: "AI 回答" };
   $("#saved-list").innerHTML = list.length ? list.map((b) => `<li data-kind="${esc(b.kind)}" data-id="${esc(b.ref_id)}">
     <div class="r-title">${esc(b.title)}</div>
     <div class="r-meta"><span class="badge">${label[b.kind] || b.kind}</span>${b.subtitle ? `<span class="badge">${esc(b.subtitle)}</span>` : ""}<span class="badge">${new Date(b.created * 1000).toLocaleDateString("zh-CN")}</span></div>
@@ -285,9 +335,17 @@ function renderMD(md) {
     html += "<table>" + rows.map((r, i) => "<tr>" + r.replace(/^\s*\||\|\s*$/g, "").split("|").map((c) => i === 0 ? `<th>${inline(c.trim())}</th>` : `<td>${inline(c.trim())}</td>`).join("") + "</tr>").join("") + "</table>";
     table = [];
   };
+  let code = null;
   for (const raw of lines) {
     const line = raw.trimEnd();
+    if (/^\s*```/.test(line)) {
+      if (code === null) { flushList(); flushTable(); code = []; } else { html += `<pre class="code">${code.join("\n")}</pre>`; code = null; }
+      continue;
+    }
+    if (code !== null) { code.push(raw); continue; }
     if (/^\s*\|.*\|\s*$/.test(line)) { flushList(); table.push(line); continue; }
+    const q = line.match(/^&gt;\s?(.*)$/);
+    if (q) { flushList(); flushTable(); html += `<blockquote>${inline(q[1])}</blockquote>`; continue; }
     flushTable();
     let m;
     if ((m = line.match(/^(#{1,4})\s+(.*)$/))) { flushList(); const lv = Math.min(4, Math.max(2, m[1].length)); html += `<h${lv}>${inline(m[2])}</h${lv}>`; }
@@ -558,6 +616,137 @@ $("#upd-list").addEventListener("click", async (e) => {
   }
   if (x.doc_id && x.action !== "error") return openItem("law", x.doc_id, target);
   target.innerHTML = `<div class="d-head"><div><h2>${esc(x.title)}</h2></div></div><p>${esc(x.summary)}</p>${x.url ? `<p class="small"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a></p>` : ""}`;
+});
+
+/* ---------- 浏览（目录） ---------- */
+const LEVEL_NAMES = ["法律", "司法解释", "行政法规", "监察法规", "地方性法规"];
+state.browse = { kind: "laws", items: [], total: 0, offset: 0, index: -1 };
+
+async function initBrowse() {
+  ["#b-level", "#b-province", "#b-topic", "#b-sort"].forEach((sel) => $(sel).addEventListener("change", () => {
+    if (sel === "#b-level" && $("#b-level").value !== "地方性法规" && $("#b-level").value) $("#b-province").value = "";
+    loadBrowse(true);
+  }));
+  $$("#b-kind button").forEach((b) => b.addEventListener("click", () => {
+    $$("#b-kind button").forEach((x) => x.classList.toggle("on", x === b));
+    state.browse.kind = b.dataset.v;
+    $("#b-law-filters").hidden = b.dataset.v !== "laws";
+    loadBrowse(true);
+  }));
+  $("#b-more").addEventListener("click", () => loadBrowse(false));
+  $("#b-list").addEventListener("click", (e) => {
+    const li = e.target.closest("li[data-i]");
+    if (li) openBrowseItem(Number(li.dataset.i));
+  });
+  await loadBrowse(true);
+}
+
+async function refreshFacets() {
+  const p = new URLSearchParams({ level: $("#b-level").value, province: $("#b-province").value, topic: $("#b-topic").value });
+  const f = await api("/api/browse/facets?" + p);
+  const keep = { level: $("#b-level").value, province: $("#b-province").value, topic: $("#b-topic").value };
+  const total = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+  $("#b-level").innerHTML = `<option value="">全部层级（${total(f.levels)}）</option>` +
+    LEVEL_NAMES.filter((l) => f.levels[l]).map((l) => `<option value="${l}">${l}（${f.levels[l]}）</option>`).join("");
+  const provs = Object.entries(f.provinces).filter(([k]) => k !== "全国" && k !== "其他").sort((a, b) => b[1] - a[1]);
+  $("#b-province").innerHTML = `<option value="">全部地区</option>` + (f.provinces["全国"] ? `<option value="全国">全国性规定（${f.provinces["全国"]}）</option>` : "") +
+    provs.map(([k, n]) => `<option value="${esc(k)}">${esc(k)}（${n}）</option>`).join("") +
+    (f.provinces["其他"] ? `<option value="其他">地区未识别（${f.provinces["其他"]}）</option>` : "");
+  const topics = Object.entries(f.topics).sort((a, b) => b[1] - a[1]);
+  $("#b-topic").innerHTML = `<option value="">全部领域</option>` + topics.map(([k, n]) => `<option value="${esc(k)}">${esc(k)}（${n}）</option>`).join("");
+  $("#b-level").value = keep.level; $("#b-province").value = keep.province; $("#b-topic").value = keep.topic;
+}
+
+async function loadBrowse(reset) {
+  const b = state.browse;
+  if (reset) { b.items = []; b.offset = 0; $("#b-list").innerHTML = ""; }
+  $("#b-info").textContent = "加载中…";
+  if (b.kind === "laws") {
+    if (reset) await refreshFacets();
+    const p = new URLSearchParams({ level: $("#b-level").value, province: $("#b-province").value, topic: $("#b-topic").value, sort: $("#b-sort").value, offset: b.offset, limit: 300 });
+    const r = await api("/api/browse/laws?" + p);
+    b.total = r.total;
+    appendBrowse(r.items.map((x) => ({ ...x, kind: "law" })));
+    $("#b-info").textContent = `共 ${r.total} 部现行法规${r.total > b.items.length ? `，已列出 ${b.items.length} 部` : ""}。点开即可从头读到尾，阅读时可以用「上一部 / 下一部」顺序翻。`;
+    $("#b-more").hidden = b.items.length >= r.total;
+  } else if (b.kind === "cases") {
+    const r = await api("/api/browse/cases?limit=500");
+    b.total = r.total;
+    appendBrowse(r.items);
+    $("#b-info").textContent = `最高人民法院指导性案例共 ${r.total} 件，按编号排列。`;
+    $("#b-more").hidden = true;
+  } else {
+    const groups = await api("/api/browse/guides");
+    const flat = [];
+    let html = "";
+    for (const g of groups) {
+      html += `<li class="group">${esc(g.label)}（${g.items.length}）</li>`;
+      for (const it of g.items) {
+        html += itemLI({ ...it, kind: "ref" }, flat.length);
+        flat.push({ ...it, kind: "ref" });
+      }
+    }
+    b.items = flat; b.total = flat.length;
+    $("#b-list").innerHTML = html;
+    $("#b-info").textContent = `办案指引共 ${flat.length} 篇，按领域分组：「要点」是实务规则和审查清单，「流程」是一类事务的处理步骤。内容只读，随 app 更新。`;
+    $("#b-more").hidden = true;
+  }
+}
+
+function itemLI(it, i) {
+  let meta = "";
+  if (it.kind === "law") {
+    meta = `<span class="badge">${esc(it.level)}</span>` + (it.province && it.province !== "全国" ? `<span class="badge">${esc(it.province)}</span>` : "")
+      + (it.status === "尚未生效" ? `<span class="badge pending">尚未生效</span>` : "") + (it.official ? `<span class="badge off">官方全文</span>` : "")
+      + (it.version_date ? `<span class="badge">${esc(it.version_date)}</span>` : "");
+  } else if (it.kind === "case") {
+    meta = `<span class="badge">第 ${it.number} 号</span>` + (it.keywords ? `<span class="badge">${esc(it.keywords.replace(/\s+/g, " ").slice(0, 36))}</span>` : "");
+  } else {
+    meta = `<span class="badge">${it.id.startsWith("doc:") ? "要点" : "流程"}</span>`;
+  }
+  const title = it.kind === "case" ? it.title.replace(/^指导性?案例\s*\d+\s*号[：:\s]*/, "") || it.title : it.title;
+  return `<li data-i="${i}"><div class="r-title">${esc(title)}</div><div class="r-meta">${meta}</div></li>`;
+}
+
+function appendBrowse(items) {
+  const b = state.browse;
+  const start = b.items.length;
+  b.items.push(...items);
+  b.offset = b.items.length;
+  $("#b-list").insertAdjacentHTML("beforeend", items.map((it, k) => itemLI(it, start + k)).join(""));
+}
+
+function openBrowseItem(i) {
+  const b = state.browse;
+  if (i < 0 || i >= b.items.length) return;
+  b.index = i;
+  const it = b.items[i];
+  $$("#b-list li").forEach((x) => x.classList.toggle("sel", Number(x.dataset.i) === i));
+  $(`#b-list li[data-i="${i}"]`)?.scrollIntoView({ block: "nearest" });
+  const unit = it.kind === "case" ? "件" : it.kind === "ref" ? "篇" : "部";
+  openItem(it.kind, it.id, $("#b-detail"), null, {
+    index: i, total: b.kind === "laws" ? b.total : b.items.length, unit,
+    go: async (d) => {
+      if (i + d >= b.items.length && b.items.length < b.total) await loadBrowse(false);
+      openBrowseItem(i + d);
+    },
+  });
+}
+
+/* ---------- 浅色 / 深色 ---------- */
+function applyTheme(t) {
+  if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+  else delete document.documentElement.dataset.theme;
+  $("#theme").textContent = t === "dark" ? "☾" : t === "light" ? "☀" : "◐";
+  $("#theme").title = { dark: "深色（点击切换为跟随系统）", light: "浅色（点击切换为深色）" }[t] || "跟随系统（点击切换为浅色）";
+}
+let theme = "";
+try { theme = localStorage.getItem("theme") || ""; } catch { /* 无痕模式等情况 */ }
+applyTheme(theme);
+$("#theme").addEventListener("click", () => {
+  theme = theme === "" ? "light" : theme === "light" ? "dark" : "";
+  try { localStorage.setItem("theme", theme); } catch { /* 忽略 */ }
+  applyTheme(theme);
 });
 
 init().catch((err) => { $("#db-stats").textContent = "初始化失败：" + err.message; });

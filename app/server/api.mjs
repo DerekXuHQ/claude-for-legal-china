@@ -103,9 +103,17 @@ export function createServer(ctx) {
         const s = loadSettings();
         return send(res, 200, { ...search.meta(), configured: !!s.api_key });
       }
+      if (p === "/api/browse/laws") {
+        return send(res, 200, search.browseLaws({ level: q.level || "", province: q.province || "", topic: q.topic || "", sort: q.sort || "name",
+          offset: Number(q.offset) || 0, limit: Math.min(Number(q.limit) || 200, 500) }));
+      }
+      if (p === "/api/browse/facets") return send(res, 200, search.browseFacets({ level: q.level || "", province: q.province || "", topic: q.topic || "" }));
+      if (p === "/api/browse/cases") return send(res, 200, search.browseCases({ offset: Number(q.offset) || 0, limit: Math.min(Number(q.limit) || 400, 500) }));
+      if (p === "/api/browse/guides") return send(res, 200, search.browseGuides());
       if (p === "/api/search") {
         const limit = Math.min(Number(q.limit) || 20, 100), offset = Number(q.offset) || 0, text = q.q || "";
-        const common = { level: q.level || "", province: q.province || "", topic: q.topic || "", current_only: q.all !== "1", limit, offset };
+        const common = { level: q.level || "", province: q.province || "", topic: q.topic || "", current_only: true, limit, offset };
+        if (q.type === "all" || !q.type) return send(res, 200, search.searchAll(text, common));
         if (q.type === "laws") return send(res, 200, search.searchLaws(text, common));
         if (q.type === "cases") return send(res, 200, search.searchCases(text, { limit, offset }));
         if (q.type === "refs") return send(res, 200, search.searchRefs(text, { limit, offset }));
@@ -122,7 +130,7 @@ export function createServer(ctx) {
           const r = ctx.userDb()?.prepare("SELECT * FROM answers WHERE id = ?").get(id);
           return r ? send(res, 200, { ...r, kind: "answer" }) : send(res, 404, { error: "未找到" });
         }
-        const getter = { article: search.getArticle, law: search.getDoc, case: search.getCase, ref: search.getRef }[kind];
+        const getter = { article: search.getArticle, law: search.getDoc, case: search.getCase, ref: search.getGuide }[kind];
         const item = getter ? getter(id) : null;
         return item ? send(res, 200, item) : send(res, 404, { error: "未找到" });
       }
