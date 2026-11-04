@@ -422,7 +422,7 @@ let scenarioCat = null;
 async function loadScenarioCat() { if (!scenarioCat) scenarioCat = await api("/api/scenarios").catch(() => ({ groups: [], scenarios: [], pipelines: {} })); return scenarioCat; }
 function setScenario(id) {
   state.scenario = id || "";
-  $$(".pk-item[data-sc]").forEach((r) => r.classList.toggle("on", r.dataset.sc === state.scenario));
+  $$(".pk-card[data-sc]").forEach((r) => r.classList.toggle("on", r.dataset.sc === state.scenario));
   const q = $("#question");
   if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
   const sc = scenarioCat?.scenarios.find((x) => x.id === id);
@@ -441,12 +441,25 @@ function renderPicker(box) {
   let cur = state.scGroup && groups.some((g) => g.key === state.scGroup) ? state.scGroup : "_common";
   box.innerHTML = `<ul class="pk-groups">${groups.map((g) => `<li data-g="${esc(g.key)}" class="${g.key === cur ? "on" : ""}"><span>${esc(g.name)}</span><em>${g.count}</em></li>`).join("")}</ul><div class="pk-items"></div>`;
   const items = $(".pk-items", box);
+  // 每种流程一个图标和短名，让人一眼看出点进去会做什么
+  const PIPE = { P1: ["gavel", "应对争议"], P2: ["coins", "追讨维权"], P3: ["scale", "执行回款"], P4: ["users", "用工方案"], P5: ["file-search", "合同审查"], P6: ["file-text", "改写文本"], P7: ["pen", "从零起草"], P8: ["shield-check", "合规判断"], P9: ["landmark", "监管应对"], P10: ["alert", "刑事应急"], P11: ["book-open", "规定解读"], P12: ["list", "期限计算"], P13: ["flag", "制度搭建"] };
+  const card = ({ attrs, icon, title, sub, tag, on, tip }) => `<button type="button" class="pk-card ${on ? "on" : ""}" ${attrs} title="${esc(tip || "")}">
+      <span class="pk-ic">${ic(icon)}</span><span class="pk-body"><b>${esc(title)}</b><span>${tag ? `<em class="pk-tag">${esc(tag)}</em>` : ""}${esc(sub)}</span></span></button>`;
   const drawItems = () => {
+    const g = groups.find((x) => x.key === cur);
     if (cur === "_common") {
-      items.innerHTML = STARTERS.map((st, i) => `<button type="button" class="pk-item ${st.scenario && st.scenario === state.scenario ? "on" : ""}" data-starter="${i}" title="${esc(st.desc)}">${ic(st.icon)}<span>${esc(st.title)}</span></button>`).join("");
+      items.innerHTML = `<div class="pk-note">最常用的 ${STARTERS.length} 件事。其他事务按左边的领域找，或者直接在下面描述。</div>`
+        + STARTERS.map((st, i) => card({ attrs: `data-starter="${i}"`, icon: st.icon, title: st.title, sub: st.desc, on: st.scenario && st.scenario === state.scenario, tip: st.desc })).join("");
     } else {
-      items.innerHTML = cat.scenarios.filter((x) => x.group === cur).map((x) => `<button type="button" class="pk-item ${x.id === state.scenario ? "on" : ""}" data-sc="${esc(x.id)}" title="${esc(`${x.name}\n流程：${cat.pipelines[x.pipeline] || ""}\n常见说法：${x.examples.join("；")}`)}"><span>${esc(x.name.replace(/（[^）]*）$/, ""))}</span></button>`).join("");
+      const list = cat.scenarios.filter((x) => x.group === cur);
+      items.innerHTML = `<div class="pk-note">${esc(g.name)}：${list.length} 个预设流程。点卡片直接开工；你的事不在这里，也可以直接在下面描述。</div>`
+        + list.map((x) => {
+          const [icon, tag] = PIPE[x.pipeline] || ["message", ""];
+          return card({ attrs: `data-sc="${esc(x.id)}"`, icon, title: x.name.replace(/（[^）]*）$/, ""), sub: x.examples[0] ? `适合：“${x.examples[0]}”` : "", tag, on: x.id === state.scenario,
+            tip: `${x.name}\n流程：${cat.pipelines[x.pipeline] || ""}\n常见说法：${x.examples.join("；")}` });
+        }).join("");
     }
+    items.scrollTop = 0;
   };
   const select = (key) => {
     if (key === cur) return;
@@ -459,9 +472,9 @@ function renderPicker(box) {
     li.addEventListener("click", () => select(li.dataset.g));
   });
   items.addEventListener("click", (e) => {
-    const b = e.target.closest(".pk-item");
+    const b = e.target.closest(".pk-card");
     if (!b) return;
-    $$(".pk-item", items).forEach((x) => x.classList.toggle("on", x === b));
+    $$(".pk-card", items).forEach((x) => x.classList.toggle("on", x === b));
     if (b.dataset.starter !== undefined) {
       const st = STARTERS[Number(b.dataset.starter)];
       setScenario(st.scenario);
@@ -554,7 +567,8 @@ function renderMatter(m) {
   if (!m || !m.display.length) {
     if (m) { $("#matter-title").value = m.title; $("#matter-task").textContent = m.task || ""; $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : ""; }
     log.innerHTML = `<div class="chat-intro">
-      <div class="intro-head"><h2>今天要处理什么事？</h2><span class="muted small">直接在下面描述，助理会自动选流程；或者在这里点一下，跳过描述直接开工。</span></div>
+      <div class="intro-head"><h2>今天要处理什么事？</h2>
+        <p>什么事都可以直接在下面的输入框里描述，助理会自己判断该用哪种办法。下面是常见事务的<b>预设流程</b>：每个都专门设计过要问清哪些事实、查哪些规定、怎么打、交付什么。找到你的事就点一下，直接开工；没找到也没关系，直接描述就行。</p></div>
       <div id="picker" class="picker"></div>
     </div>`;
     loadScenarioCat().then(() => { const box = $("#picker"); if (box) renderPicker(box); });
