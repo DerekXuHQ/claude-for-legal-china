@@ -1,6 +1,6 @@
 // 分流和追问：判断这是哪类事，缺哪些会改变结论的关键事实。
 import { completeJSON } from "./models.mjs";
-import { loadTasks, getTask } from "./tasks.mjs";
+import { getTask, scenarioCatalog } from "./tasks.mjs";
 
 const clip = (s, n) => (s && s.length > n ? s.slice(0, n) + "……" : s || "");
 
@@ -16,22 +16,25 @@ function contextBlock({ question, region, attachments = [], history = [] }) {
   ].filter(Boolean).join("\n\n");
 }
 
-/** 判断任务类型。 */
+/** 判断这是哪个场景（99 个场景之一；都不像就是 general）。 */
 export async function routeTask(settings, model, ctx, signal) {
-  const tasks = [...loadTasks().values()];
-  const list = tasks.map((t) => `- ${t.id}｜${t.name}｜${t.when}${t.examples.length ? "｜例：" + t.examples.slice(0, 3).join("；") : ""}`).join("\n");
-  const system = `你是律所的接待助理，负责把客户的问题分给合适的工作流程。只输出 JSON，不要其他文字。
+  const cat = scenarioCatalog();
+  const list = cat.groups.map((g) => `【${g.key} ${g.full}】\n` + cat.scenarios.filter((x) => x.group === g.key)
+    .map((x) => `- ${x.id}｜${x.name}${x.examples[0] ? "｜例：" + x.examples[0] : ""}`).join("\n")).join("\n");
+  const system = `你是律所的接待助理，负责把客户的事分到最贴切的具体场景，每个场景有自己的工作流程。只输出 JSON，不要其他文字。
 
-可选的任务类型：
+场景目录：
 ${list}
+- general｜以上都不贴切的其他法律问题
 
 输出格式：
-{"task": "任务编号", "also": ["同时涉及的其他任务编号，可空"], "region": "问题涉及的省级地区，看不出就空字符串", "summary": "用一句话复述用户真正要解决的问题", "urgent": true/false（有迫在眉睫的期限，如已收到起诉状、仲裁、处罚告知时为 true）}
+{"task": "场景 id", "also": ["同时涉及的其他场景 id，最多 2 个，可空"], "region": "问题涉及的省级地区，看不出就空字符串", "summary": "用一句话复述用户真正要解决的问题", "urgent": true/false（有迫在眉睫的期限，如已收到起诉状、仲裁、处罚告知时为 true）}
 
-判断要点：上传了合同并要求审查的，归合同审查；上传了方案、活动规则的，归方案合规审查；收到起诉状、仲裁申请、律师函、处罚告知的，归被诉、被索赔应对；员工、用工相关的优先归劳动用工。`;
+判断要点：看用户是哪一方、处在哪个阶段（事前想做 / 已被对方主张 / 要去追讨 / 已有判决要执行）、手里有没有底稿。上传了合同并要求审查的，选对应合同类型的审查场景；拿对方模板或旧合同改的，选改写场景；收到起诉状、仲裁申请、律师函、处罚告知的，选应对场景。`;
   const r = await completeJSON(settings, { model, system, user: contextBlock(ctx), effort: "low", signal });
-  const task = loadTasks().has(r.task) ? r.task : "general";
-  return { task, name: getTask(task).name, also: (r.also || []).filter((x) => loadTasks().has(x) && x !== task), region: r.region || ctx.region || "", summary: r.summary || "", urgent: !!r.urgent };
+  const known = (id) => cat.byId.has(id);
+  const task = known(r.task) ? r.task : "general";
+  return { task, name: getTask(task).name, also: (Array.isArray(r.also) ? r.also : []).filter((x) => known(x) && x !== task).slice(0, 2), region: r.region || ctx.region || "", summary: r.summary || "", urgent: !!r.urgent };
 }
 
 /** 追问：返回需要先问的问题（最多 6 个）；信息足够时返回空数组。 */

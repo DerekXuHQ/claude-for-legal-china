@@ -4,7 +4,7 @@ import { completeJSON, stream, parseJSON } from "./models.mjs";
 import { runAgent, SYSTEM_PROMPT } from "./agent.mjs";
 import { getTask, contractChecklists } from "./tasks.mjs";
 import { splitClauses } from "./docs.mjs";
-import { getArticle } from "../search.mjs";
+import { getArticle, getDb } from "../search.mjs";
 
 const clip = (s, n) => (s && s.length > n ? s.slice(0, n) + "……" : s || "");
 const RISK_ORDER = { 高: 0, 中: 1, 低: 2 };
@@ -24,14 +24,55 @@ async function pool(items, limit, fn) {
 const ISSUE_FORMAT = `每个问题一个对象：
 {"ref": "条款编号或位置，例如「第8条」「付款条款」", "quote": "原文中有问题的句子（照抄，60字以内）", "category": "合法性与效力 / 权利义务失衡 / 可执行性 / 商业风险 / 表述歧义 / 缺失约定 / 关系与实操", "risk": "高 / 中 / 低", "issue": "问题是什么，对我方有什么后果（具体）", "suggest": "首选修改：可以直接替换进合同的条款文字", "fallback": "后备方案：对方不接受首选时可以退让到的文字（没有就空）", "negotiate": "跟对方谈时可以怎么说（一句话）", "basis": [{"law": "法规全称", "article": "第X条", "id": "检索工具返回的条文编号，没有就空"}]}`;
 
+// 合同成立与效力（「这份合同立不立得住」）：单独一轮，拿固定的民法典条文原文去对照全文，
+// 不靠模型凭记忆通读挑错。缺签约主体、标的不明确、需审批未审批、格式条款未提示、免责条款无效、定金超限……
+const INTEGRITY_ARTICLES = [
+  ["中华人民共和国民法典", ["第一百四十三条", "第一百四十四条", "第一百四十六条", "第一百五十三条", "第一百五十四条", "第一百七十一条", "第四百七十条", "第四百九十条", "第四百九十六条", "第四百九十七条", "第四百九十八条", "第五百零二条", "第五百零六条", "第五百一十条", "第五百八十五条", "第五百八十六条", "第五百八十七条", "第五百八十八条"]],
+];
+function integrityPack() {
+  const db = getDb();
+  const out = [];
+  for (const [title, arts] of INTEGRITY_ARTICLES) {
+    const doc = db.prepare("SELECT id FROM docs WHERE title = ? AND is_current = 1 LIMIT 1").get(title);
+    if (!doc) continue;
+    for (const a of arts) {
+      const r = db.prepare("SELECT id, text FROM articles WHERE doc_id = ? AND article_cn = ?").get(doc.id, a);
+      if (r) out.push({ id: r.id, title: "民法典", article: a, text: r.text.slice(0, 600) });
+    }
+  }
+  return out;
+}
+
+async function integrityCheck(settings, { model, doc, ctx, profile, signal }) {
+  const arts = integrityPack();
+  const j = await completeJSON(settings, {
+    model, effort: "medium", signal,
+    system: `你是合同审查律师，这一轮只查「合同立不立得住、能不能执行」，不查商业条款的好坏。对照下面的民法典条文原文，通读整份合同，逐项检查：
+1. 签约主体：双方名称是否完整准确（与营业执照一致）、有无签约代表授权、我方是否在跟真正的权利人签（例如转租要有原出租人同意、代理商要有授权）；
+2. 成立与生效：签字盖章栏、生效条件、需要审批登记才生效的、附条件附期限；
+3. 内容是否确定：标的、数量、质量标准、价款、履行期限地点方式是否明确到能执行（「约」「左右」「以某方通知为准」都算不确定）；
+4. 效力：违反强制性规定或公序良俗的约定、无效的免责条款（人身损害、故意或重大过失造成财产损失）、格式条款的提示说明义务与无效情形；
+5. 违约救济能不能落地：定金是否超过标的额 20%、定金与违约金能否同时主张、违约金是否明显过高、解除条件是否明确；
+6. 文件之间的冲突：正文与附件、前后条款相互矛盾，引用了不存在的附件或制度。
+依据只能用下面条文的 id。只输出 JSON：{"issues": [ ... ]}
+${ISSUE_FORMAT}
+
+民法典条文原文：
+${arts.map((a) => `[${a.id}] ${a.article}：${a.text}`).join("\n")}`,
+    user: `${ctx}\n\n## 合同画像\n${JSON.stringify(profile)}\n\n## 合同全文\n${clip(doc, 60000)}`,
+  });
+  const ids = new Set(arts.map((a) => a.id));
+  return { issues: (Array.isArray(j.issues) ? j.issues : []).map((x) => ({ ...x, category: x.category || "合法性与效力", basis: (x.basis || []).filter((b) => ids.has(b?.id)).map((b) => ({ ...b, law: "中华人民共和国民法典", article: arts.find((a) => a.id === b.id)?.article || b.article })) })), arts };
+}
+
 /**
  * @param {object} p
  * @param {"contract_review"|"plan_review"} p.kind
  */
-export async function runReview(settings, { kind, doc, question, region, facts, mainModel, reviewModel, emit, signal, db, verify }) {
+export async function runReview(settings, { kind, task: scenarioTask, doc, question, region, facts, mainModel, reviewModel, emit, signal, db, verify }) {
   const isPlan = kind === "plan_review";
   const unit = isPlan ? "环节" : "条款";
-  const task = getTask(kind);
+  const task = scenarioTask || getTask(kind);
   const checklists = isPlan ? "" : contractChecklists();
   const ctx = [
     `## 用户的要求\n${question}`,
@@ -71,7 +112,8 @@ ${isPlan ? "" : `\n参考：各类合同的必备条款清单\n${clip(checklists
     emit({ type: "stage", text: `查法条出错，继续审查：${String(err.message || err).slice(0, 80)}` });
   }
   const packIds = new Set(pack.map((x) => x.id));
-  const packText = pack.length ? pack.map((x) => `[${x.id}] 《${x.title}》${x.article}（${x.point}）：${x.text}`).join("\n") : "（没有查到依据条文；依据只写你确定的法规名称和条号）";
+  const packTextOf = () => pack.length ? pack.map((x) => `[${x.id}] 《${x.title}》${x.article}（${x.point}）：${x.text}`).join("\n") : "（没有查到依据条文；依据只写你确定的法规名称和条号）";
+  let packText = packTextOf();
   emit({ type: "stage", text: `找到 ${pack.length} 条审查依据` });
 
   // ② 分段逐条审查（并行，不再调用工具）
@@ -93,6 +135,11 @@ ${packText}
 ${isPlan ? "" : `逐条对照这些常见陷阱：单方变更价格或服务内容；「不属于格式条款」之类声明（对方模板仍可能是格式条款，要看提示说明义务）；免除对方故意或重大过失责任、人身损害责任的约定（无效）；把对方的责任转嫁给我方；责任上限过低或只约束我方；违约金与定金叠加或过高；预付、验收和付款节点；自动续约与提前终止费用；数据、个人信息与保密；知识产权归属；管辖与仲裁约定是否明确有效。`}
 依据优先从上面的清单里选，写清 id；清单里没有的，只写你有把握的法规全称和条号。没问题的${unit}不要写。只输出 JSON：{"issues": [ ... ]}
 ${ISSUE_FORMAT}`;
+  const v2 = process.env.CLS_REVIEW !== "v1"; // 成立与效力检查：一轮并行调用，默认开
+  const integrityJob = v2 && !isPlan
+    ? integrityCheck(settings, { model: mainModel, doc, ctx, profile, signal }).then((r) => { emit({ type: "step", text: `合同成立与效力检查：发现 ${r.issues.length} 个问题` }); return r; })
+      .catch((err) => { if (signal?.aborted) throw err; emit({ type: "stage", text: `效力检查出错，跳过：${String(err.message || err).slice(0, 80)}` }); return { issues: [], arts: [] }; })
+    : Promise.resolve({ issues: [], arts: [] });
   const perChunk = await pool(chunks, 5, async (chunk, i) => {
     try {
       const j = await completeJSON(settings, {
@@ -107,7 +154,10 @@ ${ISSUE_FORMAT}`;
       return [];
     }
   });
-  let issues = perChunk.flat().filter((x) => x && x.issue);
+  const integrity = await integrityJob;
+  for (const a of integrity.arts) if (!packIds.has(a.id)) { pack.push({ id: a.id, title: "中华人民共和国民法典", article: a.article, point: "合同成立与效力", text: a.text }); packIds.add(a.id); }
+  packText = packTextOf();
+  let issues = [...integrity.issues, ...perChunk.flat()].filter((x) => x && x.issue);
   for (const m of profile.missing || []) issues.push({ ref: "缺失", quote: "", category: "缺失约定", risk: "中", issue: m, suggest: "", fallback: "", negotiate: "", basis: [] });
 
   // ③ 对抗式复核（另一家族模型）

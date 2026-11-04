@@ -56,6 +56,11 @@
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
   <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-user-x" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 8 5 5M22 8l-5 5"/></symbol>
+  <symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18M7 6h1v4M16.71 13.88l.7.71-2.82 2.82"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 17.5v-11"/></symbol>
+  <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+  <symbol id="i-landmark" viewBox="0 0 24 24"><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2l8 5H4z"/></symbol>
 </svg>
 <header class="top">
   <div class="brand"><span class="logo">法</span><span>中国法律检索</span></div>
@@ -159,6 +164,7 @@
         <div id="chat-log" class="chat-log"></div>
         <div class="composer-wrap">
           <form id="ask-form" class="composer">
+            <div id="scenario-pill" class="scenario-pill" hidden></div>
             <div id="attach-chips" class="chips"></div>
             <textarea id="question" rows="1" placeholder="说说是什么事，或者直接上传文件…"></textarea>
             <div class="composer-bar">
@@ -289,8 +295,8 @@
     <label>复核模型 <span class="muted">（合同、方案审查时用另一家的模型交叉复核）</span>
       <select name="review_model"><option value="auto">自动选择另一家族的强模型</option></select>
     </label>
-    <label>语音转文字模型 <span class="muted">（上传录音、视频和语音输入用；留空则用系统听写）</span>
-      <select name="transcribe_model"><option value="">不使用</option></select>
+    <label>语音转文字模型 <span class="muted">（话筒听写、上传的录音和视频都用它；默认 gpt-live-transcribe）</span>
+      <select name="transcribe_model"><option>gpt-live-transcribe</option></select>
     </label>
     <p class="muted small">API key 只保存在这台电脑上（仅本人可读），只会发给上面的接口地址。主力模型和分析深度在法律助理的输入框下方选。</p>
     <h3 style="margin-top:8px">版本</h3>

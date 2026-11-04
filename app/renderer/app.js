@@ -394,14 +394,55 @@ function bindCites(root) {
 state.matter = null;      // 当前事项
 state.pendingFiles = [];  // 已上传、还没随消息发出的文件
 
+// 首屏 12 个最常见的事（依据 docs/scenarios-research.md §5）；scenario 为空的交给助理按内容分到具体场景
 const STARTERS = [
-  { icon: "file-search", title: "审一份合同", desc: "上传合同，逐条找漏洞、给修改文字和谈判要点", prompt: "请帮我审查这份合同。我方是：", upload: true },
-  { icon: "gavel", title: "被起诉 / 收到律师函", desc: "上传起诉状、仲裁申请、律师函或处罚告知书", prompt: "我收到了附件里的文书，请帮我分析怎么应对。", upload: true },
-  { icon: "flag", title: "我想告对方 / 追款", desc: "判断有没有依据、能不能开始、需要哪些证据", prompt: "我想起诉对方，情况是：" },
-  { icon: "users", title: "员工纠纷", desc: "辞退、补偿、N+1、加班费、竞业限制", prompt: "员工的情况是：" },
-  { icon: "shield-check", title: "这个方案合不合法", desc: "上传营销活动、商业模式或制度方案", prompt: "请审查这个方案有没有违法或合规风险。", upload: true },
-  { icon: "pen", title: "起草一份文书", desc: "律师函、催款函、解除通知、协议、决议", prompt: "请帮我起草一份：" },
+  { icon: "users", title: "员工要 2N+1", desc: "最多要赔多少、怎么谈能少赔、要不要硬扛", scenario: "employee_demands_2n_plus_1", prompt: "员工被辞退后要求 2N+1。情况是：" },
+  { icon: "gavel", title: "收到劳动仲裁", desc: "答辩期限、每一项请求怎么应对、要不要调解", scenario: "labor_arbitration_respondent", prompt: "我们收到了劳动仲裁申请书（已上传）。", upload: true },
+  { icon: "user-x", title: "想让一个员工走", desc: "能力不行或违纪，怎样合法、成本最低", scenario: "terminate_underperformer", prompt: "有个员工我想让他走，情况是：" },
+  { icon: "pen", title: "协商离职协议", desc: "把钱和后续风险都写清楚", scenario: "negotiated_separation_agreement", prompt: "员工同意协商离职，请帮我写协商解除协议。情况是：" },
+  { icon: "file-search", title: "审一份合同", desc: "采购、销售、服务、租赁、经销……告诉我哪些必须改", scenario: "", prompt: "请帮我审查这份合同。我方是：", upload: true },
+  { icon: "file-text", title: "把对方模板改成对我有利", desc: "逐条修改并写好给对方的修改理由", scenario: "redraft_counterparty_template", prompt: "这是对方发来的合同模板，请改成对我方有利的版本。我方是：", upload: true },
+  { icon: "coins", title: "客户欠款不付", desc: "先发函、先保全还是直接起诉", scenario: "receivable_collection", prompt: "客户欠我们款项一直不付，情况是：" },
+  { icon: "scale", title: "赢了官司拿不到钱", desc: "找财产、申请执行、限高失信", scenario: "judgment_enforcement", prompt: "我们胜诉了但对方不履行，情况是：" },
+  { icon: "receipt", title: "顾客或家长要退费", desc: "会员卡、预付卡、学费，按规定该退多少", scenario: "", prompt: "顾客要求退费，情况是：" },
+  { icon: "compare", title: "股东闹翻了", desc: "想退出或想让对方退出，有哪些办法", scenario: "shareholder_falling_out", prompt: "我们股东之间闹翻了，情况是：" },
+  { icon: "megaphone", title: "广告文案、促销合不合规", desc: "改成合规版本", scenario: "ad_copy_review", prompt: "请看看这段广告文案或促销活动有没有违法风险：" },
+  { icon: "landmark", title: "收到监管通知或罚单", desc: "市场监管、税务、劳动监察：期限内该做什么", scenario: "", prompt: "我们收到了监管部门的通知（已上传）。", upload: true },
 ];
+state.scenario = "";   // 新事项里选定的场景
+let scenarioCat = null;
+async function loadScenarioCat() { if (!scenarioCat) scenarioCat = await api("/api/scenarios").catch(() => ({ groups: [], scenarios: [], pipelines: {} })); return scenarioCat; }
+function setScenario(id) {
+  state.scenario = id || "";
+  const q = $("#question");
+  if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
+  const sc = scenarioCat?.scenarios.find((x) => x.id === id);
+  const pill = $("#scenario-pill");
+  pill.hidden = !sc;
+  if (sc) {
+    pill.innerHTML = `场景：<b>${esc(sc.name)}</b> · ${esc(scenarioCat.pipelines[sc.pipeline] || "")}<button type="button" title="取消，让助理自己判断">${ic("x")}</button>`;
+    pill.querySelector("button").onclick = () => setScenario("");
+    q.placeholder = sc.examples[0] ? `例如：${sc.examples[0]}` : q.dataset.defaultPh;
+  } else q.placeholder = q.dataset.defaultPh;
+}
+function renderCatalog(box, query = "") {
+  const cat = scenarioCat;
+  if (!cat) return;
+  const k = query.trim();
+  const hit = (x) => !k || x.name.includes(k) || x.examples.some((e) => e.includes(k));
+  box.innerHTML = cat.groups.map((g) => {
+    const items = cat.scenarios.filter((x) => x.group === g.key && hit(x));
+    if (!items.length) return "";
+    return `<details class="sc-group"${k ? " open" : ""}><summary>${esc(g.name)} <span class="muted small">${items.length}</span></summary>
+      <div class="sc-items">${items.map((x) => `<button type="button" class="sc-item" data-sc="${esc(x.id)}" title="${esc(x.examples.join("\n"))}"><b>${esc(x.name)}</b><span>${esc(cat.pipelines[x.pipeline] || "")}${x.freq === "高" ? " · 常见" : ""}</span></button>`).join("")}</div></details>`;
+  }).join("") || `<p class="muted small">没有找到。直接在下面描述你的事，助理会判断用哪种流程。</p>`;
+  $$("[data-sc]", box).forEach((b) => b.addEventListener("click", () => {
+    const sc = cat.scenarios.find((x) => x.id === b.dataset.sc);
+    setScenario(sc.id);
+    $("#question").focus();
+    if (sc.needsDoc) $("#file-input").click();
+  }));
+}
 
 async function loadMatters() {
   const list = await api("/api/matters");
@@ -436,7 +477,9 @@ $("#new-matter").addEventListener("click", async () => {
 async function ensureMatter() {
   if (state.matter) return state.matter.id;
   const { id } = await api("/api/matters", { method: "POST", body: "{}" });
+  const keep = state.scenario; // 先选了场景、第一次上传或发送时才建事项：场景保留
   await openMatter(id);
+  if (keep) setScenario(keep);
   return id;
 }
 
@@ -444,6 +487,7 @@ async function openMatter(id) {
   const m = await api(`/api/matters/${id}`);
   state.matter = m;
   state.pendingFiles = [];
+  setScenario("");
   renderChips();
   renderMatter(m);
   loadMatters();
@@ -464,15 +508,26 @@ function renderMatter(m) {
       <h2>今天要处理什么事？</h2>
       <p>助理会先问清关键事实，再查法条、案例和办案指引，给出判断、依据、下一步和可以直接用的文书。合同和方案会逐条审，并用另一家的模型复核。每件事单独保存，随时回来接着办。</p>
       <div class="starters">${STARTERS.map((s, i) => `<button class="starter" data-starter="${i}"><span class="s-ic">${ic(s.icon)}</span><b>${esc(s.title)}</b><span>${esc(s.desc)}</span></button>`).join("")}</div>
+      <div class="sc-head"><h3>全部场景</h3><input type="search" id="sc-search" placeholder="搜场景，例如：竞业、预付卡、工伤、虚开、商标"></div>
+      <p class="small muted">每种场景有自己的办法：问哪些事实、查哪些规定、怎么打、交付什么。不知道选哪个，直接在下面描述，助理会判断。</p>
+      <div id="sc-catalog" class="sc-catalog"></div>
       <p class="small muted">可以上传 PDF、Word、图片（截图、照片会自动识别文字）、录音和视频。</p>
     </div>`;
-    $$("[data-starter]", log).forEach((b) => b.addEventListener("click", () => {
+    $$("[data-starter]", log).forEach((b) => b.addEventListener("click", async () => {
       const s = STARTERS[Number(b.dataset.starter)];
+      await loadScenarioCat();
+      setScenario(s.scenario);
       $("#question").value = s.prompt;
       composerChanged();
       $("#question").focus();
       if (s.upload) $("#file-input").click();
     }));
+    loadScenarioCat().then(() => {
+      const box = $("#sc-catalog");
+      if (!box) return;
+      renderCatalog(box);
+      $("#sc-search").addEventListener("input", (e) => renderCatalog(box, e.target.value));
+    });
     return;
   }
   $("#matter-title").value = m.title;
@@ -596,13 +651,14 @@ $("#file-input").addEventListener("change", async (e) => {
     state.pendingFiles.push(chip);
     renderChips();
     try {
-      const data = await new Promise((ok, bad) => {
+      const media = /^(audio|video)\//.test(f.type) || /\.(mp3|m4a|wav|aac|ogg|webm|mp4|mov|flac|opus)$/i.test(f.name);
+      const data = media ? await audioFileToWav16k(f).catch(() => { throw new Error("读不出这个文件里的声音（可以先导出成 m4a、mp3 或 wav 再上传）"); }) : await new Promise((ok, bad) => {
         const r = new FileReader();
         r.onload = () => ok(String(r.result).split(",")[1] || "");
         r.onerror = () => bad(r.error);
         r.readAsDataURL(f);
       });
-      const res = await api("/api/upload", { method: "POST", body: JSON.stringify({ matter_id: matterId, name: f.name, mime: f.type, data, model: $("#ask-model").value }) });
+      const res = await api("/api/upload", { method: "POST", body: JSON.stringify({ matter_id: matterId, name: f.name, mime: media ? (f.type || "audio/wav") : f.type, data, model: $("#ask-model").value }) });
       Object.assign(chip, res, { status: "ok" });
     } catch (err) {
       Object.assign(chip, { status: "error", error: err.message });
@@ -620,40 +676,136 @@ function renderChips() {
   composerChanged();
 }
 
-/* 语音输入：配置了语音转文字模型就录音转写；否则提示用系统听写 */
-let recorder = null;
-$("#mic-btn").addEventListener("click", async () => {
-  if (recorder) { recorder.stop(); return; }
-  const s = await api("/api/settings");
-  if (!s.transcribe_model) {
-    toast("还没有配置语音转文字模型。可以直接用系统听写：Mac 在输入框里连按两下 Fn（地球键），Windows 按 Win+H。\n如果接口支持语音转文字，可以在「设置 → 语音转文字模型」里选。", 7000);
-    $("#question").focus();
-    return;
-  }
+/* 听写（照搬 CopyDeck）：按话筒开始，说的话边说边写进输入框光标处；再按一次结束，字留在框里不自动发送；Esc 取消并恢复原样。
+   麦克风 24kHz → AudioWorklet 每 200ms 一块 PCM16 → 本地服务转给网关的实时转写（gpt-live-transcribe）。 */
+const dict = { s: null };
+const MIC_ICON = ic("mic");
+function dictButton(state) {
+  const b = $("#mic-btn");
+  b.classList.toggle("rec", state === "recording" || state === "finishing");
+  b.classList.toggle("connecting", state === "connecting");
+  b.disabled = state === "finishing";
+  b.innerHTML = state === "recording" ? `<span class="dict-wave"><i></i><i></i><i></i><i></i></span><span class="dict-label">正在听</span>`
+    : state === "finishing" ? `<span class="dict-label">收尾中</span>` : state === "connecting" ? `<span class="dict-label">准备中</span>` : MIC_ICON;
+  b.title = state === "recording" ? "正在听，点一下结束；Esc 取消" : "语音输入（听写）";
+  const q = $("#question");
+  q.classList.toggle("dictating", state !== "idle");
+  if (state === "recording") { q.dataset.ph ??= q.placeholder; q.placeholder = "正在听…说完再点一下话筒结束，Esc 取消"; }
+  else if (state === "idle" && q.dataset.ph != null) { q.placeholder = q.dataset.ph; delete q.dataset.ph; }
+}
+// 识别出的整段文字写进输入框：只替换这次听写写进去的那部分（流式结果改口也不会重复）
+function dictWrite(s, text) {
+  const q = $("#question");
+  if (q.value !== s.written) { const c = q.selectionEnd ?? q.value.length; s.before = q.value.slice(0, c); s.after = q.value.slice(c); s.consumed = s.text.length; }
+  const piece = text.length > s.consumed ? text.slice(s.consumed) : "";
+  s.text = text;
+  const value = s.before + piece + s.after;
+  if (value === q.value) return;
+  q.value = s.written = value;
+  const at = s.before.length + piece.length;
+  if (document.activeElement === q) q.setSelectionRange(at, at);
+}
+function dictStopCapture(s) {
+  cancelAnimationFrame(s.raf);
+  clearTimeout(s.timer);
+  s.stream?.getTracks().forEach((t) => t.stop());
+  s.source?.disconnect(); s.node?.disconnect(); s.ctx?.close().catch(() => {});
+}
+function dictEnd(s) { dictStopCapture(s); if (dict.s === s) dict.s = null; dictButton("idle"); }
+function dictFail(s, err) {
+  if (s.cancelled) return;
+  s.cancelled = true;
+  if (s.id) api(`/api/dictation/${s.id}/cancel`, { method: "POST" }).catch(() => {});
+  dictEnd(s);
+  const msg = err?.name === "NotAllowedError" ? "请在系统设置里允许「中国法律检索」使用麦克风。" : err?.message || String(err);
+  toast("听写失败：" + msg);
+}
+async function dictStart() {
+  const q = $("#question");
+  const s = dict.s = { before: q.value.slice(0, q.selectionStart ?? q.value.length), after: q.value.slice(q.selectionEnd ?? q.value.length), original: q.value, consumed: 0, text: "", written: q.value, queue: Promise.resolve() };
+  dictButton("connecting");
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const chunks = [];
-    recorder = new MediaRecorder(stream);
-    recorder.ondataavailable = (e) => chunks.push(e.data);
-    recorder.onstop = async () => {
-      stream.getTracks().forEach((t) => t.stop());
-      recorder = null;
-      $("#mic-btn").classList.remove("rec");
-      $("#mic-btn").title = "语音输入";
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      const data = await new Promise((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.readAsDataURL(blob); });
-      try {
-        const res = await api("/api/transcribe", { method: "POST", body: JSON.stringify({ name: "dictation.webm", mime: "audio/webm", data }) });
-        $("#question").value += res.text || "";
-        composerChanged();
-        $("#question").focus();
-      } catch (err) { toast("语音转文字失败：" + err.message); }
+    const [conn, stream] = await Promise.all([
+      api("/api/dictation/start", { method: "POST", body: "{}" }),
+      navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }),
+    ]);
+    s.id = conn.id; s.stream = stream;
+    if (s.cancelled) { dictStopCapture(s); api(`/api/dictation/${s.id}/cancel`, { method: "POST" }).catch(() => {}); return; }
+    s.ctx = new AudioContext({ sampleRate: 24000 });
+    await s.ctx.audioWorklet.addModule("dictation-worklet.js");
+    s.node = new AudioWorkletNode(s.ctx, "dictation-capture");
+    s.source = s.ctx.createMediaStreamSource(stream);
+    s.analyser = s.ctx.createAnalyser(); s.analyser.fftSize = 512; s.source.connect(s.analyser);
+    const broken = (err) => { if (!s.cancelled && !s.ending) dictFail(s, err); };
+    const push = (r) => { if (!s.cancelled && r?.text != null) dictWrite(s, r.text); };
+    s.node.port.onmessage = (e) => {
+      if (e.data === "flushed") { s.flushDone?.(); return; }
+      if (s.cancelled) return;
+      if (e.data === "boundary") { s.queue = s.queue.then(() => api(`/api/dictation/${s.id}/boundary`, { method: "POST" })).then(push); s.queue.catch(broken); return; }
+      const bytes = new Uint8Array(e.data);
+      let raw = "";
+      for (let i = 0; i < bytes.length; i += 8192) raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
+      const audio = btoa(raw);
+      s.queue = s.queue.then(() => api(`/api/dictation/${s.id}/append`, { method: "POST", body: JSON.stringify({ audio }) })).then(push);
+      s.queue.catch(broken);
     };
-    recorder.start();
-    $("#mic-btn").classList.add("rec");
-    $("#mic-btn").title = "正在录音，点一下结束并转成文字";
-  } catch (err) { toast("无法使用麦克风：" + err.message); recorder = null; }
-});
+    s.source.connect(s.node); s.node.connect(s.ctx.destination);
+    await s.ctx.resume();
+    if (s.cancelled) { dictStopCapture(s); return; }
+    dictButton("recording");
+    const buf = new Float32Array(s.analyser.fftSize);
+    const tick = () => { if (dict.s !== s || s.cancelled) return; s.analyser.getFloatTimeDomainData(buf); let p = 0; for (const x of buf) p += x * x; $("#mic-btn").style.setProperty("--lv", Math.min(1, Math.sqrt(p / buf.length) * 8).toFixed(2)); s.raf = requestAnimationFrame(tick); };
+    tick();
+    q.focus();
+    s.timer = setTimeout(() => { toast("听写最长 3 分钟，已经帮你结束了。"); dictStop(); }, 180000);
+  } catch (err) { dictFail(s, err); }
+}
+async function dictStop() {
+  const s = dict.s;
+  if (!s || s.cancelled || s.ending) return;
+  if (!s.node) { dictCancel(); return; }
+  s.ending = true; dictButton("finishing"); clearTimeout(s.timer);
+  try {
+    await new Promise((ok, bad) => { const t = setTimeout(() => bad(new Error("音频收尾超时")), 2000); s.flushDone = () => { clearTimeout(t); ok(); }; s.node.port.postMessage("flush"); });
+    dictStopCapture(s);
+    await s.queue;
+    const r = await api(`/api/dictation/${s.id}/finish`, { method: "POST" });
+    if (!s.cancelled) dictWrite(s, r.text || "");
+    if (!r.text && !s.text) toast("没有听到说话。");
+  } catch (err) { if (!s.cancelled) toast("听写失败：" + err.message); }
+  finally { s.cancelled = true; dictEnd(s); $("#question").focus(); }
+}
+function dictCancel() {
+  const s = dict.s;
+  if (!s) return;
+  s.cancelled = true;
+  if (s.id) api(`/api/dictation/${s.id}/cancel`, { method: "POST" }).catch(() => {});
+  $("#question").value = s.original;
+  dictEnd(s);
+}
+$("#mic-btn").addEventListener("mousedown", (e) => e.preventDefault()); // 不抢输入框光标
+$("#mic-btn").addEventListener("click", () => { if (dict.s) { dict.s.node ? dictStop() : dictCancel(); } else dictStart(); });
+window.addEventListener("keydown", (e) => { if (dict.s && e.key === "Escape" && !e.isComposing) { e.preventDefault(); e.stopImmediatePropagation(); dictCancel(); } }, true);
+
+/* 上传的录音、视频：在本机解码成 16kHz 单声道 WAV（视频只取音轨）再送去转写 */
+async function audioFileToWav16k(file) {
+  const ctx = new AudioContext();
+  let decoded;
+  try { decoded = await ctx.decodeAudioData(await file.arrayBuffer()); } finally { ctx.close().catch(() => {}); }
+  const frames = Math.ceil(decoded.duration * 16000);
+  const off = new OfflineAudioContext(1, frames, 16000);
+  const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start();
+  const pcm = (await off.startRendering()).getChannelData(0);
+  const out = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+  const str = (o, x) => [...x].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); out.setUint32(4, 36 + pcm.length * 2, true); str(8, "WAVEfmt "); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 1, true);
+  out.setUint32(24, 16000, true); out.setUint32(28, 32000, true); out.setUint16(32, 2, true); out.setUint16(34, 16, true); str(36, "data"); out.setUint32(40, pcm.length * 2, true);
+  for (let i = 0; i < pcm.length; i++) { const v = Math.max(-1, Math.min(1, pcm[i])); out.setInt16(44 + i * 2, Math.round(v * (v < 0 ? 32768 : 32767)), true); }
+  const bytes = new Uint8Array(out.buffer);
+  let raw = "";
+  for (let i = 0; i < bytes.length; i += 8192) raw += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(raw);
+}
 
 /* 发送 */
 $("#question").addEventListener("keydown", (e) => {
@@ -687,7 +839,7 @@ async function send({ intake_answers, skip_intake }) {
   let text = "";
   try {
     const res = await fetch("/api/ask", { method: "POST", headers: HEADERS, body: JSON.stringify({
-      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake,
+      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake, scenario: state.scenario,
       region: $("#ask-region").value, model: $("#ask-model").value, depth: $("#ask-depth").value }) });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -727,7 +879,7 @@ $("#open-settings").addEventListener("click", async () => {
   f.elements.api_key.value = s.api_key || "";
   f.elements.auto_update.checked = s.auto_update !== false;
   f.elements.update_interval_days.value = String(s.update_interval_days || 7);
-  state.settingsModels = { review: s.review_model || "auto", transcribe: s.transcribe_model || "" };
+  state.settingsModels = { review: s.review_model || "auto", transcribe: s.transcribe_model || "gpt-live-transcribe" };
   fillModelSelects(state.modelList || []);
   $("#models-status").textContent = "";
   $("#model-list").hidden = true;
@@ -764,12 +916,13 @@ $("#save-settings").addEventListener("click", async (e) => {
 /* ---------- 模型清单（AI 问答输入框下方） ---------- */
 function fillModelSelects(models) {
   const f = $("#settings-form");
-  const cur = state.settingsModels || { review: "auto", transcribe: "" };
+  const cur = state.settingsModels || { review: "auto", transcribe: "gpt-live-transcribe" };
   f.elements.review_model.innerHTML = `<option value="auto">自动选择另一家族的强模型</option>` + models.map((m) => `<option>${esc(m)}</option>`).join("");
   f.elements.review_model.value = models.includes(cur.review) ? cur.review : "auto";
   const tr = models.filter((m) => /transcri|whisper|audio|speech|asr/i.test(m));
-  f.elements.transcribe_model.innerHTML = `<option value="">不使用（用系统听写）</option>` + tr.map((m) => `<option>${esc(m)}</option>`).join("");
-  f.elements.transcribe_model.value = tr.includes(cur.transcribe) ? cur.transcribe : "";
+  const opts = [...new Set(["gpt-live-transcribe", ...tr])];
+  f.elements.transcribe_model.innerHTML = opts.map((m) => `<option>${esc(m)}</option>`).join("");
+  f.elements.transcribe_model.value = opts.includes(cur.transcribe) ? cur.transcribe : "gpt-live-transcribe";
 }
 
 function fillModels(r) {

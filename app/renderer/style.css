@@ -458,3 +458,36 @@ details.steps[open] > summary .chev { transform: rotate(180deg); }
 .pop-list li[hidden] { display: none; }
 .matter-head:not([hidden]) + .spacer { display: none; }
 body[data-view="ask"] .foot { display: none; }
+/* 听写（同 CopyDeck）：输入框边框染色，话筒变成「波形＋正在听」 */
+.composer:has(textarea.dictating) { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+textarea.dictating::placeholder { color: var(--accent); }
+#mic-btn.rec, #mic-btn.connecting { width: auto; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+#mic-btn.connecting { color: var(--accent); border-color: var(--accent); }
+.dict-label { font-size: 12px; white-space: nowrap; }
+.dict-wave { display: inline-flex; align-items: center; gap: 2px; height: 14px; }
+.dict-wave i { display: block; width: 2px; border-radius: 1px; background: currentColor; height: calc(3px + var(--lv, 0) * 11px * var(--k, 1)); transition: height .08s linear; }
+.dict-wave i:nth-child(1) { --k: .55; } .dict-wave i:nth-child(2) { --k: 1; } .dict-wave i:nth-child(3) { --k: .8; } .dict-wave i:nth-child(4) { --k: .45; }
+
+/* 场景目录 */
+.sc-head { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+.sc-head h3 { margin: 0; font-size: 15px; }
+.sc-head input { flex: 1; max-width: 360px; }
+.sc-catalog { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 14px; }
+.sc-group { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.sc-group summary { cursor: pointer; padding: 9px 12px; font-weight: 600; font-size: 14px; }
+.sc-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; padding: 0 10px 10px; }
+.sc-item { text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.sc-item:hover { border-color: var(--accent); }
+.sc-item b { font-size: 13px; font-weight: 600; }
+.sc-item span { font-size: 12px; color: var(--muted); }
+.scenario-pill { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 12px; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-bottom: 6px; }
+.scenario-pill button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 14px; padding: 0 6px; }
+/* 场景目录、场景 pill、听写按钮：跟改版对齐 */
+.scenario-pill { margin-bottom: 0; }
+.scenario-pill button { width: 20px; height: 20px; display: grid; place-items: center; padding: 0; border-radius: 6px; }
+.scenario-pill button .i { width: 13px; height: 13px; }
+.sc-group { border-radius: 12px; }
+.sc-item { border-radius: 10px; transition: border-color .15s, background .15s; }
+.sc-item:hover { background: var(--paper); }
+#mic-btn.rec, #mic-btn.connecting { height: 32px; }
+#mic-btn.connecting { border: 1px solid var(--accent); }

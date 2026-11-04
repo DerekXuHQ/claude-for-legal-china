@@ -8,12 +8,14 @@ import { ask, newConversation } from "./ai/ask.mjs";
 import { listModels, DEFAULT_BASE_URL, complete, client } from "./ai/models.mjs";
 import { extractText } from "./ai/docs.mjs";
 import { markdownToDocx } from "./ai/export.mjs";
-import { toFile } from "openai";
+import { LiveDictation, transcribeWav, DEFAULT_SPEECH_MODEL } from "./ai/speech.mjs";
 import * as matters from "./matters.mjs";
+import { scenarioCatalog } from "./ai/tasks.mjs";
+import { PIPELINES } from "./ai/pipelines.mjs";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png" };
 export const DEFAULT_SETTINGS = {
-  base_url: DEFAULT_BASE_URL, api_key: "", model: "", depth: "medium", review_model: "auto", transcribe_model: "",
+  base_url: DEFAULT_BASE_URL, api_key: "", model: "", depth: "medium", review_model: "auto", transcribe_model: DEFAULT_SPEECH_MODEL,
   auto_update: true, update_interval_days: 7,
 };
 
@@ -38,6 +40,7 @@ export function createServer(ctx) {
     return db;
   };
   const running = new Map(); // matterId -> AbortController
+  const dictations = new Map(); // 听写 id -> { session, at }
   const modelCache = { key: "", at: 0, models: [] };
 
   const loadSettings = () => {
@@ -47,6 +50,7 @@ export function createServer(ctx) {
       for (const k of Object.keys(DEFAULT_SETTINGS)) if (k in saved) s[k] = saved[k];
     }
     if (!s.base_url) s.base_url = DEFAULT_BASE_URL;
+    if (!s.transcribe_model) s.transcribe_model = DEFAULT_SPEECH_MODEL;
     return s;
   };
   const saveSettings = (patch) => {
@@ -147,6 +151,11 @@ export function createServer(ctx) {
         const item = getter ? getter(id) : null;
         return item ? send(res, 200, item) : send(res, 404, { error: "未找到" });
       }
+      if (p === "/api/scenarios") {
+        const cat = scenarioCatalog();
+        return send(res, 200, { groups: cat.groups, pipelines: Object.fromEntries(Object.entries(PIPELINES).map(([k, v]) => [k, v.name])),
+          scenarios: cat.scenarios.map((x) => ({ id: x.id, code: x.code, name: x.name, group: x.group, pipeline: x.pipeline, freq: x.freq, examples: x.examples, needsDoc: !!PIPELINES[x.pipeline]?.needsDoc || x.pipeline === "P5" })) });
+      }
       if (p === "/api/models") {
         const s = loadSettings();
         if (!s.api_key) return send(res, 200, { models: [], error: "还没有填写 API key" });
@@ -207,14 +216,30 @@ export function createServer(ctx) {
         return send(res, 200, { ok: true });
       }
       if (p === "/api/upload") return uploadHandler(req, res);
-      if (p === "/api/transcribe") {
-        const b = await readBody(req, 30e6);
+      // 听写（照搬 CopyDeck）：start 建一条实时转写连接；append 每 200ms 送一块 24kHz PCM16，返回目前识别出的全文；
+      // boundary 在说话停顿处提交一段；finish 收尾返回最终文字。
+      if (p === "/api/dictation/start") {
         const settings = loadSettings();
-        if (!settings.transcribe_model) return send(res, 400, { error: "还没有配置语音转文字模型" });
+        if (!settings.api_key) return send(res, 400, { error: "听写需要先在「设置」里填 API key" });
+        for (const [k, d] of dictations) if (Date.now() - d.at > 240000) { d.session.close(); dictations.delete(k); }
+        const id = randomUUID();
+        const session = new LiveDictation({ baseURL: settings.base_url, apiKey: settings.api_key, model: settings.transcribe_model });
+        try { await session.ready; } catch (err) { return send(res, 400, { error: `听写连接失败：${err.message}` }); }
+        dictations.set(id, { session, at: Date.now() });
+        return send(res, 200, { id, model: settings.transcribe_model });
+      }
+      if (/^\/api\/dictation\/[^/]+\/(append|boundary|finish|cancel)$/.test(p)) {
+        const [, , , id, action] = p.split("/");
+        const d = dictations.get(id);
+        if (!d) return send(res, 404, { error: "听写已经结束" });
         try {
-          const r = await client(settings).audio.transcriptions.create({ model: settings.transcribe_model, file: await toFile(Buffer.from(String(b.data || ""), "base64"), String(b.name || "audio.webm")) });
-          return send(res, 200, { text: r.text || "" });
+          if (action === "cancel") { d.session.close(); dictations.delete(id); return send(res, 200, { ok: true }); }
+          if (action === "append") { const b = await readBody(req, 200000); return send(res, 200, await d.session.append(String(b.audio || ""))); }
+          if (action === "boundary") return send(res, 200, await d.session.boundary());
+          dictations.delete(id);
+          return send(res, 200, await d.session.finish());
         } catch (err) {
+          d.session.close(); dictations.delete(id);
           return send(res, 400, { error: String(err?.message || err).slice(0, 300) });
         }
       }
@@ -240,7 +265,7 @@ export function createServer(ctx) {
 
   // 上传：文档取文字；图片用视觉模型识别文字和内容；音频、视频转成文字
   async function uploadHandler(req, res) {
-    const b = await readBody(req, 60e6);
+    const b = await readBody(req, 300e6);
     const settings = loadSettings();
     const name = String(b.name || "文件").slice(0, 200);
     const mime = String(b.mime || "");
@@ -263,9 +288,11 @@ export function createServer(ctx) {
         text = r.choices?.[0]?.message?.content || "";
       } else if (/^(audio|video)\//.test(mime) || /\.(mp3|m4a|wav|aac|ogg|webm|mp4|mov|mpeg|mpga)$/i.test(name)) {
         kind = /^video\//.test(mime) || /\.(mp4|mov)$/i.test(name) ? "video" : "audio";
-        if (!settings.transcribe_model) throw new Error("还没有配置语音转文字模型（设置 → 语音转文字模型）。也可以用系统听写：Mac 连按两下 Fn，Windows 按 Win+H。");
-        const r = await client(settings).audio.transcriptions.create({ model: settings.transcribe_model, file: await toFile(buffer, name) });
-        text = r.text || "";
+        if (!settings.api_key) throw new Error("转写录音需要先在「设置」里填 API key");
+        // 前端已经把录音（视频取音轨）解码成 16kHz 单声道 WAV（b.wav16k）；没有就当原文件是 WAV
+        const wav = b.wav16k ? Buffer.from(String(b.wav16k), "base64") : buffer;
+        text = await transcribeWav({ settings, client: client(settings), model: settings.transcribe_model, wav });
+        if (!text.trim()) throw new Error("录音里没有识别出说话内容");
       } else {
         text = await extractText(name, buffer);
       }
@@ -329,7 +356,7 @@ export function createServer(ctx) {
         const qText = question || (files.length ? `请处理我上传的文件：${files.map((f) => f.name).join("、")}` : "");
         const r = await ask(settings, {
           conv, question: qText, region, attachments, model, depth, db: search.getDb(), emit, signal: ctrl.signal,
-          intakeAnswers, skipIntake, available: modelCache.models,
+          intakeAnswers, skipIntake, available: modelCache.models, scenario: typeof body.scenario === "string" ? body.scenario : "",
         });
         out.text = r.text || answer;
         if (!r.intake) {

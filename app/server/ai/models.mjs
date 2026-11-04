@@ -30,16 +30,21 @@ const retryable = (err) => !err?.status || err.status === 429 || err.status >= 5
 
 /**
  * 流式补全：文字增量通过 onText 推出；返回完整文字和工具调用。
- * 网关断开、超时、5xx、429 时自动重试（最多 3 次）；重试前通过 onReset 让调用方清掉已经推出的半截文字。
+ * 网关断开、超时、5xx、429 时自动重试（最多 5 次，间隔逐渐拉长，网关偶尔会成片断连）；重试前通过 onReset 让调用方清掉已经推出的半截文字。
  */
 export async function stream(settings, opts) {
   for (let attempt = 0; ; attempt++) {
     try {
       return await streamOnce(settings, opts);
     } catch (err) {
-      if (opts.signal?.aborted || attempt >= 3 || !retryable(err)) throw err;
+      if (process.env.CLS_DEBUG) {
+        const body = JSON.stringify(opts.messages);
+        console.error(`[model ${opts.model}] 第 ${attempt + 1} 次失败：${err?.status || ""} ${err?.message} ${err?.cause?.code || err?.cause?.message || ""} ${err?.cause?.cause?.code || err?.cause?.cause?.message || ""} 请求 ${body.length} 字符`);
+        (await import("node:fs")).writeFileSync("/tmp/cls_failed_req.json", body);
+      }
+      if (opts.signal?.aborted || attempt >= 5 || !retryable(err)) throw err;
       opts.onReset?.();
-      await sleep([2000, 6000, 15000][attempt]);
+      await sleep([2000, 6000, 15000, 30000, 60000][attempt]);
     }
   }
 }

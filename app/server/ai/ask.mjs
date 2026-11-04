@@ -3,9 +3,11 @@ import { runAgent, SYSTEM_PROMPT, DEPTH } from "./agent.mjs";
 import { routeTask, intakeQuestions } from "./router.mjs";
 import { getTask } from "./tasks.mjs";
 import { runReview } from "./review.mjs";
+import { runConsult } from "./consult.mjs";
 import { verifyCitations } from "./verify.mjs";
 import { pickReviewModel } from "./models.mjs";
 
+const clipLine = (s) => String(s || "").replace(/\s+/g, " ").slice(0, 60);
 const clip = (s, n) => (s && s.length > n ? s.slice(0, n) + "\n〔后面的内容过长，已省略〕" : s || "");
 
 export function newConversation() {
@@ -28,7 +30,7 @@ function answersText(questions, answers) {
  * @param {object} [p.intakeAnswers] 对上一轮追问的回答
  * @param {boolean} [p.skipIntake]  跳过追问，按现有信息作答
  */
-export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, emit, signal }) {
+export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, emit, signal, scenario = "", pipeline = process.env.CLS_PIPELINE || "agent" }) {
   const cfg = DEPTH[depth] || DEPTH.medium;
   conv.attachments.push(...attachments);
   let route, facts = "", userQuestion = question;
@@ -42,8 +44,15 @@ export async function ask(settings, { conv, question, region, attachments = [], 
     region = region || conv.pending.region;
     conv.pending = null;
   } else {
-    emit({ type: "stage", text: "理解问题" });
-    route = await routeTask(settings, model, { question, region, attachments: conv.attachments, history: conv.history }, signal);
+    // 用户在目录里选了场景：这个事项就按该场景办，不再自动分流
+    if (scenario && getTask(scenario).scenario) conv.scenario = scenario;
+    if (conv.scenario) {
+      const t = getTask(conv.scenario);
+      route = { task: t.id, name: t.name, also: [], region: region || conv.route?.region || "", summary: conv.route?.summary || clipLine(question), urgent: false };
+    } else {
+      emit({ type: "stage", text: "理解问题" });
+      route = await routeTask(settings, model, { question, region, attachments: conv.attachments, history: conv.history }, signal);
+    }
     region = region || route.region;
     emit({ type: "route", task: route.task, name: route.name, summary: route.summary, also: route.also });
     // 第一次问、或换了一类事时，先看要不要追问
@@ -66,11 +75,13 @@ export async function ask(settings, { conv, question, region, attachments = [], 
   let text;
 
   // 新上传了文件、或这份文件还没审过时，走多轮审查；之后的追问在已有审查意见的基础上回答
-  if ((route.task === "contract_review" || route.task === "plan_review") && doc && (attachments.length || !conv.reviewed)) {
+  // 合同审查场景（P5）走合同审查；合规判断场景（P8）上传了方案文件的走方案审查
+  const reviewKind = route.task === "contract_review" || task.runner === "review" ? "contract_review" : route.task === "plan_review" || task.pipeline === "P8" ? "plan_review" : "";
+  if (reviewKind && doc && (attachments.length || !conv.reviewed)) {
     conv.reviewed = true;
     const reviewModel = pickReviewModel(settings, model, available);
     const r = await runReview(settings, {
-      kind: route.task, doc, question: userQuestion, region, facts, mainModel: model, reviewModel, emit, signal, db,
+      kind: reviewKind, task: task.scenario ? task : null, doc, question: userQuestion, region, facts, mainModel: model, reviewModel, emit, signal, db,
       verify: verifyCitations,
     });
     text = r.text;
@@ -85,7 +96,7 @@ export async function ask(settings, { conv, question, region, attachments = [], 
       `## 问题\n${userQuestion}`,
     ].filter(Boolean).join("\n\n");
     emit({ type: "stage", text: `按「${task.name}」的方法检索分析` });
-    const r = await runAgent(settings, {
+    const r = pipeline === "consult" ? await runConsult(settings, { model, system, content, history: conv.history, emit, signal }) : await runAgent(settings, {
       model, effort: cfg.effort, system, steps: cfg.steps, emit, signal,
       messages: [...conv.history, { role: "user", content }],
     });
