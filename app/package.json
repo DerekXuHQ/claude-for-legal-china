@@ -15,7 +15,8 @@
     "dist:mac": "scripts/build-mac.sh",
     "dist:mac:intel": "MAC_ARCH=x64 scripts/build-mac.sh",
     "dist:win": "scripts/build-win.sh",
-    "upload-build-inputs": "gh release upload build-inputs --repo DerekXuHQ/claude-for-legal-china resources/base.db.gz resources/data-version.json --clobber"
+    "upload-build-inputs": "gh release upload build-inputs --repo DerekXuHQ/claude-for-legal-china resources/base.db.gz resources/data-version.json --clobber",
+    "agents": "node scripts/build-agents.mjs"
   },
   "dependencies": {
     "docx": "^9.15.2",

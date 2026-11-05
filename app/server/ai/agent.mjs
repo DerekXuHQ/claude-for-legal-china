@@ -336,9 +336,10 @@ export const DEPTH = {
  * 带工具的多轮检索与回答。stream 为 true 时把文字增量推给 emit。
  * @returns {Promise<{messages: object[], text: string}>}
  */
-export async function runAgent(settings, { model, effort, system, messages, steps = 16, emit = () => {}, signal, stream: doStream = true, label = "" }) {
+export async function runAgent(settings, { model, effort, system, messages, steps = 16, emit = () => {}, signal, stream: doStream = true, label = "", extra = null }) {
   const msgs = [{ role: "system", content: system }, ...messages];
-  const tools = TOOL_DEFS();
+  // extra：Agent 专用工具 { tools: [{name, description, input_schema}], run(name, args) => string|null, labels }
+  const tools = [...TOOL_DEFS(), ...(extra?.tools || []).map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }))];
   const ledger = new Set(); // 本次实际读过原文的条文编号
   for (let step = 0; step < steps; step++) {
     let turn;
@@ -357,7 +358,7 @@ export async function runAgent(settings, { model, effort, system, messages, step
       let args = null;
       try { args = JSON.parse(c.function.arguments || "{}"); } catch { /* 交给 runTool 报错 */ }
       const name = c.function.name;
-      const text = (label ? label + " · " : "") + stepText(name, args);
+      const text = (label ? label + " · " : "") + (extra?.labels?.[name] ? `${extra.labels[name]}${args?.register ? "：" + args.register : args?.skill ? "：" + args.skill : ""}` : stepText(name, args));
       let content, detail = "", kind = "local";
       if (name === "web_search") {
         kind = "web";
@@ -371,6 +372,9 @@ export async function runAgent(settings, { model, effort, system, messages, step
           content = JSON.stringify({ error: `联网搜索失败：${String(e.message || e).slice(0, 200)}` });
           detail = `联网搜索失败：${String(e.message || e).slice(0, 200)}`;
         }
+      } else if (extra?.labels?.[name]) {
+        try { content = extra.run(name, args || {}) ?? JSON.stringify({ error: "未知工具" }); } catch (e) { content = JSON.stringify({ error: String(e.message || e) }); }
+        detail = content.length > 300 ? content.slice(0, 300) + "…" : content;
       } else {
         try { content = runTool(name, args); } catch (e) { content = JSON.stringify({ error: String(e.message || e) }); }
         detail = stepDetail(name, content);

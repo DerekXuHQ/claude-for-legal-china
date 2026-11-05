@@ -45,6 +45,11 @@
   <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.13-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.13a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.13 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.13a.5.5 0 0 1-.96 0z"/></symbol>
   <symbol id="i-gavel" viewBox="0 0 24 24"><path d="m14.5 12.5-8 8a2.12 2.12 0 1 1-3-3l8-8"/><path d="m16 16 6-6M8 8l6-6M9 7l8 8M21 11l-8-8"/></symbol>
   <symbol id="i-file-search" viewBox="0 0 24 24"><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4.27 21.7A2 2 0 0 0 6 22h12a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/><circle cx="5" cy="14" r="3"/><path d="m9 18-1.5-1.5"/></symbol>
+  <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></symbol>
+  <symbol id="i-id-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h5M14 14h3"/></symbol>
   <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
   <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.38 3.62a1 1 0 0 1 3 3L7.37 18.64a2 2 0 0 1-.86.5l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .5-.86z"/></symbol>
@@ -67,6 +72,7 @@
   <div class="brand"><span class="logo">法</span><span>中国法律检索</span></div>
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="ask" role="tab"><svg class="i" aria-hidden="true"><use href="#i-scale"/></svg><span>法律助理</span></button>
+    <button class="tab" data-view="agents" role="tab"><svg class="i" aria-hidden="true"><use href="#i-bot"/></svg><span>Agent</span> <span id="agent-count" class="count"></span></button>
     <button class="tab" data-view="browse" role="tab"><svg class="i" aria-hidden="true"><use href="#i-book-open"/></svg><span>浏览</span></button>
     <button class="tab" data-view="search" role="tab"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><span>检索</span></button>
     <button class="tab" data-view="saved" role="tab"><svg class="i" aria-hidden="true"><use href="#i-bookmark"/></svg><span>收藏</span> <span id="saved-count" class="count"></span></button>
@@ -218,6 +224,17 @@
   <!-- 法规更新 -->
 
   <!-- 收藏 -->
+  <!-- Agent：按业务领域列出全部命名 Agent 和定时 Agent，另有台账、实务画像、定时报告 -->
+  <section id="view-agents" class="view">
+    <div class="ag">
+      <aside class="ag-side">
+        <div class="ag-search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input id="ag-q" placeholder="搜索 Agent：保密协议、起诉状、量刑……"></div>
+        <ol id="ag-areas" class="pk-groups"></ol>
+      </aside>
+      <div class="ag-main" id="ag-main"></div>
+    </div>
+  </section>
+
   <section id="view-saved" class="view">
     <div class="split">
       <div class="pane-left">
@@ -347,6 +364,13 @@
   仅供参考，不构成法律意见 · 法规文本优先采用中国人大网、国家行政法规库、最高人民法院公布的官方全文，其余取自国家法律法规数据库（经 CC0 数据集）
 </footer>
 
+
+<dialog id="ag-dialog" class="wide">
+  <form method="dialog">
+    <div class="ag-dlg-head"><h3 id="ag-dlg-title"></h3><button value="cancel" class="icon-btn" title="关闭"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <div id="ag-dlg-body"></div>
+  </form>
+</dialog>
 
 <dialog id="app-update">
   <form method="dialog">

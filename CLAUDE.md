@@ -25,7 +25,7 @@ NOTICE                            # 上游项目署名（Apache 2.0 要求）
 app/                              # 桌面 app（Electron + SQLite 全文索引），数据包构建产物在 app/data/、app/resources/，不进 git
 ```
 
-`app/` 的数据包会收录各插件的 `references/*.md` 和 `skills/*/SKILL.md`（标题含「国际」「境外」等的段落除外）。改了这些文件后，发布新安装包前运行 `cd app && npm run data` 重建数据包。官方网站的访问规则写在 `app/server/official/fetch.mjs`：请求间隔不少于 2 秒，遇到验证页就停，不访问 robots.txt 禁止的网站。
+`app/` 的数据包会收录各插件的 `references/*.md` 和 `skills/*/SKILL.md`（标题含「国际」「境外」等的段落除外）。改了这些文件后，发布新安装包前运行 `cd app && npm run data` 重建数据包。桌面 app 的「Agent」页把每个技能做成一个命名 Agent、把 `agents/*.md` 做成定时 Agent，内容打包在 `app/server/ai/roster/`（进 git）：增删改技能或 Agent 后运行 `cd app && npm run agents` 重新生成；新技能要在 `app/scripts/build-agents.mjs` 的 `EXTRA` 里补一个中文职位名，否则脚本报错。官方网站的访问规则写在 `app/server/official/fetch.mjs`：请求间隔不少于 2 秒，遇到验证页就停，不访问 robots.txt 禁止的网站。
 
 ## 改完之后要做的事
 

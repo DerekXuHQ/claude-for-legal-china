@@ -33,6 +33,7 @@ function showView(v) {
   $$(".tab").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
   $$(".view").forEach((s) => s.classList.toggle("active", s.id === "view-" + v));
   if (v === "saved") renderSaved();
+  if (v === "agents") renderAgents();
   // 第一次进法律助理：打开最近的事项；之后切回来保持原样（包括还没发消息的新事项页）
   if (v === "ask") { $("#question").focus(); if (!state.matter && !state.askOpened) { state.askOpened = true; loadMatters().then((l) => { if (state.matter || state.newMatterShown) return; l[0] ? openMatter(l[0].id) : renderMatter(null); }); } }
   if (v === "settings") { loadSettingsForm(); renderUpdates(); $("#upd-dot").hidden = true; }
@@ -437,6 +438,7 @@ let scenarioCat = null;
 async function loadScenarioCat() { if (!scenarioCat) scenarioCat = await api("/api/scenarios").catch(() => ({ groups: [], scenarios: [], pipelines: {} })); return scenarioCat; }
 function setScenario(id) {
   state.scenario = id || "";
+  state.agent = "";
   $$(".pk-card[data-sc]").forEach((r) => r.classList.toggle("on", r.dataset.sc === state.scenario));
   const q = $("#question");
   if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
@@ -545,9 +547,10 @@ $("#new-matter").addEventListener("click", () => {
 async function ensureMatter() {
   if (state.matter) return state.matter.id;
   const { id } = await api("/api/matters", { method: "POST", body: "{}" });
-  const keep = state.scenario; // 先选了场景、第一次上传或发送时才建事项：场景保留
+  const keep = state.scenario, keepAgent = state.agent; // 先选了场景或 Agent、第一次上传或发送时才建事项：保留
   await openMatter(id);
   if (keep) setScenario(keep);
+  if (keepAgent) setAgent(keepAgent);
   return id;
 }
 
@@ -1186,7 +1189,7 @@ async function send({ intake_answers, skip_intake, retry_question }) {
   let text = "";
   try {
     const res = await fetch("/api/ask", { method: "POST", headers: HEADERS, body: JSON.stringify({
-      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake, scenario: state.scenario,
+      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake, scenario: state.scenario, agent: state.agent,
       region: $("#ask-region").value, model: $("#ask-model").value, depth: $("#ask-depth").value }) });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -1935,3 +1938,234 @@ $("#keys-list").addEventListener("click", (e) => {
 });
 function stopRecording() { if (keyRecording) window.removeEventListener("keydown", keyRecording, true); keyRecording = null; }
 renderKeys();
+
+/* ---------- Agent：命名 Agent、定时 Agent、台账、实务画像 ---------- */
+state.agent = "";
+state.ag = null;
+state.agSel = "_all";
+const CADENCE = { daily: "每天", weekly: "每周" };
+const fmtTime = (t) => (t ? new Date(t * 1000).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "");
+const agById = (id) => state.ag?.agents.find((a) => a.id === id);
+
+function setAgent(id, info) {
+  const a = info || agById(id);
+  state.agent = a ? id : "";
+  state.scenario = "";
+  const pill = $("#scenario-pill"), q = $("#question");
+  if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
+  pill.hidden = !a;
+  if (!a) { q.placeholder = q.dataset.defaultPh; return; }
+  pill.innerHTML = `Agent：<b>${esc(a.title)}</b> · ${esc(a.area)}<button type="button" title="取消，让助理自己判断">${ic("x")}</button>`;
+  pill.querySelector("button").onclick = () => setScenario("");
+  q.placeholder = `${a.blurb}。把材料拖进来，或者说说情况`;
+}
+
+async function loadAgents() {
+  state.ag = await api("/api/agents");
+  const n = state.ag.unseen || 0;
+  $("#agent-count").textContent = n ? String(n) : "";
+  return state.ag;
+}
+window.refreshAgentBadge = () => loadAgents().then(() => { if (document.body.dataset.view === "agents") renderAgentMain(); }).catch(() => {});
+window.openAgentRun = (id) => { showView("agents"); openRun(id); };
+
+async function renderAgents() {
+  await loadAgents().catch((e) => toast("读取 Agent 列表失败：" + e.message));
+  if (!state.ag) return;
+  const { agents, areas } = state.ag;
+  const tasks = agents.filter((a) => a.kind === "task");
+  const items = [
+    ["_all", "全部 Agent", tasks.length], ["_watch", "定时 Agent", agents.length - tasks.length],
+    ...areas.map((x) => [x.plugin, x.area, agents.filter((a) => a.plugin === x.plugin).length]),
+    ["_sep"], ["_registers", "台账", Object.values(state.ag.counts || {}).reduce((s, n) => s + n, 0)], ["_profiles", "实务画像", areas.filter((x) => x.configured).length + "/" + areas.length], ["_runs", "定时报告", state.ag.unseen || ""],
+  ];
+  $("#ag-areas").innerHTML = items.map(([k, name, n]) => k === "_sep" ? `<li class="sep"></li>` : `<li data-k="${esc(k)}" class="${state.agSel === k ? "on" : ""}">${esc(name)}<em>${n ?? ""}</em></li>`).join("");
+  renderAgentMain();
+}
+$("#ag-areas").addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-k]");
+  if (!li) return;
+  state.agSel = li.dataset.k;
+  $("#ag-q").value = "";
+  $$("#ag-areas li").forEach((x) => x.classList.toggle("on", x === li));
+  renderAgentMain();
+});
+$("#ag-q").addEventListener("input", () => renderAgentMain());
+
+function agentCard(a) {
+  const w = state.ag.watchers?.[a.id];
+  if (a.kind === "watch") {
+    const last = w?.last;
+    return `<div class="ag-card watch" data-id="${esc(a.id)}">
+      <div class="ag-card-top">${ic("clock")}<b>${esc(a.title)}</b><span class="badge">${CADENCE[a.cadence] || ""}</span></div>
+      <p>${esc(a.blurb)}</p>
+      <div class="ag-meta">${w?.running ? `${ic("loader", "spin")} 正在运行` : last ? `上次 ${fmtTime(last.started)}：${esc(last.summary || last.status)}` : "还没有运行过"}</div>
+      <div class="ag-meta">读：${(a.registers || []).map((k) => `${esc(state.ag.registers[k]?.name || k)}（${state.ag.counts?.[k] || 0}）`).join("、")}${a.lawUpdates ? "、法规库更新" : ""}${a.files ? "、事项新增文件" : ""}</div>
+      <div class="ag-actions">
+        <label class="check"><input type="checkbox" data-act="toggle" ${w?.enabled ? "checked" : ""}> 自动运行</label>
+        <button type="button" class="ghost" data-act="run" ${w?.running ? "disabled" : ""}>${ic("play")}立即运行</button>
+        ${last ? `<button type="button" class="ghost" data-act="last" data-run="${esc(last.id)}">看报告</button>` : ""}
+        <button type="button" class="ghost" data-act="skill">说明</button>
+      </div></div>`;
+  }
+  return `<div class="ag-card" data-id="${esc(a.id)}">
+    <div class="ag-card-top">${ic("bot")}<b>${esc(a.title)}</b></div>
+    <p>${esc(a.blurb)}</p>
+    <div class="ag-actions">
+      <button type="button" class="primary" data-act="start">开始</button>
+      <button type="button" class="ghost" data-act="skill">技能说明</button>
+      <span class="muted small">${esc(a.skills[0])}</span>
+    </div></div>`;
+}
+
+function profileBar(plugin) {
+  const x = state.ag.areas.find((y) => y.plugin === plugin);
+  if (!x) return "";
+  return `<div class="ag-profile ${x.configured ? "ok" : ""}">${ic("id-card")}
+    <span>${x.configured ? `<b>${esc(x.area)}实务画像已配置</b>：本领域的 Agent 都按你们的立场、红线和审批人办事。` : `<b>还没有配置${esc(x.area)}实务画像</b>：Agent 会按通用的稳健立场办，依赖团队立场的判断标〔假设〕。花十分钟做一次访谈，之后都按你们的规矩来。`}</span>
+    ${x.hasInterview ? `<button type="button" class="${x.configured ? "ghost" : "primary"}" data-interview="${esc(plugin)}">${x.configured ? "重新访谈" : "开始访谈"}</button>` : ""}
+    <button type="button" class="ghost" data-profile="${esc(plugin)}">${x.configured ? "查看 / 修改" : "直接填写"}</button></div>`;
+}
+
+function renderAgentMain() {
+  const box = $("#ag-main");
+  if (!state.ag) return;
+  const sel = state.agSel, q = $("#ag-q").value.trim();
+  const { agents, areas } = state.ag;
+  if (!q && sel === "_registers") return renderRegisters(box);
+  if (!q && sel === "_profiles") return renderProfiles(box);
+  if (!q && sel === "_runs") return renderRuns(box);
+  let list, head;
+  if (q) {
+    const words = q.split(/\s+/);
+    list = agents.filter((a) => words.every((w) => (a.title + a.blurb + a.area + a.id).toLowerCase().includes(w.toLowerCase())));
+    head = `<h2>搜索「${esc(q)}」</h2><p class="muted">找到 ${list.length} 个 Agent</p>`;
+  } else if (sel === "_watch") {
+    list = agents.filter((a) => a.kind === "watch");
+    head = `<h2>定时 Agent</h2><p class="muted">app 开着时在后台按频率运行，读台账、法规库更新和事项文件，有需要你决定的事就发系统通知。台账为空时不运行，不产生费用。</p>`;
+  } else if (sel === "_all") {
+    head = `<h2>全部 Agent</h2><p class="muted">每个 Agent 按一个完整的技能办事：要问什么、查什么、交付什么格式都是定好的。点「开始」，把材料拖进去或说说情况。直接在「法律助理」里提问，也会自动交给最合适的 Agent。</p>`;
+    box.innerHTML = head + areas.map((x) => {
+      const xs = agents.filter((a) => a.plugin === x.plugin && a.kind === "task");
+      return xs.length ? `<h3 class="ag-area">${esc(x.area)} <em>${xs.length}</em></h3><div class="ag-grid">${xs.map(agentCard).join("")}</div>` : "";
+    }).join("");
+    return;
+  } else {
+    const x = areas.find((y) => y.plugin === sel);
+    list = agents.filter((a) => a.plugin === sel);
+    head = `<h2>${esc(x?.area || "")}</h2>${profileBar(sel)}`;
+  }
+  box.innerHTML = head + `<div class="ag-grid">${list.map(agentCard).join("") || `<p class="muted">没有找到。</p>`}</div>`;
+}
+
+$("#ag-main").addEventListener("click", async (e) => {
+  const iv = e.target.closest("[data-interview]");
+  if (iv) return startAgent(`${iv.dataset.interview}:cold-start-interview`, "请开始实务画像访谈。");
+  const pf = e.target.closest("[data-profile]");
+  if (pf) return editProfile(pf.dataset.profile);
+  const rn = e.target.closest("[data-run]");
+  if (rn) return openRun(rn.dataset.run);
+  const btn = e.target.closest("[data-act]");
+  const card = e.target.closest(".ag-card");
+  if (!btn || !card) return;
+  const a = agById(card.dataset.id);
+  const act = btn.dataset.act;
+  if (act === "start") startAgent(a.id);
+  else if (act === "skill") showSkill(a.id);
+  else if (act === "toggle") { await api(`/api/watchers/${encodeURIComponent(a.id)}/toggle`, { method: "POST", body: JSON.stringify({ enabled: btn.checked }) }); loadAgents(); }
+  else if (act === "run") {
+    btn.disabled = true; btn.innerHTML = `${ic("loader", "spin")}运行中…`;
+    try {
+      const r = await api(`/api/watchers/${encodeURIComponent(a.id)}/run`, { method: "POST", body: "{}" });
+      await loadAgents(); renderAgentMain();
+      if (r.runId) openRun(r.runId); else toast(r.skipped || "已运行");
+    } catch (err) { toast("运行失败：" + err.message); btn.disabled = false; btn.innerHTML = `${ic("play")}立即运行`; }
+  }
+});
+
+function startAgent(id, autoText = "") {
+  showView("ask");
+  $("#new-matter").click();
+  const a = agById(id) || (id.endsWith(":cold-start-interview") ? { id, title: `${state.ag.areas.find((x) => id.startsWith(x.plugin + ":"))?.area || ""}实务画像访谈`, area: "实务画像", blurb: "回答几个问题，生成你们团队的实务画像" } : null);
+  setAgent(id, a);
+  if (autoText) { $("#question").value = autoText; composerChanged(); send({}); }
+}
+
+function dlg(title, html) {
+  $("#ag-dlg-title").textContent = title;
+  $("#ag-dlg-body").innerHTML = html;
+  const d = $("#ag-dialog");
+  if (!d.open) d.showModal();
+  return $("#ag-dlg-body");
+}
+
+async function showSkill(id) {
+  const r = await api(`/api/agents/skill?id=${encodeURIComponent(id)}`);
+  const a = agById(id);
+  dlg(`${r.title} · 技能说明`, `<p class="muted small">${esc(a?.area || "")} · ${a?.kind === "watch" ? "定时 Agent" : "命名 Agent"} · 技能 ${r.skills.map((s) => esc(s.key)).join("、")}</p>`
+    + r.skills.map((s) => `<div class="md ag-skill">${renderMD(s.text)}</div>`).join("<hr>"));
+}
+
+async function openRun(id) {
+  const r = await api(`/api/runs/${encodeURIComponent(id)}`);
+  const a = agById(r.agent);
+  const body = dlg(`${a?.title || r.agent} · ${fmtTime(r.started)}`, `<div class="md">${renderMD(r.text || r.summary || "")}</div>
+    <div class="dialog-actions"><button type="button" class="ghost" id="run-word">${ic("file-down")}导出 Word</button></div>`);
+  bindCites?.(body);
+  $("#run-word").onclick = () => exportWord({ text: r.text, task: a?.title || "" });
+  loadAgents().catch(() => {});
+}
+
+async function renderRuns(box) {
+  const runs = await api("/api/runs");
+  box.innerHTML = `<h2>定时报告</h2><p class="muted">定时 Agent 每次运行的报告。</p>` + (runs.length ? `<ol class="ag-runs">${runs.map((r) => `<li data-run="${esc(r.id)}" class="${r.seen ? "" : "new"}"><b>${esc(agById(r.agent)?.title || r.agent)}</b><span>${esc(r.summary || r.status)}</span><em>${fmtTime(r.started)}</em></li>`).join("")}</ol>` : `<p class="muted">还没有报告。台账里有记录后，定时 Agent 会自动运行；也可以在「定时 Agent」里点「立即运行」。</p>`);
+}
+
+async function renderProfiles(box) {
+  const { areas } = state.ag;
+  box.innerHTML = `<h2>实务画像</h2><p class="muted">每个领域一份：你们的标准立场、能接受的底线、红线、谁批什么、行文习惯。这个领域的 Agent 每次都先读它。只存在这台电脑上。</p>
+    <div class="ag-profile ${state.ag.companyConfigured ? "ok" : ""}">${ic("landmark")}<span><b>公司基本情况</b>：名称、行业、规模、所在地区、主要业务，所有 Agent 共用。</span><button type="button" class="ghost" data-profile="_company">${state.ag.companyConfigured ? "查看 / 修改" : "填写"}</button></div>`
+    + areas.map((x) => profileBar(x.plugin)).join("");
+}
+
+async function editProfile(plugin) {
+  const r = await api(`/api/profiles/${encodeURIComponent(plugin)}`);
+  const name = plugin === "_company" ? "公司基本情况" : `${state.ag.areas.find((x) => x.plugin === plugin)?.area || ""}实务画像`;
+  const body = dlg(name, `<p class="muted small">${r.text ? `上次保存：${fmtTime(r.updated)}` : plugin === "_company" ? "例如：公司名称、行业、员工人数、注册地和主要经营地、主要客户和供应商类型、有没有外资或上市安排。" : "还没有配置。下面是模板，把括号里的待填项改成你们的做法后保存；不想手填就关掉窗口，点「开始访谈」。"}</p>
+    <textarea id="pf-text" spellcheck="false">${esc(r.text || r.template || "")}</textarea>
+    <div class="dialog-actions">${r.text ? `<button type="button" class="ghost" id="pf-clear">${ic("trash")}清空</button>` : ""}<button type="button" class="primary" id="pf-save">保存</button></div>`);
+  $("#pf-save").onclick = async () => {
+    await api(`/api/profiles/${encodeURIComponent(plugin)}`, { method: "POST", body: JSON.stringify({ text: $("#pf-text").value }) });
+    $("#ag-dialog").close(); toast(`已保存${name}`); await loadAgents(); renderAgentMain();
+  };
+  const c = body.querySelector("#pf-clear");
+  if (c) c.onclick = async () => { if (!confirm(`清空${name}？`)) return; await api(`/api/profiles/${encodeURIComponent(plugin)}`, { method: "POST", body: JSON.stringify({ text: "" }) }); $("#ag-dialog").close(); await loadAgents(); renderAgentMain(); };
+}
+
+state.regSel = "contracts";
+async function renderRegisters(box) {
+  const regs = state.ag.registers, counts = state.ag.counts || {};
+  const k = state.regSel;
+  const r = await api(`/api/registers/${k}`);
+  const fields = [...regs[k].fields];
+  for (const row of r.rows) for (const f of Object.keys(row)) if (!f.startsWith("_") && f !== "id" && !fields.includes(f)) fields.push(f);
+  box.innerHTML = `<h2>台账</h2><p class="muted">Agent 办事时自动登记（例如审完合同写进合同台账），定时 Agent 从这里读数据。也可以手动添加。</p>
+    <div class="seg ag-regs">${Object.entries(regs).map(([key, v]) => `<button data-reg="${key}" class="${key === k ? "on" : ""}">${esc(v.name)}${counts[key] ? ` ${counts[key]}` : ""}</button>`).join("")}</div>
+    <div class="ag-reg-bar"><button type="button" class="ghost" id="reg-add">${ic("plus")}添加一条</button></div>
+    ${r.rows.length ? `<div class="ag-table"><table><thead><tr>${fields.map((f) => `<th>${esc(f)}</th>`).join("")}<th>来源</th><th></th></tr></thead><tbody>${r.rows.map((row) => `<tr data-id="${esc(row.id)}">${fields.map((f) => `<td>${esc(row[f] ?? "")}</td>`).join("")}<td class="muted">${esc(row._source || "")}</td><td><button type="button" class="icon-btn" data-edit="${esc(row.id)}" title="修改">${ic("pen")}</button><button type="button" class="icon-btn" data-del="${esc(row.id)}" title="删除">${ic("trash")}</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">${esc(regs[k].name)}还没有记录。</p>`}`;
+  box.querySelectorAll("[data-reg]").forEach((b) => (b.onclick = () => { state.regSel = b.dataset.reg; renderRegisters(box); }));
+  const edit = (row = {}) => {
+    const d = dlg(`${row.id ? "修改" : "添加"}：${regs[k].name}`, `<div class="ag-form">${fields.map((f) => `<label>${esc(f)}<input data-f="${esc(f)}" value="${esc(row[f] ?? "")}"></label>`).join("")}</div>
+      <div class="dialog-actions"><button type="button" class="primary" id="reg-save">保存</button></div>`);
+    d.querySelector("#reg-save").onclick = async () => {
+      const data = {};
+      d.querySelectorAll("[data-f]").forEach((i) => { if (i.value.trim() || row[i.dataset.f] != null) data[i.dataset.f] = i.value.trim(); });
+      await api(`/api/registers/${k}`, { method: "POST", body: JSON.stringify({ id: row.id || "", data }) });
+      $("#ag-dialog").close(); await loadAgents(); renderRegisters(box);
+    };
+  };
+  $("#reg-add").onclick = () => edit();
+  box.querySelectorAll("[data-edit]").forEach((b) => (b.onclick = () => edit(r.rows.find((x) => x.id === b.dataset.edit))));
+  box.querySelectorAll("[data-del]").forEach((b) => (b.onclick = async () => { if (!confirm("删除这条记录？")) return; await api(`/api/registers/${k}/${b.dataset.del}`, { method: "DELETE" }); await loadAgents(); renderRegisters(box); }));
+}
+loadAgents().catch(() => {});

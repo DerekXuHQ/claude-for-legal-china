@@ -1,6 +1,6 @@
 // 中国法律检索：Electron 主进程。
 // 启动本地检索服务（只监听 127.0.0.1），第一次运行时在后台准备资料库，定期检查官方网站的法规更新。
-import { app, BrowserWindow, Menu, shell, dialog, systemPreferences } from "electron";
+import { app, BrowserWindow, Menu, shell, dialog, systemPreferences, Notification } from "electron";
 import { Worker } from "node:worker_threads";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import path from "node:path";
@@ -244,6 +244,16 @@ app.whenReady().then(async () => {
     startUpdate,
     stopUpdate,
     appInfo: () => ({ version: app.getVersion(), sequence: updater?.installedSequence() || 0, data: dataVersion(), data_dir: DATA, platform: process.platform, arch: process.arch }),
+    // 定时 Agent 的报告：发系统通知，点一下打开 app 并显示这份报告
+    notify: ({ title, body, runId }) => {
+      try {
+        if (!Notification.isSupported()) return;
+        const n = new Notification({ title: `${title}（中国法律检索）`, body });
+        n.on("click", () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); win.webContents.executeJavaScript(`window.openAgentRun && window.openAgentRun(${JSON.stringify(runId)})`).catch(() => {}); } });
+        n.show();
+      } catch (e) { console.error("notify", e); }
+      try { win?.webContents.executeJavaScript("window.refreshAgentBadge && window.refreshAgentBadge()").catch(() => {}); } catch { /* 窗口已关 */ }
+    },
     // 拖进来的网页链接：在不显示的窗口里打开（独立会话，不带任何登录状态），等脚本跑完取标题和正文
     renderUrl: (url) => new Promise((resolve, reject) => {
       const w = new BrowserWindow({ show: false, width: 1280, height: 900, webPreferences: { partition: "linkfetch", javascript: true, nodeIntegration: false, contextIsolation: true, sandbox: true, images: false } });

@@ -1,0 +1,3193 @@
+{
+ "areas": {
+  "commercial-legal": "商事合同",
+  "corporate-legal": "公司与并购",
+  "employment-legal": "劳动用工",
+  "privacy-legal": "数据与个人信息",
+  "product-legal": "产品与营销",
+  "regulatory-legal": "监管合规",
+  "ai-governance-legal": "AI 治理",
+  "ip-legal": "知识产权",
+  "litigation-legal": "诉讼仲裁",
+  "criminal-legal": "刑事辩护与合规",
+  "procurement-legal": "招投标与政府采购",
+  "legal-research-cn": "法律检索与研究",
+  "law-practice-cn": "律所实务",
+  "legal-clinic": "法律援助与诊所",
+  "law-student": "法学学习"
+ },
+ "agents": [
+  {
+   "id": "commercial-legal:amendment-history",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "合同修订追踪",
+   "blurb": "追踪合同从原始版本到历次修订的完整变更",
+   "skills": [
+    "commercial-legal:amendment-history"
+   ],
+   "description": "追溯合同从基础协议到所有修订的变更轨迹——可以是所有变更的时间线摘要， 也可以是特定条款的追踪。当用户说\"这个合同历次改了什么\"\"显示修订历史\" \"最新的[条款]在哪里\"\"[条款]如何演变的\"或上传多个版本的协议时使用。"
+  },
+  {
+   "id": "commercial-legal:construction-contract-review",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "建设工程合同审查",
+   "blurb": "施工、总包、分包合同的付款、结算、工期、质量与优先受偿权审查",
+   "skills": [
+    "commercial-legal:construction-contract-review"
+   ],
+   "description": "当用户审查中国建设工程施工、总包、分包或代建合同，重点核对付款、工期、变更签证、验收结算和质保时使用；普通 SaaS 或 NDA 合同改用对应商事审查技能。"
+  },
+  {
+   "id": "commercial-legal:contract-drafting",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "合同起草",
+   "blurb": "从零起草买卖、服务、技术、许可、合作等合同，先访谈后成稿",
+   "skills": [
+    "commercial-legal:contract-drafting"
+   ],
+   "description": "从零起草各类合同的专业技能，覆盖买卖、服务、技术、许可、合作、建设工程等常见类型，按六步法推进（需求确认→法律调研→框架搭建→条款设计→风险扫描→文档生成），内置谈判立场三级分档与多维风险扫描。当用户说\"起草合同\"\"写协议\"\"拟合同\"\"帮我写份合同\"\"需要一份XX合同\"\"草拟一份协议\"时触发。不适用于合同审查、合同翻译或纯法律咨询。"
+  },
+  {
+   "id": "commercial-legal:escalation-flagger",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "问题升级路由",
+   "blurb": "将合同问题路由至适当审批人并起草请示",
+   "skills": [
+    "commercial-legal:escalation-flagger"
+   ],
+   "description": "根据审查指引中的上报矩阵将合同问题路由至合适的审批人，并起草上报说明。 当用户说\"谁需要批准这个\"\"上报这个\"\"这个需要法务负责人签字吗\" \"路由这个去审批\"或当其他技能发现超出审查者权限的问题时使用。"
+  },
+  {
+   "id": "commercial-legal:renewal-tracker",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "续约台账",
+   "blurb": "列出临近取消截止日的合同，在通知窗口关闭前提醒",
+   "skills": [
+    "commercial-legal:renewal-tracker"
+   ],
+   "description": "展示具有即将到来的取消截止日期的合同，在通知窗口关闭前发出预警， 基于维护的续约登记册运行。当用户询问\"什么即将续约\"\"哪些续约即将到期\" \"我们是否错过了取消窗口\"\"将此添加到续约追踪器\"时使用，或按计划运行。 接收来自 saas-msa-review 的交接数据。"
+  },
+  {
+   "id": "commercial-legal:review",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "合同审查（自动分流）",
+   "blurb": "收到一份合同，先判断类型再交给对应的审查流程",
+   "skills": [
+    "commercial-legal:review"
+   ],
+   "description": "根据审查指引审查供应商协议、保密协议或SaaS订阅。从标题识别协议结构， 路由至正确的审查技能，并将输出整合为单一备忘录。当用户说\"审查这个合同\" \"检查这个主协议\"\"这个保密协议可以吗\"\"看看这个SaaS协议\"或附上接收方协议供审查时使用。"
+  },
+  {
+   "id": "commercial-legal:review-proposals",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "审查指引修订审批",
+   "blurb": "审阅「审查指引更新」提出的修订建议，逐条批准或驳回并写回指引",
+   "skills": [
+    "commercial-legal:review-proposals"
+   ],
+   "description": "审查并批准（或拒绝）来自审查指引监控代理的待处理更新建议，并将批准的变更 应用到业务领域配置中。当审查指引监控代理提出建议时使用，或当用户说 \"审查审查指引建议\"\"有哪些待处理的审查指引更新\"或想逐一处理偏离驱动的审查指引变更时使用。"
+  },
+  {
+   "id": "commercial-legal:stakeholder-summary",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "业务方摘要",
+   "blurb": "把合同审查意见改写成业务负责人愿意读的一页纸",
+   "skills": [
+    "commercial-legal:stakeholder-summary"
+   ],
+   "description": "将合同审查转化为业务利益方实际会阅读的摘要。不是法律备忘录——是对 \"能签吗？需要知道什么？\"的两分钟回答。当用户说\"给业务部门总结一下\" \"写给[利益方]\"解释给采购\"\"非法务摘要\"或审查完成后需要发送给法务以外的人时使用。"
+  },
+  {
+   "id": "commercial-legal:nda-triage",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "保密协议分流",
+   "blurb": "对收到的保密协议做绿/黄/红三色分流，只有难的才交律师",
+   "skills": [
+    "commercial-legal:review",
+    "commercial-legal:nda-review"
+   ],
+   "description": "参考：对接收方保密协议进行快速三色分类（绿/黄/红），使团队成员仅将律师时间投入 真正需要审查的协议。面向销售和BD人员，在联系法务前自助筛查。当 /commercial-legal:review 检测到保密协议时自动加载。"
+  },
+  {
+   "id": "commercial-legal:vendor-review",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "供应商合同审查",
+   "blurb": "依据审查指引审查供应商协议，标偏离、评风险、给修改文字和升级路径",
+   "skills": [
+    "commercial-legal:review",
+    "commercial-legal:vendor-agreement-review"
+   ],
+   "description": "参考：根据团队审查指引审查接收方供应商协议。标注偏离项、评估风险、生成具体 修订语言并路由至合适的审批人。当 /commercial-legal:review 检测到供应商主协议、 服务协议或类似协议时加载。"
+  },
+  {
+   "id": "commercial-legal:saas-review",
+   "kind": "task",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "SaaS 订阅协议审查",
+   "blurb": "自动续费、涨价、数据、服务等级、责任上限等订阅合同要点审查",
+   "skills": [
+    "commercial-legal:review",
+    "commercial-legal:saas-msa-review"
+   ],
+   "description": "参考：SaaS订阅协议审查，重点关注订阅交易中最关键的条款——自动续约机制、 价格调整、数据可迁移性、运行时间SLA以及再处理者权利。当 /commercial-legal:review 检测到SaaS或订阅协议时加载。"
+  },
+  {
+   "id": "commercial-legal:deal-debrief",
+   "kind": "watch",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "签署合同复盘",
+   "blurb": "每周找出最近签署、且偏离审查指引的合同，请你趁还记得谈判经过补记偏离原因，写进偏离日志",
+   "skills": [],
+   "cadence": "weekly",
+   "registers": [
+    "contracts",
+    "deviations"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": false,
+   "description": "每周运行的代理：找出近期已签署、且与合同手册立场有偏离的协议， 趁律师还记得谈判经过，请其补记偏离原因。默认每周一上午运行，也可随时手动调用。 触发语：\"交易复盘\"\"记录偏离\"\"复盘上周签的合同\"\"这周签了哪些合同\"，或按计划运行。"
+  },
+  {
+   "id": "commercial-legal:playbook-monitor",
+   "kind": "watch",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "审查指引更新",
+   "blurb": "盯着偏离日志：同一条款 12 个月内被突破 5 次以上，说明指引跟不上实际做法，提出具体的修订建议",
+   "skills": [
+    "commercial-legal:review-proposals"
+   ],
+   "cadence": "weekly",
+   "registers": [
+    "deviations",
+    "playbook_proposals"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": false,
+   "description": "由数据触发的代理：盯着偏离日志，某一条款的立场被突破的次数多到说明合同手册已跟不上实际做法时， 提出具体的合同手册修订建议。默认阈值：滚动 12 个月内同一条款偏离 5 次 （可在 `~/.claude/plugins/config/claude-for-legal-zh/commercial-legal/CLAUDE.md` 中调整）。 触发语：\"检查合同手册\"\"合同手册要不要改\"\"合同手册监测\"，或每次 deal-debrief 运行后自动执行。"
+  },
+  {
+   "id": "commercial-legal:renewal-watcher",
+   "kind": "watch",
+   "plugin": "commercial-legal",
+   "area": "商事合同",
+   "title": "合同续约监控",
+   "blurb": "每周读合同台账，把 90 天内要决定是否取消、续约的合同按紧急程度列出来，取消窗口关闭前提醒你",
+   "skills": [
+    "commercial-legal:renewal-tracker"
+   ],
+   "cadence": "weekly",
+   "registers": [
+    "contracts"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": false,
+   "description": "定期运行的代理：读取续约登记册，把即将到来的续约和取消截止日推送出去。默认每周运行一次。 推送到 `~/.claude/plugins/config/claude-for-legal-zh/commercial-legal/CLAUDE.md` → 行文风格 → 续约提醒发送至 中指定的频道或邮箱。触发语：\"哪些合同要续约了\"\"查一下续约\"\"续约报告\"，或按计划运行。"
+  },
+  {
+   "id": "corporate-legal:ai-tool-handoff",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "批量审查工具交接",
+   "blurb": "大批量文件转交专门的 AI 审查工具，并把结果收回来复核",
+   "skills": [
+    "corporate-legal:ai-tool-handoff"
+   ],
+   "description": "检测 AI 辅助审查工具（如 Luminance、Kira 等）是否在使用中，将大批量条款提取 交接给工具，并按 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 中的 信任层级对其输出进行 QA。当用户说\"交给AI工具\"\"批量审查\"\"AI提取\"或 diligence-issue-extraction 遇到大批量类别时使用。"
+  },
+  {
+   "id": "corporate-legal:board-minutes",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "董事会会议纪要",
+   "blurb": "按内部格式起草董事会或专门委员会会议纪要",
+   "skills": [
+    "corporate-legal:board-minutes"
+   ],
+   "description": "按你的内部格式起草董事会或专门委员会会议纪要。从你的日历中自动检测即将召开的 董事会和委员会会议，询问议程及任何演示文稿或预读材料，并生成一份根据你的种子 会议纪要学习的完整格式草案。同时处理替代会议的书面决议。触发：\"董事会纪要\" \"起草纪要\"\"即将召开的董事会\"\"委员会纪要\"\"书面决议\"或日历检测到即将召开的 董事会或委员会事件。"
+  },
+  {
+   "id": "corporate-legal:closing-checklist",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "交割清单管理",
+   "blurb": "追踪阻碍交割的各项条件、同意、文件和申报",
+   "skills": [
+    "corporate-legal:closing-checklist"
+   ],
+   "description": "什么在阻碍交割——维护交割检查表，包含状态、关键路径和距交割天数。自我更新： 从尽调发现和清单构建中接收新项目，追踪状态，呈现阻碍项。当用户说\"交割检查表\" \"还差什么\"\"检查表状态\"\"加入检查表\"或按计划状态拉取时使用。"
+  },
+  {
+   "id": "corporate-legal:corporate-docs",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "公司治理文件起草",
+   "blurb": "股东会决议、董事会决议、公司章程及修正案等起草",
+   "skills": [
+    "corporate-legal:corporate-docs"
+   ],
+   "description": "公司治理文件起草助手——覆盖股东会决议、董事会决议、公司章程、股东协议、出资协议、增资协议的起草。处理表决事项与表决比例、治理结构设计、股权与出资安排、决策机制与僵局打破、利润分配、股权转让与退出、签署落款等核心内容。当用户提到以下任一场景时触发：写股东会决议、董事会决议、公司章程、股东协议、出资协议、增资协议、公司治理文件、起草决议、起草章程、股东之间的协议、增资扩股文件、表决比例、治理结构。不适用于普通商业合同、诉讼文书。（董事会或专门委员会的一致书面决议用 written-consent，会议纪要用 board-minutes。）"
+  },
+  {
+   "id": "corporate-legal:deal-team-summary",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "交易团队简报",
+   "blurb": "把尽调发现汇总成管理层版、交易团队版、谈判版简报",
+   "skills": [
+    "corporate-legal:deal-team-summary"
+   ],
+   "description": "将尽调发现汇总为适合受众层级的交易团队简报——面向领导层的执行摘要、面向团队的 工作摘要。当用户说\"给交易团队简报\"\"尽调现状如何\"\"汇总发现给[受众]\" \"交易更新\"或按简报频率触发时使用。"
+  },
+  {
+   "id": "corporate-legal:diligence-evidence-matrix",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "尽调证据矩阵",
+   "blurb": "股权投资或收购尽调底稿全量入账，事实—证据—问题逐条对应",
+   "skills": [
+    "corporate-legal:diligence-evidence-matrix"
+   ],
+   "description": "当用户需要对中国公司股权投资或收购尽调底稿做全量入账、事实证据映射、矛盾追踪和问题矩阵时使用；只要求单份合同摘要时不触发。"
+  },
+  {
+   "id": "corporate-legal:diligence-issue-extraction",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "尽调问题提取",
+   "blurb": "按预设类别和重要性阈值提取数据室文件中的问题",
+   "skills": [
+    "corporate-legal:diligence-issue-extraction"
+   ],
+   "description": "读取数据室文件并按内部类别和重要性阈值提取问题，以内部备忘录格式产出发现。 当用户说\"审查数据室\"\"从[文件夹]提取问题\"\"尽调审查\"\"数据室里有什么\" 或指向数据室文件时使用。"
+  },
+  {
+   "id": "corporate-legal:due-diligence-checklist",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "尽调清单定制",
+   "blurb": "按行业、阶段、交易类型生成尽调资料清单",
+   "skills": [
+    "corporate-legal:due-diligence-checklist"
+   ],
+   "description": "尽职调查清单定制生成技能。根据标的行业、发展阶段与交易类型，输出覆盖商业/财务/法律/技术/运营/人力六大维度的尽调清单，并配套信息请求清单（IRL）、尽调排期与 Red Flag 检查点。触发词：尽调清单、DD checklist、尽职调查、due diligence、信息请求、IRL、Red Flag、尽调排期、尽调计划、清单定制。不适用于：单份合同审查、已签约后的合规体检、纯估值建模、诉讼证据梳理，也不替代实地访谈、外部审计或专项法律意见。"
+  },
+  {
+   "id": "corporate-legal:entity-compliance",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "企业合规追踪",
+   "blurb": "跨地域、跨主体类型的申报节点计算和合规体检",
+   "skills": [
+    "corporate-legal:entity-compliance"
+   ],
+   "description": "主体合规追踪器——初始化、报告即将到来的截止日、更新状态、运行健康审计、 导出为 CSV。维护从主体清单构建的 compliance-tracker.yaml，按主体和 注册地计算申报截止日，呈现未来30/60/90天内的待办事项。当用户说\"主体合规\" \"申报截止日\"\"年报到期\"\"主体追踪器\"\"什么申报到期\"\"主体健康\"或\"存续状态\"时使用。"
+  },
+  {
+   "id": "corporate-legal:integration-management",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "并购整合管理",
+   "blurb": "分阶段交割后整合计划，含同意追踪和周报",
+   "skills": [
+    "corporate-legal:integration-management"
+   ],
+   "description": "交割后并购整合追踪器——分阶段工作计划、同意追踪、规模化合同转让、 每周状态报告。从任何可获取的交易工件（股权收购协议、交易摘要、 交割检查表）初始化，并连接到来自并购冷启动的 deal-context.md 和 closing-checklist.yaml。当用户说\"整合\"\"交割后\"\"同意未决\" \"合同转让\"\"整合状态\"或\"交易还差什么\"时使用。"
+  },
+  {
+   "id": "corporate-legal:legal-opinion",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "法律意见书",
+   "blurb": "就尽调、合规、交易安排等特定事项出具法律意见书",
+   "skills": [
+    "corporate-legal:legal-opinion"
+   ],
+   "description": "出具法律意见书。用于对特定事项（尽职调查、合规审查、交易安排、专项法律问题）进行系统分析并给出明确结论与可执行建议，按标准结构（事项与背景→审查范围与依据→事实认定→法律分析→结论与建议→假设与限制声明）成稿。触发关键词：出法律意见书 / 法律意见 / 尽职调查意见 / 合规意见 / 交易法律意见 / 专项法律意见 / 律师意见书。不适用于诉讼文书（起诉状、答辩状、上诉状），也不适用于合同条款起草。"
+  },
+  {
+   "id": "corporate-legal:material-contract-schedule",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "重大合同披露清单",
+   "blurb": "依据尽调发现和收购协议阈值编制披露清单",
+   "skills": [
+    "corporate-legal:material-contract-schedule"
+   ],
+   "description": "从尽调发现构建重大合同披露清单，适用股权收购协议的重大合同定义，并按 协议清单格式排版。当用户说\"建合同清单\"\"披露清单\"\"清单 3.X\" \"重大合同列表\"或起草披露清单时使用。"
+  },
+  {
+   "id": "corporate-legal:tabular-review",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "表格式尽调审查",
+   "blurb": "对数据室文件逐份表格式审查，每格附带引用来源",
+   "skills": [
+    "corporate-legal:tabular-review"
+   ],
+   "description": "表格审查——一行一文件，一列一数据点，每个单元格标注来源。为并购尽调而构建 （\"审查这200份目标公司合同中的控制权变更、合同转让和重大不利变化条款\"）， 但适用于任何需要产出电子表格的批量审查。当用户说\"表格审查\"\"审查网格\"\"建一个网格\" \"从这些合同中提取这些字段\"\"审查这些文件中的X、Y、Z\"\"给我一个关于……的电子表格\" \"批量审查\"或指向文件夹并要求比较时使用。"
+  },
+  {
+   "id": "corporate-legal:written-consent",
+   "kind": "task",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "董事会/股东会决议起草",
+   "blurb": "按内部格式起草决议，附带先例检索",
+   "skills": [
+    "corporate-legal:written-consent"
+   ],
+   "description": "以内部格式起草董事会或专门委员会的一致书面决议，从决议存储库中检索先例。 处理多决议决议、董事冲突标记、适用法律下的通知要求以及签署人追踪， 包含对重大单项行动的内置范围警示。当用户说\"书面决议\"\"一致决议\" \"董事会决议\"\"替代会议的决议\"\"书面审定\"或描述一项需要董事会批准但无需召开会议的行动时使用。"
+  },
+  {
+   "id": "corporate-legal:dataroom-watcher",
+   "kind": "watch",
+   "plugin": "corporate-legal",
+   "area": "公司与并购",
+   "title": "数据室监控",
+   "blurb": "每天看各事项新上传的文件（相当于数据室新增），标出高优先级类别，并汇报交割清单进展",
+   "skills": [
+    "corporate-legal:closing-checklist"
+   ],
+   "cadence": "daily",
+   "registers": [
+    "closing_items"
+   ],
+   "files": true,
+   "lawUpdates": false,
+   "web": false,
+   "description": "盯着数据室的新上传文件，并按计划推送交割检查表进展。新上传文件落在高优先级类别的，单独标出。 触发语：\"数据室有什么新文件\"\"数据室更新\"\"VDR 更新\"，或按计划运行。"
+  },
+  {
+   "id": "employment-legal:expansion-kickoff",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "跨省用工规划",
+   "blurb": "启动新省份用工规划及外部律师委托简报",
+   "skills": [
+    "employment-legal:expansion-kickoff",
+    "employment-legal:international-expansion"
+   ],
+   "description": "启动在新省/直辖市或地域的用工扩张规划——收集基础信息，运行 劳务派遣 vs 业务外包 vs 直接用工的用工结构框架分析，起草跨职能问题清单， 浮现该地域的特定风险标记，并创建持续追踪文件。当有人说\"我们要在[地域]招人\"、 \"扩张到[省/直辖市]\"或\"在[地域]的首次用工\"时使用。"
+  },
+  {
+   "id": "employment-legal:expansion-update",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "跨省用工进展更新",
+   "blurb": "更新进行中的异地用工项目，重算已解锁的事项",
+   "skills": [
+    "employment-legal:expansion-update",
+    "employment-legal:international-expansion"
+   ],
+   "description": "更新进行中的跨地域用工扩张项目状态——重新计算现已解封的项目， 标记任何逾期的项目，浮现下一优先级。当自上次会话以来已有工作进展， 且扩张追踪文件需要反映当前状态时使用。"
+  },
+  {
+   "id": "employment-legal:handbook-updates",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "员工手册修订比对",
+   "blurb": "拟修订的规章制度与现行版逐条比对，标出连锁影响和民主程序要求",
+   "skills": [
+    "employment-legal:handbook-updates"
+   ],
+   "description": "将拟议的规章制度变更与现行版本进行diff对比，标记连锁影响 和省级补充条款影响。当用户说\"更新规章制度\"、\"将此添加到规章制度\"、 \"规章制度变更\"或有一项制度准备纳入时使用。"
+  },
+  {
+   "id": "employment-legal:hiring-review",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "录用审查",
+   "blurb": "审查录用通知及竞业限制/服务期条款",
+   "skills": [
+    "employment-legal:hiring-review"
+   ],
+   "description": "审查录用通知书及竞业限制/保密条款——含管辖地检查。实质性规则（竞业限制可执行性、 工时制度分类、个人信息保护）在每次录用时研究提取，不预先存储。当用户提出 \"审查这个录用通知\"、\"这里能用竞业限制吗\"、\"检查这份录用通知书\"、 \"在[某地]招聘\"或附上录用通知书时使用。"
+  },
+  {
+   "id": "employment-legal:investigation-add",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "调查材料补充",
+   "blurb": "向进行中的调查添加文件、访谈记录或观察意见",
+   "skills": [
+    "employment-legal:investigation-add",
+    "employment-legal:internal-investigation"
+   ],
+   "description": "向进行中的调查添加数据——文件、访谈记录或观察意见。 按已记录的筛选标准批量处理，浮现重要事项，记录所有已审查内容 以供覆盖验证。当新的证据、访谈记录或文件材料进入进行中的调查时使用。"
+  },
+  {
+   "id": "employment-legal:investigation-memo",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "调查备忘录",
+   "blurb": "从调查日志起草或更新调查备忘录",
+   "skills": [
+    "employment-legal:investigation-memo",
+    "employment-legal:internal-investigation"
+   ],
+   "description": "从调查日志起草或更新调查备忘录。当调查进展到可以撰写第一版备忘录时， 或当新数据已添加且现有草案需要更新时使用。"
+  },
+  {
+   "id": "employment-legal:investigation-open",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "内部调查",
+   "blurb": "启动、追踪、补充和汇总内部调查事项",
+   "skills": [
+    "employment-legal:investigation-open",
+    "employment-legal:internal-investigation"
+   ],
+   "description": "开启新的内部调查事项——运行立案登记，生成证据来源清单， 并创建持续调查日志。当收到投诉或指控，且律师需要建立一个 受保密保护的调查工作空间时使用。"
+  },
+  {
+   "id": "employment-legal:investigation-query",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "调查日志查询",
+   "blurb": "查询调查日志：谁说了什么、哪些陈述互相矛盾",
+   "skills": [
+    "employment-legal:investigation-query",
+    "employment-legal:internal-investigation"
+   ],
+   "description": "对进行中的调查日志进行查询——证人说了什么、哪些地方陈述互相矛盾、 存在哪些证据缺口、每个问题上最有证明力的证据是什么。 当律师需要查询调查记录而不重新阅读每个条目时使用。"
+  },
+  {
+   "id": "employment-legal:investigation-summary",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "调查结论摘要",
+   "blurb": "按 HR、管理层、外部律师等受众起草调查摘要",
+   "skills": [
+    "employment-legal:investigation-summary",
+    "employment-legal:internal-investigation"
+   ],
+   "description": "从调查备忘录起草面向特定受众的摘要——HR版本、管理层版本或外部律师版本。 当调查备忘录需要传达给不应看到完整保密工作成果的受众时使用。"
+  },
+  {
+   "id": "employment-legal:labor-arbitration",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "劳动仲裁应对",
+   "blurb": "案情分析、证据收集、胜负评估、答辩与庭审准备",
+   "skills": [
+    "employment-legal:labor-arbitration"
+   ],
+   "description": "劳动仲裁应对全流程技能，覆盖案情分析、证据收集、胜负概率评估、答辩状撰写、举证质证意见与重点风险提示。当用户收到仲裁申请书、需要进行劳动仲裁应对、撰写答辩状、做仲裁案件分析，或处理涉及经济补偿金/赔偿金/双倍工资/加班费/未签劳动合同/违法解除/工伤赔偿/竞业限制等劳动争议时触发。触发表述如\"收到仲裁申请\"\"劳动仲裁应对\"\"答辩状\"\"仲裁案件分析\"\"劳动争议\"。不适用于：劳动诉讼一审/二审庭审代理文书、行政处理或行政复议、劳务派遣资质等纯行政备案事项、纯薪酬税务测算，以及与劳动仲裁无关的民商事或刑事案件。"
+  },
+  {
+   "id": "employment-legal:labor-contract",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "劳动合同起草",
+   "blurb": "按岗位类型一次生成劳动合同及配套协议",
+   "skills": [
+    "employment-legal:labor-contract"
+   ],
+   "description": "劳动合同定制生成。根据岗位类型（普通员工/高级管理人员）一次性确定最优条款组合，输出一份完整、结构清晰的劳动合同。触发场景：用户需要起草劳动合同、定制劳动合同条款、生成劳动合同文档。不适用于：劳务合同/承揽合同/合作协议等非劳动关系文本、已签订合同的合规审查或纠纷分析、社保公积金或个税的具体核算、非中国大陆法域的雇佣文件。"
+  },
+  {
+   "id": "employment-legal:leave-tracker",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "假期查询",
+   "blurb": "查看进行中的假期，得到截止日预警和需要做的决定",
+   "skills": [
+    "employment-legal:leave-tracker"
+   ],
+   "description": "检查进行中的假期，获取截止日期预警和需要做出的决策。仅呈现 需要采取行动的假期并说明原因——不是状态面板。建议每周运行， 或每当律师需要知道哪些假期有即将到来的审批、证明或到期截止时使用。"
+  },
+  {
+   "id": "employment-legal:log-leave",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "假期登记",
+   "blurb": "向假期台账登记新假期，开始追踪期限",
+   "skills": [
+    "employment-legal:log-leave"
+   ],
+   "description": "向假期登记册添加新假期条目，录入开始追踪截止日期所需的最低信息。 当员工开始休假且你希望追踪器从第一天起监控审批、证明和到期时间时使用。"
+  },
+  {
+   "id": "employment-legal:policy-drafting",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "规章制度起草",
+   "blurb": "起草劳动规章制度，含民主程序和公示要求",
+   "skills": [
+    "employment-legal:policy-drafting"
+   ],
+   "description": "起草劳动规章制度/员工手册——含省级补充条款，在管辖范围内法律有差异时 生成地方版本。当用户说\"起草一份[主题]制度\"、\"我们需要关于[主题]的规定\"、 \"更新我们的[主题]制度\"或指出制度空白时使用。"
+  },
+  {
+   "id": "employment-legal:severance-calc",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "经济补偿测算",
+   "blurb": "经济补偿、赔偿金、代通知金逐项公式与分步测算",
+   "skills": [
+    "employment-legal:severance-calc"
+   ],
+   "description": "劳动经济补偿与赔偿金测算助手。逐项给出公式、口径与分步算法，覆盖经济补偿金（N，含半年/不满半年规则、社平 3 倍封顶与年限封顶）、违法解除赔偿金（2N）、代通知金（N+1）、未签书面劳动合同二倍工资、加班费、未休年假折算。触发词：经济补偿金、赔偿金、N、N+1、2N、双倍工资、加班费、年假折算、解除补偿计算、工龄补偿、离职能拿多少钱。不适用于：是否构成违法解除/工伤认定/竞业限制效力等定性判断，劳动合同条款审查，案例检索，仲裁起诉文书起草，以及社保、个税、公积金的代缴核算——本技能只做\"金额测算\"，不替代定性分析与正式法律意见。"
+  },
+  {
+   "id": "employment-legal:termination-review",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "劳动合同解除审查",
+   "blurb": "对拟议解除进行法定事由审查和风险标记",
+   "skills": [
+    "employment-legal:termination-review"
+   ],
+   "description": "劳动合同解除审查——高风险标记检测、经济补偿/赔偿金计算及最终工资支付时点 按管辖地（省/直辖市）逐项审查。管辖地特定规则（解除条件、补偿标准、通知义务） 在每次审查时研究提取，不预先存储。当用户提出\"审查这个解除\"、\"能解除这个人吗\"、 \"解除审查\"或描述解除场景时使用。"
+  },
+  {
+   "id": "employment-legal:wage-hour-qa",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "劳动用工问答",
+   "blurb": "面向\"快速问答\"渠道的劳动用工法律咨询",
+   "skills": [
+    "employment-legal:wage-hour-qa"
+   ],
+   "description": "管辖地感知的劳动用工问答——工时制度分类、加班工资、最低工资、 年休假、产假、病假/医疗期、最终工资支付——针对具体省/直辖市回答， 以研究提取的现行规则为依据而非记忆陈述。当用户提出任何劳动法问题， 或说\"[某地]的规则是什么\"、\"这个岗位是否适用不定时工作制\"、 \"我们需要支付加班费吗\"或\"可以把这个岗位归类为\"时使用。"
+  },
+  {
+   "id": "employment-legal:worker-classification",
+   "kind": "task",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "劳动关系认定",
+   "blurb": "依据劳动和社会保障部〔2005〕12号三要素测试用工关系",
+   "skills": [
+    "employment-legal:worker-classification"
+   ],
+   "description": "对拟议用工安排进行劳动关系认定——根据劳社部发〔2005〕12号三要素逐项分析， 区分劳动关系、劳务关系、承揽关系，并标识用工模式与事实之间的认定偏差。 仅适用于尚未开始的前瞻性分析。当用户提出\"我们想用一个人做承包商\"、 \"这是劳务关系还是劳动关系\"、\"如何认定这个人的用工关系\"或描述拟议用工安排时使用。"
+  },
+  {
+   "id": "employment-legal:leave-tracker",
+   "kind": "watch",
+   "plugin": "employment-legal",
+   "area": "劳动用工",
+   "title": "假期期限监控",
+   "blurb": "每周检查在休的产假、医疗期、工伤假等，在法定期限届满前提醒你需要做什么决定",
+   "skills": [
+    "employment-legal:leave-tracker"
+   ],
+   "cadence": "weekly",
+   "registers": [
+    "leaves"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": false,
+   "description": "每周代理，监控有硬性法定期限的员工假期 — 年休假、产假、病假/医疗期、工伤假、婚假、育儿假 — 在期限届满前发出决策点预警。不是状态报告； 告诉你需要做出什么决定及何时做出。 每周运行（设置周一早间提醒调用 `/employment-legal:leave-tracker`）。自动排程需要 独立的集成 — Claude Code agent 不会自调度。 触发短语：\"假期追踪\"、\"open leaves\"、\"年休假状态\"、\"检查假期\"、 \"any leave deadlines\"、\"医疗期到期\"、\"产假到期\"。"
+  },
+  {
+   "id": "privacy-legal:dpa-review",
+   "kind": "task",
+   "plugin": "privacy-legal",
+   "area": "数据与个人信息",
+   "title": "个人信息处理协议审查",
+   "blurb": "依据审查指引审查个人信息处理协议（控制者或处理者视角）",
+   "skills": [
+    "privacy-legal:dpa-review"
+   ],
+   "description": "依据你的数据处理协议（DPA）操作手册审查一份DPA——自动检测你是受托处理者 还是处理者，并应用操作手册正确的半部分。当用户说\"审查这份DPA\"\"检查这份 数据处理附录\"\"客户发来了他们的DPA\"\"这份DPA可以吗\"，或附上一份DPA时使用。"
+  },
+  {
+   "id": "privacy-legal:dsar-response",
+   "kind": "task",
+   "plugin": "privacy-legal",
+   "area": "数据与个人信息",
+   "title": "个人信息主体权利响应",
+   "blurb": "在法定期限内起草权利响应告知和实质回复",
+   "skills": [
+    "privacy-legal:dsar-response"
+   ],
+   "description": "处理个人信息主体权利请求（查阅、复制、删除、可携带、更正等）并起草回复——验证身份、 按系统逐一定位数据、评估豁免、起草确认函和实质回复函。当收到个人信息主体权利请求， 用户粘贴查阅/删除/可携带/更正请求，或说\"来了个DSAR\"\"查阅请求\"\"删除权\"\"有人想要 他们的数据\"时使用。"
+  },
+  {
+   "id": "privacy-legal:pia-generation",
+   "kind": "task",
+   "plugin": "privacy-legal",
+   "area": "数据与个人信息",
+   "title": "个人信息保护影响评估",
+   "blurb": "按内部格式生成新功能或新活动的个人信息保护影响评估报告",
+   "skills": [
+    "privacy-legal:pia-generation"
+   ],
+   "description": "生成符合内部格式的个人信息保护影响评估（PIA），适用于新功能、产品或处理活动， 使用从种子PIA学习到的结构。当用户说\"写一份PIA\"\"个人信息保护影响评估\"\"我们需要 为这个做PIA吗\"\"对这个功能做隐私审查\"，或描述一项新的个人信息处理活动时使用。"
+  },
+  {
+   "id": "privacy-legal:policy-monitor",
+   "kind": "task",
+   "plugin": "privacy-legal",
+   "area": "数据与个人信息",
+   "title": "隐私政策监控",
+   "blurb": "扫描已存评估、协议审查和分流结果，检查政策与实践的偏差",
+   "skills": [
+    "privacy-legal:policy-monitor"
+   ],
+   "description": "保持个人信息处理规则与实践一致。两种模式：周度扫描已保存的PIA、DPA审查和分诊结果以 发现处理规则漂移；或针对拟议的新实践进行直接查询。当用户问\"我们的处理规则覆盖这个吗\" \"我们想开始做X——处理规则需要更新吗\"\"运行处理规则监控\"\"处理规则扫描\"，或想找到处理 规则不再匹配团队实际操作的地方时使用。"
+  },
+  {
+   "id": "privacy-legal:privacy-policy",
+   "kind": "task",
+   "plugin": "privacy-legal",
+   "area": "数据与个人信息",
+   "title": "隐私政策起草",
+   "blurb": "按产品实际生成隐私政策和个人信息收集清单",
+   "skills": [
+    "privacy-legal:privacy-policy"
+   ],
+   "description": "按产品事实生成最小合规版隐私协议（隐私政策），并配套个人信息清单、第三方/SDK清单、后续完善事项与复查报告。适用于 App、网站、小程序、SaaS、管理端、SDK 等在上线前形成基础隐私合规文档。基于中国数据安全法律体系（个人信息保护法、数据安全法、网络安全法）起草。触发场景：要求生成隐私政策/隐私协议、App/网站/小程序/SaaS/SDK 上线前合规、需要个人信息清单、需要第三方清单。不适用于完整深度版——本技能仅交付最小合规版本，如需大而全的正式深度协议，应说明本技能只产出最小合规版。"
+  },
+  {
+   "id": "privacy-legal:reg-gap-analysis",
+   "kind": "task",
+   "plugin": "privacy-legal",
+   "area": "数据与个人信息",
+   "title": "隐私法规差距分析",
+   "blurb": "将新规或修订与现行隐私政策和实践进行差异比对",
+   "skills": [
+    "privacy-legal:reg-gap-analysis"
+   ],
+   "description": "将新出台或变更的法规与现行个人信息处理规则及实践进行差异对比——输出差距清单和 附负责人和日期的整改计划。当新法规出台，用户问\"[某法规]影响我们吗\"\"[某法规] 差距分析\"\"对照[法规]进行合规检查\"，或粘贴法规文本时使用。"
+  },
+  {
+   "id": "privacy-legal:use-case-triage",
+   "kind": "task",
+   "plugin": "privacy-legal",
+   "area": "数据与个人信息",
+   "title": "个保场景分流",
+   "blurb": "判断处理活动是否需要个保法第55条评估、或可直接推进",
+   "skills": [
+    "privacy-legal:use-case-triage"
+   ],
+   "description": "快速判断某项处理活动是否需要个人信息保护影响评估、是否触发个保法第55条法定评估义务， 或可直接推进——同时排查个人信息处理规则冲突并路由至正确的下一步。当用户询问\"这个需 要做PIA吗\"\"对这个功能做隐私分诊\"\"对X做隐私检查\"\"从隐私角度看这个行不行\"，或描述一 项新的个人信息处理活动、产品功能或供应商关系时使用。"
+  },
+  {
+   "id": "product-legal:feature-risk-assessment",
+   "kind": "task",
+   "plugin": "product-legal",
+   "area": "产品与营销",
+   "title": "功能风险评估",
+   "blurb": "对单个功能或产品领域做深入风险评估",
+   "skills": [
+    "product-legal:feature-risk-assessment"
+   ],
+   "description": "对单个功能或产品领域进行更深入的风险评估，当上线审查发现某个议题需要 超出单行条目的深度分析时使用。结构化分析：可能出什么问题、可能性多大、 后果多严重、如何缓解。当用户说\"深入分析这个风险\"\"[功能]风险评估\" \"可能出什么问题\"或上线审查标记了全新议题时使用。"
+  },
+  {
+   "id": "product-legal:is-this-a-problem",
+   "kind": "task",
+   "plugin": "product-legal",
+   "area": "产品与营销",
+   "title": "这是问题吗？\" 快速判断",
+   "blurb": "快速回答产品/营销法律咨询——依据你的风险校准做模式匹配",
+   "skills": [
+    "product-legal:is-this-a-problem"
+   ],
+   "description": "对快速的飞书/钉钉问题给出\"这有问题吗？\"答复——对照您的校准进行模式匹配。 当用户说\"这有问题吗\"\"快速问一下\"\"我们能做X吗\"\"这个需要法务审查吗\"\"帮我看看\" 或粘贴一个需要即时判断（没问题/需要审查/暂停）的产品经理问题时使用。"
+  },
+  {
+   "id": "product-legal:launch-review",
+   "kind": "task",
+   "plugin": "product-legal",
+   "area": "产品与营销",
+   "title": "产品上线审查",
+   "blurb": "依据风险校准审查产品上线",
+   "skills": [
+    "product-legal:launch-review"
+   ],
+   "description": "对照您的框架和风险校准进行全面产品上线审查。当用户说\"审查这个上线\" \"[功能]法务审查\"\"我们能上线吗\"\"[产品]有什么法律问题\"或引用了需要 逐类审查备忘录的产品需求文档或上线追踪工单时使用。"
+  },
+  {
+   "id": "product-legal:marketing-claims-review",
+   "kind": "task",
+   "plugin": "product-legal",
+   "area": "产品与营销",
+   "title": "营销宣传审查",
+   "blurb": "标记需要补强、改写或删除的宣传文案（广告法/反不正当竞争法）",
+   "skills": [
+    "product-legal:marketing-claims-review"
+   ],
+   "description": "审查营销文案中的宣传主张，识别哪些需要证实、改写或删除。 当用户说\"审查这份营销文案\"\"检查这些宣传\"\"我们能这么说吗\" \"这是夸大还是有问题\"或粘贴了营销内容（落地页、邮件、广告、标语）时使用。"
+  },
+  {
+   "id": "product-legal:launch-watcher",
+   "kind": "watch",
+   "plugin": "product-legal",
+   "area": "产品与营销",
+   "title": "产品上线雷达",
+   "blurb": "每天看上线计划，把近期可能需要法务审查的功能提前挑出来，免得临上线才知道",
+   "skills": [
+    "product-legal:launch-review"
+   ],
+   "cadence": "daily",
+   "registers": [
+    "launches"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": false,
+   "description": "盯住上线追踪器（Jira/Linear），把近期可能需要法务审查的上线提前挑出来， 免得产品法务临上线才知道。每日运行。触发语：\"最近有哪些要上线\" \"有什么需要我知道的\"\"上线雷达\"，或按计划运行。"
+  },
+  {
+   "id": "regulatory-legal:comments",
+   "kind": "task",
+   "plugin": "regulatory-legal",
+   "area": "监管合规",
+   "title": "征求意见稿追踪",
+   "blurb": "审查开放的征求意见期、记录决策、追踪截止日期",
+   "skills": [
+    "regulatory-legal:comments",
+    "regulatory-legal:gap-surfacer"
+   ],
+   "description": "审阅公开的征求意见期，记录决策，跟踪截止日期。适用于征求意见稿征求意见窗口开启时，你需要呈现截止日期、决定是否提交意见或记录已提交/不提交/放弃的决策时（--decide CMT-ID）。"
+  },
+  {
+   "id": "regulatory-legal:gaps",
+   "kind": "task",
+   "plugin": "regulatory-legal",
+   "area": "监管合规",
+   "title": "合规差距追踪",
+   "blurb": "开放差距追踪器——已标记尚未关闭的项目",
+   "skills": [
+    "regulatory-legal:gaps",
+    "regulatory-legal:gap-surfacer"
+   ],
+   "description": "开放差距跟踪器——已标记但尚未关闭的事项。适用于用户询问\"有哪些开放的差距\"、\"差距跟踪器\"、\"整改状态\"，或想关闭（--close GAP-ID）或风险接受（--accept GAP-ID）一个已跟踪的差距时。"
+  },
+  {
+   "id": "regulatory-legal:policy-diff",
+   "kind": "task",
+   "plugin": "regulatory-legal",
+   "area": "监管合规",
+   "title": "政策差异分析",
+   "blurb": "将特定法规变化与已索引的政策库进行差异比对",
+   "skills": [
+    "regulatory-legal:policy-diff"
+   ],
+   "description": "将特定法规变化与已索引的政策库进行差异分析。适用于法规发生变化，你需要知道它触及了哪些政策以及差距是什么；用户说\"把这个法规与我们的政策做差异分析\"、\"这影响了哪些政策\"、\"差距分析\"；或 reg-feed-watcher 传递了一项重要事项时。"
+  },
+  {
+   "id": "regulatory-legal:policy-redraft",
+   "kind": "task",
+   "plugin": "regulatory-legal",
+   "area": "监管合规",
+   "title": "政策重述",
+   "blurb": "带修改标记的政策重述以关闭差距——供政策负责人审阅的建议稿",
+   "skills": [
+    "regulatory-legal:policy-redraft"
+   ],
+   "description": "产出关闭一个差距的政策修订建议稿（带标记版）。由 /regulatory-legal:gaps 或 /regulatory-legal:policy-diff 找到的差距触发。供内部审阅的初稿——不直接应用到已批准的政策文件中。适用于用户说\"重写政策\"、\"起草政策修复\"、\"标记政策\"或 gap-surfacer 传递差距供起草时。"
+  },
+  {
+   "id": "regulatory-legal:reg-feed-watcher",
+   "kind": "task",
+   "plugin": "regulatory-legal",
+   "area": "监管合规",
+   "title": "即时法规检查",
+   "blurb": "即时检查法规动态，报告上次检查以来的更新",
+   "skills": [
+    "regulatory-legal:reg-feed-watcher"
+   ],
+   "description": "检查法规动态源，报告自上次检查以来的新事项，按重要度阈值过滤。适用于用户说\"检查法规动态\"、\"有什么新规定\"、\"法规更新\"、从定时任务触发执行，或手动粘贴法规动态进行分类和差异分析时。"
+  },
+  {
+   "id": "regulatory-legal:reg-change-monitor",
+   "kind": "watch",
+   "plugin": "regulatory-legal",
+   "area": "监管合规",
+   "title": "法规动态监控",
+   "blurb": "每周汇总资料库同步到的法规变化和联网查到的监管动态，按重要度过滤后写成简报",
+   "skills": [
+    "regulatory-legal:reg-feed-watcher"
+   ],
+   "cadence": "weekly",
+   "registers": [
+    "reg_watch"
+   ],
+   "files": false,
+   "lawUpdates": true,
+   "web": true,
+   "description": "定时检查法规动态源，按重要度阈值过滤后发出简报。检查频率以 ~/.claude/plugins/config/claude-for-legal-zh/regulatory-legal/CLAUDE.md 的配置为准。 过滤是为了让简报只留有用的信息。触发词：\"法规简报\"、\"监管有什么新动态\"、 \"最近出了哪些新规\"，或由定时任务触发。"
+  },
+  {
+   "id": "ai-governance-legal:ai-inventory",
+   "kind": "task",
+   "plugin": "ai-governance-legal",
+   "area": "AI 治理",
+   "title": "AI 系统台账",
+   "blurb": "逐个系统登记 AI 角色、风险等级和监管义务（备案、标识、安全评估）",
+   "skills": [
+    "ai-governance-legal:ai-inventory"
+   ],
+   "description": "按系统逐一定义AI角色、风险等级和监管义务——判定每个系统是 AI服务提供者还是使用者，分配风险层级，并映射至中国AI法规 的义务要求。适用于建立AI系统清单、进行年度AI审计、或新法 规要求重新分类时。"
+  },
+  {
+   "id": "ai-governance-legal:aia-generation",
+   "kind": "task",
+   "plugin": "ai-governance-legal",
+   "area": "AI 治理",
+   "title": "AI 影响评估",
+   "blurb": "对适用范围内的各监管制度开展算法安全评估/科技伦理审查",
+   "skills": [
+    "ai-governance-legal:aia-generation"
+   ],
+   "description": "为AI系统或模型生成风险定级和合规概要评估——涵盖数据、公平性、 透明度、安全性和监管注册表。在用例分类为\"附条件-高\"后使用， 产品或工程团队提出\"我们需要做AI影响评估\"时使用，或定期重新 认证已部署系统时使用。采用快速/全面双轨制。"
+  },
+  {
+   "id": "ai-governance-legal:policy-monitor",
+   "kind": "task",
+   "plugin": "ai-governance-legal",
+   "area": "AI 治理",
+   "title": "AI 政策监控",
+   "blurb": "扫描已存评估、分流结果和供应商审查，检查 AI 政策偏差",
+   "skills": [
+    "ai-governance-legal:policy-monitor"
+   ],
+   "description": "保持AI使用政策与当前实践一致。两种模式：每周扫描已保存的AI 评估和分类结果以发现政策漂移；或对提议的新实践进行直接查询。 适用于用户询问\"我们的AI政策是否覆盖了这一点\"、\"我们想 开始做X——政策需要更新吗\"、\"运行AI政策监测\"、\"政策扫描\" 或需要发现AI政策与实际操作不符之处时。"
+  },
+  {
+   "id": "ai-governance-legal:policy-starter",
+   "kind": "task",
+   "plugin": "ai-governance-legal",
+   "area": "AI 治理",
+   "title": "AI 使用政策起草",
+   "blurb": "按监管要求和公司实际做法起草内部 AI 使用政策",
+   "skills": [
+    "ai-governance-legal:policy-starter"
+   ],
+   "description": "根据监管注册表和公司已有的实践位置，起草AI使用政策。 适用于团队从未有过AI使用政策、需要快速生成初稿供法律审阅、 或现有政策需要根据新法规全面重写时。"
+  },
+  {
+   "id": "ai-governance-legal:reg-gap-analysis",
+   "kind": "task",
+   "plugin": "ai-governance-legal",
+   "area": "AI 治理",
+   "title": "AI 法规差距分析",
+   "blurb": "将新的 AI 法规与当前治理状态进行差异比对",
+   "skills": [
+    "ai-governance-legal:reg-gap-analysis"
+   ],
+   "description": "将新的或修订的AI法规与当前AI政策和实践进行差异分析—— 输出差距清单和整改计划，含负责人和日期。适用于新法规 出台、用户询问\"[某法规]是否影响我们\"、\" AI法规差距分析\"或粘贴法规文本时。"
+  },
+  {
+   "id": "ai-governance-legal:use-case-triage",
+   "kind": "task",
+   "plugin": "ai-governance-legal",
+   "area": "AI 治理",
+   "title": "AI 场景分流",
+   "blurb": "对照登记册对拟议 AI 应用场景进行分类",
+   "skills": [
+    "ai-governance-legal:use-case-triage"
+   ],
+   "description": "对提议的AI用例进行分类和风险排序：检索现有注册表、检查红线、 对残余风险进行分级。输出为经核准/附条件/不核准，并附书面理由。 适用于收到新的AI用例提案、产品团队询问\"这个AI功能可以上线吗\"、 或需要运行AI用例审批委员会流程时。"
+  },
+  {
+   "id": "ai-governance-legal:vendor-ai-review",
+   "kind": "task",
+   "plugin": "ai-governance-legal",
+   "area": "AI 治理",
+   "title": "AI 供应商审查",
+   "blurb": "审查 AI 供应商条款——训练数据使用、责任分配、模型变更、政策差距",
+   "skills": [
+    "ai-governance-legal:vendor-ai-review"
+   ],
+   "description": "审查AI供应商条款——重点核查训练数据来源合规性、责任分配、 模型变更通知、合规义务向下传导。适用于审查AI SaaS协议、 AI模型授权、AI API服务条款，或采购团队提出\"这个AI供应商 合同有问题吗\"时使用。"
+  },
+  {
+   "id": "ip-legal:cease-desist",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "侵权警告函",
+   "blurb": "起草或分流警告函，依据你的维权策略校准",
+   "skills": [
+    "ip-legal:cease-desist"
+   ],
+   "description": "起草侵权警告函（发送模式）或对收到的警告函进行分诊（接收模式）。当依你的 执法姿态对侵权人主张权利并发送校准后的警告函，或对收到的警告函进行分诊生成 结构化选项备忘录附建议时使用。"
+  },
+  {
+   "id": "ip-legal:clearance",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "商标可注册性检索",
+   "blurb": "初步检索——相同/近似商标筛查和混淆可能性判断",
+   "skills": [
+    "ip-legal:clearance"
+   ],
+   "description": "商标清除初步检索——排除性筛查+近似商标查询，产出标注清单而非清除法律意见。当新商标 被提出、被询问某商标是否可用或需要进行排除检索、或在完整专业检索前评估混淆可能性因素 时使用。本技能绝不作出商标无冲突的结论。"
+  },
+  {
+   "id": "ip-legal:fto-triage",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "FTO 初步分析",
+   "blurb": "对潜在阻碍专利的结构化初步审视——分流而非法律意见",
+   "skills": [
+    "ip-legal:fto-triage"
+   ],
+   "description": "自由实施（FTO）初检——对可能构成障碍的专利进行结构化初步审查，非FTO法律意见。 当产品、工艺或功能被评估是否存在障碍专利、被询问是否有任何东西阻碍产品上市、 或需要在专利律师审查前对最可能的专利构建初步权利要求对照表时使用。 本技能绝不作出产品可自由实施的结论。"
+  },
+  {
+   "id": "ip-legal:infringement-triage",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "侵权初步判断",
+   "blurb": "商标/著作权/专利/商业秘密跨权利初步分流",
+   "skills": [
+    "ip-legal:infringement-triage"
+   ],
+   "description": "知识产权侵权初步筛查——涵盖商标、著作权、专利和商业秘密的侵权因素清单， 标注各方有利/不利因素，不作侵权结论。用于评估他人是否侵犯你的知识产权、 你是否可能侵犯他人权利、出现山寨产品或抄袭者时，或判断事项是否值得追诉及如何追诉。"
+  },
+  {
+   "id": "ip-legal:invention-intake",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "发明披露筛查",
+   "blurb": "新颖性、创造性、可授权主题、公开日和申请策略初筛",
+   "skills": [
+    "ip-legal:invention-intake"
+   ],
+   "description": "发明披露初步筛查——新颖性、创造性、可授权主题、公开日和 可检测性及战略价值。用于收到发明披露、需要判断是否值得进行 现有技术检索和专利律师审查、进一步调查或驳回时。"
+  },
+  {
+   "id": "ip-legal:ip-clause-review",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "知识产权条款审查",
+   "blurb": "审查转让、归属、许可授权、保证和赔偿条款",
+   "skills": [
+    "ip-legal:ip-clause-review"
+   ],
+   "description": "审查协议中的知识产权条款——权利归属、所有权、许可授予、 保证、赔偿。用于审查劳动/顾问/SOW/供应商/许可协议中的知识产权条款， 当被要求检查权利归属语言或许可范围时，或当知识产权条款的协议被粘贴或附加时。"
+  },
+  {
+   "id": "ip-legal:oss-review",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "开源合规检查",
+   "blurb": "依据你的部署模式对开源许可证进行分类",
+   "skills": [
+    "ip-legal:oss-review"
+   ],
+   "description": "开源许可证合规检查——对依赖列表、单个库或对外发布代码。 用于审查清单/SBOM/代码仓库的copyleft义务和许可证兼容性， 当被问及某库是否可以发布、或准备将代码开源时。"
+  },
+  {
+   "id": "ip-legal:portfolio",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "知识产权组合管理",
+   "blurb": "注册、续展、维护费、使用声明管理",
+   "skills": [
+    "ip-legal:portfolio"
+   ],
+   "description": "追踪知识产权组合——注册、续展、维持费和商标使用声明。 用于检查到期续展事项、添加或更新资产、记录维持费缴纳， 或审计登记簿中的空白、失效及商业使用问题。"
+  },
+  {
+   "id": "ip-legal:takedown",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "通知-删除",
+   "blurb": "起草删除通知、分流收到通知或起草反通知（信息网络传播权保护条例）",
+   "skills": [
+    "ip-legal:takedown"
+   ],
+   "description": "起草\"通知-删除\"通知（依信息网络传播权保护条例）、对收到的通知进行分诊或起草反通知。 当通过著作权通知主张权利并需核验法定合理使用情形与通知真实性，当收到通知需要分诊为接受/ 反通知/协商/暂不行动选项，或需起草符合中国法要求的反通知时使用。"
+  },
+  {
+   "id": "ip-legal:trademark-filing",
+   "kind": "task",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "商标申请",
+   "blurb": "尼斯分类类别规划、申请文件准备和审查意见应对",
+   "skills": [
+    "ip-legal:trademark-filing"
+   ],
+   "description": "面向中国商标申请的全流程辅助技能：依据尼斯分类进行类别规划、对拟申请商标做可注册性初筛、准备申请材料（商品/服务清单、商标说明），并以结构化方式输出建议与风险分级。适用于商标咨询、类别规划、可注册性初筛、申请材料准备、商标注册等场景。不适用于替代正式法律意见、承诺注册成功率、处理复杂商标争议。（新商标的近似商标排除检索用 clearance。）"
+  },
+  {
+   "id": "ip-legal:ip-renewal-watcher",
+   "kind": "watch",
+   "plugin": "ip-legal",
+   "area": "知识产权",
+   "title": "知识产权续展监控",
+   "blurb": "每周读知识产权组合，算出商标续展、专利年费等到期事项，按紧急程度排出清单",
+   "skills": [
+    "ip-legal:portfolio"
+   ],
+   "cadence": "weekly",
+   "registers": [
+    "ip_assets"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": false,
+   "description": "定时代理，读取知识产权组合登记册，计算待办事项， 发出按优先级排序的期限报告。默认每周运行一次。发至 `~/.claude/plugins/config/claude-for-legal-zh/ip-legal/CLAUDE.md` → 续展预警中指定的频道。触发短语：\"什么该续展了\"、\"IP 期限\"、 \"组合检查\"、\"IP 续展报告\"、或按排程。"
+  },
+  {
+   "id": "litigation-legal:agent-brief",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "代理词起草",
+   "blurb": "庭审代理词与辩论意见",
+   "skills": [
+    "litigation-legal:agent-brief"
+   ],
+   "description": "撰写庭审用代理词与辩论意见，以民商事案件为主、兼顾通用诉讼。围绕争议焦点组织事实、证据与法律论证，回应并反驳对方主张，最终落到代理意见结论。当用户提到写代理词、起草代理意见、辩论意见、庭审代理词、法庭辩论提纲、质证与辩论意见时触发。不适用于起诉状、答辩状、上诉状等诉状类文书，也不适用于合同起草或审查。（只起草单个文书章节用 brief-section-drafter。）"
+  },
+  {
+   "id": "litigation-legal:answer-drafting",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "民事答辩状",
+   "blurb": "针对原告诉讼请求逐项答辩",
+   "skills": [
+    "litigation-legal:answer-drafting"
+   ],
+   "description": "撰写民事答辩状，针对原告诉讼请求逐项答辩，组织事实抗辩与法律抗辩、反驳对方证据与请求权基础并提出己方主张。当用户说写答辩状、起草民事答辩状、应诉答辩、反驳起诉状、被起诉了怎么答辩，或上传对方起诉状、证据材料希望据此应诉时触发。不适用于刑事/行政答辩、起诉状撰写、合同起草。"
+  },
+  {
+   "id": "litigation-legal:appeal-petition",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "上诉状与再审申请",
+   "blurb": "撰写民事上诉状或再审申请书",
+   "skills": [
+    "litigation-legal:appeal-petition"
+   ],
+   "description": "撰写民事上诉状或再审申请书。当用户提到写上诉状、起草上诉状、再审申请书、申请再审、不服一审判决上诉、二审上诉理由、原审判决有错误想救济时触发。基于原审判决识别认定事实、适用法律或程序上的错误，组织上诉请求与上诉理由（或再审事由），并提供两种文书的标准结构与切换。不适用于起诉状、答辩状、刑事上诉（如涉及，可提示其与民事程序的差异并建议另行处理）。"
+  },
+  {
+   "id": "litigation-legal:brief-section-drafter",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "法律文书起草",
+   "blurb": "按律所/团队格式起草法律文书章节",
+   "skills": [
+    "litigation-legal:brief-section-drafter"
+   ],
+   "description": "按内部风格起草法律文书章节，与案件理论保持一致——每个事实有出处， 每个案例经核实，每个论点绑定理论。当用户说\"起草[章节]\"、 \"写事实部分\"、\"关于[问题]的代理意见\"或需要法律文书章节初稿时使用。"
+  },
+  {
+   "id": "litigation-legal:chronology",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "大事记构建",
+   "blurb": "从已声明来源和上传材料构建或更新大事记",
+   "skills": [
+    "litigation-legal:chronology"
+   ],
+   "description": "从声明的文件来源和上传材料构建或更新大事记——提取带日期的事件、 去重，并按案件理论标记重要性。当用户要求从证据材料或案件文件 构建大事记或时间线，说\"从材料中提取时间线\"或\"什么发生了什么时间\"， 或需要工作大事记、事实陈述或证人特定时间线时使用。"
+  },
+  {
+   "id": "litigation-legal:civil-complaint-drafting",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "民事起诉状",
+   "blurb": "按法定结构撰写民事起诉状",
+   "skills": [
+    "litigation-legal:civil-complaint-drafting"
+   ],
+   "description": "协助按法定结构撰写民事起诉状。当用户说\"写起诉状\"、\"起草民事起诉状\"、\"帮我写诉状\"、\"我要起诉XX\"，或给出案件事实希望据此生成起诉状时触发。不适用于刑事自诉状、行政起诉状、答辩状或合同起草。"
+  },
+  {
+   "id": "litigation-legal:claim-chart",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "要件分析表",
+   "blurb": "逐要件分析表——专利侵权或民事案由",
+   "skills": [
+    "litigation-legal:claim-chart"
+   ],
+   "description": "构建或审查要件分析表——专利权利要求对照表（侵权、无效或审查）或 民事构成要件分析表（任何诉讼请求或抗辩），每个单元格附精确引用， 缺口检测为优先输出。当用户要求要件分析表、权利要求对照表、 证据对照表、侵权或无效主张、逐要件映射，或问\"我们证明[主张]还缺什么\"时使用。"
+  },
+  {
+   "id": "litigation-legal:deadline-tracker",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "诉讼期限台账",
+   "blurb": "录入、查看、完结开庭、举证、答辩、上诉等期限",
+   "skills": [
+    "litigation-legal:deadline-tracker"
+   ],
+   "description": "诉讼/仲裁期限台账管理——录入、查看、完结开庭/举证/答辩/管辖权异议/上诉/再审/ 申请执行/保全续封/仲裁时效等硬性期限，`list` 时按剩余天数预警。当用户说\"记一个期限\"\"收到判决了记上诉期\"\"开庭日期记一下\"\"列出期限\" \"这个期限办完了\"，或其他技能（拆案/判决分析/再审分析）产生新期限需要入册时使用。"
+  },
+  {
+   "id": "litigation-legal:demand-draft",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "律师函起草",
+   "blurb": "起草律师函，设置发送门槛",
+   "skills": [
+    "litigation-legal:demand-draft"
+   ],
+   "description": "从已完成的委托登记起草律师函——通过保密/自认风险/和解谈判姿态检查清单门禁， 输出 .docx，附发送后检查清单，并提供创建案件的选项。当用户说 \"起草律师函\"、\"写[类型]函\"或已完成委托登记准备转为可发送草案时使用。"
+  },
+  {
+   "id": "litigation-legal:demand-intake",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "律师函准备",
+   "blurb": "起草前背景收集——当事人、事实、依据、谈判筹码",
+   "skills": [
+    "litigation-legal:demand-intake"
+   ],
+   "description": "律师函起草前的委托背景收集——当事人、事实、依据、筹码、 最佳替代方案和保密过滤——写入结构化的委托登记文件供 律师函起草技能读取。当用户想准备律师函、在起草前进行委托登记， 或获取付款催告、违约/催告整改、停止侵权等律师函的背景时使用。"
+  },
+  {
+   "id": "litigation-legal:demand-received",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "收函分流",
+   "blurb": "分流收到的律师函——选项、案件交叉检查、转交",
+   "skills": [
+    "litigation-legal:demand-received"
+   ],
+   "description": "来函分流处理——提取关键字段、交叉检索案件组合、评估实质理由、 提出响应方案并附建议，必要时转交案件登记或律师函起草。 当用户说\"收到一封律师函\"、\"审查这个来函\"或附上来函要求评估时使用。"
+  },
+  {
+   "id": "litigation-legal:deposition-prep",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "庭前准备",
+   "blurb": "构建与案件理论挂钩的庭前准备提纲，含文书和质证要点",
+   "skills": [
+    "litigation-legal:deposition-prep"
+   ],
+   "description": "为证人构建庭前准备提纲——从案件材料中提取其相关文件， 围绕案件理论组织要点，并浮现质证材料。当用户说 \"为[证人]做庭前准备\"、\"构建庭审提纲\"或\"准备[姓名]的庭前会议/庭审\"时使用。"
+  },
+  {
+   "id": "litigation-legal:judgment-analysis",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "判决书分析",
+   "blurb": "拆解判决、识别法律错误，评估上诉或再审",
+   "skills": [
+    "litigation-legal:judgment-analysis"
+   ],
+   "description": "判决书深度拆解与法律错误识别工具，评估上诉策略与再审事由并输出救济路径建议。当用户提到判决书分析、拆解判决书、上诉策略、再审申请、法律错误识别、寻找上诉理由、救济路径、判决书解读、找上诉理由、裁判文书审查时触发。不适用于合同起草、非诉文书撰写、纯法律咨询。"
+  },
+  {
+   "id": "litigation-legal:legal-hold",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "证据保全",
+   "blurb": "签发、更新、解除或报告证据保全",
+   "skills": [
+    "litigation-legal:legal-hold"
+   ],
+   "description": "发出、更新、解除或报告证据保全通知——将保全通知起草为 .docx， 更新案件日志中的保全字段，并排期下次更新。当用户说 \"发出证据保全通知\"、\"更新保全通知\"、\"解除保全\"或要求全案组合证据保全状态报告时使用。"
+  },
+  {
+   "id": "litigation-legal:matter-briefing",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "案件深度简报",
+   "blurb": "单个案件深度简报——适用于主任或外部律师会议准备",
+   "skills": [
+    "litigation-legal:matter-briefing"
+   ],
+   "description": "单个案件深度简报——当前姿态、变化之处、下个节点、 待解决问题和风险重评估检查，适用于向法务负责人汇报或外部律师通话前准备。 当用户说\"简报[案件]\"、\"这个案件什么情况\"或需要了解特定案件时使用。"
+  },
+  {
+   "id": "litigation-legal:matter-close",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "结案归档",
+   "blurb": "记录结果、最终敞口和经验教训，归档案件",
+   "skills": [
+    "litigation-legal:matter-close"
+   ],
+   "description": "结案——捕获结果、最终敞口和反思教训，从活跃案件组合中归档但不删除记录。 当用户需要结案、说\"[案件]结束了\"或需要记录和解、撤诉、判决、 撤回或合并结果时使用。"
+  },
+  {
+   "id": "litigation-legal:matter-intake",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "案件登记",
+   "blurb": "新案件统一登记——写入案件文件、历史记录，追加日志",
+   "skills": [
+    "litigation-legal:matter-intake"
+   ],
+   "description": "登记新案件——统一问题涵盖标识信息、利益冲突检索、来源、 风险分流、重要性、外聘律师、内部负责人、证据保全和关键日期； 写入 matter.md 和 history.md 并在 _log.yaml 中追加结构化行。 当用户说\"新案件\"、\"登记这个案件\"或需要将新案件纳入案件组合时使用。"
+  },
+  {
+   "id": "litigation-legal:matter-update",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "案件进展记录",
+   "blurb": "向案件历史追加带日期的事件并刷新案件日志",
+   "skills": [
+    "litigation-legal:matter-update"
+   ],
+   "description": "向案件历史文件追加带日期的事件记录并刷新日志行—— 捕获新进展、状态变化、风险重评估、期限变更和和解授权变更。 当用户需要记录案件更新、标注进展或对案件组合记录状态变更时使用。"
+  },
+  {
+   "id": "litigation-legal:neutral-hearing-outline",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "中立庭审提纲",
+   "blurb": "按仲裁员/中立主持人角色生成双方对称的发问与程序清单",
+   "skills": [
+    "litigation-legal:neutral-hearing-outline"
+   ],
+   "description": "当用户以仲裁员、调解员或其他中立主持人身份准备中国法庭审提纲、事实发问与程序安排时使用；当事人代理策略改用诉讼领域的庭前技能。"
+  },
+  {
+   "id": "litigation-legal:oc-status",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "外部律师状态",
+   "blurb": "为活跃案件组合生成每周状态催问草稿",
+   "skills": [
+    "litigation-legal:oc-status"
+   ],
+   "description": "为活跃案件组合中的各外聘律师生成每周状态请求邮件草稿—— 每案一份 markdown。当用户要求向外聘律师发状态请求、 每周外聘律师检查或需要从案件组合日志中起草各案状态邮件时使用。"
+  },
+  {
+   "id": "litigation-legal:portfolio-status",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "案件组合状态",
+   "blurb": "风险分布、临近截止日期、停滞案件",
+   "skills": [
+    "litigation-legal:portfolio-status"
+   ],
+   "description": "从 _log.yaml 汇总案件组合——风险分布、即将到期的节点、 陈旧案件、重要性汇总、阶段分布和异常标注。 当用户问\"案件总体情况如何\"、\"有多少个未结案件\"或需要案件组合汇总时使用。"
+  },
+  {
+   "id": "litigation-legal:privilege-log-review",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "证据三性审查",
+   "blurb": "第一轮证据三性审查——初步判断 + 标注律师需复核事项",
+   "skills": [
+    "litigation-legal:privilege-log-review"
+   ],
+   "description": "证据三性审查——对证据清单进行首轮审查，做出明显的 合法性/关联性判断并标记需要律师审查的疑难项目。 当用户说\"审查证据清单\"、\"证据三性审查\"、 \"检查这些证据的可采性\"或有证据清单需要在质证前审核时使用。"
+  },
+  {
+   "id": "litigation-legal:retrial-analysis",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "再审可行性分析",
+   "blurb": "读取生效裁判和原审材料，识别再审事由",
+   "skills": [
+    "litigation-legal:retrial-analysis"
+   ],
+   "description": "民事再审可行性分析 — 读取生效判决书、原审证据与庭审笔录，识别原审事实、证据、论理、法律适用方面的错误与瑕疵，逐项匹配《民事诉讼法》法定再审事由，输出再审可行性分析报告。提供\"仅判决书快速筛查\"与\"完整材料深度分析\"两种模式。触发词：再审、再审分析、申请再审、再审事由、再审可行性、生效判决错误、判决救济、能不能再审。不适用于一审/二审/上诉策略、合同审查与起草、纯法律咨询问答。"
+  },
+  {
+   "id": "litigation-legal:settlement",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "和解与调解协议",
+   "blurb": "梳理争议、设计方案并起草和解协议或调解协议",
+   "skills": [
+    "litigation-legal:settlement"
+   ],
+   "description": "起草和解协议与调解协议的专业技能。通过四步工作流（梳理争议与各方诉求→设计了结方案→设计履行与违约保障→内联模板成文）固定争议解决方案、各方权利义务、款项金额与履行期限、争议一次性了结与权利放弃，并确保协议可执行、必要时提示申请司法确认或制作调解书。当用户提到写和解协议、起草调解协议、和解方案、纠纷了结协议、还款和解、一次性了结、纠纷一揽子解决时触发。不适用于普通商业合同的起草（请用合同起草技能）、起诉状答辩状等诉讼文书的撰写。"
+  },
+  {
+   "id": "litigation-legal:subpoena-triage",
+   "kind": "task",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "法院调查令/协查通知处理",
+   "blurb": "分类、界定范围并规划合规方案",
+   "skills": [
+    "litigation-legal:subpoena-triage"
+   ],
+   "description": "处理送达公司的法院调查令、行政机关协查通知或证人出庭通知—— 分类、分析范围/负担/保密、交叉检索案件组合， 生成异议框架、合规方案和期限日历。当用户说\"收到了调查令\"、 \"被送达协查通知\"或附上调查令/协查通知要求评估时使用。"
+  },
+  {
+   "id": "litigation-legal:docket-watcher",
+   "kind": "watch",
+   "plugin": "litigation-legal",
+   "area": "诉讼仲裁",
+   "title": "案件进度监控",
+   "blurb": "每天对照案件台账和期限台账，列出临近的答辩、举证、开庭、上诉期限和停滞的案件",
+   "skills": [
+    "litigation-legal:deadline-tracker"
+   ],
+   "cadence": "daily",
+   "registers": [
+    "cases",
+    "deadlines"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": false,
+   "description": "定时代理，监控活跃案件组合的法院案件进度。 拉取新进文书、计算候选期限、逐案比对历史记录 和待办事项、输出案件进度报告。触发词：\"查案件进度\"、 \"any new filings\"、\"案件进度检查\"、\"有什么新进展\"、或按排程执行。"
+  },
+  {
+   "id": "criminal-legal:bail-application",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "取保候审申请",
+   "blurb": "从脱敏案情提取法定事由，起草取保候审或羁押必要性审查申请",
+   "skills": [
+    "criminal-legal:bail-application"
+   ],
+   "description": "取保候审及羁押必要性审查申请辅助。从脱敏案情中提取法定事由与酌定事由， 辅助撰写逻辑清晰、情理法并重的申请文书框架。当用户要求\"申请取保候审\"、 \"羁押必要性审查\"、\"变更强制措施\"或梳理取保事由时使用。"
+  },
+  {
+   "id": "criminal-legal:case-analysis",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "刑事证据链梳理",
+   "blurb": "从供述、证言、书证中梳理事实和证据链，标出矛盾与缺口",
+   "skills": [
+    "criminal-legal:case-analysis"
+   ],
+   "description": "刑事案卷笔录与证据链梳理。协助律师从大量脱敏后的供述、证人证言、物证中 提取关键时间线，寻找供述矛盾点和证据闭环断裂处。当用户提供脱敏后的 讯问笔录、询问笔录摘要，要求\"交叉对比时间线\"、\"找出供述矛盾\"、 \"梳理证据链\"或评估孤证问题时使用。"
+  },
+  {
+   "id": "criminal-legal:case-file-notes",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "刑事阅卷笔录",
+   "blurb": "制作阅卷笔录并做合规校核",
+   "skills": [
+    "criminal-legal:case-file-notes"
+   ],
+   "description": "刑事阅卷笔录制作与合规校核。用户明确提出”刑事阅卷””刑事阅卷笔录”或在刑事案件中要求生成或修订阅卷笔录时必须使用（只需对脱敏摘要做快速证据链梳理时用 case-analysis）；先区分法律援助类和委托类，再核对供述归属、讯问要素、原件与法律来源。"
+  },
+  {
+   "id": "criminal-legal:client-communication",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "刑事案件客户沟通",
+   "blurb": "服务计划书、工作进展报告、家属沟通要点",
+   "skills": [
+    "criminal-legal:client-communication"
+   ],
+   "description": "刑事案件客户沟通与服务可视化。用户说\"客户沟通\"\"服务计划书\"\"工作通报\"\"客户汇报\"\"决策辅助清单\"\"庭审简报\"时使用；把对内办案工作转化为对客户的脱敏沟通材料，最高红线是不泄露辩护策略底牌。"
+  },
+  {
+   "id": "criminal-legal:client-meeting-prep",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "刑事会见准备",
+   "blurb": "会见发问清单和会见笔录",
+   "skills": [
+    "criminal-legal:client-meeting-prep"
+   ],
+   "description": "刑事会见发问清单与会见笔录准备技能。用户明确提出”刑事会见””刑事会见笔录””刑事会见清单””会见发问”时使用；必须基于阅卷笔录或卷宗材料生成问题，不得脱离证据空泛发问。"
+  },
+  {
+   "id": "criminal-legal:compliance-non-prosecution",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "企业合规不起诉",
+   "blurb": "涉案企业合规整改大纲与第三方监督评估准备",
+   "skills": [
+    "criminal-legal:compliance-non-prosecution"
+   ],
+   "description": "涉案企业合规不起诉审查与整改大纲辅助。基于《涉案企业合规建设、评估和 审查办法（试行）》，评估企业合规整改草案，发现盲点，提示第三方监督 评估的实质性证据要求。当用户处理涉税、环保、数据安全等涉企犯罪案件， 要求\"合规整改审查\"、\"合规不起诉评估\"、\"整改计划盲点\"时使用。"
+  },
+  {
+   "id": "criminal-legal:defense-plan",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "辩护方案",
+   "blurb": "辩点梳理、策略路径选择与各阶段工作计划",
+   "skills": [
+    "criminal-legal:defense-plan"
+   ],
+   "description": "刑事辩护方案与策略路径选择。用户说\"辩护方案\"\"辩护策略\"\"辩点梳理\"\"策略选择\"\"辩点矩阵\"时使用（对脱敏案情做罪与非罪、此罪与彼罪的法理分析用 defense-strategy；本技能在已有阅卷笔录后做辩点矩阵和主攻路径选择）；基于阅卷笔录系统梳理辩点、评估强度、选择主攻路径，是阅卷与辩护词之间的决策环节。"
+  },
+  {
+   "id": "criminal-legal:defense-statement",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "辩护词起草",
+   "blurb": "辩护词、庭审辩论提纲、最后陈述辅导",
+   "skills": [
+    "criminal-legal:defense-statement"
+   ],
+   "description": "辩护词、庭审辩论提纲与最后陈述辅导生成。用户说\"辩护词\"\"辩护意见\"\"庭审辩论\"\"最后陈述辅导\"时使用；必须在律师明确说\"可以出了\"之后才生成辩护词。"
+  },
+  {
+   "id": "criminal-legal:defense-strategy",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "辩护思路与类案分析",
+   "blurb": "按构成要件拆解，分析罪与非罪、此罪彼罪和类案裁判",
+   "skills": [
+    "criminal-legal:defense-strategy"
+   ],
+   "description": "辩护思路与类案法理分析。根据脱敏案情拆解犯罪构成要件，分析罪与非罪、 此罪与彼罪的界限，提取争议焦点，提出无罪或罪轻的辩护切入点。当用户 描述脱敏案情并询问\"构不构成犯罪\"、\"定什么罪更轻\"、\"辩护思路\"时使用。"
+  },
+  {
+   "id": "criminal-legal:investigation-stage-docs",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "侦查阶段文书",
+   "blurb": "取保申请、不批捕意见、变更强制措施等侦查阶段文书",
+   "skills": [
+    "criminal-legal:investigation-stage-docs"
+   ],
+   "description": "刑事侦查阶段三类文书生成。用户说\"侦查阶段\"\"取保申请\"\"不批捕意见书\"\"羁押必要性审查\"时使用，产出正式文书（只需从脱敏案情快速梳理取保事由时用 bail-application）；必须区分无卷会见（本skill）和阅卷后会见（client-meeting-prep）。"
+  },
+  {
+   "id": "criminal-legal:non-prosecution-opinion",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "不起诉意见书",
+   "blurb": "起草不起诉法律意见书，争取法定、酌定或存疑不起诉",
+   "skills": [
+    "criminal-legal:non-prosecution-opinion"
+   ],
+   "description": "不起诉法律意见书生成。用户说\"不起诉意见\"\"不起诉法律意见书\"\"争取不起诉\"时使用；覆盖法定/存疑/酌定三类不起诉（涉案企业合规不起诉用 compliance-non-prosecution）。"
+  },
+  {
+   "id": "criminal-legal:plea-negotiation",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "认罪认罚协商",
+   "blurb": "认罪认罚协商策略与量刑建议沟通意见",
+   "skills": [
+    "criminal-legal:plea-negotiation"
+   ],
+   "description": "认罪认罚协商策略意见书生成。用户说\"认罪认罚\"\"认罪认罚协商\"\"量刑建议协商\"\"要不要认罪认罚\"时使用；必须基于阅卷笔录，独立分析利弊。"
+  },
+  {
+   "id": "criminal-legal:sentencing",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "量刑测算",
+   "blurb": "按五步法测算量刑并拟定量刑建议",
+   "skills": [
+    "criminal-legal:sentencing"
+   ],
+   "description": "以五步法对刑事个案进行量刑测算与量刑建议拟定的专业工作流。当用户提到量刑、量刑建议、量刑计算、量刑测算、起点刑、基准刑、宣告刑、认罪认罚量刑、自首从宽、累犯从重、犯罪未遂量刑、从犯量刑，或需要对具体案件估算刑期区间、评估各情节调节幅度时触发。不适用于无罪辩护策略、证据审查、程序咨询、纯法条检索。（认罪认罚的协商策略用 plea-negotiation，本技能负责量刑测算。）"
+  },
+  {
+   "id": "criminal-legal:trial-examination-outline",
+   "kind": "task",
+   "plugin": "criminal-legal",
+   "area": "刑事辩护与合规",
+   "title": "庭审发问与质证提纲",
+   "blurb": "庭前会议、排非申请、发问与举证质证提纲",
+   "skills": [
+    "criminal-legal:trial-examination-outline"
+   ],
+   "description": "庭审发问与举证质证提纲生成。用户说\"庭前会议\"\"排非申请\"\"非法证据排除\"\"庭审发问\"\"质证提纲\"\"举证质证\"\"发问提纲\"时使用；必须基于阅卷笔录，律师确认后生成正式文书。覆盖一审阶段庭前会议和庭审发问/质证两大场景，对应交付物7+8。"
+  },
+  {
+   "id": "procurement-legal:bid-review",
+   "kind": "task",
+   "plugin": "procurement-legal",
+   "area": "招投标与政府采购",
+   "title": "采购文件审查",
+   "blurb": "资格、评分与响应证据矩阵",
+   "skills": [
+    "procurement-legal:bid-review"
+   ],
+   "description": "当用户要求审查采购/招标文件、响应文件、资格条件、评分规则或投标风险时使用；单纯寻找公告改用 notice-watch。"
+  },
+  {
+   "id": "procurement-legal:challenge-complaint",
+   "kind": "task",
+   "plugin": "procurement-legal",
+   "area": "招投标与政府采购",
+   "title": "采购质疑投诉",
+   "blurb": "争点、证据和候选期限",
+   "skills": [
+    "procurement-legal:challenge-complaint"
+   ],
+   "description": "当用户需要分析或起草政府采购质疑、质疑答复、投诉及相关期限和证据时使用；普通售后争议改用 contract-performance。"
+  },
+  {
+   "id": "procurement-legal:contract-performance",
+   "kind": "task",
+   "plugin": "procurement-legal",
+   "area": "招投标与政府采购",
+   "title": "采购合同履约审查",
+   "blurb": "中标后签约、变更、验收、付款环节的合规审查",
+   "skills": [
+    "procurement-legal:contract-performance"
+   ],
+   "description": "当用户需要审查政府采购或招标项目中标后的签约、变更、验收、付款或履行争议时使用；投标资格与评分审查改用 bid-review。"
+  },
+  {
+   "id": "procurement-legal:regime-triage",
+   "kind": "task",
+   "plugin": "procurement-legal",
+   "area": "招投标与政府采购",
+   "title": "采购制度判断",
+   "blurb": "判断项目适用政府采购法、招标投标法还是其他采购制度",
+   "skills": [
+    "procurement-legal:regime-triage"
+   ],
+   "description": "当用户需要判断项目适用政府采购法、招标投标法或其他采购制度，或要识别采购程序与审查职责时使用；已确定制度的单条合同修改不触发。"
+  },
+  {
+   "id": "procurement-legal:notice-watch",
+   "kind": "watch",
+   "plugin": "procurement-legal",
+   "area": "招投标与政府采购",
+   "title": "采购公告监测",
+   "blurb": "每天检查你关注的采购项目的公开公告和澄清有没有变化，列出投标、质疑等候选期限",
+   "skills": [],
+   "cadence": "daily",
+   "registers": [
+    "procurement_projects"
+   ],
+   "files": false,
+   "lawUpdates": false,
+   "web": true,
+   "description": "只读跟踪用户指定采购项目的公开公告及澄清变化，输出候选期限与待核材料；不投标、不质疑、不发信。"
+  },
+  {
+   "id": "legal-research-cn:authority-check",
+   "kind": "task",
+   "plugin": "legal-research-cn",
+   "area": "法律检索与研究",
+   "title": "中国法法源核验",
+   "blurb": "核实原文、版本、效力及案例引用姿态",
+   "skills": [
+    "legal-research-cn:authority-check"
+   ],
+   "description": "当用户要核验中国法法条、司法解释、规范性文件或案例的原文、版本、效力和引用姿态时使用；一般文书润色不触发。"
+  },
+  {
+   "id": "legal-research-cn:case-comparison",
+   "kind": "task",
+   "plugin": "legal-research-cn",
+   "area": "法律检索与研究",
+   "title": "类案对比",
+   "blurb": "核实全文、生效状态、不利段落和事实可比性",
+   "skills": [
+    "legal-research-cn:case-comparison"
+   ],
+   "description": "当用户要求中国法院类案检索、指导性案例或参考案例比较、裁判分歧分析时使用；只有案号格式校对时改用 authority-check。"
+  },
+  {
+   "id": "legal-research-cn:issue-memo",
+   "kind": "task",
+   "plugin": "legal-research-cn",
+   "area": "法律检索与研究",
+   "title": "研究备忘录",
+   "blurb": "就中国法争点形成可追溯的研究备忘录、相反观点和行动建议",
+   "skills": [
+    "legal-research-cn:issue-memo"
+   ],
+   "description": "当用户要就中国法争点形成可追溯研究备忘录、相反观点与行动建议时使用；单个法条真伪核对改用 authority-check。"
+  },
+  {
+   "id": "legal-research-cn:lecture-source-pack",
+   "kind": "task",
+   "plugin": "legal-research-cn",
+   "area": "法律检索与研究",
+   "title": "法律讲座来源包",
+   "blurb": "主张、法源、案例及讲前更新核验",
+   "skills": [
+    "legal-research-cn:lecture-source-pack"
+   ],
+   "description": "当用户准备中国法律主题讲座、培训或公开分享，需建立来源包、案例清单和讲述提纲时使用；单个法条核对改用 authority-check。"
+  },
+  {
+   "id": "legal-research-cn:law-change-watch",
+   "kind": "watch",
+   "plugin": "legal-research-cn",
+   "area": "法律检索与研究",
+   "title": "法源变化监控",
+   "blurb": "每周把资料库同步到的法规变化和你关注的法规、手上的事项对照，列出需要律师核验的变化线索",
+   "skills": [],
+   "cadence": "weekly",
+   "registers": [
+    "watched_laws"
+   ],
+   "files": false,
+   "lawUpdates": true,
+   "web": false,
+   "description": "只读扫描指定法规或司法解释的官方发布变化，生成待律师核验的变化线索；不自动修改客户政策或发信。"
+  },
+  {
+   "id": "law-practice-cn:complaint-triage",
+   "kind": "task",
+   "plugin": "law-practice-cn",
+   "area": "律所实务",
+   "title": "一般投诉分流",
+   "blurb": "投诉、举报、申诉的渠道、证据及候选期限",
+   "skills": [
+    "law-practice-cn:complaint-triage"
+   ],
+   "description": "当用户需要处理非政府采购的一般投诉、举报、申诉或其答复，需判断受理机关、程序、证据和期限时使用；政府采购质疑投诉改用 procurement-legal 的 challenge-complaint。"
+  },
+  {
+   "id": "law-practice-cn:consultation-analysis",
+   "kind": "task",
+   "plugin": "law-practice-cn",
+   "area": "律所实务",
+   "title": "法律咨询分析",
+   "blurb": "事实、法源、相反观点及客户可行动方案",
+   "skills": [
+    "law-practice-cn:consultation-analysis"
+   ],
+   "description": "当用户需要就中国法问题形成可追溯的咨询分析、客户答复或正式意见草稿时使用；仅核对一条法规原文时改用 legal-research-cn 的 authority-check。"
+  },
+  {
+   "id": "law-practice-cn:legal-service-proposal",
+   "kind": "task",
+   "plugin": "law-practice-cn",
+   "area": "律所实务",
+   "title": "法律服务方案与报价",
+   "blurb": "服务范围、计价底稿、收费规则与审批边界",
+   "skills": [
+    "law-practice-cn:legal-service-proposal"
+   ],
+   "description": "当律师需要起草或核对中国法律服务洽商方案、服务范围和报价结构时使用；一般合同价款审查改用商事或采购合同技能。"
+  },
+  {
+   "id": "law-practice-cn:legal-terminology",
+   "kind": "task",
+   "plugin": "law-practice-cn",
+   "area": "律所实务",
+   "title": "法律用语校对",
+   "blurb": "起草或修改法律文书时校正法律术语和表述",
+   "skills": [
+    "law-practice-cn:legal-terminology"
+   ],
+   "description": "用于在起草、修改或审查各类法律文本（合同、起诉状、答辩状、法律意见书、备忘录、裁判文书、合规文件等）时，对其中的用语进行规范化处理，使其准确、无歧义、符合法律文体。触发场景包括： 1. 起草或修改法律文书时需要为某一法律概念选择恰当用语； 2. 审查文本时发现术语使用不规范、相互混淆或可能产生歧义； 3. 需要把口语化、俗称或日常表达转换为规范的法律表达； 4. 用户明确要求对一段文字做\"术语规范化\"\"用词审查\"或\"措辞校正\"； 5. 需要对易混淆的近似术语作出辨析并择优使用时。 本技能面向通用中国法语境，可独立运行。"
+  },
+  {
+   "id": "legal-clinic:build-guide",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "诊所实务指南",
+   "blurb": "帮指导老师撰写实务领域指南，配置面向学生的行为",
+   "skills": [
+    "legal-clinic:build-guide"
+   ],
+   "description": "帮助诊所指导老师撰写实践领域指南，配置面向学生技能的行为——接待问题、 教学姿态（assist / guide / teach）、审查门控、跨插件检查、本地规则。 当指导律师需要撰写或修订按实践领域的指南、调整诊所技能在其诊所类型 下的行为或将其教学理念设定为插件配置时使用。"
+  },
+  {
+   "id": "legal-clinic:client-comms-log",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "当事人沟通记录",
+   "blurb": "记录电话、邮件、短信、面谈等沟通",
+   "skills": [
+    "legal-clinic:client-comms-log"
+   ],
+   "description": "记录当事人沟通——电话、邮件、短信、信函、面谈、语音留言。 按案件仅追加记录，含日期条目、方向、媒介、摘要、行动事项。 与 /client-letter 和 /status client 协同使用。 当需要记录通话或当事人邮件、查阅沟通日志或询问\"我们上次告诉[当事人]什么\"时使用。"
+  },
+  {
+   "id": "legal-clinic:client-intake",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "法律诊所接待",
+   "blurb": "结构化客户接待，含跨领域问题识别和冲突标记",
+   "skills": [
+    "legal-clinic:client-intake"
+   ],
+   "description": "结构化接待——实践领域模板、跨领域考点识别、利益冲突标记、分流分类。 生成学生分析、指导老师审查的格式化案件摘要。不决定是否受理案件。 当开始新当事人接待、进行接待访谈或记录新当事人情况时使用。"
+  },
+  {
+   "id": "legal-clinic:client-letter",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "客户信函起草",
+   "blurb": "常规客户信函——预约确认、材料索取、进展更新",
+   "skills": [
+    "legal-clinic:client-letter"
+   ],
+   "description": "基于模板的常规当事人信函——预约确认、文件索取、\"已提交\"简报。 使用通俗语言，包含必要元素，附指导路由。不含实质性建议。 当学生需要发送常规信函、预约确认、文件索取信或向当事人发送简短状态说明时使用。"
+  },
+  {
+   "id": "legal-clinic:deadlines",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "法律诊所节点追踪",
+   "blurb": "添加、报告、更新和关闭案件节点，含执业风险警告",
+   "skills": [
+    "legal-clinic:deadlines"
+   ],
+   "description": "追踪案件截止日期——添加、跨案汇总报告、更新、完成、关闭。 按可配置阈值预警（默认14/7/3/1天）；逾期项目保持标记直至解决。 诊所工作量的运营记录。当学生或指导老师需要添加截止日期、查询本周 到期事项、获取截止日期报告或更新案件截止日期时使用。"
+  },
+  {
+   "id": "legal-clinic:draft",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "诊所文书初稿",
+   "blurb": "劳动仲裁申请书、离婚起诉状等常见文书初稿",
+   "skills": [
+    "legal-clinic:draft"
+   ],
+   "description": "常见诊所文件的初稿——实践领域模板（劳动争议仲裁申请书、离婚起诉状、 人身保护令申请书、律师函等），管辖地感知的格式，明确为需要学生分析 和指导律师审查的起手点。当学生需要起诉状、信函、申请书、陈述书或 其他诊所文件的初稿时使用。"
+  },
+  {
+   "id": "legal-clinic:memo",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "案件备忘录框架",
+   "blurb": "IRAC 结构案件分析备忘录，标注研究缺口",
+   "skills": [
+    "legal-clinic:memo"
+   ],
+   "description": "IRAC 框架化的案件分析备忘录，标注检索缺口——提供框架结构而非分析结论。 规则部分是\"待检索\"，应用部分是\"学生分析\"提示，结论部分留空。 当学生需要搭建案件分析备忘录框架、撰写分析或在案件中构建 IRAC 备忘录时使用。"
+  },
+  {
+   "id": "legal-clinic:ramp",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "学生学期导入",
+   "blurb": "学期导入——诊所流程、工具导览、实践练习",
+   "skills": [
+    "legal-clinic:ramp"
+   ],
+   "description": "学生学期导入——诊所程序、工具导览、真实案件之前的实践练习。 读取指导老师在设置时上传的手册并以互动方式教学。 当新诊所学生说\"帮我导入\"\"我是诊所新人\"\"开始\"，或每学期开始时使用； 传入 --card 获取一页参考卡。"
+  },
+  {
+   "id": "legal-clinic:research-start",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "检索路线图",
+   "blurb": "需检查的法条、案例领域、检索关键词——线索而非引用",
+   "skills": [
+    "legal-clinic:research-start"
+   ],
+   "description": "法律问题的检索路线图——需查阅的法条、需调查的案例法领域、行政监管框架、 北大法宝/法信/元典检索关键词。提供线索和框架，非权威引注；学生核实并 发展所有内容。当学生询问从哪里开始检索、需要某个问题的检索路线图、 或需要识别已有检索中的缺口时使用。"
+  },
+  {
+   "id": "legal-clinic:semester-handoff",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "学期移交",
+   "blurb": "期末案件移交备忘录",
+   "skills": [
+    "legal-clinic:semester-handoff"
+   ],
+   "description": "学期末案件交接备忘录——/ramp 的镜像。生成按案件的移交备忘录和群体摘要， 使离届群体将工作干净地移交给新群体。读取截止日期、当事人沟通和案件历史。 当指导老师或离届学生需要结束学期、构建移交备忘录或协助毕业/退出学生离任时使用。"
+  },
+  {
+   "id": "legal-clinic:status",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "案件状态汇总",
+   "blurb": "按受众分类的案件状态——客户版、指导老师版、法院版",
+   "skills": [
+    "legal-clinic:status"
+   ],
+   "description": "按受众的案件状态摘要——面向当事人（通俗语言）、面向内部（供指导老师）、 或面向法院（按本地规则的正式文书标题格式）。同样的事实，不同的表述框架和深度。 当学生需要更新当事人、向指导老师汇报或准备法院状态报告时使用。"
+  },
+  {
+   "id": "legal-clinic:supervisor-review-queue",
+   "kind": "task",
+   "plugin": "legal-clinic",
+   "area": "法律援助与诊所",
+   "title": "指导老师审查队列",
+   "blurb": "教授审查队列（配置正式审查督导时）",
+   "skills": [
+    "legal-clinic:supervisor-review-queue"
+   ],
+   "description": "指导老师审查队列——学生输出在此等待指导老师批准后才能发给当事人或法院。 仅在冷启动设置时选择\"正式审查队列\"指导风格时活跃；否则休眠。 当指导老师想查看等待审查的内容、批准、编辑后批准或退回某项时使用。"
+  },
+  {
+   "id": "law-student:bar-prep-questions",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "法考备考教练",
+   "blurb": "针对薄弱科目提供客观题和主观题练习",
+   "skills": [
+    "law-student:bar-prep-questions"
+   ],
+   "description": "法考备考题目——客观题或主观题，针对你的薄弱科目和考试类型。追踪错题并回归 薄弱模式。当用户说\"法考练习\"\"客观题\"\"主观题\"\"测试我\"时使用。"
+  },
+  {
+   "id": "law-student:case-brief",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "案例摘要",
+   "blurb": "按你偏好的格式做案例摘要",
+   "skills": [
+    "law-student:case-brief"
+   ],
+   "description": "按你偏好的格式撰写案例摘要。在训练模式下，要求学生在写摘要前先陈述裁判要旨。 当用户说\"摘要[案例]\"\"[案例]的裁判要旨是什么\"\"案例摘要\"或粘贴案例文本时使用。"
+  },
+  {
+   "id": "law-student:cold-call-prep",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "课堂准备",
+   "blurb": "预测教授提问并在课前进行针对性训练",
+   "skills": [
+    "law-student:cold-call-prep"
+   ],
+   "description": "课堂提问准备——预测老师可能提问的问题并以苏格拉底式追问训练，标注你的薄弱 环节以便课前重温。当用户说\"准备明天的课\"\"课堂提问[案例]\"\"[老师]可能在 [案例]上问什么\"或指向指定阅读材料时使用。"
+  },
+  {
+   "id": "law-student:exam-forecast",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "考试预测",
+   "blurb": "分析同一教授历年试题，预测可能重点",
+   "skills": [
+    "law-student:exam-forecast"
+   ],
+   "description": "分析同一授课教师的历年考题以揭示模式——科目权重、反复出现的考点陷阱、 偏好的案例假设类型、政策vs法条分析的比例——并预测今年考试可能的重点。 当用户说\"考试考什么\"\"分析历年考题\"\"预测考试\"或分享历年考题时使用。"
+  },
+  {
+   "id": "law-student:flashcards",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "记忆卡片训练",
+   "blurb": "生成或训练记忆卡片——Leitner 式分层记忆",
+   "skills": [
+    "law-student:flashcards"
+   ],
+   "description": "生成或训练法条概念记忆卡片——莱特纳式记忆桶，按科目的 Markdown 存储， 带自我评估的训练模式。当用户说\"训练记忆卡片\"\"根据[材料]制作记忆卡片\" \"考我卡片\"或想记忆法条时使用。"
+  },
+  {
+   "id": "law-student:irac-practice",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "IRAC 写作批改",
+   "blurb": "对 IRAC 作文的结构、问题识别、规则引用、分析逻辑评分",
+   "skills": [
+    "law-student:irac-practice"
+   ],
+   "description": "给 IRAC 论文评分——结构、考点识别、规则准确性、分析深度和组织。绝不代写 论文或展示范文；追踪跨练习的模式。当用户说\"批改我的 IRAC\"\"检查我的论文\" 或\"我写了这个，给我反馈\"时使用。"
+  },
+  {
+   "id": "law-student:legal-writing",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "法律写作反馈",
+   "blurb": "对草稿的结构性反馈——从不代写",
+   "skills": [
+    "law-student:legal-writing"
+   ],
+   "description": "对法律写作草稿（备忘录、代理词、论文、法考主观题答案）的结构性反馈—— 组织结构、分析深度、清晰度、引注格式。绝不代写重写。当用户说\"给我的备忘录 提反馈\"\"读一下我的草稿\"\"批评我的代理词\"时使用。"
+  },
+  {
+   "id": "law-student:outline-builder",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "知识体系搭建",
+   "blurb": "从课堂笔记和教材构建或扩展知识体系",
+   "skills": [
+    "law-student:outline-builder"
+   ],
+   "description": "按你的格式从课堂笔记和教材构建或扩展课程知识大纲。搭建框架——不替你 写大纲。当用户说\"大纲[科目]\"\"添加到我的大纲\"\"从[材料]构建大纲\" 或指向课堂材料时使用。"
+  },
+  {
+   "id": "law-student:session",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "专项练习",
+   "blurb": "在一个科目上做 N 题集中练习（客观题、主观题或记忆卡片）",
+   "skills": [
+    "law-student:session"
+   ],
+   "description": "在一个科目上运行一场集中的 N 题练习——客观题、主观题或记忆卡片。 追踪表现并更新学习计划。当用户说\"给我出10道[科目]题\"\"做一场[科目]练习\" \"做5张[科目]卡片\"或想练习固定数量的题目并让计划随之调整时使用。"
+  },
+  {
+   "id": "law-student:socratic-drill",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "课堂问答训练",
+   "blurb": "它问、你答、它追问——不直接给答案",
+   "skills": [
+    "law-student:socratic-drill"
+   ],
+   "description": "苏格拉底式追问训练——我问，你答，我追问。在你真正掌握之前绝不给你答案。 当用户说\"训练我\"\"提问我\"\"苏格拉底式\"\"测试我的[科目]\"或想进行主动学习时使用。"
+  },
+  {
+   "id": "law-student:study-plan",
+   "kind": "task",
+   "plugin": "law-student",
+   "area": "法学学习",
+   "title": "学习计划",
+   "blurb": "长期学习计划，含排课和基于学习记录的适应性调整",
+   "skills": [
+    "law-student:study-plan"
+   ],
+   "description": "构建或更新长期法考备考（或期末备考）学习计划——分阶段、按薄弱科目的权重分配、 每日练习安排，根据 study-plan.yaml 中的练习历史自适应调整。 当用户说\"制定学习计划\"\"规划我的法考备考\"\"安排我的复习\"\"我该怎么复习[X]\"时使用。"
+  }
+ ],
+ "skills": {
+  "ai-governance-legal:ai-inventory": {
+   "plugin": "ai-governance-legal",
+   "skill": "ai-inventory",
+   "description": "按系统逐一定义AI角色、风险等级和监管义务——判定每个系统是 AI服务提供者还是使用者，分配风险层级，并映射至中国AI法规 的义务要求。适用于建立AI系统清单、进行年度AI审计、或新法 规要求重新分类时。",
+   "config": false
+  },
+  "ai-governance-legal:aia-generation": {
+   "plugin": "ai-governance-legal",
+   "skill": "aia-generation",
+   "description": "为AI系统或模型生成风险定级和合规概要评估——涵盖数据、公平性、 透明度、安全性和监管注册表。在用例分类为\"附条件-高\"后使用， 产品或工程团队提出\"我们需要做AI影响评估\"时使用，或定期重新 认证已部署系统时使用。采用快速/全面双轨制。",
+   "config": false
+  },
+  "ai-governance-legal:cold-start-interview": {
+   "plugin": "ai-governance-legal",
+   "skill": "cold-start-interview",
+   "description": "首次运行访谈以建立AI治理实践配置：适用法规、 AI系统清单、红线、审批工作流和输出偏好。 在插件首次安装时自动运行。使用 --redo 可重新运行。",
+   "config": true
+  },
+  "ai-governance-legal:customize": {
+   "plugin": "ai-governance-legal",
+   "skill": "customize",
+   "description": "在不重新运行完整冷启动访谈的情况下定制AI治理实践配置。 调整默认风险阈值、红线清单、审批流程或AI政策立场。 适用于\"把我们的AI风险偏好调整为更保守\"、 \"添加一条新的红线\"、\"更新算法备案到期提醒\"、 或任何细微调整场景。不覆盖已配置的所有内容——仅编辑指定字段。",
+   "config": true
+  },
+  "ai-governance-legal:matter-workspace": {
+   "plugin": "ai-governance-legal",
+   "skill": "matter-workspace",
+   "description": "管理事务工作区——创建、列表、切换、关闭或解除活跃事务。 适用于多客户私人执业场景，将一个客户或委托的上下文与另一个 隔离开。也可以在实质技能需要知道它在哪个事务中工作时使用。",
+   "config": true
+  },
+  "ai-governance-legal:policy-monitor": {
+   "plugin": "ai-governance-legal",
+   "skill": "policy-monitor",
+   "description": "保持AI使用政策与当前实践一致。两种模式：每周扫描已保存的AI 评估和分类结果以发现政策漂移；或对提议的新实践进行直接查询。 适用于用户询问\"我们的AI政策是否覆盖了这一点\"、\"我们想 开始做X——政策需要更新吗\"、\"运行AI政策监测\"、\"政策扫描\" 或需要发现AI政策与实际操作不符之处时。",
+   "config": false
+  },
+  "ai-governance-legal:policy-starter": {
+   "plugin": "ai-governance-legal",
+   "skill": "policy-starter",
+   "description": "根据监管注册表和公司已有的实践位置，起草AI使用政策。 适用于团队从未有过AI使用政策、需要快速生成初稿供法律审阅、 或现有政策需要根据新法规全面重写时。",
+   "config": false
+  },
+  "ai-governance-legal:reg-gap-analysis": {
+   "plugin": "ai-governance-legal",
+   "skill": "reg-gap-analysis",
+   "description": "将新的或修订的AI法规与当前AI政策和实践进行差异分析—— 输出差距清单和整改计划，含负责人和日期。适用于新法规 出台、用户询问\"[某法规]是否影响我们\"、\" AI法规差距分析\"或粘贴法规文本时。",
+   "config": false
+  },
+  "ai-governance-legal:use-case-triage": {
+   "plugin": "ai-governance-legal",
+   "skill": "use-case-triage",
+   "description": "对提议的AI用例进行分类和风险排序：检索现有注册表、检查红线、 对残余风险进行分级。输出为经核准/附条件/不核准，并附书面理由。 适用于收到新的AI用例提案、产品团队询问\"这个AI功能可以上线吗\"、 或需要运行AI用例审批委员会流程时。",
+   "config": false
+  },
+  "ai-governance-legal:vendor-ai-review": {
+   "plugin": "ai-governance-legal",
+   "skill": "vendor-ai-review",
+   "description": "审查AI供应商条款——重点核查训练数据来源合规性、责任分配、 模型变更通知、合规义务向下传导。适用于审查AI SaaS协议、 AI模型授权、AI API服务条款，或采购团队提出\"这个AI供应商 合同有问题吗\"时使用。",
+   "config": false
+  },
+  "commercial-legal:amendment-history": {
+   "plugin": "commercial-legal",
+   "skill": "amendment-history",
+   "description": "追溯合同从基础协议到所有修订的变更轨迹——可以是所有变更的时间线摘要， 也可以是特定条款的追踪。当用户说\"这个合同历次改了什么\"\"显示修订历史\" \"最新的[条款]在哪里\"\"[条款]如何演变的\"或上传多个版本的协议时使用。",
+   "config": false
+  },
+  "commercial-legal:cold-start-interview": {
+   "plugin": "commercial-legal",
+   "skill": "cold-start-interview",
+   "description": "运行冷启动访谈以了解你的商事合同实务并写入团队业务领域配置。在首次使用插件时、 配置文件缺失或仍为模板占位符时、或当用户说\"设置插件\"\"配置商事合同\" \"引导我\"\"我们开始吧\"时使用。这是全新安装时应运行的唯一技能。",
+   "config": true
+  },
+  "commercial-legal:construction-contract-review": {
+   "plugin": "commercial-legal",
+   "skill": "construction-contract-review",
+   "description": "当用户审查中国建设工程施工、总包、分包或代建合同，重点核对付款、工期、变更签证、验收结算和质保时使用；普通 SaaS 或 NDA 合同改用对应商事审查技能。",
+   "config": false
+  },
+  "commercial-legal:contract-drafting": {
+   "plugin": "commercial-legal",
+   "skill": "contract-drafting",
+   "description": "从零起草各类合同的专业技能，覆盖买卖、服务、技术、许可、合作、建设工程等常见类型，按六步法推进（需求确认→法律调研→框架搭建→条款设计→风险扫描→文档生成），内置谈判立场三级分档与多维风险扫描。当用户说\"起草合同\"\"写协议\"\"拟合同\"\"帮我写份合同\"\"需要一份XX合同\"\"草拟一份协议\"时触发。不适用于合同审查、合同翻译或纯法律咨询。",
+   "config": false
+  },
+  "commercial-legal:customize": {
+   "plugin": "commercial-legal",
+   "skill": "customize",
+   "description": "商事合同业务领域配置的引导式定制——修改一项配置而无需重新运行完整的冷启动访谈。 调整风险姿态、上报联系人、审查指引立场、保密协议分类偏好、行文风格、 审查偏好或事项工作区路径。当用户说\"改一下我的[某配置]\"\"更新我的配置\" \"编辑我的审查指引\"\"调整我的设置\"或\"定制\"时使用。",
+   "config": true
+  },
+  "commercial-legal:escalation-flagger": {
+   "plugin": "commercial-legal",
+   "skill": "escalation-flagger",
+   "description": "根据审查指引中的上报矩阵将合同问题路由至合适的审批人，并起草上报说明。 当用户说\"谁需要批准这个\"\"上报这个\"\"这个需要法务负责人签字吗\" \"路由这个去审批\"或当其他技能发现超出审查者权限的问题时使用。",
+   "config": false
+  },
+  "commercial-legal:matter-workspace": {
+   "plugin": "commercial-legal",
+   "skill": "matter-workspace",
+   "description": "管理事项工作区——新建、列出、切换、关闭或脱离（业务领域级）。当多客户执业者 需要创建事项、切换当前事项、列出事项、归档事项或脱离至业务领域级上下文时使用， 或当其他技能需要知道当前在哪个事项中工作时使用。",
+   "config": true
+  },
+  "commercial-legal:nda-review": {
+   "plugin": "commercial-legal",
+   "skill": "nda-review",
+   "description": "参考：对接收方保密协议进行快速三色分类（绿/黄/红），使团队成员仅将律师时间投入 真正需要审查的协议。面向销售和BD人员，在联系法务前自助筛查。当 /commercial-legal:review 检测到保密协议时自动加载。",
+   "config": false
+  },
+  "commercial-legal:renewal-tracker": {
+   "plugin": "commercial-legal",
+   "skill": "renewal-tracker",
+   "description": "展示具有即将到来的取消截止日期的合同，在通知窗口关闭前发出预警， 基于维护的续约登记册运行。当用户询问\"什么即将续约\"\"哪些续约即将到期\" \"我们是否错过了取消窗口\"\"将此添加到续约追踪器\"时使用，或按计划运行。 接收来自 saas-msa-review 的交接数据。",
+   "config": false
+  },
+  "commercial-legal:review": {
+   "plugin": "commercial-legal",
+   "skill": "review",
+   "description": "根据审查指引审查供应商协议、保密协议或SaaS订阅。从标题识别协议结构， 路由至正确的审查技能，并将输出整合为单一备忘录。当用户说\"审查这个合同\" \"检查这个主协议\"\"这个保密协议可以吗\"\"看看这个SaaS协议\"或附上接收方协议供审查时使用。",
+   "config": false
+  },
+  "commercial-legal:review-proposals": {
+   "plugin": "commercial-legal",
+   "skill": "review-proposals",
+   "description": "审查并批准（或拒绝）来自审查指引监控代理的待处理更新建议，并将批准的变更 应用到业务领域配置中。当审查指引监控代理提出建议时使用，或当用户说 \"审查审查指引建议\"\"有哪些待处理的审查指引更新\"或想逐一处理偏离驱动的审查指引变更时使用。",
+   "config": false
+  },
+  "commercial-legal:saas-msa-review": {
+   "plugin": "commercial-legal",
+   "skill": "saas-msa-review",
+   "description": "参考：SaaS订阅协议审查，重点关注订阅交易中最关键的条款——自动续约机制、 价格调整、数据可迁移性、运行时间SLA以及再处理者权利。当 /commercial-legal:review 检测到SaaS或订阅协议时加载。",
+   "config": false
+  },
+  "commercial-legal:stakeholder-summary": {
+   "plugin": "commercial-legal",
+   "skill": "stakeholder-summary",
+   "description": "将合同审查转化为业务利益方实际会阅读的摘要。不是法律备忘录——是对 \"能签吗？需要知道什么？\"的两分钟回答。当用户说\"给业务部门总结一下\" \"写给[利益方]\"解释给采购\"\"非法务摘要\"或审查完成后需要发送给法务以外的人时使用。",
+   "config": false
+  },
+  "commercial-legal:vendor-agreement-review": {
+   "plugin": "commercial-legal",
+   "skill": "vendor-agreement-review",
+   "description": "参考：根据团队审查指引审查接收方供应商协议。标注偏离项、评估风险、生成具体 修订语言并路由至合适的审批人。当 /commercial-legal:review 检测到供应商主协议、 服务协议或类似协议时加载。",
+   "config": false
+  },
+  "corporate-legal:ai-tool-handoff": {
+   "plugin": "corporate-legal",
+   "skill": "ai-tool-handoff",
+   "description": "检测 AI 辅助审查工具（如 Luminance、Kira 等）是否在使用中，将大批量条款提取 交接给工具，并按 `~/.claude/plugins/config/claude-for-legal-zh/corporate-legal/CLAUDE.md` 中的 信任层级对其输出进行 QA。当用户说\"交给AI工具\"\"批量审查\"\"AI提取\"或 diligence-issue-extraction 遇到大批量类别时使用。",
+   "config": false
+  },
+  "corporate-legal:board-minutes": {
+   "plugin": "corporate-legal",
+   "skill": "board-minutes",
+   "description": "按你的内部格式起草董事会或专门委员会会议纪要。从你的日历中自动检测即将召开的 董事会和委员会会议，询问议程及任何演示文稿或预读材料，并生成一份根据你的种子 会议纪要学习的完整格式草案。同时处理替代会议的书面决议。触发：\"董事会纪要\" \"起草纪要\"\"即将召开的董事会\"\"委员会纪要\"\"书面决议\"或日历检测到即将召开的 董事会或委员会事件。",
+   "config": false
+  },
+  "corporate-legal:closing-checklist": {
+   "plugin": "corporate-legal",
+   "skill": "closing-checklist",
+   "description": "什么在阻碍交割——维护交割检查表，包含状态、关键路径和距交割天数。自我更新： 从尽调发现和清单构建中接收新项目，追踪状态，呈现阻碍项。当用户说\"交割检查表\" \"还差什么\"\"检查表状态\"\"加入检查表\"或按计划状态拉取时使用。",
+   "config": false
+  },
+  "corporate-legal:cold-start-interview": {
+   "plugin": "corporate-legal",
+   "skill": "cold-start-interview",
+   "description": "内部冷启动访谈（需求清单 + 先前备忘录），或用于逐项交易上下文的 --new-deal。模块化：识别哪些实务领域适用（并购、董事会与公司秘书、 公众公司、主体管理），然后对每个活跃模块询问有针对性的问题， 仅将相关章节写入插件配置。在全新安装时、CLAUDE.md 仍有 [PLACEHOLDER] 标记时、开始新交易时、或重新检查集成或刷新某一模块时使用。",
+   "config": true
+  },
+  "corporate-legal:corporate-docs": {
+   "plugin": "corporate-legal",
+   "skill": "corporate-docs",
+   "description": "公司治理文件起草助手——覆盖股东会决议、董事会决议、公司章程、股东协议、出资协议、增资协议的起草。处理表决事项与表决比例、治理结构设计、股权与出资安排、决策机制与僵局打破、利润分配、股权转让与退出、签署落款等核心内容。当用户提到以下任一场景时触发：写股东会决议、董事会决议、公司章程、股东协议、出资协议、增资协议、公司治理文件、起草决议、起草章程、股东之间的协议、增资扩股文件、表决比例、治理结构。不适用于普通商业合同、诉讼文书。（董事会或专门委员会的一致书面决议用 written-consent，会议纪要用 board-minutes。）",
+   "config": false
+  },
+  "corporate-legal:customize": {
+   "plugin": "corporate-legal",
+   "skill": "customize",
+   "description": "公司业务实务画像的引导式定制——修改一项配置而无需重新运行完整的冷启动访谈。 调整风险姿态、上报联系人、活跃模块（并购/董事会与公司秘书/公众公司/主体管理）、 重要性阈值、披露清单格式、决议先例或事项工作区路径。当用户说\"改一下我的[某配置]\" \"更新我的配置\"\"编辑我的实务画像\"\"调整我的设置\"或\"定制\"时使用。",
+   "config": true
+  },
+  "corporate-legal:deal-team-summary": {
+   "plugin": "corporate-legal",
+   "skill": "deal-team-summary",
+   "description": "将尽调发现汇总为适合受众层级的交易团队简报——面向领导层的执行摘要、面向团队的 工作摘要。当用户说\"给交易团队简报\"\"尽调现状如何\"\"汇总发现给[受众]\" \"交易更新\"或按简报频率触发时使用。",
+   "config": false
+  },
+  "corporate-legal:diligence-evidence-matrix": {
+   "plugin": "corporate-legal",
+   "skill": "diligence-evidence-matrix",
+   "description": "当用户需要对中国公司股权投资或收购尽调底稿做全量入账、事实证据映射、矛盾追踪和问题矩阵时使用；只要求单份合同摘要时不触发。",
+   "config": false
+  },
+  "corporate-legal:diligence-issue-extraction": {
+   "plugin": "corporate-legal",
+   "skill": "diligence-issue-extraction",
+   "description": "读取数据室文件并按内部类别和重要性阈值提取问题，以内部备忘录格式产出发现。 当用户说\"审查数据室\"\"从[文件夹]提取问题\"\"尽调审查\"\"数据室里有什么\" 或指向数据室文件时使用。",
+   "config": false
+  },
+  "corporate-legal:due-diligence-checklist": {
+   "plugin": "corporate-legal",
+   "skill": "due-diligence-checklist",
+   "description": "尽职调查清单定制生成技能。根据标的行业、发展阶段与交易类型，输出覆盖商业/财务/法律/技术/运营/人力六大维度的尽调清单，并配套信息请求清单（IRL）、尽调排期与 Red Flag 检查点。触发词：尽调清单、DD checklist、尽职调查、due diligence、信息请求、IRL、Red Flag、尽调排期、尽调计划、清单定制。不适用于：单份合同审查、已签约后的合规体检、纯估值建模、诉讼证据梳理，也不替代实地访谈、外部审计或专项法律意见。",
+   "config": false
+  },
+  "corporate-legal:entity-compliance": {
+   "plugin": "corporate-legal",
+   "skill": "entity-compliance",
+   "description": "主体合规追踪器——初始化、报告即将到来的截止日、更新状态、运行健康审计、 导出为 CSV。维护从主体清单构建的 compliance-tracker.yaml，按主体和 注册地计算申报截止日，呈现未来30/60/90天内的待办事项。当用户说\"主体合规\" \"申报截止日\"\"年报到期\"\"主体追踪器\"\"什么申报到期\"\"主体健康\"或\"存续状态\"时使用。",
+   "config": false
+  },
+  "corporate-legal:integration-management": {
+   "plugin": "corporate-legal",
+   "skill": "integration-management",
+   "description": "交割后并购整合追踪器——分阶段工作计划、同意追踪、规模化合同转让、 每周状态报告。从任何可获取的交易工件（股权收购协议、交易摘要、 交割检查表）初始化，并连接到来自并购冷启动的 deal-context.md 和 closing-checklist.yaml。当用户说\"整合\"\"交割后\"\"同意未决\" \"合同转让\"\"整合状态\"或\"交易还差什么\"时使用。",
+   "config": false
+  },
+  "corporate-legal:legal-opinion": {
+   "plugin": "corporate-legal",
+   "skill": "legal-opinion",
+   "description": "出具法律意见书。用于对特定事项（尽职调查、合规审查、交易安排、专项法律问题）进行系统分析并给出明确结论与可执行建议，按标准结构（事项与背景→审查范围与依据→事实认定→法律分析→结论与建议→假设与限制声明）成稿。触发关键词：出法律意见书 / 法律意见 / 尽职调查意见 / 合规意见 / 交易法律意见 / 专项法律意见 / 律师意见书。不适用于诉讼文书（起诉状、答辩状、上诉状），也不适用于合同条款起草。",
+   "config": false
+  },
+  "corporate-legal:material-contract-schedule": {
+   "plugin": "corporate-legal",
+   "skill": "material-contract-schedule",
+   "description": "从尽调发现构建重大合同披露清单，适用股权收购协议的重大合同定义，并按 协议清单格式排版。当用户说\"建合同清单\"\"披露清单\"\"清单 3.X\" \"重大合同列表\"或起草披露清单时使用。",
+   "config": false
+  },
+  "corporate-legal:matter-workspace": {
+   "plugin": "corporate-legal",
+   "skill": "matter-workspace",
+   "description": "管理事项工作区——创建、列出、切换、关闭或分离活跃事项，使多客户执业者将一个 客户的上下文与其他客户隔离。任何需要知道正在处理哪个事项的实质性技能均读取 本技能。当用户说\"新事项\"\"切换事项\"\"列出事项\"\"关闭事项\"或希望仅以实务级工作时使用。",
+   "config": true
+  },
+  "corporate-legal:tabular-review": {
+   "plugin": "corporate-legal",
+   "skill": "tabular-review",
+   "description": "表格审查——一行一文件，一列一数据点，每个单元格标注来源。为并购尽调而构建 （\"审查这200份目标公司合同中的控制权变更、合同转让和重大不利变化条款\"）， 但适用于任何需要产出电子表格的批量审查。当用户说\"表格审查\"\"审查网格\"\"建一个网格\" \"从这些合同中提取这些字段\"\"审查这些文件中的X、Y、Z\"\"给我一个关于……的电子表格\" \"批量审查\"或指向文件夹并要求比较时使用。",
+   "config": false
+  },
+  "corporate-legal:written-consent": {
+   "plugin": "corporate-legal",
+   "skill": "written-consent",
+   "description": "以内部格式起草董事会或专门委员会的一致书面决议，从决议存储库中检索先例。 处理多决议决议、董事冲突标记、适用法律下的通知要求以及签署人追踪， 包含对重大单项行动的内置范围警示。当用户说\"书面决议\"\"一致决议\" \"董事会决议\"\"替代会议的决议\"\"书面审定\"或描述一项需要董事会批准但无需召开会议的行动时使用。",
+   "config": false
+  },
+  "criminal-legal:bail-application": {
+   "plugin": "criminal-legal",
+   "skill": "bail-application",
+   "description": "取保候审及羁押必要性审查申请辅助。从脱敏案情中提取法定事由与酌定事由， 辅助撰写逻辑清晰、情理法并重的申请文书框架。当用户要求\"申请取保候审\"、 \"羁押必要性审查\"、\"变更强制措施\"或梳理取保事由时使用。",
+   "config": false
+  },
+  "criminal-legal:case-analysis": {
+   "plugin": "criminal-legal",
+   "skill": "case-analysis",
+   "description": "刑事案卷笔录与证据链梳理。协助律师从大量脱敏后的供述、证人证言、物证中 提取关键时间线，寻找供述矛盾点和证据闭环断裂处。当用户提供脱敏后的 讯问笔录、询问笔录摘要，要求\"交叉对比时间线\"、\"找出供述矛盾\"、 \"梳理证据链\"或评估孤证问题时使用。",
+   "config": false
+  },
+  "criminal-legal:case-file-notes": {
+   "plugin": "criminal-legal",
+   "skill": "case-file-notes",
+   "description": "刑事阅卷笔录制作与合规校核。用户明确提出”刑事阅卷””刑事阅卷笔录”或在刑事案件中要求生成或修订阅卷笔录时必须使用（只需对脱敏摘要做快速证据链梳理时用 case-analysis）；先区分法律援助类和委托类，再核对供述归属、讯问要素、原件与法律来源。",
+   "config": false
+  },
+  "criminal-legal:client-communication": {
+   "plugin": "criminal-legal",
+   "skill": "client-communication",
+   "description": "刑事案件客户沟通与服务可视化。用户说\"客户沟通\"\"服务计划书\"\"工作通报\"\"客户汇报\"\"决策辅助清单\"\"庭审简报\"时使用；把对内办案工作转化为对客户的脱敏沟通材料，最高红线是不泄露辩护策略底牌。",
+   "config": false
+  },
+  "criminal-legal:client-meeting-prep": {
+   "plugin": "criminal-legal",
+   "skill": "client-meeting-prep",
+   "description": "刑事会见发问清单与会见笔录准备技能。用户明确提出”刑事会见””刑事会见笔录””刑事会见清单””会见发问”时使用；必须基于阅卷笔录或卷宗材料生成问题，不得脱离证据空泛发问。",
+   "config": false
+  },
+  "criminal-legal:cold-start-interview": {
+   "plugin": "criminal-legal",
+   "skill": "cold-start-interview",
+   "description": "运行冷启动面谈以了解你的刑事业务实务并撰写实务画像。 用于首次安装、实务画像缺失或仍含占位符时，使用 --redo 重新设置、 或在连接或断开 MCP 后使用 --check-integrations 重新探测集成。 这是全新安装时唯一应运行的技能。",
+   "config": true
+  },
+  "criminal-legal:compliance-non-prosecution": {
+   "plugin": "criminal-legal",
+   "skill": "compliance-non-prosecution",
+   "description": "涉案企业合规不起诉审查与整改大纲辅助。基于《涉案企业合规建设、评估和 审查办法（试行）》，评估企业合规整改草案，发现盲点，提示第三方监督 评估的实质性证据要求。当用户处理涉税、环保、数据安全等涉企犯罪案件， 要求\"合规整改审查\"、\"合规不起诉评估\"、\"整改计划盲点\"时使用。",
+   "config": false
+  },
+  "criminal-legal:customize": {
+   "plugin": "criminal-legal",
+   "skill": "customize",
+   "description": "引导式微调刑事业务实务画像——不必重跑完整冷启动面谈即可修改单项设置。 调整执业角色、辩护立场校准、常见案件类型、汇报审批链、检索集成或 事项工作区路径。当用户说\"改一下我的某项设置\"、\"更新画像\"、 \"自定义\"时使用。",
+   "config": true
+  },
+  "criminal-legal:defense-plan": {
+   "plugin": "criminal-legal",
+   "skill": "defense-plan",
+   "description": "刑事辩护方案与策略路径选择。用户说\"辩护方案\"\"辩护策略\"\"辩点梳理\"\"策略选择\"\"辩点矩阵\"时使用（对脱敏案情做罪与非罪、此罪与彼罪的法理分析用 defense-strategy；本技能在已有阅卷笔录后做辩点矩阵和主攻路径选择）；基于阅卷笔录系统梳理辩点、评估强度、选择主攻路径，是阅卷与辩护词之间的决策环节。",
+   "config": false
+  },
+  "criminal-legal:defense-statement": {
+   "plugin": "criminal-legal",
+   "skill": "defense-statement",
+   "description": "辩护词、庭审辩论提纲与最后陈述辅导生成。用户说\"辩护词\"\"辩护意见\"\"庭审辩论\"\"最后陈述辅导\"时使用；必须在律师明确说\"可以出了\"之后才生成辩护词。",
+   "config": false
+  },
+  "criminal-legal:defense-strategy": {
+   "plugin": "criminal-legal",
+   "skill": "defense-strategy",
+   "description": "辩护思路与类案法理分析。根据脱敏案情拆解犯罪构成要件，分析罪与非罪、 此罪与彼罪的界限，提取争议焦点，提出无罪或罪轻的辩护切入点。当用户 描述脱敏案情并询问\"构不构成犯罪\"、\"定什么罪更轻\"、\"辩护思路\"时使用。",
+   "config": false
+  },
+  "criminal-legal:investigation-stage-docs": {
+   "plugin": "criminal-legal",
+   "skill": "investigation-stage-docs",
+   "description": "刑事侦查阶段三类文书生成。用户说\"侦查阶段\"\"取保申请\"\"不批捕意见书\"\"羁押必要性审查\"时使用，产出正式文书（只需从脱敏案情快速梳理取保事由时用 bail-application）；必须区分无卷会见（本skill）和阅卷后会见（client-meeting-prep）。",
+   "config": false
+  },
+  "criminal-legal:matter-workspace": {
+   "plugin": "criminal-legal",
+   "skill": "matter-workspace",
+   "description": "管理事项工作区——创建、列表、切换、关闭或解除（实务级）。 为多案件执业者保持一个委托的上下文与其他案件隔绝——刑事案件间的 事实隔离同时是保密义务要求。用于开启新案件、切换案件、列出案件、 关闭/归档案件或仅在实务级工作时。",
+   "config": true
+  },
+  "criminal-legal:non-prosecution-opinion": {
+   "plugin": "criminal-legal",
+   "skill": "non-prosecution-opinion",
+   "description": "不起诉法律意见书生成。用户说\"不起诉意见\"\"不起诉法律意见书\"\"争取不起诉\"时使用；覆盖法定/存疑/酌定三类不起诉（涉案企业合规不起诉用 compliance-non-prosecution）。",
+   "config": false
+  },
+  "criminal-legal:plea-negotiation": {
+   "plugin": "criminal-legal",
+   "skill": "plea-negotiation",
+   "description": "认罪认罚协商策略意见书生成。用户说\"认罪认罚\"\"认罪认罚协商\"\"量刑建议协商\"\"要不要认罪认罚\"时使用；必须基于阅卷笔录，独立分析利弊。",
+   "config": false
+  },
+  "criminal-legal:sentencing": {
+   "plugin": "criminal-legal",
+   "skill": "sentencing",
+   "description": "以五步法对刑事个案进行量刑测算与量刑建议拟定的专业工作流。当用户提到量刑、量刑建议、量刑计算、量刑测算、起点刑、基准刑、宣告刑、认罪认罚量刑、自首从宽、累犯从重、犯罪未遂量刑、从犯量刑，或需要对具体案件估算刑期区间、评估各情节调节幅度时触发。不适用于无罪辩护策略、证据审查、程序咨询、纯法条检索。（认罪认罚的协商策略用 plea-negotiation，本技能负责量刑测算。）",
+   "config": false
+  },
+  "criminal-legal:trial-examination-outline": {
+   "plugin": "criminal-legal",
+   "skill": "trial-examination-outline",
+   "description": "庭审发问与举证质证提纲生成。用户说\"庭前会议\"\"排非申请\"\"非法证据排除\"\"庭审发问\"\"质证提纲\"\"举证质证\"\"发问提纲\"时使用；必须基于阅卷笔录，律师确认后生成正式文书。覆盖一审阶段庭前会议和庭审发问/质证两大场景，对应交付物7+8。",
+   "config": false
+  },
+  "employment-legal:cold-start-interview": {
+   "plugin": "employment-legal",
+   "skill": "cold-start-interview",
+   "description": "首次配置访谈——从你的劳动规章制度和解除备忘录中学习你的管辖范围 和上报规则。询问哪些省/直辖市有员工，阅读种子文件，并构建 管辖地感知的上报表。在首次安装、CLAUDE.md 中仍有 [PLACEHOLDER] 标记时使用，或使用 --redo 或 --check-integrations 重新运行时使用。",
+   "config": true
+  },
+  "employment-legal:customize": {
+   "plugin": "employment-legal",
+   "skill": "customize",
+   "description": "引导式自定义你的劳动法实践画像——修改一项内容 而不重新运行整个首次配置访谈。调整管辖范围、 风险姿态、上报联系人、录用审查规则、解除审查规则、 规章制度立场、调查偏好或案件工作空间路径。当用户说 \"修改我的[某物]\"、\"添加管辖地\"、\"更新我的画像\"、 \"编辑我的配置\"或\"自定义\"时使用。",
+   "config": true
+  },
+  "employment-legal:expansion-kickoff": {
+   "plugin": "employment-legal",
+   "skill": "expansion-kickoff",
+   "description": "启动在新省/直辖市或地域的用工扩张规划——收集基础信息，运行 劳务派遣 vs 业务外包 vs 直接用工的用工结构框架分析，起草跨职能问题清单， 浮现该地域的特定风险标记，并创建持续追踪文件。当有人说\"我们要在[地域]招人\"、 \"扩张到[省/直辖市]\"或\"在[地域]的首次用工\"时使用。",
+   "config": false
+  },
+  "employment-legal:expansion-update": {
+   "plugin": "employment-legal",
+   "skill": "expansion-update",
+   "description": "更新进行中的跨地域用工扩张项目状态——重新计算现已解封的项目， 标记任何逾期的项目，浮现下一优先级。当自上次会话以来已有工作进展， 且扩张追踪文件需要反映当前状态时使用。",
+   "config": false
+  },
+  "employment-legal:handbook-updates": {
+   "plugin": "employment-legal",
+   "skill": "handbook-updates",
+   "description": "将拟议的规章制度变更与现行版本进行diff对比，标记连锁影响 和省级补充条款影响。当用户说\"更新规章制度\"、\"将此添加到规章制度\"、 \"规章制度变更\"或有一项制度准备纳入时使用。",
+   "config": false
+  },
+  "employment-legal:hiring-review": {
+   "plugin": "employment-legal",
+   "skill": "hiring-review",
+   "description": "审查录用通知书及竞业限制/保密条款——含管辖地检查。实质性规则（竞业限制可执行性、 工时制度分类、个人信息保护）在每次录用时研究提取，不预先存储。当用户提出 \"审查这个录用通知\"、\"这里能用竞业限制吗\"、\"检查这份录用通知书\"、 \"在[某地]招聘\"或附上录用通知书时使用。",
+   "config": false
+  },
+  "employment-legal:internal-investigation": {
+   "plugin": "employment-legal",
+   "skill": "internal-investigation",
+   "description": "参考框架：内部调查从立案到调查备忘录的共享工作方法——保密调查日志、 文件批量筛查（找出关键材料）、证据来源覆盖跟踪、基于日志的问答、 备忘录起草和分受众摘要。由 /investigation-open、/investigation-add、 /investigation-query、/investigation-memo、/investigation-summary 加载， 不单独调用。",
+   "config": false
+  },
+  "employment-legal:international-expansion": {
+   "plugin": "employment-legal",
+   "skill": "international-expansion",
+   "description": "参考框架：异地用工扩张的落地规划——主线是在中国大陆新省/直辖市或城市用工 （跨省用工：用工主体与用工方式选择、社保公积金属地、最低工资与经济补偿基数、 地方规定差异），辅线是中国企业到境外用工（EOR 与设立实体、境外投资备案提示）。 含跨部门问题清单、外部律师/当地律师简报和持续追踪文件。 由 /expansion-kickoff 和 /expansion-update 加载，不单独调用。",
+   "config": false
+  },
+  "employment-legal:investigation-add": {
+   "plugin": "employment-legal",
+   "skill": "investigation-add",
+   "description": "向进行中的调查添加数据——文件、访谈记录或观察意见。 按已记录的筛选标准批量处理，浮现重要事项，记录所有已审查内容 以供覆盖验证。当新的证据、访谈记录或文件材料进入进行中的调查时使用。",
+   "config": false
+  },
+  "employment-legal:investigation-memo": {
+   "plugin": "employment-legal",
+   "skill": "investigation-memo",
+   "description": "从调查日志起草或更新调查备忘录。当调查进展到可以撰写第一版备忘录时， 或当新数据已添加且现有草案需要更新时使用。",
+   "config": false
+  },
+  "employment-legal:investigation-open": {
+   "plugin": "employment-legal",
+   "skill": "investigation-open",
+   "description": "开启新的内部调查事项——运行立案登记，生成证据来源清单， 并创建持续调查日志。当收到投诉或指控，且律师需要建立一个 受保密保护的调查工作空间时使用。",
+   "config": false
+  },
+  "employment-legal:investigation-query": {
+   "plugin": "employment-legal",
+   "skill": "investigation-query",
+   "description": "对进行中的调查日志进行查询——证人说了什么、哪些地方陈述互相矛盾、 存在哪些证据缺口、每个问题上最有证明力的证据是什么。 当律师需要查询调查记录而不重新阅读每个条目时使用。",
+   "config": false
+  },
+  "employment-legal:investigation-summary": {
+   "plugin": "employment-legal",
+   "skill": "investigation-summary",
+   "description": "从调查备忘录起草面向特定受众的摘要——HR版本、管理层版本或外部律师版本。 当调查备忘录需要传达给不应看到完整保密工作成果的受众时使用。",
+   "config": false
+  },
+  "employment-legal:labor-arbitration": {
+   "plugin": "employment-legal",
+   "skill": "labor-arbitration",
+   "description": "劳动仲裁应对全流程技能，覆盖案情分析、证据收集、胜负概率评估、答辩状撰写、举证质证意见与重点风险提示。当用户收到仲裁申请书、需要进行劳动仲裁应对、撰写答辩状、做仲裁案件分析，或处理涉及经济补偿金/赔偿金/双倍工资/加班费/未签劳动合同/违法解除/工伤赔偿/竞业限制等劳动争议时触发。触发表述如\"收到仲裁申请\"\"劳动仲裁应对\"\"答辩状\"\"仲裁案件分析\"\"劳动争议\"。不适用于：劳动诉讼一审/二审庭审代理文书、行政处理或行政复议、劳务派遣资质等纯行政备案事项、纯薪酬税务测算，以及与劳动仲裁无关的民商事或刑事案件。",
+   "config": false
+  },
+  "employment-legal:labor-contract": {
+   "plugin": "employment-legal",
+   "skill": "labor-contract",
+   "description": "劳动合同定制生成。根据岗位类型（普通员工/高级管理人员）一次性确定最优条款组合，输出一份完整、结构清晰的劳动合同。触发场景：用户需要起草劳动合同、定制劳动合同条款、生成劳动合同文档。不适用于：劳务合同/承揽合同/合作协议等非劳动关系文本、已签订合同的合规审查或纠纷分析、社保公积金或个税的具体核算、非中国大陆法域的雇佣文件。",
+   "config": false
+  },
+  "employment-legal:leave-tracker": {
+   "plugin": "employment-legal",
+   "skill": "leave-tracker",
+   "description": "检查进行中的假期，获取截止日期预警和需要做出的决策。仅呈现 需要采取行动的假期并说明原因——不是状态面板。建议每周运行， 或每当律师需要知道哪些假期有即将到来的审批、证明或到期截止时使用。",
+   "config": false
+  },
+  "employment-legal:log-leave": {
+   "plugin": "employment-legal",
+   "skill": "log-leave",
+   "description": "向假期登记册添加新假期条目，录入开始追踪截止日期所需的最低信息。 当员工开始休假且你希望追踪器从第一天起监控审批、证明和到期时间时使用。",
+   "config": false
+  },
+  "employment-legal:matter-workspace": {
+   "plugin": "employment-legal",
+   "skill": "matter-workspace",
+   "description": "管理案件工作空间——新建、列表、切换、关闭或解除（实务级）。 创建、列举、切换、关闭和解除活跃案件，使一个客户委托的上下文 绝不泄露到另一个。当多客户执业者说\"新案件\"、\"切换案件\"、 \"列出我的案件\"、\"关闭此案件\"或需要管理哪个案件活跃时使用。",
+   "config": true
+  },
+  "employment-legal:policy-drafting": {
+   "plugin": "employment-legal",
+   "skill": "policy-drafting",
+   "description": "起草劳动规章制度/员工手册——含省级补充条款，在管辖范围内法律有差异时 生成地方版本。当用户说\"起草一份[主题]制度\"、\"我们需要关于[主题]的规定\"、 \"更新我们的[主题]制度\"或指出制度空白时使用。",
+   "config": false
+  },
+  "employment-legal:severance-calc": {
+   "plugin": "employment-legal",
+   "skill": "severance-calc",
+   "description": "劳动经济补偿与赔偿金测算助手。逐项给出公式、口径与分步算法，覆盖经济补偿金（N，含半年/不满半年规则、社平 3 倍封顶与年限封顶）、违法解除赔偿金（2N）、代通知金（N+1）、未签书面劳动合同二倍工资、加班费、未休年假折算。触发词：经济补偿金、赔偿金、N、N+1、2N、双倍工资、加班费、年假折算、解除补偿计算、工龄补偿、离职能拿多少钱。不适用于：是否构成违法解除/工伤认定/竞业限制效力等定性判断，劳动合同条款审查，案例检索，仲裁起诉文书起草，以及社保、个税、公积金的代缴核算——本技能只做\"金额测算\"，不替代定性分析与正式法律意见。",
+   "config": false
+  },
+  "employment-legal:termination-review": {
+   "plugin": "employment-legal",
+   "skill": "termination-review",
+   "description": "劳动合同解除审查——高风险标记检测、经济补偿/赔偿金计算及最终工资支付时点 按管辖地（省/直辖市）逐项审查。管辖地特定规则（解除条件、补偿标准、通知义务） 在每次审查时研究提取，不预先存储。当用户提出\"审查这个解除\"、\"能解除这个人吗\"、 \"解除审查\"或描述解除场景时使用。",
+   "config": false
+  },
+  "employment-legal:wage-hour-qa": {
+   "plugin": "employment-legal",
+   "skill": "wage-hour-qa",
+   "description": "管辖地感知的劳动用工问答——工时制度分类、加班工资、最低工资、 年休假、产假、病假/医疗期、最终工资支付——针对具体省/直辖市回答， 以研究提取的现行规则为依据而非记忆陈述。当用户提出任何劳动法问题， 或说\"[某地]的规则是什么\"、\"这个岗位是否适用不定时工作制\"、 \"我们需要支付加班费吗\"或\"可以把这个岗位归类为\"时使用。",
+   "config": false
+  },
+  "employment-legal:worker-classification": {
+   "plugin": "employment-legal",
+   "skill": "worker-classification",
+   "description": "对拟议用工安排进行劳动关系认定——根据劳社部发〔2005〕12号三要素逐项分析， 区分劳动关系、劳务关系、承揽关系，并标识用工模式与事实之间的认定偏差。 仅适用于尚未开始的前瞻性分析。当用户提出\"我们想用一个人做承包商\"、 \"这是劳务关系还是劳动关系\"、\"如何认定这个人的用工关系\"或描述拟议用工安排时使用。",
+   "config": false
+  },
+  "ip-legal:cease-desist": {
+   "plugin": "ip-legal",
+   "skill": "cease-desist",
+   "description": "起草侵权警告函（发送模式）或对收到的警告函进行分诊（接收模式）。当依你的 执法姿态对侵权人主张权利并发送校准后的警告函，或对收到的警告函进行分诊生成 结构化选项备忘录附建议时使用。",
+   "config": false
+  },
+  "ip-legal:clearance": {
+   "plugin": "ip-legal",
+   "skill": "clearance",
+   "description": "商标清除初步检索——排除性筛查+近似商标查询，产出标注清单而非清除法律意见。当新商标 被提出、被询问某商标是否可用或需要进行排除检索、或在完整专业检索前评估混淆可能性因素 时使用。本技能绝不作出商标无冲突的结论。",
+   "config": false
+  },
+  "ip-legal:cold-start-interview": {
+   "plugin": "ip-legal",
+   "skill": "cold-start-interview",
+   "description": "运行冷启动面谈以了解你的知识产权实务并撰写实务画像。 用于首次安装、实务画像缺失或仍含占位符时，使用 --redo 重新设置、 或在连接或断开 MCP 后使用 --check-integrations 重新探测集成。 这是全新安装时唯一应运行的技能。",
+   "config": true
+  },
+  "ip-legal:customize": {
+   "plugin": "ip-legal",
+   "skill": "customize",
+   "description": "对知识产权实务画像做引导式调整：只改一处，不必重跑完整的冷启动访谈。 可调整风险偏好、上报联系人、业务领域范围、品牌保护策略、维权姿态、 商标近似检索阈值、开源审查规则或事项工作区路径。当用户说\"改一下我的 [某项设置]\"\"更新我的画像\"\"修改配置\"或\"定制\"时使用。",
+   "config": true
+  },
+  "ip-legal:fto-triage": {
+   "plugin": "ip-legal",
+   "skill": "fto-triage",
+   "description": "自由实施（FTO）初检——对可能构成障碍的专利进行结构化初步审查，非FTO法律意见。 当产品、工艺或功能被评估是否存在障碍专利、被询问是否有任何东西阻碍产品上市、 或需要在专利律师审查前对最可能的专利构建初步权利要求对照表时使用。 本技能绝不作出产品可自由实施的结论。",
+   "config": false
+  },
+  "ip-legal:infringement-triage": {
+   "plugin": "ip-legal",
+   "skill": "infringement-triage",
+   "description": "知识产权侵权初步筛查——涵盖商标、著作权、专利和商业秘密的侵权因素清单， 标注各方有利/不利因素，不作侵权结论。用于评估他人是否侵犯你的知识产权、 你是否可能侵犯他人权利、出现山寨产品或抄袭者时，或判断事项是否值得追诉及如何追诉。",
+   "config": false
+  },
+  "ip-legal:invention-intake": {
+   "plugin": "ip-legal",
+   "skill": "invention-intake",
+   "description": "发明披露初步筛查——新颖性、创造性、可授权主题、公开日和 可检测性及战略价值。用于收到发明披露、需要判断是否值得进行 现有技术检索和专利律师审查、进一步调查或驳回时。",
+   "config": false
+  },
+  "ip-legal:ip-clause-review": {
+   "plugin": "ip-legal",
+   "skill": "ip-clause-review",
+   "description": "审查协议中的知识产权条款——权利归属、所有权、许可授予、 保证、赔偿。用于审查劳动/顾问/SOW/供应商/许可协议中的知识产权条款， 当被要求检查权利归属语言或许可范围时，或当知识产权条款的协议被粘贴或附加时。",
+   "config": false
+  },
+  "ip-legal:matter-workspace": {
+   "plugin": "ip-legal",
+   "skill": "matter-workspace",
+   "description": "管理事项工作区——创建、列表、切换、关闭或解除（实务级）。 为多客户执业者保持一个客户或委托的上下文与其他客户隔绝。 用于用户想要开启新事项、切换事项、列出事项、关闭/归档事项或仅在实务级工作时。",
+   "config": true
+  },
+  "ip-legal:oss-review": {
+   "plugin": "ip-legal",
+   "skill": "oss-review",
+   "description": "开源许可证合规检查——对依赖列表、单个库或对外发布代码。 用于审查清单/SBOM/代码仓库的copyleft义务和许可证兼容性， 当被问及某库是否可以发布、或准备将代码开源时。",
+   "config": false
+  },
+  "ip-legal:portfolio": {
+   "plugin": "ip-legal",
+   "skill": "portfolio",
+   "description": "追踪知识产权组合——注册、续展、维持费和商标使用声明。 用于检查到期续展事项、添加或更新资产、记录维持费缴纳， 或审计登记簿中的空白、失效及商业使用问题。",
+   "config": false
+  },
+  "ip-legal:takedown": {
+   "plugin": "ip-legal",
+   "skill": "takedown",
+   "description": "起草\"通知-删除\"通知（依信息网络传播权保护条例）、对收到的通知进行分诊或起草反通知。 当通过著作权通知主张权利并需核验法定合理使用情形与通知真实性，当收到通知需要分诊为接受/ 反通知/协商/暂不行动选项，或需起草符合中国法要求的反通知时使用。",
+   "config": false
+  },
+  "ip-legal:trademark-filing": {
+   "plugin": "ip-legal",
+   "skill": "trademark-filing",
+   "description": "面向中国商标申请的全流程辅助技能：依据尼斯分类进行类别规划、对拟申请商标做可注册性初筛、准备申请材料（商品/服务清单、商标说明），并以结构化方式输出建议与风险分级。适用于商标咨询、类别规划、可注册性初筛、申请材料准备、商标注册等场景。不适用于替代正式法律意见、承诺注册成功率、处理复杂商标争议。（新商标的近似商标排除检索用 clearance。）",
+   "config": false
+  },
+  "law-practice-cn:cold-start-interview": {
+   "plugin": "law-practice-cn",
+   "skill": "cold-start-interview",
+   "description": "当律师或律所团队首次配置中国律师业务插件，需设置咨询、投诉、服务报价的角色、保密与审批边界时使用；单次任务已有完整规则时不触发。",
+   "config": true
+  },
+  "law-practice-cn:complaint-triage": {
+   "plugin": "law-practice-cn",
+   "skill": "complaint-triage",
+   "description": "当用户需要处理非政府采购的一般投诉、举报、申诉或其答复，需判断受理机关、程序、证据和期限时使用；政府采购质疑投诉改用 procurement-legal 的 challenge-complaint。",
+   "config": false
+  },
+  "law-practice-cn:consultation-analysis": {
+   "plugin": "law-practice-cn",
+   "skill": "consultation-analysis",
+   "description": "当用户需要就中国法问题形成可追溯的咨询分析、客户答复或正式意见草稿时使用；仅核对一条法规原文时改用 legal-research-cn 的 authority-check。",
+   "config": false
+  },
+  "law-practice-cn:legal-service-proposal": {
+   "plugin": "law-practice-cn",
+   "skill": "legal-service-proposal",
+   "description": "当律师需要起草或核对中国法律服务洽商方案、服务范围和报价结构时使用；一般合同价款审查改用商事或采购合同技能。",
+   "config": false
+  },
+  "law-practice-cn:legal-terminology": {
+   "plugin": "law-practice-cn",
+   "skill": "legal-terminology",
+   "description": "用于在起草、修改或审查各类法律文本（合同、起诉状、答辩状、法律意见书、备忘录、裁判文书、合规文件等）时，对其中的用语进行规范化处理，使其准确、无歧义、符合法律文体。触发场景包括： 1. 起草或修改法律文书时需要为某一法律概念选择恰当用语； 2. 审查文本时发现术语使用不规范、相互混淆或可能产生歧义； 3. 需要把口语化、俗称或日常表达转换为规范的法律表达； 4. 用户明确要求对一段文字做\"术语规范化\"\"用词审查\"或\"措辞校正\"； 5. 需要对易混淆的近似术语作出辨析并择优使用时。 本技能面向通用中国法语境，可独立运行。",
+   "config": false
+  },
+  "law-student:bar-prep-questions": {
+   "plugin": "law-student",
+   "skill": "bar-prep-questions",
+   "description": "法考备考题目——客观题或主观题，针对你的薄弱科目和考试类型。追踪错题并回归 薄弱模式。当用户说\"法考练习\"\"客观题\"\"主观题\"\"测试我\"时使用。",
+   "config": false
+  },
+  "law-student:case-brief": {
+   "plugin": "law-student",
+   "skill": "case-brief",
+   "description": "按你偏好的格式撰写案例摘要。在训练模式下，要求学生在写摘要前先陈述裁判要旨。 当用户说\"摘要[案例]\"\"[案例]的裁判要旨是什么\"\"案例摘要\"或粘贴案例文本时使用。",
+   "config": false
+  },
+  "law-student:cold-call-prep": {
+   "plugin": "law-student",
+   "skill": "cold-call-prep",
+   "description": "课堂提问准备——预测老师可能提问的问题并以苏格拉底式追问训练，标注你的薄弱 环节以便课前重温。当用户说\"准备明天的课\"\"课堂提问[案例]\"\"[老师]可能在 [案例]上问什么\"或指向指定阅读材料时使用。",
+   "config": false
+  },
+  "law-student:cold-start-interview": {
+   "plugin": "law-student",
+   "skill": "cold-start-interview",
+   "description": "关于你的访谈和材料收录——课程、法考报考地、学习风格（追问训练型 vs 讲解引导型）、 过往大纲、有反馈的批改论文、历年考题、法考真题集、教学大纲、已撰写论文。 在新安装、用户说\"设置\"或\"开始\"时使用，或使用 --check-integrations 重新探测连接器。",
+   "config": true
+  },
+  "law-student:customize": {
+   "plugin": "law-student",
+   "skill": "customize",
+   "description": "引导式自定义你的法学学习画像——无需重新运行完整的新手导入访谈即可修改单项设置。 调整当前课程、学习风格、大纲偏好、法考备考科目、种子材料或学习节奏。 当用户说\"修改我的[某项]\"\"添加课程\"\"更新我的画像\"\"新学期\"\"自定义\"时使用。",
+   "config": true
+  },
+  "law-student:exam-forecast": {
+   "plugin": "law-student",
+   "skill": "exam-forecast",
+   "description": "分析同一授课教师的历年考题以揭示模式——科目权重、反复出现的考点陷阱、 偏好的案例假设类型、政策vs法条分析的比例——并预测今年考试可能的重点。 当用户说\"考试考什么\"\"分析历年考题\"\"预测考试\"或分享历年考题时使用。",
+   "config": false
+  },
+  "law-student:flashcards": {
+   "plugin": "law-student",
+   "skill": "flashcards",
+   "description": "生成或训练法条概念记忆卡片——莱特纳式记忆桶，按科目的 Markdown 存储， 带自我评估的训练模式。当用户说\"训练记忆卡片\"\"根据[材料]制作记忆卡片\" \"考我卡片\"或想记忆法条时使用。",
+   "config": false
+  },
+  "law-student:irac-practice": {
+   "plugin": "law-student",
+   "skill": "irac-practice",
+   "description": "给 IRAC 论文评分——结构、考点识别、规则准确性、分析深度和组织。绝不代写 论文或展示范文；追踪跨练习的模式。当用户说\"批改我的 IRAC\"\"检查我的论文\" 或\"我写了这个，给我反馈\"时使用。",
+   "config": false
+  },
+  "law-student:legal-writing": {
+   "plugin": "law-student",
+   "skill": "legal-writing",
+   "description": "对法律写作草稿（备忘录、代理词、论文、法考主观题答案）的结构性反馈—— 组织结构、分析深度、清晰度、引注格式。绝不代写重写。当用户说\"给我的备忘录 提反馈\"\"读一下我的草稿\"\"批评我的代理词\"时使用。",
+   "config": false
+  },
+  "law-student:outline-builder": {
+   "plugin": "law-student",
+   "skill": "outline-builder",
+   "description": "按你的格式从课堂笔记和教材构建或扩展课程知识大纲。搭建框架——不替你 写大纲。当用户说\"大纲[科目]\"\"添加到我的大纲\"\"从[材料]构建大纲\" 或指向课堂材料时使用。",
+   "config": false
+  },
+  "law-student:session": {
+   "plugin": "law-student",
+   "skill": "session",
+   "description": "在一个科目上运行一场集中的 N 题练习——客观题、主观题或记忆卡片。 追踪表现并更新学习计划。当用户说\"给我出10道[科目]题\"\"做一场[科目]练习\" \"做5张[科目]卡片\"或想练习固定数量的题目并让计划随之调整时使用。",
+   "config": false
+  },
+  "law-student:socratic-drill": {
+   "plugin": "law-student",
+   "skill": "socratic-drill",
+   "description": "苏格拉底式追问训练——我问，你答，我追问。在你真正掌握之前绝不给你答案。 当用户说\"训练我\"\"提问我\"\"苏格拉底式\"\"测试我的[科目]\"或想进行主动学习时使用。",
+   "config": false
+  },
+  "law-student:study-plan": {
+   "plugin": "law-student",
+   "skill": "study-plan",
+   "description": "构建或更新长期法考备考（或期末备考）学习计划——分阶段、按薄弱科目的权重分配、 每日练习安排，根据 study-plan.yaml 中的练习历史自适应调整。 当用户说\"制定学习计划\"\"规划我的法考备考\"\"安排我的复习\"\"我该怎么复习[X]\"时使用。",
+   "config": false
+  },
+  "legal-clinic:build-guide": {
+   "plugin": "legal-clinic",
+   "skill": "build-guide",
+   "description": "帮助诊所指导老师撰写实践领域指南，配置面向学生技能的行为——接待问题、 教学姿态（assist / guide / teach）、审查门控、跨插件检查、本地规则。 当指导律师需要撰写或修订按实践领域的指南、调整诊所技能在其诊所类型 下的行为或将其教学理念设定为插件配置时使用。",
+   "config": false
+  },
+  "legal-clinic:client-comms-log": {
+   "plugin": "legal-clinic",
+   "skill": "client-comms-log",
+   "description": "记录当事人沟通——电话、邮件、短信、信函、面谈、语音留言。 按案件仅追加记录，含日期条目、方向、媒介、摘要、行动事项。 与 /client-letter 和 /status client 协同使用。 当需要记录通话或当事人邮件、查阅沟通日志或询问\"我们上次告诉[当事人]什么\"时使用。",
+   "config": false
+  },
+  "legal-clinic:client-intake": {
+   "plugin": "legal-clinic",
+   "skill": "client-intake",
+   "description": "结构化接待——实践领域模板、跨领域考点识别、利益冲突标记、分流分类。 生成学生分析、指导老师审查的格式化案件摘要。不决定是否受理案件。 当开始新当事人接待、进行接待访谈或记录新当事人情况时使用。",
+   "config": false
+  },
+  "legal-clinic:client-letter": {
+   "plugin": "legal-clinic",
+   "skill": "client-letter",
+   "description": "基于模板的常规当事人信函——预约确认、文件索取、\"已提交\"简报。 使用通俗语言，包含必要元素，附指导路由。不含实质性建议。 当学生需要发送常规信函、预约确认、文件索取信或向当事人发送简短状态说明时使用。",
+   "config": false
+  },
+  "legal-clinic:cold-start-interview": {
+   "plugin": "legal-clinic",
+   "skill": "cold-start-interview",
+   "description": "指导老师的一次性诊所设置——实践领域、管辖地、指导风格（正式审查队列 / 可配置标记 / 较轻触），以及手册/规则上传。写入 CLAUDE.md 使所有其他技能 和每个运行 /ramp 的学生都从相同的诊所背景读取。在新安装、CLAUDE.md 有 占位符、使用 --redo 重新设置或使用 --check-integrations 重新检查集成时使用。",
+   "config": true
+  },
+  "legal-clinic:customize": {
+   "plugin": "legal-clinic",
+   "skill": "customize",
+   "description": "引导式定制你的法律诊所画像——无需重新运行整个冷启动访谈即可更改一项内容。 调整诊所画像、管辖地、指导风格、实践领域模板、学期配置或产出保障。 当用户说\"更改我的[某内容]\"\"新学期\"\"添加实践领域\"\"更新我的配置\" 或\"定制\"时使用。",
+   "config": true
+  },
+  "legal-clinic:deadlines": {
+   "plugin": "legal-clinic",
+   "skill": "deadlines",
+   "description": "追踪案件截止日期——添加、跨案汇总报告、更新、完成、关闭。 按可配置阈值预警（默认14/7/3/1天）；逾期项目保持标记直至解决。 诊所工作量的运营记录。当学生或指导老师需要添加截止日期、查询本周 到期事项、获取截止日期报告或更新案件截止日期时使用。",
+   "config": false
+  },
+  "legal-clinic:draft": {
+   "plugin": "legal-clinic",
+   "skill": "draft",
+   "description": "常见诊所文件的初稿——实践领域模板（劳动争议仲裁申请书、离婚起诉状、 人身保护令申请书、律师函等），管辖地感知的格式，明确为需要学生分析 和指导律师审查的起手点。当学生需要起诉状、信函、申请书、陈述书或 其他诊所文件的初稿时使用。",
+   "config": false
+  },
+  "legal-clinic:form-generation": {
+   "plugin": "legal-clinic",
+   "skill": "form-generation",
+   "description": "参考：已弃用——请使用 `/draft` 代替。本技能已在 v2 重构中并入 draft 技能，后者处理实践领域文件生成（含表格填充）。保留为重定向以支持迁移。",
+   "config": false
+  },
+  "legal-clinic:memo": {
+   "plugin": "legal-clinic",
+   "skill": "memo",
+   "description": "IRAC 框架化的案件分析备忘录，标注检索缺口——提供框架结构而非分析结论。 规则部分是\"待检索\"，应用部分是\"学生分析\"提示，结论部分留空。 当学生需要搭建案件分析备忘录框架、撰写分析或在案件中构建 IRAC 备忘录时使用。",
+   "config": false
+  },
+  "legal-clinic:plain-language-letters": {
+   "plugin": "legal-clinic",
+   "skill": "plain-language-letters",
+   "description": "参考：已弃用——常规信函请使用 `/client-letter`，实质性更新请使用 `/status client`。在 v2 重构中拆分为两个更聚焦的技能。保留为重定向以支持迁移。",
+   "config": false
+  },
+  "legal-clinic:ramp": {
+   "plugin": "legal-clinic",
+   "skill": "ramp",
+   "description": "学生学期导入——诊所程序、工具导览、真实案件之前的实践练习。 读取指导老师在设置时上传的手册并以互动方式教学。 当新诊所学生说\"帮我导入\"\"我是诊所新人\"\"开始\"，或每学期开始时使用； 传入 --card 获取一页参考卡。",
+   "config": false
+  },
+  "legal-clinic:research-start": {
+   "plugin": "legal-clinic",
+   "skill": "research-start",
+   "description": "法律问题的检索路线图——需查阅的法条、需调查的案例法领域、行政监管框架、 北大法宝/法信/元典检索关键词。提供线索和框架，非权威引注；学生核实并 发展所有内容。当学生询问从哪里开始检索、需要某个问题的检索路线图、 或需要识别已有检索中的缺口时使用。",
+   "config": false
+  },
+  "legal-clinic:semester-handoff": {
+   "plugin": "legal-clinic",
+   "skill": "semester-handoff",
+   "description": "学期末案件交接备忘录——/ramp 的镜像。生成按案件的移交备忘录和群体摘要， 使离届群体将工作干净地移交给新群体。读取截止日期、当事人沟通和案件历史。 当指导老师或离届学生需要结束学期、构建移交备忘录或协助毕业/退出学生离任时使用。",
+   "config": false
+  },
+  "legal-clinic:status": {
+   "plugin": "legal-clinic",
+   "skill": "status",
+   "description": "按受众的案件状态摘要——面向当事人（通俗语言）、面向内部（供指导老师）、 或面向法院（按本地规则的正式文书标题格式）。同样的事实，不同的表述框架和深度。 当学生需要更新当事人、向指导老师汇报或准备法院状态报告时使用。",
+   "config": false
+  },
+  "legal-clinic:supervisor-review-queue": {
+   "plugin": "legal-clinic",
+   "skill": "supervisor-review-queue",
+   "description": "指导老师审查队列——学生输出在此等待指导老师批准后才能发给当事人或法院。 仅在冷启动设置时选择\"正式审查队列\"指导风格时活跃；否则休眠。 当指导老师想查看等待审查的内容、批准、编辑后批准或退回某项时使用。",
+   "config": false
+  },
+  "legal-research-cn:authority-check": {
+   "plugin": "legal-research-cn",
+   "skill": "authority-check",
+   "description": "当用户要核验中国法法条、司法解释、规范性文件或案例的原文、版本、效力和引用姿态时使用；一般文书润色不触发。",
+   "config": false
+  },
+  "legal-research-cn:case-comparison": {
+   "plugin": "legal-research-cn",
+   "skill": "case-comparison",
+   "description": "当用户要求中国法院类案检索、指导性案例或参考案例比较、裁判分歧分析时使用；只有案号格式校对时改用 authority-check。",
+   "config": false
+  },
+  "legal-research-cn:cold-start-interview": {
+   "plugin": "legal-research-cn",
+   "skill": "cold-start-interview",
+   "description": "当用户首次配置中国法研究插件，或要求设置研究深度、来源优先级与引用格式时使用；单次法律问答不触发。",
+   "config": true
+  },
+  "legal-research-cn:issue-memo": {
+   "plugin": "legal-research-cn",
+   "skill": "issue-memo",
+   "description": "当用户要就中国法争点形成可追溯研究备忘录、相反观点与行动建议时使用；单个法条真伪核对改用 authority-check。",
+   "config": false
+  },
+  "legal-research-cn:lecture-source-pack": {
+   "plugin": "legal-research-cn",
+   "skill": "lecture-source-pack",
+   "description": "当用户准备中国法律主题讲座、培训或公开分享，需建立来源包、案例清单和讲述提纲时使用；单个法条核对改用 authority-check。",
+   "config": false
+  },
+  "litigation-legal:agent-brief": {
+   "plugin": "litigation-legal",
+   "skill": "agent-brief",
+   "description": "撰写庭审用代理词与辩论意见，以民商事案件为主、兼顾通用诉讼。围绕争议焦点组织事实、证据与法律论证，回应并反驳对方主张，最终落到代理意见结论。当用户提到写代理词、起草代理意见、辩论意见、庭审代理词、法庭辩论提纲、质证与辩论意见时触发。不适用于起诉状、答辩状、上诉状等诉状类文书，也不适用于合同起草或审查。（只起草单个文书章节用 brief-section-drafter。）",
+   "config": false
+  },
+  "litigation-legal:answer-drafting": {
+   "plugin": "litigation-legal",
+   "skill": "answer-drafting",
+   "description": "撰写民事答辩状，针对原告诉讼请求逐项答辩，组织事实抗辩与法律抗辩、反驳对方证据与请求权基础并提出己方主张。当用户说写答辩状、起草民事答辩状、应诉答辩、反驳起诉状、被起诉了怎么答辩，或上传对方起诉状、证据材料希望据此应诉时触发。不适用于刑事/行政答辩、起诉状撰写、合同起草。",
+   "config": false
+  },
+  "litigation-legal:appeal-petition": {
+   "plugin": "litigation-legal",
+   "skill": "appeal-petition",
+   "description": "撰写民事上诉状或再审申请书。当用户提到写上诉状、起草上诉状、再审申请书、申请再审、不服一审判决上诉、二审上诉理由、原审判决有错误想救济时触发。基于原审判决识别认定事实、适用法律或程序上的错误，组织上诉请求与上诉理由（或再审事由），并提供两种文书的标准结构与切换。不适用于起诉状、答辩状、刑事上诉（如涉及，可提示其与民事程序的差异并建议另行处理）。",
+   "config": false
+  },
+  "litigation-legal:brief-section-drafter": {
+   "plugin": "litigation-legal",
+   "skill": "brief-section-drafter",
+   "description": "按内部风格起草法律文书章节，与案件理论保持一致——每个事实有出处， 每个案例经核实，每个论点绑定理论。当用户说\"起草[章节]\"、 \"写事实部分\"、\"关于[问题]的代理意见\"或需要法律文书章节初稿时使用。",
+   "config": false
+  },
+  "litigation-legal:chronology": {
+   "plugin": "litigation-legal",
+   "skill": "chronology",
+   "description": "从声明的文件来源和上传材料构建或更新大事记——提取带日期的事件、 去重，并按案件理论标记重要性。当用户要求从证据材料或案件文件 构建大事记或时间线，说\"从材料中提取时间线\"或\"什么发生了什么时间\"， 或需要工作大事记、事实陈述或证人特定时间线时使用。",
+   "config": false
+  },
+  "litigation-legal:civil-complaint-drafting": {
+   "plugin": "litigation-legal",
+   "skill": "civil-complaint-drafting",
+   "description": "协助按法定结构撰写民事起诉状。当用户说\"写起诉状\"、\"起草民事起诉状\"、\"帮我写诉状\"、\"我要起诉XX\"，或给出案件事实希望据此生成起诉状时触发。不适用于刑事自诉状、行政起诉状、答辩状或合同起草。",
+   "config": false
+  },
+  "litigation-legal:claim-chart": {
+   "plugin": "litigation-legal",
+   "skill": "claim-chart",
+   "description": "构建或审查要件分析表——专利权利要求对照表（侵权、无效或审查）或 民事构成要件分析表（任何诉讼请求或抗辩），每个单元格附精确引用， 缺口检测为优先输出。当用户要求要件分析表、权利要求对照表、 证据对照表、侵权或无效主张、逐要件映射，或问\"我们证明[主张]还缺什么\"时使用。",
+   "config": false
+  },
+  "litigation-legal:cold-start-interview": {
+   "plugin": "litigation-legal",
+   "skill": "cold-start-interview",
+   "description": "诉讼插件首次配置——按角色分流（法务、律所律师、独立执业）、 按立场分流（原告、被告、两者皆有），捕获风险校准、执业背景和文书风格， 写入实践画像 CLAUDE.md。在全新安装时、用户想设置或重做实践画像时、 或重新检查可用集成时使用。",
+   "config": true
+  },
+  "litigation-legal:customize": {
+   "plugin": "litigation-legal",
+   "skill": "customize",
+   "description": "引导式自定义你的诉讼实践画像——修改一项而不重新运行整个首次配置访谈。 调整执业角色、立场（原告/被告/混合）、风险校准、执业背景、 文书风格、上报表联系人、严重性词汇或案件工作空间路径。 当用户说\"修改我的[某项目]\"、\"更新我的画像\"、\"编辑我的配置\"或\"自定义\"时使用。",
+   "config": true
+  },
+  "litigation-legal:deadline-tracker": {
+   "plugin": "litigation-legal",
+   "skill": "deadline-tracker",
+   "description": "诉讼/仲裁期限台账管理——录入、查看、完结开庭/举证/答辩/管辖权异议/上诉/再审/ 申请执行/保全续封/仲裁时效等硬性期限，`list` 时按剩余天数预警。当用户说\"记一个期限\"\"收到判决了记上诉期\"\"开庭日期记一下\"\"列出期限\" \"这个期限办完了\"，或其他技能（拆案/判决分析/再审分析）产生新期限需要入册时使用。",
+   "config": false
+  },
+  "litigation-legal:demand-draft": {
+   "plugin": "litigation-legal",
+   "skill": "demand-draft",
+   "description": "从已完成的委托登记起草律师函——通过保密/自认风险/和解谈判姿态检查清单门禁， 输出 .docx，附发送后检查清单，并提供创建案件的选项。当用户说 \"起草律师函\"、\"写[类型]函\"或已完成委托登记准备转为可发送草案时使用。",
+   "config": false
+  },
+  "litigation-legal:demand-intake": {
+   "plugin": "litigation-legal",
+   "skill": "demand-intake",
+   "description": "律师函起草前的委托背景收集——当事人、事实、依据、筹码、 最佳替代方案和保密过滤——写入结构化的委托登记文件供 律师函起草技能读取。当用户想准备律师函、在起草前进行委托登记， 或获取付款催告、违约/催告整改、停止侵权等律师函的背景时使用。",
+   "config": false
+  },
+  "litigation-legal:demand-received": {
+   "plugin": "litigation-legal",
+   "skill": "demand-received",
+   "description": "来函分流处理——提取关键字段、交叉检索案件组合、评估实质理由、 提出响应方案并附建议，必要时转交案件登记或律师函起草。 当用户说\"收到一封律师函\"、\"审查这个来函\"或附上来函要求评估时使用。",
+   "config": false
+  },
+  "litigation-legal:deposition-prep": {
+   "plugin": "litigation-legal",
+   "skill": "deposition-prep",
+   "description": "为证人构建庭前准备提纲——从案件材料中提取其相关文件， 围绕案件理论组织要点，并浮现质证材料。当用户说 \"为[证人]做庭前准备\"、\"构建庭审提纲\"或\"准备[姓名]的庭前会议/庭审\"时使用。",
+   "config": false
+  },
+  "litigation-legal:judgment-analysis": {
+   "plugin": "litigation-legal",
+   "skill": "judgment-analysis",
+   "description": "判决书深度拆解与法律错误识别工具，评估上诉策略与再审事由并输出救济路径建议。当用户提到判决书分析、拆解判决书、上诉策略、再审申请、法律错误识别、寻找上诉理由、救济路径、判决书解读、找上诉理由、裁判文书审查时触发。不适用于合同起草、非诉文书撰写、纯法律咨询。",
+   "config": false
+  },
+  "litigation-legal:legal-hold": {
+   "plugin": "litigation-legal",
+   "skill": "legal-hold",
+   "description": "发出、更新、解除或报告证据保全通知——将保全通知起草为 .docx， 更新案件日志中的保全字段，并排期下次更新。当用户说 \"发出证据保全通知\"、\"更新保全通知\"、\"解除保全\"或要求全案组合证据保全状态报告时使用。",
+   "config": false
+  },
+  "litigation-legal:matter-briefing": {
+   "plugin": "litigation-legal",
+   "skill": "matter-briefing",
+   "description": "单个案件深度简报——当前姿态、变化之处、下个节点、 待解决问题和风险重评估检查，适用于向法务负责人汇报或外部律师通话前准备。 当用户说\"简报[案件]\"、\"这个案件什么情况\"或需要了解特定案件时使用。",
+   "config": false
+  },
+  "litigation-legal:matter-close": {
+   "plugin": "litigation-legal",
+   "skill": "matter-close",
+   "description": "结案——捕获结果、最终敞口和反思教训，从活跃案件组合中归档但不删除记录。 当用户需要结案、说\"[案件]结束了\"或需要记录和解、撤诉、判决、 撤回或合并结果时使用。",
+   "config": false
+  },
+  "litigation-legal:matter-intake": {
+   "plugin": "litigation-legal",
+   "skill": "matter-intake",
+   "description": "登记新案件——统一问题涵盖标识信息、利益冲突检索、来源、 风险分流、重要性、外聘律师、内部负责人、证据保全和关键日期； 写入 matter.md 和 history.md 并在 _log.yaml 中追加结构化行。 当用户说\"新案件\"、\"登记这个案件\"或需要将新案件纳入案件组合时使用。",
+   "config": false
+  },
+  "litigation-legal:matter-update": {
+   "plugin": "litigation-legal",
+   "skill": "matter-update",
+   "description": "向案件历史文件追加带日期的事件记录并刷新日志行—— 捕获新进展、状态变化、风险重评估、期限变更和和解授权变更。 当用户需要记录案件更新、标注进展或对案件组合记录状态变更时使用。",
+   "config": false
+  },
+  "litigation-legal:matter-workspace": {
+   "plugin": "litigation-legal",
+   "skill": "matter-workspace",
+   "description": "为多客户执业场景管理案件工作空间——创建、列表、切换、关闭或脱离活跃案件。 当用户需要创建新案件工作空间、切换活跃案件、列出案件、归档案件或 仅在实务级工作而不关联特定案件时使用。",
+   "config": true
+  },
+  "litigation-legal:neutral-hearing-outline": {
+   "plugin": "litigation-legal",
+   "skill": "neutral-hearing-outline",
+   "description": "当用户以仲裁员、调解员或其他中立主持人身份准备中国法庭审提纲、事实发问与程序安排时使用；当事人代理策略改用诉讼领域的庭前技能。",
+   "config": false
+  },
+  "litigation-legal:oc-status": {
+   "plugin": "litigation-legal",
+   "skill": "oc-status",
+   "description": "为活跃案件组合中的各外聘律师生成每周状态请求邮件草稿—— 每案一份 markdown。当用户要求向外聘律师发状态请求、 每周外聘律师检查或需要从案件组合日志中起草各案状态邮件时使用。",
+   "config": false
+  },
+  "litigation-legal:portfolio-status": {
+   "plugin": "litigation-legal",
+   "skill": "portfolio-status",
+   "description": "从 _log.yaml 汇总案件组合——风险分布、即将到期的节点、 陈旧案件、重要性汇总、阶段分布和异常标注。 当用户问\"案件总体情况如何\"、\"有多少个未结案件\"或需要案件组合汇总时使用。",
+   "config": false
+  },
+  "litigation-legal:privilege-log-review": {
+   "plugin": "litigation-legal",
+   "skill": "privilege-log-review",
+   "description": "证据三性审查——对证据清单进行首轮审查，做出明显的 合法性/关联性判断并标记需要律师审查的疑难项目。 当用户说\"审查证据清单\"、\"证据三性审查\"、 \"检查这些证据的可采性\"或有证据清单需要在质证前审核时使用。",
+   "config": false
+  },
+  "litigation-legal:retrial-analysis": {
+   "plugin": "litigation-legal",
+   "skill": "retrial-analysis",
+   "description": "民事再审可行性分析 — 读取生效判决书、原审证据与庭审笔录，识别原审事实、证据、论理、法律适用方面的错误与瑕疵，逐项匹配《民事诉讼法》法定再审事由，输出再审可行性分析报告。提供\"仅判决书快速筛查\"与\"完整材料深度分析\"两种模式。触发词：再审、再审分析、申请再审、再审事由、再审可行性、生效判决错误、判决救济、能不能再审。不适用于一审/二审/上诉策略、合同审查与起草、纯法律咨询问答。",
+   "config": false
+  },
+  "litigation-legal:settlement": {
+   "plugin": "litigation-legal",
+   "skill": "settlement",
+   "description": "起草和解协议与调解协议的专业技能。通过四步工作流（梳理争议与各方诉求→设计了结方案→设计履行与违约保障→内联模板成文）固定争议解决方案、各方权利义务、款项金额与履行期限、争议一次性了结与权利放弃，并确保协议可执行、必要时提示申请司法确认或制作调解书。当用户提到写和解协议、起草调解协议、和解方案、纠纷了结协议、还款和解、一次性了结、纠纷一揽子解决时触发。不适用于普通商业合同的起草（请用合同起草技能）、起诉状答辩状等诉讼文书的撰写。",
+   "config": false
+  },
+  "litigation-legal:subpoena-triage": {
+   "plugin": "litigation-legal",
+   "skill": "subpoena-triage",
+   "description": "处理送达公司的法院调查令、行政机关协查通知或证人出庭通知—— 分类、分析范围/负担/保密、交叉检索案件组合， 生成异议框架、合规方案和期限日历。当用户说\"收到了调查令\"、 \"被送达协查通知\"或附上调查令/协查通知要求评估时使用。",
+   "config": false
+  },
+  "privacy-legal:cold-start-interview": {
+   "plugin": "privacy-legal",
+   "skill": "cold-start-interview",
+   "description": "运行冷启动访谈——学习你的隐私实践并从你的处理规则、DPA模板和一份参考PIA写入 CLAUDE.md。在首次运行、CLAUDE.md缺失或有占位符、或用户说\"设置隐私插件\" \"引导我\"\"配置隐私\"\"，或想重新运行访谈或重新检查集成时使用。",
+   "config": true
+  },
+  "privacy-legal:customize": {
+   "plugin": "privacy-legal",
+   "skill": "customize",
+   "description": "对个人信息保护实务画像做引导式调整：只改一处，不必重跑完整的冷启动访谈。 可调整风险偏好、上报联系人、个人信息处理协议操作手册、隐私政策承诺、 个人信息保护影响评估（PIA）内部风格、个人信息主体权利响应流程或事项工作区路径。 当用户说\"改一下我的[某项设置]\"\"更新我的画像\"\"修改操作手册\"或\"定制\"时使用。",
+   "config": true
+  },
+  "privacy-legal:dpa-review": {
+   "plugin": "privacy-legal",
+   "skill": "dpa-review",
+   "description": "依据你的数据处理协议（DPA）操作手册审查一份DPA——自动检测你是受托处理者 还是处理者，并应用操作手册正确的半部分。当用户说\"审查这份DPA\"\"检查这份 数据处理附录\"\"客户发来了他们的DPA\"\"这份DPA可以吗\"，或附上一份DPA时使用。",
+   "config": false
+  },
+  "privacy-legal:dsar-response": {
+   "plugin": "privacy-legal",
+   "skill": "dsar-response",
+   "description": "处理个人信息主体权利请求（查阅、复制、删除、可携带、更正等）并起草回复——验证身份、 按系统逐一定位数据、评估豁免、起草确认函和实质回复函。当收到个人信息主体权利请求， 用户粘贴查阅/删除/可携带/更正请求，或说\"来了个DSAR\"\"查阅请求\"\"删除权\"\"有人想要 他们的数据\"时使用。",
+   "config": false
+  },
+  "privacy-legal:matter-workspace": {
+   "plugin": "privacy-legal",
+   "skill": "matter-workspace",
+   "description": "管理事项工作区——新建、列出、切换、关闭或脱离（实践级）。使一个客户或委托的上下文 与其他所有客户或委托分开，适用于多客户执业者。当用户想打开新事项、切换事项、列出事项、 关闭/归档事项或仅在实践级工作时使用。",
+   "config": true
+  },
+  "privacy-legal:pia-generation": {
+   "plugin": "privacy-legal",
+   "skill": "pia-generation",
+   "description": "生成符合内部格式的个人信息保护影响评估（PIA），适用于新功能、产品或处理活动， 使用从种子PIA学习到的结构。当用户说\"写一份PIA\"\"个人信息保护影响评估\"\"我们需要 为这个做PIA吗\"\"对这个功能做隐私审查\"，或描述一项新的个人信息处理活动时使用。",
+   "config": false
+  },
+  "privacy-legal:policy-monitor": {
+   "plugin": "privacy-legal",
+   "skill": "policy-monitor",
+   "description": "保持个人信息处理规则与实践一致。两种模式：周度扫描已保存的PIA、DPA审查和分诊结果以 发现处理规则漂移；或针对拟议的新实践进行直接查询。当用户问\"我们的处理规则覆盖这个吗\" \"我们想开始做X——处理规则需要更新吗\"\"运行处理规则监控\"\"处理规则扫描\"，或想找到处理 规则不再匹配团队实际操作的地方时使用。",
+   "config": false
+  },
+  "privacy-legal:privacy-policy": {
+   "plugin": "privacy-legal",
+   "skill": "privacy-policy",
+   "description": "按产品事实生成最小合规版隐私协议（隐私政策），并配套个人信息清单、第三方/SDK清单、后续完善事项与复查报告。适用于 App、网站、小程序、SaaS、管理端、SDK 等在上线前形成基础隐私合规文档。基于中国数据安全法律体系（个人信息保护法、数据安全法、网络安全法）起草。触发场景：要求生成隐私政策/隐私协议、App/网站/小程序/SaaS/SDK 上线前合规、需要个人信息清单、需要第三方清单。不适用于完整深度版——本技能仅交付最小合规版本，如需大而全的正式深度协议，应说明本技能只产出最小合规版。",
+   "config": false
+  },
+  "privacy-legal:reg-gap-analysis": {
+   "plugin": "privacy-legal",
+   "skill": "reg-gap-analysis",
+   "description": "将新出台或变更的法规与现行个人信息处理规则及实践进行差异对比——输出差距清单和 附负责人和日期的整改计划。当新法规出台，用户问\"[某法规]影响我们吗\"\"[某法规] 差距分析\"\"对照[法规]进行合规检查\"，或粘贴法规文本时使用。",
+   "config": false
+  },
+  "privacy-legal:use-case-triage": {
+   "plugin": "privacy-legal",
+   "skill": "use-case-triage",
+   "description": "快速判断某项处理活动是否需要个人信息保护影响评估、是否触发个保法第55条法定评估义务， 或可直接推进——同时排查个人信息处理规则冲突并路由至正确的下一步。当用户询问\"这个需 要做PIA吗\"\"对这个功能做隐私分诊\"\"对X做隐私检查\"\"从隐私角度看这个行不行\"，或描述一 项新的个人信息处理活动、产品功能或供应商关系时使用。",
+   "config": false
+  },
+  "procurement-legal:bid-review": {
+   "plugin": "procurement-legal",
+   "skill": "bid-review",
+   "description": "当用户要求审查采购/招标文件、响应文件、资格条件、评分规则或投标风险时使用；单纯寻找公告改用 notice-watch。",
+   "config": false
+  },
+  "procurement-legal:challenge-complaint": {
+   "plugin": "procurement-legal",
+   "skill": "challenge-complaint",
+   "description": "当用户需要分析或起草政府采购质疑、质疑答复、投诉及相关期限和证据时使用；普通售后争议改用 contract-performance。",
+   "config": false
+  },
+  "procurement-legal:cold-start-interview": {
+   "plugin": "procurement-legal",
+   "skill": "cold-start-interview",
+   "description": "当用户首次设置政府采购或招投标法律插件，需确定采购角色、地区、项目类型、风险阈值与输出格式时使用；单次法规查询不触发。",
+   "config": true
+  },
+  "procurement-legal:contract-performance": {
+   "plugin": "procurement-legal",
+   "skill": "contract-performance",
+   "description": "当用户需要审查政府采购或招标项目中标后的签约、变更、验收、付款或履行争议时使用；投标资格与评分审查改用 bid-review。",
+   "config": false
+  },
+  "procurement-legal:regime-triage": {
+   "plugin": "procurement-legal",
+   "skill": "regime-triage",
+   "description": "当用户需要判断项目适用政府采购法、招标投标法或其他采购制度，或要识别采购程序与审查职责时使用；已确定制度的单条合同修改不触发。",
+   "config": false
+  },
+  "product-legal:cold-start-interview": {
+   "plugin": "product-legal",
+   "skill": "cold-start-interview",
+   "description": "冷启动访谈——连接您的上线追踪器、读取过往审查记录、学习您的风险校准。 在全新安装、产品法务入职或插件配置含有占位符时使用。运行 --redo 重新访谈， 或 --check-integrations 仅重新检测连接器。",
+   "config": true
+  },
+  "product-legal:customize": {
+   "plugin": "product-legal",
+   "skill": "customize",
+   "description": "对产品法务实务画像进行引导式定制——修改单项设置，无需重新运行完整冷启动访谈。 调整风险校准、上报联系人、上线审查框架、营销宣传立场或事项工作空间路径。当用户说 \"修改我的[某项设置]\"\"更新我的画像\"\"编辑我的框架\"\"重调我的校准\"或\"定制\"时使用。",
+   "config": true
+  },
+  "product-legal:feature-risk-assessment": {
+   "plugin": "product-legal",
+   "skill": "feature-risk-assessment",
+   "description": "对单个功能或产品领域进行更深入的风险评估，当上线审查发现某个议题需要 超出单行条目的深度分析时使用。结构化分析：可能出什么问题、可能性多大、 后果多严重、如何缓解。当用户说\"深入分析这个风险\"\"[功能]风险评估\" \"可能出什么问题\"或上线审查标记了全新议题时使用。",
+   "config": false
+  },
+  "product-legal:is-this-a-problem": {
+   "plugin": "product-legal",
+   "skill": "is-this-a-problem",
+   "description": "对快速的飞书/钉钉问题给出\"这有问题吗？\"答复——对照您的校准进行模式匹配。 当用户说\"这有问题吗\"\"快速问一下\"\"我们能做X吗\"\"这个需要法务审查吗\"\"帮我看看\" 或粘贴一个需要即时判断（没问题/需要审查/暂停）的产品经理问题时使用。",
+   "config": false
+  },
+  "product-legal:launch-review": {
+   "plugin": "product-legal",
+   "skill": "launch-review",
+   "description": "对照您的框架和风险校准进行全面产品上线审查。当用户说\"审查这个上线\" \"[功能]法务审查\"\"我们能上线吗\"\"[产品]有什么法律问题\"或引用了需要 逐类审查备忘录的产品需求文档或上线追踪工单时使用。",
+   "config": false
+  },
+  "product-legal:marketing-claims-review": {
+   "plugin": "product-legal",
+   "skill": "marketing-claims-review",
+   "description": "审查营销文案中的宣传主张，识别哪些需要证实、改写或删除。 当用户说\"审查这份营销文案\"\"检查这些宣传\"\"我们能这么说吗\" \"这是夸大还是有问题\"或粘贴了营销内容（落地页、邮件、广告、标语）时使用。",
+   "config": false
+  },
+  "product-legal:matter-workspace": {
+   "plugin": "product-legal",
+   "skill": "matter-workspace",
+   "description": "管理事项工作空间——新建、列表、切换、关闭或脱钩（实务级）。 当您为多个客户或事项工作、需要创建、列出、切换、关闭或脱钩活跃事项 以防一个委托事项的上下文泄漏到另一个时使用。",
+   "config": true
+  },
+  "regulatory-legal:cold-start-interview": {
+   "plugin": "regulatory-legal",
+   "skill": "cold-start-interview",
+   "description": "冷启动访谈——建立你的监管监测清单、索引政策库并了解你的重要度阈值，使监测器输出信号而非噪音。适用于全新安装、重新配置时（--redo），或重新检查哪些连接器实际响应时（--check-integrations）。",
+   "config": true
+  },
+  "regulatory-legal:comments": {
+   "plugin": "regulatory-legal",
+   "skill": "comments",
+   "description": "审阅公开的征求意见期，记录决策，跟踪截止日期。适用于征求意见稿征求意见窗口开启时，你需要呈现截止日期、决定是否提交意见或记录已提交/不提交/放弃的决策时（--decide CMT-ID）。",
+   "config": false
+  },
+  "regulatory-legal:customize": {
+   "plugin": "regulatory-legal",
+   "skill": "customize",
+   "description": "指导式定制监管实践配置——在不重新运行完整冷启动访谈的情况下对单项进行调整。 调整监管机构监测清单、政策库索引、重要度阈值、差距响应流程、 动态源配置或事务工作区路径。适用于用户说\"改我的[某配置]\"、\"增加一个监管机构\"、 \"更新我的监测清单\"、\"编辑阈值\"或\"定制\"时。",
+   "config": true
+  },
+  "regulatory-legal:gap-surfacer": {
+   "plugin": "regulatory-legal",
+   "skill": "gap-surfacer",
+   "description": "参考资料：支持 /regulatory-legal:gaps 和 /regulatory-legal:comments 的共享差距和意见征集跟踪框架。跟踪未关闭的政策差距及其整改状态， 从 policy-diff 中获取差距，呈现开放和即将到期的事项，路由给负责人， 并通过企业通讯工具通知差距负责人，每次发送前需确认。 由 gaps 和 comments 技能在实质工作前加载。",
+   "config": false
+  },
+  "regulatory-legal:gaps": {
+   "plugin": "regulatory-legal",
+   "skill": "gaps",
+   "description": "开放差距跟踪器——已标记但尚未关闭的事项。适用于用户询问\"有哪些开放的差距\"、\"差距跟踪器\"、\"整改状态\"，或想关闭（--close GAP-ID）或风险接受（--accept GAP-ID）一个已跟踪的差距时。",
+   "config": false
+  },
+  "regulatory-legal:matter-workspace": {
+   "plugin": "regulatory-legal",
+   "skill": "matter-workspace",
+   "description": "管理事务工作区——创建、列表、切换、关闭或解除活跃事务（实践层面）。适用于多客户/多事务工作场景，需要将一项委托的上下文与另一项隔离开，或实质技能需要知道它在哪个事务中工作时。",
+   "config": true
+  },
+  "regulatory-legal:policy-diff": {
+   "plugin": "regulatory-legal",
+   "skill": "policy-diff",
+   "description": "将特定法规变化与已索引的政策库进行差异分析。适用于法规发生变化，你需要知道它触及了哪些政策以及差距是什么；用户说\"把这个法规与我们的政策做差异分析\"、\"这影响了哪些政策\"、\"差距分析\"；或 reg-feed-watcher 传递了一项重要事项时。",
+   "config": false
+  },
+  "regulatory-legal:policy-redraft": {
+   "plugin": "regulatory-legal",
+   "skill": "policy-redraft",
+   "description": "产出关闭一个差距的政策修订建议稿（带标记版）。由 /regulatory-legal:gaps 或 /regulatory-legal:policy-diff 找到的差距触发。供内部审阅的初稿——不直接应用到已批准的政策文件中。适用于用户说\"重写政策\"、\"起草政策修复\"、\"标记政策\"或 gap-surfacer 传递差距供起草时。",
+   "config": false
+  },
+  "regulatory-legal:reg-feed-watcher": {
+   "plugin": "regulatory-legal",
+   "skill": "reg-feed-watcher",
+   "description": "检查法规动态源，报告自上次检查以来的新事项，按重要度阈值过滤。适用于用户说\"检查法规动态\"、\"有什么新规定\"、\"法规更新\"、从定时任务触发执行，或手动粘贴法规动态进行分类和差异分析时。",
+   "config": false
+  }
+ }
+}

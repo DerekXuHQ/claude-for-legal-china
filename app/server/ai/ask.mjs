@@ -7,6 +7,7 @@ import { runConsult } from "./consult.mjs";
 import { verifyCitations, flagRepealed, citedSentences } from "./verify.mjs";
 import { completeJSON } from "./models.mjs";
 import { pickReviewModel } from "./models.mjs";
+import { getAgent, agentSystem, AGENT_TOOLS, AGENT_STEP_LABEL, runAgentTool } from "./roster.mjs";
 
 const clipLine = (s) => String(s || "").replace(/\s+/g, " ").slice(0, 60);
 const clip = (s, n) => (s && s.length > n ? s.slice(0, n) + "\n〔后面的内容过长，已省略〕" : s || "");
@@ -31,7 +32,7 @@ function answersText(questions, answers) {
  * @param {object} [p.intakeAnswers] 对上一轮追问的回答
  * @param {boolean} [p.skipIntake]  跳过追问，按现有信息作答
  */
-export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, emit, signal, scenario = "", pipeline = process.env.CLS_PIPELINE || "agent" }) {
+export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, udb = null, matterId = "", agent: agentId = "", emit, signal, scenario = "", pipeline = process.env.CLS_PIPELINE || "agent" }) {
   const cfg = DEPTH[depth] || DEPTH.medium;
   conv.attachments.push(...attachments);
   let route, facts = "", userQuestion = question;
@@ -46,8 +47,13 @@ export async function ask(settings, { conv, question, region, attachments = [], 
     conv.pending = null;
   } else {
     // 用户在目录里选了场景：这个事项就按该场景办，不再自动分流
-    if (scenario && getTask(scenario).scenario) conv.scenario = scenario;
-    if (conv.scenario) {
+    if (scenario && getTask(scenario).scenario) { conv.scenario = scenario; conv.agent = ""; }
+    // 用户在 Agent 页启动了某个 Agent：这个事项交给它办
+    if (agentId && getAgent(agentId)) { conv.agent = agentId; conv.scenario = ""; }
+    if (conv.agent && getAgent(conv.agent)) {
+      const a = getAgent(conv.agent);
+      route = { task: "agent:" + a.id, name: a.title, also: [], region: region || conv.route?.region || "", summary: conv.route?.summary || clipLine(question), urgent: false };
+    } else if (conv.scenario) {
       const t = getTask(conv.scenario);
       route = { task: t.id, name: t.name, also: [], region: region || conv.route?.region || "", summary: conv.route?.summary || clipLine(question), urgent: false };
     } else {
@@ -56,8 +62,10 @@ export async function ask(settings, { conv, question, region, attachments = [], 
     }
     region = region || route.region;
     emit({ type: "route", task: route.task, name: route.name, summary: route.summary, also: route.also });
-    // 第一次问、或换了一类事时，先看要不要追问
-    const firstOfTask = !conv.route || conv.route.task !== route.task;
+    // 分流选中了专项 Agent：之后这个事项都交给它办（技能自己会追问）
+    if (route.task.startsWith("agent:")) conv.agent = route.task.slice(6);
+    // 第一次问、或换了一类事时，先看要不要追问（Agent 按技能自己的访谈步骤问，不走通用追问）
+    const firstOfTask = !route.task.startsWith("agent:") && (!conv.route || conv.route.task !== route.task);
     if (!skipIntake && firstOfTask) {
       const q = await intakeQuestions(settings, model, route, { question, region, attachments: conv.attachments, history: conv.history }, signal);
       if (q.questions.length) {
@@ -71,8 +79,9 @@ export async function ask(settings, { conv, question, region, attachments = [], 
   conv.route = route;
   emit({ type: "route", task: route.task, name: route.name, summary: route.summary, also: route.also });
 
-  const task = getTask(route.task);
-  emit({ type: "step", kind: "route", text: `按「${task.name}」处理${task.pipelineName ? `（${task.pipelineName}流程）` : ""}`,
+  const agent = route.task.startsWith("agent:") ? getAgent(route.task.slice(6)) : null;
+  const task = agent ? { id: route.task, name: agent.title, pipelineName: "", body: "" } : getTask(route.task);
+  emit({ type: "step", kind: "route", text: agent ? `交给「${agent.title}」Agent（${agent.area}）` : `按「${task.name}」处理${task.pipelineName ? `（${task.pipelineName}流程）` : ""}`,
     detail: [route.summary && `要解决的问题：${route.summary}`, region && `地区：${region}`, facts && `你补充的情况：\n${facts}`].filter(Boolean).join("\n") });
   const doc = conv.attachments.map((a) => `【${a.name}】\n${a.text}`).join("\n\n");
   let text;
@@ -80,7 +89,7 @@ export async function ask(settings, { conv, question, region, attachments = [], 
 
   // 新上传了文件、或这份文件还没审过时，走多轮审查；之后的追问在已有审查意见的基础上回答
   // 合同审查场景（P5）走合同审查；合规判断场景（P8）上传了方案文件的走方案审查
-  const reviewKind = route.task === "contract_review" || task.runner === "review" ? "contract_review" : route.task === "plan_review" || task.pipeline === "P8" ? "plan_review" : "";
+  const reviewKind = agent ? "" : route.task === "contract_review" || task.runner === "review" ? "contract_review" : route.task === "plan_review" || task.pipeline === "P8" ? "plan_review" : "";
   if (reviewKind && doc && (attachments.length || !conv.reviewed)) {
     conv.reviewed = true;
     const reviewModel = pickReviewModel(settings, model, available);
@@ -89,6 +98,24 @@ export async function ask(settings, { conv, question, region, attachments = [], 
       verify: verifyCitations,
     });
     text = r.text;
+  } else if (agent) {
+    if (!udb) throw new Error("本机数据库不可用");
+    const system = `${agentSystem(udb, agent, SYSTEM_PROMPT)}${cfg.note}`;
+    const content = [
+      `[今天是 ${new Date().toISOString().slice(0, 10)}]`,
+      region ? `[用户所在或关注的地区：${region}]` : "",
+      facts ? `## 用户补充的情况\n${facts}` : "",
+      doc ? `## 用户上传到这个事项的文件\n${clip(doc, 120000)}` : "",
+      `## 用户的话\n${userQuestion}`,
+    ].filter(Boolean).join("\n\n");
+    emit({ type: "live", text: `「${agent.title}」按技能办理` });
+    const r = await runAgent(settings, {
+      model, effort: cfg.effort, system, steps: cfg.steps + 10, emit, signal,
+      messages: [...conv.history, { role: "user", content }],
+      extra: { tools: AGENT_TOOLS, labels: AGENT_STEP_LABEL, run: (name, args) => runAgentTool(udb, agent, name, args, matterId) },
+    });
+    text = r.text;
+    ledgerOf = r.ledger || null;
   } else {
     const extra = route.also.map((id) => getTask(id)).filter((t) => t.body).map((t) => `\n\n## 同时涉及：${t.name}\n${t.body.slice(0, 6000)}`).join("");
     const system = `${SYSTEM_PROMPT}\n\n## 本次任务：${task.name}\n${task.body}${extra}${cfg.note}`;
