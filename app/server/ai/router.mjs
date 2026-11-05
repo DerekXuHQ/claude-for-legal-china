@@ -20,7 +20,8 @@ function contextBlock({ question, region, attachments = [], history = [] }) {
 /** 判断这是哪个场景（99 个场景之一；都不像就是 general）。 */
 export async function routeTask(settings, model, ctx, signal) {
   const cat = scenarioCatalog();
-  const list = cat.groups.map((g) => `【${g.key} ${g.full}】\n` + cat.scenarios.filter((x) => x.group === g.key)
+  // 已交给 Agent 的场景不列（Agent 目录里有）
+  const list = cat.groups.map((g) => `【${g.key} ${g.full}】\n` + cat.scenarios.filter((x) => x.group === g.key && !x.agent)
     .map((x) => `- ${x.id}｜${x.name}${x.examples[0] ? "｜例：" + x.examples[0] : ""}`).join("\n")).join("\n");
   const system = `你是律所的接待助理，负责把客户的事分到最贴切的具体场景，每个场景有自己的工作流程。只输出 JSON，不要其他文字。
 
@@ -35,10 +36,12 @@ ${rosterForRouting()}
 {"task": "场景 id，或 agent:插件:技能", "also": ["同时涉及的其他场景 id，最多 2 个，可空"], "region": "问题涉及的省级地区，看不出就空字符串", "summary": "用一句话复述用户真正要解决的问题", "urgent": true/false（有迫在眉睫的期限，如已收到起诉状、仲裁、处罚告知时为 true）}
 
 判断要点：看用户是哪一方、处在哪个阶段（事前想做 / 已被对方主张 / 要去追讨 / 已有判决要执行）、手里有没有底稿。上传了合同并要求审查的，选对应合同类型的审查场景；拿对方模板或旧合同改的，选改写场景；收到起诉状、仲裁申请、律师函、处罚告知的，选应对场景。
-场景和 Agent 怎么选：用户要的正是某个 Agent 的特定成品（例如保密协议三色分流、合同修订历史、尽调表格、起诉状、答辩状、辩护词、量刑测算、经济补偿测算、商标申请、隐私政策、董事会决议、期限台账、个人信息权利请求答复……），或者点名要做这件事，选那个 Agent（task 写 agent: 开头的完整 id）；想弄清情况、判断怎么办、要综合方案的，选场景。`;
+场景和 Agent 怎么选：用户要的正是某个 Agent 的特定成品（例如保密协议三色分流、合同修订历史、尽调表格、起诉状、答辩状、辩护词、量刑测算、经济补偿测算、商标申请、隐私政策、董事会决议、期限台账、个人信息权利请求答复……），或者点名要做这件事，选那个 Agent（task 写 agent: 开头的完整 id）；想弄清情况、判断怎么办、要综合方案的，选场景。收到知识产权（商标、著作权、专利）侵权警告函或平台投诉的，选 agent:ip-legal:cease-desist；其他律师函选 agent:litigation-legal:demand-received。`;
   const r = await completeJSON(settings, { model, system, user: contextBlock(ctx), effort: "low", signal });
   const known = (id) => cat.byId.has(id) || (String(id).startsWith("agent:") && getAgent(String(id).slice(6))?.kind === "task");
-  const task = known(r.task) ? r.task : "general";
+  let task = known(r.task) ? r.task : "general";
+  const sc = cat.byId.get(task);
+  if (sc?.agent) task = "agent:" + sc.agent;
   return { task, name: task.startsWith("agent:") ? getAgent(task.slice(6)).title : getTask(task).name, also: (Array.isArray(r.also) ? r.also : []).filter((x) => known(x) && x !== task && !String(x).startsWith("agent:")).slice(0, 2), region: r.region || ctx.region || "", summary: r.summary || "", urgent: !!r.urgent };
 }
 

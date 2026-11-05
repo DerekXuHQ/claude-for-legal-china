@@ -717,3 +717,6 @@ dialog.wide form { max-height: 88vh; overflow: auto; }
 #pf-text { width: 100%; min-height: 52vh; font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); resize: vertical; box-sizing: border-box; }
 .ag-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
 @media (max-width: 760px) { .ag { grid-template-columns: 1fr; } .ag-side { display: none; } .ag-form { grid-template-columns: 1fr; } }
+.pk-groups li.pk-sep { height: 1px; padding: 0; margin: 6px 4px; background: var(--line); cursor: default; }
+.pk-groups li.pk-sep:hover { background: var(--line); }
+.pk-note + .pk-card ~ .pk-note, .pk-card + .pk-note { margin-top: 10px; }

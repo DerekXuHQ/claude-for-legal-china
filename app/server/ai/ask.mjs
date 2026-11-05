@@ -1,7 +1,7 @@
 // 一次问答的完整流程：分流 → 追问 → 按任务手册检索分析（合同、方案走多轮审查）→ 核对引用。
 import { runAgent, SYSTEM_PROMPT, DEPTH } from "./agent.mjs";
 import { routeTask, intakeQuestions } from "./router.mjs";
-import { getTask } from "./tasks.mjs";
+import { getTask, scenarioCatalog } from "./tasks.mjs";
 import { runReview } from "./review.mjs";
 import { runConsult } from "./consult.mjs";
 import { verifyCitations, flagRepealed, citedSentences } from "./verify.mjs";
@@ -47,13 +47,15 @@ export async function ask(settings, { conv, question, region, attachments = [], 
     conv.pending = null;
   } else {
     // 用户在目录里选了场景：这个事项就按该场景办，不再自动分流
-    if (scenario && getTask(scenario).scenario) { conv.scenario = scenario; conv.agent = ""; }
+    const sc = scenario ? scenarioCatalog().byId.get(scenario) : null;
+    if (sc?.agent) agentId = agentId || sc.agent; // 这个场景交给 Agent 办
+    else if (scenario && getTask(scenario).scenario) { conv.scenario = scenario; conv.agent = ""; }
     // 用户在 Agent 页启动了某个 Agent：这个事项交给它办
     if (agentId && getAgent(agentId)) { conv.agent = agentId; conv.scenario = ""; }
     else if (clearAgent) conv.agent = "";
     if (conv.agent && getAgent(conv.agent)) {
       const a = getAgent(conv.agent);
-      route = { task: "agent:" + a.id, name: a.title, also: [], region: region || conv.route?.region || "", summary: conv.route?.summary || clipLine(question), urgent: false };
+      route = { task: "agent:" + a.id, name: a.title, also: [], region: region || conv.route?.region || "", summary: conv.route?.summary || (a.kind === "interview" ? a.title : clipLine(question)), urgent: false };
     } else if (conv.scenario) {
       const t = getTask(conv.scenario);
       route = { task: t.id, name: t.name, also: [], region: region || conv.route?.region || "", summary: conv.route?.summary || clipLine(question), urgent: false };

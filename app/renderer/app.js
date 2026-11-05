@@ -432,6 +432,9 @@ const STARTERS = [
   { icon: "receipt", title: "顾客或家长要退费", desc: "会员卡、预付卡、学费，按规定该退多少", scenario: "", prompt: "顾客要求退费，情况是：" },
   { icon: "megaphone", title: "广告文案、促销合不合规", desc: "改成合规版本", scenario: "ad_copy_review", prompt: "请看看这段广告文案或促销活动有没有违法风险：" },
   { icon: "landmark", title: "收到监管通知或罚单", desc: "市场监管、税务、劳动监察：期限内该做什么", scenario: "", prompt: "我们收到了监管部门的通知（已上传）。", upload: true },
+  { icon: "shield-check", title: "对方发来保密协议", desc: "绿/黄/红三色分流：能不能直接签、哪几条必须改", agent: "commercial-legal:nda-triage", prompt: "对方发来一份保密协议（已上传），我方是：" },
+  { icon: "gavel", title: "写一份起诉状", desc: "按法定结构写民事起诉状，附证据清单和管辖分析", agent: "litigation-legal:civil-complaint-drafting", prompt: "请帮我写民事起诉状。原告是：，被告是：，事情经过：" },
+  { icon: "coins", title: "算经济补偿", desc: "经济补偿、赔偿金、代通知金逐项公式和分步计算", agent: "employment-legal:severance-calc", prompt: "请帮我算离职补偿。工作地：，入职日期：，离职日期：，离职前 12 个月平均工资：，解除原因：" },
 ];
 state.scenario = "";   // 新事项里选定的场景
 let scenarioCat = null;
@@ -451,40 +454,68 @@ function setScenario(id) {
     q.placeholder = sc.examples[0] ? `例如：${sc.examples[0]}` : q.dataset.defaultPh;
   } else q.placeholder = q.dataset.defaultPh;
 }
-// 新事项页的选择器：左边「常用 + 15 个领域」，右边是鼠标所在领域的全部场景。悬停就切换，点一下就开工。
+// 新事项页的选择器：左边「常用 + 领域」，右边是该领域「我遇到的情况」（场景：先问清事实，给判断和打法）
+// 和「要一份成品」（命名 Agent：按技能产出特定文书或表格）。悬停就切换，点一下就开工。
+// 场景分组对应哪些 Agent：插件名表示该领域全部 Agent，带冒号的是单个 Agent
+const GROUP_AGENTS = {
+  A: ["employment-legal"], B: ["commercial-legal"],
+  C: ["litigation-legal:demand-draft", "litigation-legal:demand-received", "litigation-legal:civil-complaint-drafting", "litigation-legal:settlement"],
+  E: ["corporate-legal:corporate-docs", "corporate-legal:written-consent", "corporate-legal:board-minutes", "corporate-legal:entity-compliance"],
+  F: ["corporate-legal:due-diligence-checklist", "corporate-legal:tabular-review", "corporate-legal:diligence-issue-extraction", "corporate-legal:diligence-evidence-matrix", "corporate-legal:material-contract-schedule", "corporate-legal:closing-checklist", "corporate-legal:legal-opinion", "corporate-legal:deal-team-summary", "corporate-legal:integration-management", "corporate-legal:ai-tool-handoff"],
+  G: ["ip-legal"], H: ["privacy-legal", "ai-governance-legal"], I: ["product-legal"], J: ["regulatory-legal"], M: ["criminal-legal"],
+};
+// 场景分组以外、只有 Agent 的领域
+const AGENT_ONLY = ["litigation-legal", "procurement-legal", "legal-research-cn", "law-practice-cn", "legal-clinic", "law-student"];
+function groupAgents(key) {
+  const all = (state.ag?.agents || []).filter((a) => a.kind === "task");
+  const spec = GROUP_AGENTS[key] || (AGENT_ONLY.includes(key) ? [key] : []);
+  return spec.flatMap((x) => x.includes(":") ? all.filter((a) => a.id === x) : all.filter((a) => a.plugin === x));
+}
 function renderPicker(box) {
   const cat = scenarioCat;
-  const groups = [{ key: "_common", name: "常用", count: STARTERS.length }, ...cat.groups.map((g) => ({ key: g.key, name: g.name.split(" / ")[0], count: cat.scenarios.filter((x) => x.group === g.key).length }))];
+  const own = (g) => cat.scenarios.filter((x) => x.group === g);
+  const groups = [{ key: "_common", name: "常用", count: STARTERS.length },
+    ...cat.groups.map((g) => ({ key: g.key, name: g.name.split(" / ")[0], count: own(g.key).length + groupAgents(g.key).filter((a) => !own(g.key).some((x) => x.agent === a.id)).length })),
+    ...AGENT_ONLY.map((pl) => ({ key: pl, name: state.ag?.areas.find((x) => x.plugin === pl)?.area || pl, count: groupAgents(pl).length })).filter((g) => g.count)];
   let cur = state.scGroup && groups.some((g) => g.key === state.scGroup) ? state.scGroup : "_common";
-  box.innerHTML = `<ul class="pk-groups">${groups.map((g) => `<li data-g="${esc(g.key)}" class="${g.key === cur ? "on" : ""}"><span>${esc(g.name)}</span><em>${g.count}</em></li>`).join("")}</ul><div class="pk-items"></div>`;
+  box.innerHTML = `<ul class="pk-groups">${groups.map((g, i) => `${i === cat.groups.length + 1 ? `<li class="pk-sep"></li>` : ""}<li data-g="${esc(g.key)}" class="${g.key === cur ? "on" : ""}"><span>${esc(g.name)}</span><em>${g.count}</em></li>`).join("")}</ul><div class="pk-items"></div>`;
   const items = $(".pk-items", box);
   // 每种流程一个图标和短名，让人一眼看出点进去会做什么
   const PIPE = { P1: ["gavel", "应对争议"], P2: ["coins", "追讨维权"], P3: ["scale", "执行回款"], P4: ["users", "用工方案"], P5: ["file-search", "合同审查"], P6: ["file-text", "改写文本"], P7: ["pen", "起草文书"], P8: ["shield-check", "合规判断"], P9: ["landmark", "监管应对"], P10: ["alert", "刑事应急"], P11: ["book-open", "规定解读"], P12: ["list", "期限计算"], P13: ["flag", "制度流程"] };
   const card = ({ attrs, icon, title, sub, tag, on, tip }) => `<button type="button" class="pk-card ${on ? "on" : ""}" ${attrs} title="${esc(tip || "")}">
       <span class="pk-ic">${ic(icon)}</span><span class="pk-body"><b>${esc(title)}</b><span>${tag ? `<em class="pk-tag">${esc(tag)}</em>` : ""}${esc(sub)}</span></span></button>`;
+  const agentCardHTML = (a, title) => card({ attrs: `data-agent="${esc(a.id)}"`, icon: "bot", title: title || a.title, sub: a.blurb, tag: "Agent", on: a.id === state.agent, tip: `${a.title}：${a.blurb}` });
   const drawItems = () => {
     const g = groups.find((x) => x.key === cur);
     if (cur === "_common") {
-      items.innerHTML = `<div class="pk-note">最常用的 ${STARTERS.length} 件事。其他事务按左边的领域找，或者直接在下面描述。</div>`
-        + STARTERS.map((st, i) => card({ attrs: `data-starter="${i}"`, icon: st.icon, title: st.title, sub: st.desc, on: st.scenario && st.scenario === state.scenario, tip: st.desc })).join("");
-    } else {
-      const list = cat.scenarios.filter((x) => x.group === cur);
-      items.innerHTML = `<div class="pk-note">${esc(g.name)}：${list.length} 个预设流程。点卡片直接开工；你的事不在这里，也可以直接在下面描述。</div>`
-        + list.map((x) => {
-          const [icon, tag] = PIPE[x.pipeline] || ["message", ""];
-          return card({ attrs: `data-sc="${esc(x.id)}"`, icon, title: x.name.replace(/（[^）]*）$/, ""), sub: x.examples[0] ? `适合：“${x.examples[0]}”` : "", tag, on: x.id === state.scenario,
-            tip: `${x.name}\n流程：${cat.pipelines[x.pipeline] || ""}\n常见说法：${x.examples.join("；")}` });
+      items.innerHTML = `<div class="pk-note">最常用的 ${STARTERS.length} 件事。其他事务按左边的领域找，或者直接在下面描述，助理会交给合适的流程或 Agent。</div>`
+        + STARTERS.map((st, i) => {
+          const a = agById(st.agent || cat.scenarios.find((x) => x.id === st.scenario)?.agent || "");
+          return card({ attrs: `data-starter="${i}"`, icon: st.icon, title: st.title, sub: st.desc, tag: a ? "Agent" : "", on: (st.scenario && st.scenario === state.scenario) || (a && a.id === state.agent), tip: st.desc });
         }).join("");
+    } else {
+      const sc = own(cur).filter((x) => !x.agent);
+      const handed = own(cur).filter((x) => x.agent && agById(x.agent));
+      const ags = groupAgents(cur).filter((a) => !handed.some((x) => x.agent === a.id));
+      const scHTML = sc.map((x) => {
+        const [icon, tag] = PIPE[x.pipeline] || ["message", ""];
+        return card({ attrs: `data-sc="${esc(x.id)}"`, icon, title: x.name.replace(/（[^）]*）$/, ""), sub: x.examples[0] ? `适合：“${x.examples[0]}”` : "", tag, on: x.id === state.scenario,
+          tip: `${x.name}\n流程：${cat.pipelines[x.pipeline] || ""}\n常见说法：${x.examples.join("；")}` });
+      }).join("");
+      const agHTML = [...handed.map((x) => agentCardHTML(agById(x.agent), x.name.replace(/（[^）]*）$/, ""))), ...ags.map((a) => agentCardHTML(a))].join("");
+      items.innerHTML = (sc.length ? `<div class="pk-note"><b>我遇到的情况</b>：先问清关键事实，给判断、依据和打法。</div>${scHTML}` : "")
+        + (agHTML ? `<div class="pk-note"><b>要一份成品</b>：Agent 按完整技能产出特定文书、表格或分析${state.ag?.areas.some((x) => x.configured) ? "" : "；在 Agent 页配置实务画像后按你们的立场来"}。</div>${agHTML}` : "")
+        || `<div class="pk-note">${esc(g.name)}：直接在下面描述。</div>`;
     }
     items.scrollTop = 0;
   };
   const select = (key) => {
     if (key === cur) return;
     cur = state.scGroup = key;
-    $$(".pk-groups li", box).forEach((li) => li.classList.toggle("on", li.dataset.g === cur));
+    $$(".pk-groups li[data-g]", box).forEach((li) => li.classList.toggle("on", li.dataset.g === cur));
     drawItems();
   };
-  $$(".pk-groups li", box).forEach((li) => {
+  $$(".pk-groups li[data-g]", box).forEach((li) => {
     li.addEventListener("mouseenter", () => select(li.dataset.g));
     li.addEventListener("click", () => select(li.dataset.g));
   });
@@ -494,12 +525,15 @@ function renderPicker(box) {
     $$(".pk-card", items).forEach((x) => x.classList.toggle("on", x === b));
     if (b.dataset.starter !== undefined) {
       const st = STARTERS[Number(b.dataset.starter)];
-      setScenario(st.scenario);
+      // 交给 Agent 的（包括已改由 Agent 办的场景）直接挂上 Agent
+      const handoff = st.agent || cat.scenarios.find((x) => x.id === st.scenario)?.agent;
+      if (handoff && agById(handoff)) setAgent(handoff); else setScenario(st.scenario);
       $("#question").value = st.prompt;
       composerChanged();
       $("#question").focus();
       return;
     }
+    if (b.dataset.agent) { setAgent(b.dataset.agent); $("#question").focus(); return; }
     const sc = cat.scenarios.find((x) => x.id === b.dataset.sc);
     setScenario(sc.id);
     $("#question").focus();
@@ -539,6 +573,8 @@ $("#new-matter").addEventListener("click", () => {
   state.pendingFiles = [];
   renderChips();
   setScenario("");
+  // 上一个常用卡片填进去的开头语，换新事项时清掉（用户自己打的字保留）
+  if (STARTERS.some((st) => st.prompt === $("#question").value)) { $("#question").value = ""; composerChanged(); }
   renderMatter({ title: "新事项", task: "", files: [], display: [] });
   loadMatters();
   $("#question").focus();
@@ -587,10 +623,10 @@ function renderMatter(m) {
     if (m) { $("#matter-title").value = m.title; $("#matter-task").textContent = m.task || ""; $("#matter-files").textContent = m.files.length ? `已上传 ${m.files.length} 个文件` : ""; }
     log.innerHTML = `<div class="chat-intro">
       <div class="intro-head"><h2>今天要处理什么事？</h2>
-        <p>什么事都可以直接在下面的输入框里描述，助理会自己判断该用哪种办法。下面是常见事务的<b>预设流程</b>：每个都专门设计过要问清哪些事实、查哪些规定、怎么打、交付什么。找到你的事就点一下，直接开工；没找到也没关系，直接描述就行。</p></div>
+        <p>什么事都可以直接在下面的输入框里描述，助理会自己判断该用哪种办法。也可以按领域挑：<b>我遇到的情况</b>先问清关键事实，给判断、依据和打法；<b>要一份成品</b>交给专门的 Agent，按完整技能写出文书、表格或分析。没找到也没关系，直接描述就行。</p></div>
       <div id="picker" class="picker"></div>
     </div>`;
-    loadScenarioCat().then(() => { const box = $("#picker"); if (box) renderPicker(box); });
+    Promise.all([loadScenarioCat(), state.ag ? null : loadAgents().catch(() => null)]).then(() => { const box = $("#picker"); if (box) renderPicker(box); });
     log.scrollTop = 0;
     return;
   }
@@ -1946,7 +1982,7 @@ renderKeys();
 /* ---------- Agent：命名 Agent、定时 Agent、台账、实务画像 ---------- */
 state.agent = "";
 state.ag = null;
-state.agSel = "_all";
+state.agSel = "_watch"; // Agent 页先看定时 Agent；办事从「法律助理」的新事项开始
 const CADENCE = { daily: "每天", weekly: "每周" };
 const fmtTime = (t) => (t ? new Date(t * 1000).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "");
 const agById = (id) => state.ag?.agents.find((a) => a.id === id);
@@ -1988,10 +2024,12 @@ async function renderAgents() {
   if (!state.ag) return;
   const { agents, areas } = state.ag;
   const tasks = agents.filter((a) => a.kind === "task");
+  // 上面是管理（定时 Agent、台账、实务画像、报告），下面是 Agent 目录（查看技能说明，也能直接开始）
   const items = [
-    ["_all", "全部 Agent", tasks.length], ["_watch", "定时 Agent", agents.length - tasks.length],
+    ["_watch", "定时 Agent", agents.length - tasks.length], ["_runs", "定时报告", state.ag.unseen || ""],
+    ["_registers", "台账", Object.values(state.ag.counts || {}).reduce((s, n) => s + n, 0)], ["_profiles", "实务画像", areas.filter((x) => x.configured).length + "/" + areas.length],
+    ["_sep"], ["_all", "Agent 目录", tasks.length],
     ...areas.map((x) => [x.plugin, x.area, agents.filter((a) => a.plugin === x.plugin).length]),
-    ["_sep"], ["_registers", "台账", Object.values(state.ag.counts || {}).reduce((s, n) => s + n, 0)], ["_profiles", "实务画像", areas.filter((x) => x.configured).length + "/" + areas.length], ["_runs", "定时报告", state.ag.unseen || ""],
   ];
   $("#ag-areas").innerHTML = items.map(([k, name, n]) => k === "_sep" ? `<li class="sep"></li>` : `<li data-k="${esc(k)}" class="${state.agSel === k ? "on" : ""}">${esc(name)}<em>${n ?? ""}</em></li>`).join("");
   renderAgentMain();
@@ -2058,7 +2096,7 @@ function renderAgentMain() {
     list = agents.filter((a) => a.kind === "watch");
     head = `<h2>定时 Agent</h2><p class="muted">app 开着时在后台按频率运行，读台账、法规库更新和事项文件，有需要你决定的事就发系统通知。台账为空时不运行，不产生费用。</p>`;
   } else if (sel === "_all") {
-    head = `<h2>全部 Agent</h2><p class="muted">每个 Agent 按一个完整的技能办事：要问什么、查什么、交付什么格式都是定好的。点「开始」，把材料拖进去或说说情况。直接在「法律助理」里提问，也会自动交给最合适的 Agent。</p>`;
+    head = `<h2>Agent 目录</h2><p class="muted">每个 Agent 按一个完整的技能办事：要问什么、查什么、交付什么格式都是定好的。平时在「法律助理」里新建事项时按领域挑选，或者直接描述，助理会自动交给最合适的 Agent；这里可以查看每个 Agent 的技能说明，也能直接开始。</p>`;
     box.innerHTML = head + areas.map((x) => {
       const xs = agents.filter((a) => a.plugin === x.plugin && a.kind === "task");
       return xs.length ? `<h3 class="ag-area">${esc(x.area)} <em>${xs.length}</em></h3><div class="ag-grid">${xs.map(agentCard).join("")}</div>` : "";

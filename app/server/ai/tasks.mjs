@@ -65,12 +65,25 @@ export function getTask(id) {
   return tasks.get(id) || tasks.get("general") || { id: "general", name: "法律咨询", when: "", examples: [], body: "", intake: [] };
 }
 
+// 和命名 Agent 做同一件事、而 Agent 做得更完整的场景：选中这个场景时交给 Agent 办
+export const SCENARIO_HANDOFF = {
+  nda_review: "commercial-legal:nda-triage",
+  employee_handbook_rules: "employment-legal:policy-drafting",
+  worker_classification: "employment-legal:worker-classification",
+  received_ip_infringement_notice: "ip-legal:cease-desist",
+  privacy_policy_app_compliance: "privacy-legal:privacy-policy",
+  ad_copy_review: "product-legal:marketing-claims-review",
+  labor_arbitration_respondent: "employment-legal:labor-arbitration",
+  draft_cooperation_from_scratch: "commercial-legal:contract-drafting",
+};
+
 // ---- 场景目录：99 个具体场景（scenarios.json，由 scripts/build-scenarios.mjs 从调研文档生成）----
 let scenarioCache = null;
 export function scenarioCatalog() {
   if (scenarioCache) return scenarioCache;
   const p = path.join(path.dirname(DIR), "scenarios.json");
   scenarioCache = existsSync(p) ? JSON.parse(readFileSync(p, "utf-8")) : { groups: [], scenarios: [] };
+  for (const x of scenarioCache.scenarios) if (SCENARIO_HANDOFF[x.id]) x.agent = SCENARIO_HANDOFF[x.id];
   scenarioCache.byId = new Map(scenarioCache.scenarios.map((x) => [x.id, x]));
   return scenarioCache;
 }

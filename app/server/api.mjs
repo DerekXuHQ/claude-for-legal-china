@@ -184,7 +184,7 @@ export function createServer(ctx) {
       if (p === "/api/scenarios") {
         const cat = scenarioCatalog();
         return send(res, 200, { groups: cat.groups, pipelines: Object.fromEntries(Object.entries(PIPELINES).map(([k, v]) => [k, v.name])),
-          scenarios: cat.scenarios.map((x) => ({ id: x.id, code: x.code, name: x.name, group: x.group, pipeline: x.pipeline, freq: x.freq, examples: x.examples, needsDoc: !!PIPELINES[x.pipeline]?.needsDoc || x.pipeline === "P5" })) });
+          scenarios: cat.scenarios.map((x) => ({ id: x.id, code: x.code, name: x.name, group: x.group, pipeline: x.pipeline, agent: x.agent || "", freq: x.freq, examples: x.examples, needsDoc: !!PIPELINES[x.pipeline]?.needsDoc || x.pipeline === "P5" })) });
       }
       if (p === "/api/models") {
         const s = loadSettings();
