@@ -32,7 +32,7 @@ function answersText(questions, answers) {
  * @param {object} [p.intakeAnswers] 对上一轮追问的回答
  * @param {boolean} [p.skipIntake]  跳过追问，按现有信息作答
  */
-export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, udb = null, matterId = "", agent: agentId = "", emit, signal, scenario = "", pipeline = process.env.CLS_PIPELINE || "agent" }) {
+export async function ask(settings, { conv, question, region, attachments = [], intakeAnswers, skipIntake, model, depth = "medium", available = [], db, udb = null, matterId = "", agent: agentId = "", clearAgent = false, emit, signal, scenario = "", pipeline = process.env.CLS_PIPELINE || "agent" }) {
   const cfg = DEPTH[depth] || DEPTH.medium;
   conv.attachments.push(...attachments);
   let route, facts = "", userQuestion = question;
@@ -50,6 +50,7 @@ export async function ask(settings, { conv, question, region, attachments = [], 
     if (scenario && getTask(scenario).scenario) { conv.scenario = scenario; conv.agent = ""; }
     // 用户在 Agent 页启动了某个 Agent：这个事项交给它办
     if (agentId && getAgent(agentId)) { conv.agent = agentId; conv.scenario = ""; }
+    else if (clearAgent) conv.agent = "";
     if (conv.agent && getAgent(conv.agent)) {
       const a = getAgent(conv.agent);
       route = { task: "agent:" + a.id, name: a.title, also: [], region: region || conv.route?.region || "", summary: conv.route?.summary || clipLine(question), urgent: false };

@@ -35,6 +35,8 @@ const SHELL_DIR = path.join(BOOT?.builtin || APP_DIR, "shell");
 let updater = null;
 
 let win = null;
+let reopenWindow = null; // 窗口关掉后（macOS 上 app 还在）点通知时重新打开
+const liveNotes = new Set(); // 通知对象要留住引用，否则被回收后点击没反应
 let legalDb = null;
 let userDb = null;
 const setup = { ready: false, phase: "启动中", progress: 0, error: "" };
@@ -249,7 +251,18 @@ app.whenReady().then(async () => {
       try {
         if (!Notification.isSupported()) return;
         const n = new Notification({ title: `${title}（中国法律检索）`, body });
-        n.on("click", () => { if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); win.webContents.executeJavaScript(`window.openAgentRun && window.openAgentRun(${JSON.stringify(runId)})`).catch(() => {}); } });
+        liveNotes.add(n);
+        n.on("close", () => liveNotes.delete(n));
+        n.on("click", async () => {
+          liveNotes.delete(n);
+          try {
+            if (!win && reopenWindow) await reopenWindow();
+            if (!win) return;
+            if (win.isMinimized()) win.restore();
+            win.show(); win.focus();
+            await win.webContents.executeJavaScript(`window.openAgentRun && window.openAgentRun(${JSON.stringify(runId)})`);
+          } catch (e) { console.error("notify click", e); }
+        });
         n.show();
       } catch (e) { console.error("notify", e); }
       try { win?.webContents.executeJavaScript("window.refreshAgentBadge && window.refreshAgentBadge()").catch(() => {}); } catch { /* 窗口已关 */ }
@@ -288,6 +301,7 @@ app.whenReady().then(async () => {
     },
   });
   const port = await server.listen();
+  reopenWindow = () => createWindow(port, server.token);
   // 开发模式下打印地址，便于在浏览器里调试界面
   if (!app.isPackaged) console.log(`[dev] http://127.0.0.1:${port}/#t=${server.token}`);
   prepareData();

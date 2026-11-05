@@ -25,6 +25,7 @@ const MIME = { ".html": "text/html; charset=utf-8", ".js": "application/javascri
 export const DEFAULT_SETTINGS = {
   base_url: DEFAULT_BASE_URL, api_key: "", model: "", depth: "medium", review_model: "auto", transcribe_model: DEFAULT_SPEECH_MODEL,
   auto_update: true, update_interval_days: 7,
+  watchers_off: false, watchers_disabled: {}, // 定时 Agent：全部关闭 / 单个关闭
 };
 
 /**
@@ -199,6 +200,7 @@ export function createServer(ctx) {
         }
       }
       if (p === "/api/bookmarks") return send(res, 200, ctx.userDb()?.prepare("SELECT * FROM bookmarks ORDER BY created DESC").all() || []);
+      if (/^\/api\/(agents|registers|profiles|runs)/.test(p) && !udb()) return send(res, 503, { error: "本机数据库还没准备好，请稍候再试" });
       if (p === "/api/agents") {
         const db = udb(), off = loadSettings().watchers_disabled || {};
         const ui = rosterForUi(db);
@@ -226,7 +228,7 @@ export function createServer(ctx) {
       if (p === "/api/matters") return send(res, 200, matters.listMatters(udb()));
       if (p.startsWith("/api/matters/")) {
         const m = matters.getMatter(udb(), p.split("/")[3]);
-        return m ? send(res, 200, { id: m.id, title: m.title, task: m.task, display: m.display, files: m.files, pending: !!m.state.pending, running: running.has(m.id) }) : send(res, 404, { error: "未找到" });
+        return m ? send(res, 200, { id: m.id, title: m.title, task: m.task, agent: m.state.agent || "", display: m.display, files: m.files, pending: !!m.state.pending, running: running.has(m.id) }) : send(res, 404, { error: "未找到" });
       }
       if (p.startsWith("/api/files/")) {
         const f = matters.filePath(udb(), dataDir, p.split("/").pop());
@@ -259,6 +261,7 @@ export function createServer(ctx) {
         return send(res, 200, { ok: true });
       }
       if (p === "/api/ask") return askHandler(req, res);
+      if (/^\/api\/(registers|profiles|watchers)\//.test(p) && !udb()) return send(res, 503, { error: "本机数据库还没准备好，请稍候再试" });
       if (p.startsWith("/api/registers/")) {
         const b = await readBody(req);
         return send(res, 200, reg.writeRegister(udb(), p.split("/")[3], b.data, { id: String(b.id || ""), source: "手动录入" }));
@@ -270,7 +273,7 @@ export function createServer(ctx) {
         return send(res, 200, { ok: true });
       }
       if (/^\/api\/watchers\/[^/]+\/toggle$/.test(p)) {
-        const id = decodeURIComponent(p.split("/")[3]);
+        let id; try { id = decodeURIComponent(p.split("/")[3]); } catch { return send(res, 400, { error: "参数错误" }); }
         const b = await readBody(req);
         const off = { ...(loadSettings().watchers_disabled || {}) };
         if (b.enabled) delete off[id]; else off[id] = true;
@@ -278,10 +281,10 @@ export function createServer(ctx) {
         return send(res, 200, { ok: true });
       }
       if (/^\/api\/watchers\/[^/]+\/run$/.test(p)) {
-        const id = decodeURIComponent(p.split("/")[3]);
+        let id; try { id = decodeURIComponent(p.split("/")[3]); } catch { return send(res, 400, { error: "参数错误" }); }
         const settings = loadSettings();
         if (!settings.api_key || !settings.model) return send(res, 400, { error: "还没有配置 API key 或模型" });
-        try { return send(res, 200, await runWatcher(settings, { udb: udb(), model: settings.model, id, force: true, notify: ctx.notify || (() => {}) })); }
+        try { return send(res, 200, await runWatcher(settings, { udb: udb(), model: settings.model, id, force: true })); }
         catch (e) { return send(res, 500, { error: friendlyError(e) }); }
       }
       if (p === "/api/matters") {
@@ -341,7 +344,7 @@ export function createServer(ctx) {
     if (req.method === "DELETE") {
       if (p.startsWith("/api/bookmarks/")) { ctx.userDb().prepare("DELETE FROM bookmarks WHERE id = ?").run(Number(p.split("/").pop())); return send(res, 200, { ok: true }); }
       if (p.startsWith("/api/matters/")) { matters.deleteMatter(udb(), dataDir, p.split("/")[3]); return send(res, 200, { ok: true }); }
-      if (p.startsWith("/api/registers/")) { const [, , , kind, id] = p.split("/"); return send(res, 200, reg.deleteRegister(udb(), kind, id)); }
+      if (p.startsWith("/api/registers/")) { if (!udb()) return send(res, 503, { error: "本机数据库还没准备好" }); const [, , , kind, id] = p.split("/"); return send(res, 200, reg.deleteRegister(udb(), kind, id)); }
     }
     return send(res, 404, { error: "未找到" });
   }
@@ -558,7 +561,7 @@ export function createServer(ctx) {
         const r = await ask(settings, {
           conv, question: qText, region, attachments, model, depth, db: search.getDb(), emit, signal: ctrl.signal,
           intakeAnswers, skipIntake, available: modelCache.models, scenario: typeof body.scenario === "string" ? body.scenario : "",
-          udb: udb(), matterId, agent: typeof body.agent === "string" ? body.agent : "",
+          udb: udb(), matterId, agent: typeof body.agent === "string" ? body.agent : "", clearAgent: body.clear_agent === true,
         });
         out.text = r.text || answer;
         if (!r.intake) {
@@ -605,7 +608,7 @@ export function createServer(ctx) {
   const runTick = async () => {
     if (ticking || !ctx.status().ready || !udb()) return;
     ticking = true;
-    try { const s = loadSettings(); await watcherTick(s, { udb: udb(), model: s.model, notify: ctx.notify || (() => {}) }); }
+    try { await watcherTick(loadSettings, { udb: udb(), notify: ctx.notify || (() => {}) }); }
     catch (e) { console.error("watchers", e); } finally { ticking = false; }
   };
   if (!process.env.CLS_NO_WATCHERS) { setTimeout(runTick, 90_000).unref?.(); setInterval(runTick, 30 * 60_000).unref?.(); }

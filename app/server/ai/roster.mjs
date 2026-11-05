@@ -38,7 +38,7 @@ export function skillText(key) {
     .map((x) => `\n\n### 附：${x.slice(s.length + 2)}\n${readFileSync(path.join(DIR, "skills", p, x), "utf-8")}`).join("");
   return readFileSync(f, "utf-8") + extras;
 }
-const watcherText = (id) => { const [p, a] = id.split(":"); const f = path.join(DIR, "watchers", p, a + ".md"); return existsSync(f) ? readFileSync(f, "utf-8") : ""; };
+const watcherText = (id) => { const [p, a] = id.replace(/^watch:/, "").split(":"); const f = path.join(DIR, "watchers", p, a + ".md"); return existsSync(f) ? readFileSync(f, "utf-8") : ""; };
 export const profileTemplate = (plugin) => { const f = path.join(DIR, "profiles", plugin + ".md"); return existsSync(f) ? readFileSync(f, "utf-8") : ""; };
 function referenceText(plugin, name) {
   const f = path.join(DIR, "references", plugin, path.basename(String(name)).replace(/\.md$/, "") + ".md");
@@ -50,11 +50,15 @@ const referenceList = (plugin) => { const d = path.join(DIR, "references", plugi
 const ADAPTER = `## 在本 app 里怎么执行技能（技能原文是为 Claude Code 插件写的，按下面的对应关系执行）
 - **实务画像**：技能里的 \`~/.claude/plugins/config/claude-for-legal-zh/<插件>/CLAUDE.md\`（或「实务画像」「practice profile」「合同手册」「审查指引」「playbook」）就是下面附的「实务画像」。需要写入或更新画像时调用 save_profile，写完整的画像全文。
 - **没有画像也要把活干完**：技能里「未配置实务画像就停下」「先运行 cold-start-interview 再继续」「不能给出绿色结论」一类的前置要求，在本 app 里**不适用**。照常完成全部步骤和交付物：团队立场用通用的稳健立场（对我方保护充分、行业常见）代替，写明「按通用立场」并标〔假设〕；需要按团队标准才能定的结论（例如能否不经律师直接签）给出按通用立场的结论，并说明配置画像后可能不同。回答末尾用一句话提示：在「Agent」页→「实务画像」做一次访谈，之后按你们的标准来。
+- **用户说了「不用再问 / 按现有信息直接出 / 用通用模板」**：技能里「没有先例或模板就不起草」「停下等用户明确回复某句话」之类的门槛视为用户已同意：用通用、规范的格式直接写出完整成品，开头一句说明用的是通用格式、哪些地方要按内部格式调整。用户没这么说时，按技能先问。
+- **法条、案例要自己去取**：用户只给了法规名称、条号、案例名称或案号（例如「指导案例 1 号」）时，先用 search_cases / read_case / find_law_by_title / read_articles 在资料库取原文，取不到再联网；不要说「你没有提供原文」。
+- **诊所、学习类技能**：法律援助与诊所技能的「教学模式」在没有配置画像时按「直接起草（draft）」处理，直接写出成稿，并附审查要点；法学学习类技能保留「先让学习者作答」的训练设计，但案例、法条原文要先替学习者取来。
 - **不要让用户输入斜杠命令**：本 app 没有 /命令。要用户做某件事时，说「在 Agent 页启动『某某』」或直接在这里继续。
 - **其他技能**：技能里说「运行 /插件:技能」「加载某技能」「交给某技能」时，调用 read_skill 读那个技能的全文再照做；也可以告诉用户在「Agent」页启动对应的 Agent。
 - **连接器**：本 app 没有 MCP 连接器（元典 yuandian、北大法宝、Ironclad、飞书、Slack、Jira、Linear、数据室、法院系统等都没有）。法条、司法解释、案例用 search_law / find_law_by_title / read_articles / search_cases / read_case；公开信息用 web_search；合同管理系统、数据室、案件系统、HR 系统里的数据，来自用户上传的文件和本 app 的台账（register_query）。技能说「如果没有连接器……」的，按那条路径走。
 - **登记册、日志、追踪表**（续约登记册、偏离日志 deviation-log、假期登记册、知识产权组合、案件日志、调查日志、差距追踪器、征求意见追踪等 .yaml / .md 文件）：一律用 register_query 读、register_write 写到对应台账。台账名称：${Object.entries(REGISTERS).map(([k, v]) => `${k}=${v.name}`).join("，")}。
 - **审完一份合同**（任何合同审查、分流、修订追踪），把合同的关键信息写进 contracts（合同台账）：对方、合同名称、类型、签署日、起止日、是否自动续期、取消通知天数、取消截止日、金额、我方负责人、状态；有偏离审查指引而接受的条款，同时写进 deviations。这样续约监控和签署复盘才有数据。
+- **运行日志不是台账**：Agent 说明里「记录本次运行」「写运行日志」的，就是这份报告本身，app 会自动保存；不要把运行记录写进任何台账。台账只写技能要求登记的业务记录（合同、偏离、期限、假期等），而且写进对应的那一个台账。
 - **事项工作区**（matter-workspace）就是当前事项：用户上传到这个事项的文件已经附在消息里。
 - **推送、发邮件、发飞书或 Slack**：本 app 不替用户发送任何消息。需要「推送」的内容写在回答里，app 会作为提醒显示；不要说已经发出。
 - **先访谈 / 先问**：技能要求先问清事实或先访谈的，照做：在回答里列出问题（一次最多 6 个，能给选项的给选项），等用户回答再继续；用户说「按现有信息先做」时，写明采用的假设。
@@ -82,7 +86,9 @@ ${tpl.slice(0, 30000)}`);
 export function agentSystem(db, agent, basePrompt) {
   const skills = agent.skills.map((k, i) => `## ${i === 0 ? "技能" : "配套技能"}：${k}\n${skillText(k)}`).join("\n\n");
   const refs = referenceList(agent.plugin);
-  const watch = agent.kind === "watch" ? `## Agent 说明：${agent.title}\n${watcherText(agent.id)}\n\n` : "";
+  const watch = agent.kind === "watch" ? `## Agent 说明：${agent.title}
+**本 app 会按「${agent.cadence === "daily" ? "每天" : "每周"}」自动运行你**（app 开着时；台账为空时跳过），报告存进「定时报告」并发系统通知。所以不要让用户设日历提醒、不要说「本 Agent 不会自行定时运行」；Agent 说明里关于运行频率、推送渠道、连接器的配置要求都不适用。
+${watcherText(agent.id)}\n\n` : "";
   return `${basePrompt}
 
 # 你现在是「${agent.title}」Agent（${agent.area}）

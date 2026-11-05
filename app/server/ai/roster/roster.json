@@ -153,7 +153,7 @@
    "description": "参考：SaaS订阅协议审查，重点关注订阅交易中最关键的条款——自动续约机制、 价格调整、数据可迁移性、运行时间SLA以及再处理者权利。当 /commercial-legal:review 检测到SaaS或订阅协议时加载。"
   },
   {
-   "id": "commercial-legal:deal-debrief",
+   "id": "watch:commercial-legal:deal-debrief",
    "kind": "watch",
    "plugin": "commercial-legal",
    "area": "商事合同",
@@ -171,7 +171,7 @@
    "description": "每周运行的代理：找出近期已签署、且与合同手册立场有偏离的协议， 趁律师还记得谈判经过，请其补记偏离原因。默认每周一上午运行，也可随时手动调用。 触发语：\"交易复盘\"\"记录偏离\"\"复盘上周签的合同\"\"这周签了哪些合同\"，或按计划运行。"
   },
   {
-   "id": "commercial-legal:playbook-monitor",
+   "id": "watch:commercial-legal:playbook-monitor",
    "kind": "watch",
    "plugin": "commercial-legal",
    "area": "商事合同",
@@ -191,7 +191,7 @@
    "description": "由数据触发的代理：盯着偏离日志，某一条款的立场被突破的次数多到说明合同手册已跟不上实际做法时， 提出具体的合同手册修订建议。默认阈值：滚动 12 个月内同一条款偏离 5 次 （可在 `~/.claude/plugins/config/claude-for-legal-zh/commercial-legal/CLAUDE.md` 中调整）。 触发语：\"检查合同手册\"\"合同手册要不要改\"\"合同手册监测\"，或每次 deal-debrief 运行后自动执行。"
   },
   {
-   "id": "commercial-legal:renewal-watcher",
+   "id": "watch:commercial-legal:renewal-watcher",
    "kind": "watch",
    "plugin": "commercial-legal",
    "area": "商事合同",
@@ -378,7 +378,7 @@
    "description": "以内部格式起草董事会或专门委员会的一致书面决议，从决议存储库中检索先例。 处理多决议决议、董事冲突标记、适用法律下的通知要求以及签署人追踪， 包含对重大单项行动的内置范围警示。当用户说\"书面决议\"\"一致决议\" \"董事会决议\"\"替代会议的决议\"\"书面审定\"或描述一项需要董事会批准但无需召开会议的行动时使用。"
   },
   {
-   "id": "corporate-legal:dataroom-watcher",
+   "id": "watch:corporate-legal:dataroom-watcher",
    "kind": "watch",
    "plugin": "corporate-legal",
    "area": "公司与并购",
@@ -620,7 +620,7 @@
    "description": "对拟议用工安排进行劳动关系认定——根据劳社部发〔2005〕12号三要素逐项分析， 区分劳动关系、劳务关系、承揽关系，并标识用工模式与事实之间的认定偏差。 仅适用于尚未开始的前瞻性分析。当用户提出\"我们想用一个人做承包商\"、 \"这是劳务关系还是劳动关系\"、\"如何认定这个人的用工关系\"或描述拟议用工安排时使用。"
   },
   {
-   "id": "employment-legal:leave-tracker",
+   "id": "watch:employment-legal:leave-tracker",
    "kind": "watch",
    "plugin": "employment-legal",
    "area": "劳动用工",
@@ -771,7 +771,7 @@
    "description": "审查营销文案中的宣传主张，识别哪些需要证实、改写或删除。 当用户说\"审查这份营销文案\"\"检查这些宣传\"\"我们能这么说吗\" \"这是夸大还是有问题\"或粘贴了营销内容（落地页、邮件、广告、标语）时使用。"
   },
   {
-   "id": "product-legal:launch-watcher",
+   "id": "watch:product-legal:launch-watcher",
    "kind": "watch",
    "plugin": "product-legal",
    "area": "产品与营销",
@@ -852,7 +852,7 @@
    "description": "检查法规动态源，报告自上次检查以来的新事项，按重要度阈值过滤。适用于用户说\"检查法规动态\"、\"有什么新规定\"、\"法规更新\"、从定时任务触发执行，或手动粘贴法规动态进行分类和差异分析时。"
   },
   {
-   "id": "regulatory-legal:reg-change-monitor",
+   "id": "watch:regulatory-legal:reg-change-monitor",
    "kind": "watch",
    "plugin": "regulatory-legal",
    "area": "监管合规",
@@ -1075,7 +1075,7 @@
    "description": "面向中国商标申请的全流程辅助技能：依据尼斯分类进行类别规划、对拟申请商标做可注册性初筛、准备申请材料（商品/服务清单、商标说明），并以结构化方式输出建议与风险分级。适用于商标咨询、类别规划、可注册性初筛、申请材料准备、商标注册等场景。不适用于替代正式法律意见、承诺注册成功率、处理复杂商标争议。（新商标的近似商标排除检索用 clearance。）"
   },
   {
-   "id": "ip-legal:ip-renewal-watcher",
+   "id": "watch:ip-legal:ip-renewal-watcher",
    "kind": "watch",
    "plugin": "ip-legal",
    "area": "知识产权",
@@ -1394,7 +1394,7 @@
    "description": "处理送达公司的法院调查令、行政机关协查通知或证人出庭通知—— 分类、分析范围/负担/保密、交叉检索案件组合， 生成异议框架、合规方案和期限日历。当用户说\"收到了调查令\"、 \"被送达协查通知\"或附上调查令/协查通知要求评估时使用。"
   },
   {
-   "id": "litigation-legal:docket-watcher",
+   "id": "watch:litigation-legal:docket-watcher",
    "kind": "watch",
    "plugin": "litigation-legal",
    "area": "诉讼仲裁",
@@ -1630,7 +1630,7 @@
    "description": "当用户需要判断项目适用政府采购法、招标投标法或其他采购制度，或要识别采购程序与审查职责时使用；已确定制度的单条合同修改不触发。"
   },
   {
-   "id": "procurement-legal:notice-watch",
+   "id": "watch:procurement-legal:notice-watch",
    "kind": "watch",
    "plugin": "procurement-legal",
    "area": "招投标与政府采购",
@@ -1695,7 +1695,7 @@
    "description": "当用户准备中国法律主题讲座、培训或公开分享，需建立来源包、案例清单和讲述提纲时使用；单个法条核对改用 authority-check。"
   },
   {
-   "id": "legal-research-cn:law-change-watch",
+   "id": "watch:legal-research-cn:law-change-watch",
    "kind": "watch",
    "plugin": "legal-research-cn",
    "area": "法律检索与研究",

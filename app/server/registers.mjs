@@ -33,19 +33,25 @@ export function ensureRegisterTables(db) {
     CREATE TABLE IF NOT EXISTS agent_runs(id TEXT PRIMARY KEY, agent TEXT, started REAL, finished REAL, status TEXT, summary TEXT, text TEXT, steps TEXT DEFAULT '[]', seen INT DEFAULT 0);
     CREATE INDEX IF NOT EXISTS idx_runs_agent ON agent_runs(agent, started);
   `);
+  // 第 17 版的定时 Agent id 没有 watch: 前缀（agent_runs 里只有定时 Agent 的运行记录）
+  db.prepare("UPDATE agent_runs SET agent = 'watch:' || agent WHERE agent NOT LIKE 'watch:%'").run();
+  // 上次退出或崩溃时还没跑完的，标成中断（不然界面一直显示「运行中」）
+  db.prepare("UPDATE agent_runs SET status = 'error', summary = '运行被中断（app 退出）', finished = started WHERE status = 'running'").run();
 }
 
 const row = (r) => ({ id: r.id, ...JSON.parse(r.data || "{}"), _source: r.source, _updated: r.updated });
 
+const isReg = (kind) => typeof kind === "string" && Object.hasOwn(REGISTERS, kind);
+
 export function queryRegister(db, kind, keyword = "") {
-  if (!REGISTERS[kind]) return { error: `没有这个台账：${kind}` };
+  if (!isReg(kind)) return { error: `没有这个台账：${kind}` };
   let rows = db.prepare("SELECT * FROM registers WHERE kind = ? ORDER BY updated DESC").all(kind).map(row);
   if (keyword) rows = rows.filter((r) => JSON.stringify(r).includes(keyword));
   return { register: REGISTERS[kind].name, count: rows.length, today: new Date().toISOString().slice(0, 10), rows: rows.slice(0, 300) };
 }
 
 export function writeRegister(db, kind, data, { id = "", source = "", matterId = "" } = {}) {
-  if (!REGISTERS[kind]) return { error: `没有这个台账：${kind}` };
+  if (!isReg(kind)) return { error: `没有这个台账：${kind}` };
   if (!data || typeof data !== "object" || Array.isArray(data)) return { error: "data 必须是对象" };
   const clean = Object.fromEntries(Object.entries(data).filter(([k]) => !k.startsWith("_") && k !== "id").map(([k, v]) => [k, typeof v === "object" ? JSON.stringify(v) : v]));
   let old = id ? db.prepare("SELECT * FROM registers WHERE id = ? AND kind = ?").get(id, kind) : null;
@@ -66,6 +72,7 @@ export function writeRegister(db, kind, data, { id = "", source = "", matterId =
 }
 
 export function deleteRegister(db, kind, id) {
+  if (!isReg(kind)) return { error: `没有这个台账：${kind}` };
   const r = db.prepare("DELETE FROM registers WHERE id = ? AND kind = ?").run(id, kind);
   return { ok: r.changes > 0 };
 }
@@ -78,6 +85,10 @@ export function saveProfile(db, plugin, text) {
 }
 export const deleteProfile = (db, plugin) => db.prepare("DELETE FROM profiles WHERE plugin = ?").run(plugin);
 
+/** 最近一次成功的运行（排期和「自上次以来」都以它为准）。 */
+export function lastDone(db, agent) {
+  return db.prepare("SELECT id, agent, started, finished, status, summary FROM agent_runs WHERE agent = ? AND status = 'done' ORDER BY started DESC LIMIT 1").get(agent) || null;
+}
 export function lastRun(db, agent) {
   return db.prepare("SELECT id, agent, started, finished, status, summary, seen FROM agent_runs WHERE agent = ? ORDER BY started DESC LIMIT 1").get(agent) || null;
 }

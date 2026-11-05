@@ -203,7 +203,8 @@ for (const p of plugins) {
     const { meta, body } = frontmatter(readFileSync(path.join(adir, a), "utf-8"));
     mkdirSync(path.join(OUT, "watchers", p), { recursive: true });
     writeFileSync(path.join(OUT, "watchers", p, a), tidy(body));
-    agents.push({ id: key, kind: "watch", plugin: p, area: AREAS[p], title: w.title, blurb: w.blurb,
+    // 定时 Agent 的 id 加 watch: 前缀：有的和同名技能重名（employment-legal:leave-tracker）
+    agents.push({ id: "watch:" + key, kind: "watch", plugin: p, area: AREAS[p], title: w.title, blurb: w.blurb,
       skills: w.skills, cadence: w.cadence, registers: w.registers, files: !!w.files, lawUpdates: !!w.lawUpdates, web: !!w.web, description: meta.description || "" });
   }
 }

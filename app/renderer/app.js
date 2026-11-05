@@ -547,10 +547,10 @@ $("#new-matter").addEventListener("click", () => {
 async function ensureMatter() {
   if (state.matter) return state.matter.id;
   const { id } = await api("/api/matters", { method: "POST", body: "{}" });
-  const keep = state.scenario, keepAgent = state.agent; // 先选了场景或 Agent、第一次上传或发送时才建事项：保留
+  const keep = state.scenario, keepAgent = state.agent, keepInfo = state.agentInfo; // 先选了场景或 Agent、第一次上传或发送时才建事项：保留
   await openMatter(id);
   if (keep) setScenario(keep);
-  if (keepAgent) setAgent(keepAgent);
+  if (keepAgent) setAgent(keepAgent, keepInfo);
   return id;
 }
 
@@ -559,6 +559,9 @@ async function openMatter(id) {
   state.matter = m;
   state.pendingFiles = [];
   setScenario("");
+  state.clearAgent = false;
+  // 这个事项已交给某个 Agent：显示出来（点 × 可以取消）
+  if (m.agent) { if (!state.ag) await loadAgents().catch(() => {}); setAgent(m.agent); }
   renderChips();
   renderMatter(m);
   loadMatters();
@@ -1189,8 +1192,9 @@ async function send({ intake_answers, skip_intake, retry_question }) {
   let text = "";
   try {
     const res = await fetch("/api/ask", { method: "POST", headers: HEADERS, body: JSON.stringify({
-      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake, scenario: state.scenario, agent: state.agent,
+      matter_id: matterId, question, file_ids: fileIds, intake_answers, skip_intake, scenario: state.scenario, agent: state.agent, clear_agent: !!state.clearAgent,
       region: $("#ask-region").value, model: $("#ask-model").value, depth: $("#ask-depth").value }) });
+    state.clearAgent = false;
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
@@ -1947,16 +1951,26 @@ const CADENCE = { daily: "每天", weekly: "每周" };
 const fmtTime = (t) => (t ? new Date(t * 1000).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "");
 const agById = (id) => state.ag?.agents.find((a) => a.id === id);
 
+// 事项名称旁的标识：这个事项交给了哪个 Agent（info 用于不在列表里的，例如实务画像访谈）
+function agentInfo(id) {
+  const a = agById(id);
+  if (a) return a;
+  const area = state.ag?.areas.find((x) => id.startsWith(x.plugin + ":"));
+  if (area && /:(cold-start-interview|customize)$/.test(id)) return { id, title: id.endsWith(":customize") ? `修改${area.area}实务画像` : `${area.area}实务画像访谈`, area: "实务画像", blurb: "回答几个问题，生成你们团队的实务画像" };
+  return null;
+}
 function setAgent(id, info) {
-  const a = info || agById(id);
+  const a = info || (id ? agentInfo(id) : null);
   state.agent = a ? id : "";
+  state.agentInfo = a || null;
   state.scenario = "";
   const pill = $("#scenario-pill"), q = $("#question");
   if (q.dataset.defaultPh == null) q.dataset.defaultPh = q.placeholder;
   pill.hidden = !a;
   if (!a) { q.placeholder = q.dataset.defaultPh; return; }
   pill.innerHTML = `Agent：<b>${esc(a.title)}</b> · ${esc(a.area)}<button type="button" title="取消，让助理自己判断">${ic("x")}</button>`;
-  pill.querySelector("button").onclick = () => setScenario("");
+  // 取消：之后这个事项不再交给这个 Agent，让助理自己判断
+  pill.querySelector("button").onclick = () => { setScenario(""); if (state.matter) state.clearAgent = true; };
   q.placeholder = `${a.blurb}。把材料拖进来，或者说说情况`;
 }
 
@@ -2004,7 +2018,7 @@ function agentCard(a) {
       <div class="ag-actions">
         <label class="check"><input type="checkbox" data-act="toggle" ${w?.enabled ? "checked" : ""}> 自动运行</label>
         <button type="button" class="ghost" data-act="run" ${w?.running ? "disabled" : ""}>${ic("play")}立即运行</button>
-        ${last ? `<button type="button" class="ghost" data-act="last" data-run="${esc(last.id)}">看报告</button>` : ""}
+        ${last?.status === "done" ? `<button type="button" class="ghost" data-act="last" data-run="${esc(last.id)}">看报告</button>` : ""}
         <button type="button" class="ghost" data-act="skill">说明</button>
       </div></div>`;
   }
@@ -2086,8 +2100,7 @@ $("#ag-main").addEventListener("click", async (e) => {
 function startAgent(id, autoText = "") {
   showView("ask");
   $("#new-matter").click();
-  const a = agById(id) || (id.endsWith(":cold-start-interview") ? { id, title: `${state.ag.areas.find((x) => id.startsWith(x.plugin + ":"))?.area || ""}实务画像访谈`, area: "实务画像", blurb: "回答几个问题，生成你们团队的实务画像" } : null);
-  setAgent(id, a);
+  setAgent(id);
   if (autoText) { $("#question").value = autoText; composerChanged(); send({}); }
 }
 

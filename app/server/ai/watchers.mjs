@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { loadRoster, getAgent, agentSystem, AGENT_TOOLS, AGENT_STEP_LABEL, runAgentTool } from "./roster.mjs";
 import { runAgent, SYSTEM_PROMPT } from "./agent.mjs";
-import { queryRegister, lastRun, REGISTERS } from "../registers.mjs";
+import { queryRegister, lastRun, lastDone, REGISTERS } from "../registers.mjs";
 
 const PERIOD = { daily: 86400, weekly: 7 * 86400 };
 const running = new Set();
@@ -35,7 +35,7 @@ export async function runWatcher(settings, { udb, model, id, force = false, emit
   const agent = getAgent(id);
   if (!agent || agent.kind !== "watch") throw new Error("没有这个定时 Agent");
   if (running.has(id)) throw new Error("这个 Agent 正在运行");
-  const prev = lastRun(udb, id);
+  const prev = lastDone(udb, id);
   const { parts, empty } = inputs(udb, agent, prev?.started || 0);
   if (!parts.length && !force) return { skipped: `台账为空（${empty.join("、")}）` };
   running.add(id);
@@ -70,13 +70,18 @@ export async function runWatcher(settings, { udb, model, id, force = false, emit
 }
 
 /** 到期的定时 Agent 依次跑一遍（app 启动后和每 30 分钟检查一次）。 */
-export async function tick(settings, { udb, model, notify }) {
-  if (!settings.api_key || !model || settings.watchers_off) return;
-  const off = settings.watchers_disabled || {};
+export async function tick(getSettings, { udb, notify }) {
   for (const a of watcherList()) {
-    if (off[a.id]) continue;
-    const prev = lastRun(udb, a.id);
-    if (prev && Date.now() / 1000 - prev.started < (PERIOD[a.cadence] || PERIOD.weekly) - 600) continue;
+    // 每个 Agent 跑之前重新读设置：用户中途关掉的，不再跑
+    const settings = getSettings();
+    if (!settings.api_key || !settings.model || settings.watchers_off) return;
+    if ((settings.watchers_disabled || {})[a.id]) continue;
+    const model = settings.model;
+    const done = lastDone(udb, a.id), last = lastRun(udb, a.id);
+    const now = Date.now() / 1000;
+    if (done && now - done.started < (PERIOD[a.cadence] || PERIOD.weekly) - 600) continue;
+    // 上次出错的，至少隔 2 小时再试
+    if (last && last.status === "error" && now - last.started < 7200) continue;
     try { await runWatcher(settings, { udb, model, id: a.id, notify }); } catch (e) { console.error("watcher", a.id, e.message); }
   }
 }

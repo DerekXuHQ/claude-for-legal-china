@@ -37,7 +37,7 @@ ${rosterForRouting()}
 判断要点：看用户是哪一方、处在哪个阶段（事前想做 / 已被对方主张 / 要去追讨 / 已有判决要执行）、手里有没有底稿。上传了合同并要求审查的，选对应合同类型的审查场景；拿对方模板或旧合同改的，选改写场景；收到起诉状、仲裁申请、律师函、处罚告知的，选应对场景。
 场景和 Agent 怎么选：用户要的正是某个 Agent 的特定成品（例如保密协议三色分流、合同修订历史、尽调表格、起诉状、答辩状、辩护词、量刑测算、经济补偿测算、商标申请、隐私政策、董事会决议、期限台账、个人信息权利请求答复……），或者点名要做这件事，选那个 Agent（task 写 agent: 开头的完整 id）；想弄清情况、判断怎么办、要综合方案的，选场景。`;
   const r = await completeJSON(settings, { model, system, user: contextBlock(ctx), effort: "low", signal });
-  const known = (id) => cat.byId.has(id) || (String(id).startsWith("agent:") && !!getAgent(String(id).slice(6)));
+  const known = (id) => cat.byId.has(id) || (String(id).startsWith("agent:") && getAgent(String(id).slice(6))?.kind === "task");
   const task = known(r.task) ? r.task : "general";
   return { task, name: task.startsWith("agent:") ? getAgent(task.slice(6)).title : getTask(task).name, also: (Array.isArray(r.also) ? r.also : []).filter((x) => known(x) && x !== task && !String(x).startsWith("agent:")).slice(0, 2), region: r.region || ctx.region || "", summary: r.summary || "", urgent: !!r.urgent };
 }
