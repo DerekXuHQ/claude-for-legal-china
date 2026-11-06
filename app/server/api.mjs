@@ -596,13 +596,13 @@ export function createServer(ctx) {
     res.end();
   }
 
-  const server = http.createServer((req, res) => {
-    handle(req, res).catch((err) => {
-      console.error(err);
-      if (!res.headersSent) send(res, 500, { error: String(err?.message || err) });
-      else res.end();
-    });
+  // 一次请求的完整处理。桌面版挂在本机 HTTP 服务上；iOS 版没有 HTTP 服务，页面里直接调用它（见 ios/web/boot.mjs）
+  const dispatch = (req, res) => handle(req, res).catch((err) => {
+    console.error(err);
+    if (!res.headersSent) send(res, 500, { error: String(err?.message || err) });
+    else res.end();
   });
+  let server = null;
   // 定时 Agent：启动 90 秒后检查一次，之后每 30 分钟检查一次
   let ticking = false;
   const runTick = async () => {
@@ -615,7 +615,8 @@ export function createServer(ctx) {
 
   return {
     token,
-    listen: () => new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server.address().port))),
-    close: () => server.close(),
+    handle: dispatch,
+    listen: () => new Promise((resolve) => { server = http.createServer(dispatch); server.listen(0, "127.0.0.1", () => resolve(server.address().port)); }),
+    close: () => server?.close(),
   };
 }

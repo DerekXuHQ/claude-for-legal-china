@@ -12,6 +12,7 @@ on:
       - "!app/docs/**"
       - "!app/eval/**"
       - "!app/**/*.md"
+      - "!app/ios/**"
   workflow_dispatch:
 
 permissions:

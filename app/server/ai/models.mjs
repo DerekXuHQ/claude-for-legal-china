@@ -4,7 +4,7 @@ import OpenAI from "openai";
 export const DEFAULT_BASE_URL = "https://api.portkey.bond/v1";
 
 export function client(settings) {
-  return new OpenAI({ apiKey: settings.api_key || "none", baseURL: settings.base_url || DEFAULT_BASE_URL, maxRetries: 2, timeout: 600000 });
+  return new OpenAI({ apiKey: settings.api_key || "none", baseURL: settings.base_url || DEFAULT_BASE_URL, maxRetries: 2, timeout: 600000, dangerouslyAllowBrowser: true }); // iOS 版在 App 内的网页视图里运行；密钥只在本机
 }
 
 export async function listModels(settings, signal) {

@@ -20,7 +20,10 @@ function localScript(name) { // 脚本在 app.asar 里，系统工具读不到�
   return dst;
 }
 const run = (cmd, args, timeout) => new Promise((ok) => execFile(cmd, args, { timeout, maxBuffer: 20e6, windowsHide: true, encoding: "utf8" }, (err, out) => ok(err ? "" : String(out || ""))));
+// iOS 版：本机文字识别、HEIC、录音转换由原生层提供（ios/web-src/boot 里注册 globalThis.__iosNative）
+const IOS = () => globalThis.__iosNative;
 export async function localOcr(img) {
+  if (IOS()) return IOS().ocr(img).catch(() => "");
   if (process.platform !== "darwin" && process.platform !== "win32") return "";
   const ext = /png/.test(img.mime) ? "png" : /bmp/.test(img.mime) ? "bmp" : /gif/.test(img.mime) ? "gif" : "jpg";
   const tmp = path.join(os.tmpdir(), `cls-ocr-${process.pid}-${Math.random().toString(36).slice(2)}.${ext}`);
@@ -179,6 +182,7 @@ export async function tiffToPngs(buffer) {
 
 /** HEIC（苹果手机照片）：Mac 上用系统自带的 sips 转成 JPEG；其他系统提示转换 */
 export async function heicToJpeg(buffer) {
+  if (IOS()) return IOS().heicToJpeg(buffer);
   if (process.platform !== "darwin") throw new Error("这台电脑不能直接读取 HEIC 照片，请在手机或相册里导出为 JPG 后再上传");
   const { mkdtempSync, writeFileSync, readFileSync, rmSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
@@ -194,6 +198,7 @@ export async function heicToJpeg(buffer) {
 
 /** 前端解不了的录音格式（如手机通话录音常见的 AMR）：Mac 上用系统自带的 afconvert 转成 24kHz 单声道 WAV */
 export async function audioToWav16k(buffer, ext) {
+  if (IOS()) return IOS().audioToWav(buffer, ext);
   if (process.platform !== "darwin") throw new Error("读不出这个录音的格式，请先导出成 m4a、mp3 或 wav 再上传");
   const { mkdtempSync, writeFileSync, readFileSync, rmSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");

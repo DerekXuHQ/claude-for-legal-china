@@ -16,7 +16,9 @@
     "dist:mac:intel": "MAC_ARCH=x64 scripts/build-mac.sh",
     "dist:win": "scripts/build-win.sh",
     "upload-build-inputs": "gh release upload build-inputs --repo DerekXuHQ/claude-for-legal-china resources/base.db.gz resources/data-version.json --clobber",
-    "agents": "node scripts/build-agents.mjs"
+    "agents": "node scripts/build-agents.mjs",
+    "ios:web": "node ios/build-web.mjs",
+    "ios:project": "node ios/build-web.mjs && cd ios && xcodegen generate"
   },
   "dependencies": {
     "docx": "^9.15.2",
@@ -28,8 +30,15 @@
     "word-extractor": "^1.0.4"
   },
   "devDependencies": {
+    "buffer": "^6.0.3",
     "electron": "44.7.0",
-    "electron-builder": "26.15.3"
+    "electron-builder": "26.15.3",
+    "esbuild": "^0.25.10",
+    "events": "^3.3.0",
+    "fflate": "^0.8.2",
+    "path-browserify": "^1.0.1",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5"
   },
   "build": {
     "appId": "com.derekxuhq.chinalawsearch",

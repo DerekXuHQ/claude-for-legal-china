@@ -1,0 +1,103 @@
+# iOS App：每次改动后在 GitHub 的 Mac 上编译，装进 iPhone 模拟器跑一遍自检（首次下载法规库、建索引、
+# 检索、Agent、台账、上传读取、Word 导出、文字识别、联网），并给主要页面截图。
+# 结果在这次运行的 Artifacts 里：autotest.json 和 screenshots/。
+name: iOS app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/ios/**"
+      - "app/renderer/**"
+      - "app/server/**"
+      - "app/package.json"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ios
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: app
+    env:
+      BUNDLE: com.derekxuhq.chinalawsearch
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Build web part
+        run: npm run ios:web
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          cd ios && xcodegen generate
+      - name: Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          LATEST=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+          xcrun simctl list runtimes
+      - name: Build for simulator
+        run: |
+          set -o pipefail
+          cd ios
+          xcodebuild -project ChinaLawSearch.xcodeproj -scheme ChinaLawSearch -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee build.log | grep -E "error:|warning: .*Sources|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build.log
+      - name: Run in simulator
+        run: |
+          set -x
+          UDID=$(xcrun simctl list devices available -j | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const d=JSON.parse(s).devices;const all=Object.entries(d).filter(([k])=>/iOS/.test(k)).sort().reverse().flatMap(([,v])=>v);const p=all.find(x=>/^iPhone 1[5-9]( Pro)?$/.test(x.name))||all.find(x=>/^iPhone/.test(x.name));console.log(p.udid)})')
+          echo "UDID=$UDID" >> $GITHUB_ENV
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          APP=ios/build/Build/Products/Debug-iphonesimulator/ChinaLawSearch.app
+          xcrun simctl install "$UDID" "$APP"
+          mkdir -p shots
+          xcrun simctl launch "$UDID" "$BUNDLE" -autotest YES
+          sleep 20; xcrun simctl io "$UDID" screenshot shots/0-first-launch.png
+          C=$(xcrun simctl get_app_container "$UDID" "$BUNDLE" data)
+          F="$C/Documents/data/autotest.json"
+          for i in $(seq 1 180); do
+            if [ -f "$F" ] && grep -q '"done": true' "$F"; then break; fi
+            if [ $((i % 6)) -eq 0 ]; then xcrun simctl io "$UDID" screenshot "shots/0-setup-$i.png"; fi
+            sleep 10
+          done
+          cp "$F" autotest.json || echo '{"done":false,"results":[]}' > autotest.json
+          cat autotest.json
+          for v in ask agents browse search settings; do
+            xcrun simctl terminate "$UDID" "$BUNDLE" || true
+            xcrun simctl launch "$UDID" "$BUNDLE" -view "$v"
+            sleep 8
+            xcrun simctl io "$UDID" screenshot "shots/view-$v.png"
+          done
+          xcrun simctl spawn "$UDID" log show --last 15m --predicate 'process == "ChinaLawSearch"' --style compact > shots/app.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-simulator
+          path: |
+            app/autotest.json
+            app/shots/
+            app/ios/build.log
+          retention-days: 7
+      - name: Check results
+        run: |
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync("autotest.json", "utf8"));
+            for (const x of r.results) console.log(x.ok ? "PASS" : "FAIL", x.name, "|", x.detail.slice(0, 200));
+            if (!r.done) { console.log("自检没有跑完"); process.exit(1); }
+            if (r.results.some((x) => !x.ok)) process.exit(1);
+          '

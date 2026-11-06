@@ -1,0 +1,64 @@
+# iOS 工程定义（XcodeGen）。生成 Xcode 工程：cd app && npm run ios:project
+# 网页部分（App/Web）由 npm run ios:web 生成，Xcode 每次构建前也会自动重新生成。
+name: ChinaLawSearch
+options:
+  bundleIdPrefix: com.derekxuhq
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  developmentLanguage: zh-Hans
+settings:
+  base:
+    MARKETING_VERSION: "1.0.76"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+targets:
+  ChinaLawSearch:
+    type: application
+    platform: iOS
+    scheme: {}
+    sources:
+      - path: App/Sources
+      - path: App/Vendor/sqlite/sqlite3.c
+        compilerFlags: "-DSQLITE_ENABLE_FTS5 -DSQLITE_THREADSAFE=2 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DQS=0 -DSQLITE_DEFAULT_WAL_SYNCHRONOUS=1 -w"
+      - path: App/Assets.xcassets
+      - path: App/Web
+        type: folder
+        buildPhase: resources
+    preBuildScripts:
+      - name: 生成网页部分
+        basedOnDependencyAnalysis: false
+        script: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.nvm/current/bin:$PATH"
+          if [ -n "$CI" ] && [ -f "$SRCROOT/App/Web/boot.js" ]; then exit 0; fi
+          cd "$SRCROOT/.." && npm run ios:web
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 中国法律检索
+        CFBundleDevelopmentRegion: zh-Hans
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: ""
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        NSMicrophoneUsageDescription: 语音输入问题、录音转文字时需要使用麦克风。
+        NSCameraUsageDescription: 拍摄合同、通知书等文件，识别其中的文字。
+        NSPhotoLibraryUsageDescription: 从相册选择截图或照片，识别其中的文字。
+        UIFileSharingEnabled: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.derekxuhq.chinalawsearch
+        PRODUCT_NAME: ChinaLawSearch
+        SWIFT_OBJC_BRIDGING_HEADER: App/Sources/Bridging-Header.h
+        HEADER_SEARCH_PATHS: $(SRCROOT)/App/Vendor/sqlite
+        OTHER_LDFLAGS: -lz
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: ""
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES

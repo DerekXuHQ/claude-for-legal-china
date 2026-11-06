@@ -242,7 +242,9 @@ export async function extractDoc(name, buffer) {
     return { pages, ocrPages, text: pages.join("\n\n") };
   }
   if (ext === "docx") {
-    const text = (await mammoth.extractRawText({ buffer })).value;
+    // Node 版 mammoth 收 buffer，浏览器版（iOS App 里）收 arrayBuffer；两个都给
+    const ab = buffer.buffer ? buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) : buffer;
+    const text = (await mammoth.extractRawText({ buffer, arrayBuffer: ab })).value;
     const zip = await zipOf(buffer);
     const media = Object.keys(zip.files).filter((f) => /^word\/media\//.test(f)).sort((a, b) => numOf(a) - numOf(b));
     const len = text.replace(/\s/g, "").length;

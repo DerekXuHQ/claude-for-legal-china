@@ -1,0 +1,142 @@
+// iOS 版入口：在 App 的网页视图里运行桌面版的服务端代码（检索、问答、Agent、台账……），
+// 界面（renderer/app.js）照常用 fetch("/api/...") 调它，只是不经过 HTTP，直接调用请求处理函数。
+import { setLocalApi } from "./globals.mjs"; // 必须第一个：补全局对象、接管网络
+import { Buffer } from "buffer";
+import { callSync, call, on, isNative } from "./native.mjs";
+import { DatabaseSync } from "node:sqlite";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import { createServer } from "../../server/api.mjs";
+import * as search from "../../server/search.mjs";
+import { ensureUserTables } from "../../server/official/sync.mjs";
+import { ensureOfficialColumns, promotePending } from "../../server/official/apply.mjs";
+import DATA_VERSION from "../../resources/data-version.json";
+
+pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/build/pdf.worker.min.mjs";
+
+// 原生能力：Vision 文字识别（中文，含繁体）、HEIC 转 JPG、录音转 WAV（服务端 ocr.mjs 会调用）
+globalThis.__iosNative = {
+  ocr: (img) => call("ocr.image", { data: img.data, mime: img.mime }),
+  heicToJpeg: async (buffer) => ({ data: await call("image.toJpeg", { data: Buffer.from(buffer).toString("base64") }), mime: "image/jpeg" }),
+  audioToWav: async (buffer, ext) => Buffer.from(await call("audio.toWav", { data: Buffer.from(buffer).toString("base64"), ext, rate: 24000 }), "base64"),
+};
+
+const DATA = "/data";
+const LEGAL_DB = DATA + "/legal.db";
+const USER_DB = DATA + "/user.db";
+// 法规数据包：和桌面版同一个（GitHub 上的 build-inputs 预发布），首次打开时下载并在本机建索引
+const DB_URL = "https://github.com/DerekXuHQ/claude-for-legal-china/releases/download/build-inputs/base.db.gz";
+
+const setup = { phase: "准备中", progress: 0, ready: false, error: "" };
+let userDb = null;
+
+function openUserDb() {
+  userDb = new DatabaseSync(USER_DB);
+  userDb.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=10000;
+    CREATE TABLE IF NOT EXISTS bookmarks(id INTEGER PRIMARY KEY, kind TEXT, ref_id TEXT, title TEXT,
+      subtitle TEXT, snippet TEXT, note TEXT, created REAL, UNIQUE(kind, ref_id));
+    CREATE TABLE IF NOT EXISTS answers(id TEXT PRIMARY KEY, question TEXT, region TEXT, answer TEXT,
+      steps TEXT, model TEXT, created REAL);`);
+  ensureUserTables(userDb);
+}
+
+function openLegalDb() {
+  const db = new DatabaseSync(LEGAL_DB);
+  db.exec("PRAGMA busy_timeout=10000;");
+  ensureOfficialColumns(db);
+  promotePending(db);
+  search.setDb(db);
+}
+
+async function prepareData() {
+  try {
+    const st = callSync("setup.status", { version: DATA_VERSION.version });
+    if (!st.ready) {
+      // 原生层在后台线程下载、解压、建全文索引，进度通过事件推回来
+      const off = on("setup", (ev) => { setup.phase = ev.phase || setup.phase; setup.progress = ev.progress ?? setup.progress; });
+      await call("setup.prepare", { url: DB_URL, sha256: DATA_VERSION.sha256, version: DATA_VERSION.version });
+      off();
+    }
+    setup.phase = "打开资料库"; setup.progress = 0.99;
+    openLegalDb();
+    setup.ready = true; setup.phase = "完成"; setup.progress = 1;
+  } catch (e) {
+    setup.error = `资料库准备失败：${e.message}。请检查网络后重新打开 App。`;
+  }
+}
+
+function appInfo() {
+  const info = isNative ? callSync("app.info") : {};
+  return { version: info.version || "dev", sequence: 0, data: DATA_VERSION.version, data_dir: "App 内", platform: "ios", arch: "arm64", build: info.build || "" };
+}
+
+// 把 fetch 的 Request 变成服务端代码要的 req / res，响应写进一个流式 Response（问答的 SSE 照常逐字显示）
+function makeLocalApi(handle) {
+  const counts = new Map();
+  return async (u, request) => {
+    if (/[?&]debug\b/.test(location.search)) { // 调试：同一接口 3 秒内被调用上百次时报出来
+      const k = u.pathname; const c = (counts.get(k) || 0) + 1; counts.set(k, c);
+      if (c === 1) setTimeout(() => counts.delete(k), 3000);
+      if (c > 200) { window.__loop = k; throw new Error("循环调用：" + k); }
+    }
+    const body = ["GET", "HEAD"].includes(request.method) ? null : Buffer.from(await request.arrayBuffer());
+    const handlers = {};
+    const req = {
+      url: u.pathname + u.search, method: request.method,
+      headers: Object.fromEntries([...request.headers].map(([k, v]) => [k.toLowerCase(), v])),
+      on(ev, fn) { handlers[ev] = fn; return req; }, destroy() {},
+    };
+    let ctrl, resolveHead;
+    const head = new Promise((r) => { resolveHead = r; });
+    const stream = new ReadableStream({ start(c) { ctrl = c; } });
+    const res = {
+      headersSent: false, writableEnded: false, statusCode: 200, _headers: {},
+      setHeader(k, v) { this._headers[k] = v; },
+      writeHead(status, headers = {}) { this.statusCode = status; Object.assign(this._headers, headers); this.headersSent = true; resolveHead(); return this; },
+      write(chunk) { if (!this.headersSent) this.writeHead(200); if (chunk != null) ctrl.enqueue(typeof chunk === "string" ? new TextEncoder().encode(chunk) : new Uint8Array(chunk)); return true; },
+      end(chunk) { if (this.writableEnded) return; if (chunk != null) this.write(chunk); else if (!this.headersSent) this.writeHead(this.statusCode); this.writableEnded = true; try { ctrl.close(); } catch { /* 已关闭 */ } },
+    };
+    handle(req, res);
+    // 请求体：服务端代码按 Node 的事件方式读
+    queueMicrotask(() => { if (body?.length) handlers.data?.(body); handlers.end?.(); });
+    await head;
+    const h = { ...res._headers };
+    delete h["Content-Length"]; delete h["content-length"];
+    return new Response(stream, { status: res.statusCode, headers: h });
+  };
+}
+
+async function main() {
+  try { callSync("fs.mkdir", { path: DATA }); callSync("fs.mkdir", { path: DATA + "/tmp" }); } catch { /* 原生层会建好 */ }
+  openUserDb();
+  const server = createServer({
+    staticDir: "/web",
+    settingsPath: DATA + "/settings.json",
+    userDb: () => userDb,
+    status: () => ({ ...setup }),
+    updateStatus: () => ({ running: false, phase: "", progress: 0 }),
+    startUpdate: () => ({ ok: false, error: "iOS 版的法规更新随 App 更新发布" }),
+    stopUpdate: () => {},
+    appInfo,
+    notify: ({ title, body, runId }) => call("notify", { title: `${title}`, body, runId }).catch(() => {}),
+  });
+  setLocalApi(makeLocalApi(server.handle));
+  location.hash = "t=" + server.token;
+  prepareData();
+  // 服务端准备好之后再加载界面脚本（界面一启动就会调 /api/status）
+  const launch = window.__launch || {};
+  if (launch.autotest || /[?&]autotest\b/.test(location.search)) import("./autotest.mjs").then((m) => m.autotest()).then((r) => { window.__autotestDone = r; });
+  if (/[?&]noui\b/.test(location.search)) { window.__bootDone = true; return; } // 调试：只启动服务端
+  for (const src of ["shortcuts.js", "app.js"]) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src; s.onload = resolve; s.onerror = () => reject(new Error("加载失败：" + src));
+      document.body.appendChild(s);
+    });
+  }
+  // 启动参数 -view agents 等：直接打开某个页面（截图测试用）
+  if (launch.view && typeof window.showView === "function") setTimeout(() => window.showView(launch.view), 300);
+}
+
+main().catch((e) => {
+  document.body.insertAdjacentHTML("afterbegin", `<pre style="padding:16px;color:#a00;white-space:pre-wrap">启动失败：${String(e?.stack || e)}</pre>`);
+});
