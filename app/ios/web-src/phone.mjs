@@ -129,3 +129,20 @@ export function setupIosAttach() {
   const note = document.querySelector("#attach-pop .attach-note");
   if (note) note.textContent = "也可以粘贴截图、文字或网页链接";
 }
+
+// 手机内存有限：文件内容要在页面里以文本形式传几次，太大的文件可能让 App 被系统关掉。超过上限的先提示，不读入。
+export function setupIosUploadLimits() {
+  if (typeof window.addFiles !== "function") return;
+  const orig = window.addFiles;
+  const MB = 1e6;
+  window.addFiles = (files) => {
+    const ok = [], skipped = [];
+    for (const f of files || []) {
+      const audio = /^audio\//.test(f.type) || /\.(m4a|mp3|wav|aac|amr|caf|ogg|flac)$/i.test(f.name);
+      const limit = audio ? 50 * MB : 200 * MB;
+      if (f.size > limit) skipped.push(`${f.name}（${Math.round(f.size / MB)} MB）`); else ok.push(f);
+    }
+    if (skipped.length) window.toast?.(`手机上单个文件最大 200 MB、录音最大 50 MB（约 1 小时），这些没有读入：${skipped.join("、")}。可以分段后再上传，或在电脑版里处理。`, 8000);
+    return ok.length ? orig(ok) : undefined;
+  };
+}
