@@ -103,3 +103,60 @@ jobs:
             if (!r.done) { console.log("自检没有跑完"); process.exit(1); }
             if (r.results.some((x) => !x.ok)) process.exit(1);
           '
+
+  # TestFlight：配好下面四个 GitHub Secrets 后自动签名、打包并上传（没配就跳过）
+  #   APPLE_TEAM_ID        开发者账号的 Team ID（developer.apple.com → Membership）
+  #   ASC_KEY_ID           App Store Connect API 密钥的 Key ID
+  #   ASC_ISSUER_ID        App Store Connect API 密钥的 Issuer ID
+  #   ASC_KEY_P8           下载的 .p8 文件全文
+  testflight:
+    needs: simulator
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: app
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+    steps:
+      - name: Check secrets
+        id: check
+        run: |
+          if [ -n "$APPLE_TEAM_ID" ] && [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ]; then echo "ok=1" >> $GITHUB_OUTPUT; else echo "还没有配置 TestFlight 所需的 Secrets，跳过"; fi
+        working-directory: .
+      - uses: actions/checkout@v5
+        if: steps.check.outputs.ok == '1'
+      - uses: actions/setup-node@v5
+        if: steps.check.outputs.ok == '1'
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Archive and upload
+        if: steps.check.outputs.ok == '1'
+        run: |
+          set -eo pipefail
+          npm ci --no-audit --no-fund
+          npm run ios:web
+          brew install xcodegen
+          LATEST=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1); sudo xcode-select -s "$LATEST"
+          cd ios && xcodegen generate
+          KEY="$RUNNER_TEMP/AuthKey.p8"; printf '%s' "$ASC_KEY_P8" > "$KEY"
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $KEY -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
+          xcodebuild -project ChinaLawSearch.xcodeproj -scheme ChinaLawSearch -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CURRENT_PROJECT_VERSION="${{ github.run_number }}" $AUTH archive | tail -20
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/out" $AUTH | tail -20

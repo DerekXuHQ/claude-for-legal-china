@@ -2174,7 +2174,7 @@ async function renderRuns(box) {
 
 async function renderProfiles(box) {
   const { areas } = state.ag;
-  box.innerHTML = `<h2>实务画像</h2><p class="muted">每个领域一份：你们的标准立场、能接受的底线、红线、谁批什么、行文习惯。这个领域的 Agent 每次都先读它。只存在这台电脑上。</p>
+  box.innerHTML = `<h2>实务画像</h2><p class="muted">每个领域一份：你们的标准立场、能接受的底线、红线、谁批什么、行文习惯。这个领域的 Agent 每次都先读它。只存在本机。</p>
     <div class="ag-profile ${state.ag.companyConfigured ? "ok" : ""}">${ic("landmark")}<span><b>公司基本情况</b>：名称、行业、规模、所在地区、主要业务，所有 Agent 共用。</span><button type="button" class="ghost" data-profile="_company">${state.ag.companyConfigured ? "查看 / 修改" : "填写"}</button></div>`
     + areas.map((x) => profileBar(x.plugin)).join("");
 }

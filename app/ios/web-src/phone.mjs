@@ -5,6 +5,13 @@ export function setupPhone() {
   const W = window;
   if (typeof W.setCollapsed !== "function") return;
 
+  // 手机上不自动弹出键盘：界面代码里的 .focus() 只在桌面版生效，用户点输入框时照常
+  const q = document.getElementById("question");
+  if (q) q.focus = function (...a) { if (!phone()) return HTMLTextAreaElement.prototype.focus.apply(this, a); };
+  // 打字时（键盘弹出）收起底部标签栏
+  document.addEventListener("focusin", (e) => { if (phone() && e.target.matches?.("input, textarea, [contenteditable]")) document.body.classList.add("typing"); });
+  document.addEventListener("focusout", () => setTimeout(() => { if (!document.activeElement?.matches?.("input, textarea, [contenteditable]")) document.body.classList.remove("typing"); }, 50));
+
   const collapseSides = () => { if (phone()) { W.setCollapsed("ask-left", true); W.setCollapsed("ask-right", true); } };
   collapseSides();
 

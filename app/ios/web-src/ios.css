@@ -7,7 +7,13 @@ body[data-platform="ios"] .composer-wrap { padding-bottom: max(10px, env(safe-ar
 /* 没有鼠标：键盘快捷键提示、拖动分隔条都用不上 */
 body[data-platform="ios"] .gutter { display: none !important; }
 
+/* 没有实体键盘的设备不显示「快捷键」设置 */
+@media (hover: none) { body[data-platform="ios"] [data-sec="keys"] { display: none !important; } }
+
 @media (max-width: 760px) {
+  /* 打字时收起底部标签栏，把空间留给键盘上方的内容 */
+  body[data-platform="ios"].typing .top { display: none; }
+  body[data-platform="ios"].typing .view { padding-bottom: 0; }
   /* 底部标签栏 */
   body[data-platform="ios"] { --bar: calc(56px + env(safe-area-inset-bottom)); }
   body[data-platform="ios"] .top { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 4px 4px env(safe-area-inset-bottom); gap: 0; border-bottom: 0; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 92%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }

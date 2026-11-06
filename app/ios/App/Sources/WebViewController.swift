@@ -70,6 +70,12 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         webView.load(URLRequest(url: URL(string: "app://local/index.html")!))
     }
 
+    // 听写：网页要麦克风时直接允许（系统第一次会弹出麦克风权限确认），不再每次都问
+    @available(iOS 15.0, *)
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        decisionHandler(type == .microphone ? .grant : .prompt)
+    }
+
     // MARK: alert / confirm / prompt（prompt 同时是同步桥）
 
     func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
