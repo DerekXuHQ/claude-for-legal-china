@@ -77,6 +77,20 @@ export async function autotest() {
     must(up.preview && up.preview.includes("龑辰") && up.preview.includes("140,000"), "读回来的文字不对：" + JSON.stringify(up).slice(0, 200));
     return `docx ${buf.length} 字节，读回 ${up.chars} 字：${up.preview.slice(0, 60)}`;
   });
+  await step("上传 PDF（pdf.js 在网页视图里解析）", async () => {
+    // 手写一个最小的 PDF（Helvetica，ASCII 文字），测试 pdf.js 和它的 worker 能在 App 里跑
+    const content = "BT /F1 18 Tf 72 720 Td (Contract No. 2026-1106 Penalty 500000) Tj ET";
+    const objs = ["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+      `<< /Length ${content.length} >>\nstream\n${content}\nendstream`, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
+    let pdf = "%PDF-1.4\n"; const offs = [];
+    objs.forEach((o, i) => { offs.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map((o) => String(o).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    const r = await api("/api/upload", { method: "POST", body: JSON.stringify({ matter_id: matterId, name: "自检.pdf", mime: "application/pdf", data: btoa(pdf) }) });
+    must(r.preview && r.preview.includes("Contract No. 2026-1106"), "读出的文字不对：" + JSON.stringify(r).slice(0, 200));
+    return `读出：${r.preview}`;
+  });
   await step("本机文字识别（Vision）", async () => {
     const c = document.createElement("canvas"); c.width = 900; c.height = 260;
     const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 900, 260); g.fillStyle = "#000";
@@ -144,6 +158,18 @@ async function uiTour() {
     ["12-返回", async () => { click(".ios-back"); }],
     ["13-浏览", async () => { click('.tab[data-view="browse"]'); await wait(1200); }],
     ["14-设置", async () => { click('.tab[data-view="settings"]'); await wait(600); }],
+    ["14b-导出Word", async () => {
+      // 打开有回答的事项，点回答下面的「导出 Word」，确认弹出了系统分享面板
+      const list = await api("/api/matters");
+      const m = list.find((x) => x.task) || list[0];
+      if (!m) return;
+      click('.tab[data-view="ask"]'); await W.openMatter(m.id); await wait(800);
+      const btn = document.querySelector(".msg.ai [data-word]");
+      if (!btn) return; // 没配置模型时事项里没有回答，跳过
+      btn.click(); await wait(2500);
+      const shown = await call("debug.presented");
+      if (!/Activity/.test(shown)) throw new Error("没有弹出分享面板：" + shown);
+    }],
     ["15-深色模式", async () => { document.documentElement.dataset.theme = "dark"; click('.tab[data-view="ask"]'); click("#new-matter"); }],
   ];
   for (const [name, fn] of tour) {

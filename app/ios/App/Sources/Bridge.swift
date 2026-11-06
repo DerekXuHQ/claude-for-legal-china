@@ -164,6 +164,15 @@ final class Bridge: NSObject, WKScriptMessageHandler {
         case "speech.start": speech.start { [weak self] err in if let err { self?.reject(id, err) } else { self?.resolve(id, true) } }
         case "speech.stop": speech.stop(final: true); resolve(id, true)
         case "speech.cancel": speech.stop(final: false); resolve(id, true)
+        case "debug.presented":
+            // 自检用：现在弹出的是什么界面（例如导出 Word 后的分享面板）
+            DispatchQueue.main.async {
+                var vc = self.webView?.window?.rootViewController
+                while let p = vc?.presentedViewController { vc = p }
+                let name = vc.map { String(describing: type(of: $0)) } ?? ""
+                if vc is UIActivityViewController { vc?.dismiss(animated: false) } // 看完就关掉，免得挡住后面的步骤
+                self.resolve(id, name)
+            }
         case "app.ready":
             resolve(id, true)
             DispatchQueue.main.async { self.onReady?() }
