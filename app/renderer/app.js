@@ -2094,7 +2094,7 @@ function renderAgentMain() {
     head = `<h2>搜索「${esc(q)}」</h2><p class="muted">找到 ${list.length} 个 Agent</p>`;
   } else if (sel === "_watch") {
     list = agents.filter((a) => a.kind === "watch");
-    head = `<h2>定时 Agent</h2><p class="muted">app 开着时在后台按频率运行，读台账、法规库更新和事项文件，有需要你决定的事就发系统通知。台账为空时不运行，不产生费用。</p>`;
+    head = `<h2>定时 Agent</h2><p class="muted">App 打开期间按频率自动运行（电脑上窗口最小化也会运行；手机上需要 App 在前台），读台账、法规库更新和事项文件，有需要你决定的事就发系统通知。台账为空时不运行，不产生费用。</p>`;
   } else if (sel === "_all") {
     head = `<h2>Agent 目录</h2><p class="muted">每个 Agent 按一个完整的技能办事：要问什么、查什么、交付什么格式都是定好的。平时在「法律助理」里新建事项时按领域挑选，或者直接描述，助理会自动交给最合适的 Agent；这里可以查看每个 Agent 的技能说明，也能直接开始。</p>`;
     box.innerHTML = head + areas.map((x) => {
