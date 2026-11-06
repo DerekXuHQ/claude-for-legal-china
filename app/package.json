@@ -18,7 +18,8 @@
     "upload-build-inputs": "gh release upload build-inputs --repo DerekXuHQ/claude-for-legal-china resources/base.db.gz resources/data-version.json --clobber",
     "agents": "node scripts/build-agents.mjs",
     "ios:web": "node ios/build-web.mjs",
-    "ios:project": "node ios/build-web.mjs && cd ios && xcodegen generate"
+    "ios:project": "node ios/build-web.mjs && cd ios && xcodegen generate",
+    "ios:sim": "bash ios/run-sim.sh"
   },
   "dependencies": {
     "docx": "^9.15.2",

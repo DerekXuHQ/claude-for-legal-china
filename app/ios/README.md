@@ -12,6 +12,16 @@ iPhone / iPad 版。界面和桌面版相同，检索、法律助理、150 个 A
   WebSocket、文字识别（Vision）、照片和录音转换、语音输入、首次打开时下载法规数据包并建索引、通知、导出文件。
 - **原生接口说明**：`App/Sources/Bridge.swift` 和 `dev/mock-native.mjs`（浏览器里的模拟实现）一一对应。
 
+## 最快的测试方法（模拟器）
+
+```bash
+cd app && npm run ios:sim            # 编译、打开 iPhone 模拟器、装上并启动
+cd app && npm run ios:sim -- -autotest   # 同上，并把主要功能自检一遍
+```
+
+第一次需要：Xcode（App Store）、在终端运行一次 `sudo xcodebuild -license accept`、`brew install xcodegen`；
+脚本会自动下载 iOS 模拟器（约 8 GB）。
+
 ## 在模拟器或自己的 iPhone 上运行
 
 需要 Mac、Xcode（App Store 免费下载）和 Node.js。
