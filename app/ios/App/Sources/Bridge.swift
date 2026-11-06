@@ -17,6 +17,8 @@ final class Bridge: NSObject, WKScriptMessageHandler {
     lazy var speech = SpeechBridge(bridge: self)
     /// 页面准备好之后要做的事（例如冷启动时点通知要打开的报告）
     var onReady: (() -> Void)?
+    /// 弹出系统分享面板（WebViewController 设置）
+    var onShare: ((URL) -> Void)?
 
     /// 网页重新加载（内存紧张时系统回收了网页进程）：旧页面的请求、连接、数据库全部清掉，免得事件推给新页面
     func reset() {
@@ -164,6 +166,18 @@ final class Bridge: NSObject, WKScriptMessageHandler {
         case "speech.start": speech.start { [weak self] err in if let err { self?.reject(id, err) } else { self?.resolve(id, true) } }
         case "speech.stop": speech.stop(final: true); resolve(id, true)
         case "speech.cancel": speech.stop(final: false); resolve(id, true)
+        case "share.file":
+            // 导出的文件（Word 等）：写进临时目录，用系统分享面板（存到「文件」、发微信、发邮件……）
+            let name = ((a["name"] as? String) ?? "导出文件").replacingOccurrences(of: "/", with: "-")
+            guard let d = Data(base64Encoded: a["data"] as? String ?? "") else { reject(id, "数据格式不对"); return }
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent("exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let url = dir.appendingPathComponent(name)
+            do { try d.write(to: url, options: .atomic) } catch { reject(id, error.localizedDescription); return }
+            DispatchQueue.main.async {
+                self.onShare?(url)
+                self.resolve(id, true)
+            }
         case "debug.presented":
             // 自检用：现在弹出的是什么界面（例如导出 Word 后的分享面板）
             DispatchQueue.main.async {

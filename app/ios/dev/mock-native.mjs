@@ -68,6 +68,7 @@ async function asyncOp(id, op, a) {
       case "net.cancel": nets.get(a.id)?.abort(); return resolve(id, true);
       case "notify": console.log("[通知]", a.title, a.body); return resolve(id, true);
       case "app.ready": return resolve(id, true);
+      case "share.file": console.log("[分享]", a.name, Math.round((a.data || "").length * 0.75), "字节"); return resolve(id, true);
       case "debug.presented": return resolve(id, "UIActivityViewController"); // 浏览器里没有分享面板
       case "debug.snapshot": return resolve(id, true); // 浏览器里截不了网页视图，跳过
       case "speech.start": case "speech.stop": case "speech.cancel": return resolve(id, null, "开发模式没有语音识别");

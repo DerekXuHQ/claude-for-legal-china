@@ -79,6 +79,7 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
     override func viewDidLoad() {
         super.viewDidLoad()
         UNUserNotificationCenter.current().delegate = self
+        bridge.onShare = { [weak self] url in self?.share(url) }
         bridge.onReady = { [weak self] in
             guard let self else { return }
             self.pageReady = true
@@ -158,6 +159,10 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
 
     func downloadDidFinish(_ download: WKDownload) {
         guard let url = downloads.removeValue(forKey: ObjectIdentifier(download)) else { return }
+        share(url)
+    }
+
+    func share(_ url: URL) {
         let vc = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         vc.popoverPresentationController?.sourceView = view
         vc.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)

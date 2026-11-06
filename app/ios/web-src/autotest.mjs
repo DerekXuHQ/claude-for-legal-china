@@ -14,7 +14,8 @@ async function step(name, fn) {
     const detail = await fn();
     results.push({ name, ok: true, ms: Math.round(performance.now() - t0), detail: String(detail ?? "").slice(0, 300) });
   } catch (e) {
-    results.push({ name, ok: false, ms: Math.round(performance.now() - t0), detail: String(e?.stack || e).slice(0, 600) });
+    // Safari 的 e.stack 不含错误信息，两样都记
+    results.push({ name, ok: false, ms: Math.round(performance.now() - t0), detail: `${e?.name || "Error"}: ${e?.message || e}\n${String(e?.stack || "").slice(0, 400)}` });
   }
   save();
 }

@@ -5,14 +5,18 @@ import { Buffer } from "buffer";
 import { callSync, call, on, isNative } from "./native.mjs";
 import { DatabaseSync } from "node:sqlite";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import * as pdfWorker from "pdfjs-dist/legacy/build/pdf.worker.mjs";
 import { createServer } from "../../server/api.mjs";
 import * as search from "../../server/search.mjs";
 import { ensureUserTables, runSync } from "../../server/official/sync.mjs";
 import { ensureOfficialColumns, promotePending } from "../../server/official/apply.mjs";
 import DATA_VERSION from "../../resources/data-version.json";
-import { setupPhone, setupNativeDictation, setupIosVersion, setupIosAttach, setupIosUploadLimits } from "./phone.mjs";
+import { setupPhone, setupNativeDictation, setupIosVersion, setupIosAttach, setupIosUploadLimits, setupIosDownloads } from "./phone.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/build/pdf.worker.min.mjs";
+// App 内的网页从 app:// 加载，WebKit 可能不让从这里起 Worker；把 pdf.js 的 worker 直接放进页面，
+// pdf.js 看到 globalThis.pdfjsWorker 就在主线程里解析，不再另起 Worker
+globalThis.pdfjsWorker = pdfWorker;
 
 // 原生能力：Vision 文字识别（中文，含繁体）、HEIC 转 JPG、录音转 WAV（服务端 ocr.mjs 会调用）
 globalThis.__iosNative = {
@@ -174,6 +178,7 @@ async function main() {
   setupIosVersion();
   setupIosAttach();
   setupIosUploadLimits();
+  setupIosDownloads();
   call("app.ready").catch(() => {}); // 原生层：页面准备好了（冷启动时点通知要打开的报告在这之后打开）
   // 启动参数 -view agents 等：直接打开某个页面（截图测试用）
   if (launch.view && typeof window.showView === "function") setTimeout(() => window.showView(launch.view), 300);

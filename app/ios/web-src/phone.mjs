@@ -146,3 +146,19 @@ export function setupIosUploadLimits() {
     return ok.length ? orig(ok) : undefined;
   };
 }
+
+// 下载（导出 Word 等）：页面里 <a download href="blob:..."> 的点击交给原生，弹出系统分享面板。
+// 不依赖 WKWebView 的下载流程（blob 链接在 app:// 页面里不一定能下载）
+import { bytesToB64 } from "./native.mjs";
+export function setupIosDownloads() {
+  const orig = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function (...a) {
+    if (this.hasAttribute("download") && /^(blob|data):/.test(this.href)) {
+      const name = this.getAttribute("download") || "导出文件";
+      fetch(this.href).then((r) => r.arrayBuffer()).then((buf) => call("share.file", { name, data: bytesToB64(new Uint8Array(buf)) }))
+        .catch((e) => window.toast?.("导出失败：" + e.message));
+      return;
+    }
+    return orig.apply(this, a);
+  };
+}
