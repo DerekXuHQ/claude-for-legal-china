@@ -7,6 +7,9 @@ body[data-platform="ios"] .composer-wrap { padding-bottom: max(10px, env(safe-ar
 /* 没有鼠标：键盘快捷键提示、拖动分隔条都用不上 */
 body[data-platform="ios"] .gutter { display: none !important; }
 
+/* 全屏阅读的「返回」按钮只在手机布局里出现 */
+.ios-back { display: none; }
+
 /* 没有实体键盘的设备不显示「快捷键」设置 */
 @media (hover: none) { body[data-platform="ios"] [data-sec="keys"] { display: none !important; } }
 
