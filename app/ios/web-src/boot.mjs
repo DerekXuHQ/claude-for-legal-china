@@ -7,10 +7,10 @@ import { DatabaseSync } from "node:sqlite";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { createServer } from "../../server/api.mjs";
 import * as search from "../../server/search.mjs";
-import { ensureUserTables } from "../../server/official/sync.mjs";
+import { ensureUserTables, runSync } from "../../server/official/sync.mjs";
 import { ensureOfficialColumns, promotePending } from "../../server/official/apply.mjs";
 import DATA_VERSION from "../../resources/data-version.json";
-import { setupPhone, setupNativeDictation } from "./phone.mjs";
+import { setupPhone, setupNativeDictation, setupIosVersion } from "./phone.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/build/pdf.worker.min.mjs";
 
@@ -28,6 +28,31 @@ const USER_DB = DATA + "/user.db";
 const DB_URL = "https://github.com/DerekXuHQ/claude-for-legal-china/releases/download/build-inputs/base.db.gz";
 
 const setup = { phase: "准备中", progress: 0, ready: false, error: "" };
+let sync = { running: false };
+let syncCtrl = null;
+
+// 官方法规更新：和桌面版同一套（server/official/sync.mjs），在页面里异步运行（主要是等网络，界面照常可用）
+function startUpdate(mode = "incremental") {
+  if (!setup.ready) return { ok: false, error: "资料库还在准备中" };
+  if (sync.running) return { ok: false, error: "正在检查更新" };
+  sync = { ...sync, running: true, mode, phase: "开始", checked: 0, fetched: 0, changes: 0, errors: 0, current: "" };
+  syncCtrl = new AbortController();
+  const legalDb = new DatabaseSync(LEGAL_DB), udb = new DatabaseSync(USER_DB);
+  legalDb.exec("PRAGMA busy_timeout=10000;"); udb.exec("PRAGMA busy_timeout=10000;");
+  runSync({ legalDb, userDb: udb, mode, signal: syncCtrl.signal, onProgress: (p) => Object.assign(sync, p, { running: true }) })
+    .then((stats) => Object.assign(sync, { running: false, finished_at: new Date().toISOString(), last_result: stats }))
+    .catch((err) => Object.assign(sync, { running: false, finished_at: new Date().toISOString(), last_result: { error: syncCtrl.signal.aborted ? "已停止" : String(err?.message || err) } }))
+    .finally(() => { try { legalDb.close(); udb.close(); } catch { /* 已关闭 */ } });
+  return { ok: true };
+}
+function maybeAutoUpdate() {
+  let s = {};
+  try { s = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(callSync("fs.read", { path: DATA + "/settings.json" })), (c) => c.charCodeAt(0)))); } catch { /* 用默认 */ }
+  if (s.auto_update === false || !setup.ready || sync.running || !userDb) return;
+  const last = userDb.prepare("SELECT value FROM sync_state WHERE key = 'last_check'").get()?.value;
+  const days = Math.max(1, Number(s.update_interval_days) || 7);
+  if (!last || Date.now() - Date.parse(last) > days * 86400000) startUpdate("incremental");
+}
 let userDb = null;
 
 function openUserDb() {
@@ -114,15 +139,15 @@ async function main() {
     settingsPath: DATA + "/settings.json",
     userDb: () => userDb,
     status: () => ({ ...setup }),
-    updateStatus: () => ({ running: false, phase: "", progress: 0 }),
-    startUpdate: () => ({ ok: false, error: "iOS 版的法规更新随 App 更新发布" }),
-    stopUpdate: () => {},
+    updateStatus: () => ({ ...sync }),
+    startUpdate,
+    stopUpdate: () => syncCtrl?.abort(),
     appInfo,
     notify: ({ title, body, runId }) => call("notify", { title: `${title}`, body, runId }).catch(() => {}),
   });
   setLocalApi(makeLocalApi(server.handle));
   location.hash = "t=" + server.token;
-  prepareData();
+  prepareData().then(() => { setTimeout(maybeAutoUpdate, 30000); setInterval(maybeAutoUpdate, 6 * 3600 * 1000); });
   // 服务端准备好之后再加载界面脚本（界面一启动就会调 /api/status）
   const launch = window.__launch || {};
   if (launch.autotest || /[?&]autotest\b/.test(location.search)) import("./autotest.mjs").then((m) => m.autotest()).then((r) => { window.__autotestDone = r; });
@@ -136,6 +161,7 @@ async function main() {
   }
   setupPhone();
   setupNativeDictation();
+  setupIosVersion();
   // 启动参数 -view agents 等：直接打开某个页面（截图测试用）
   if (launch.view && typeof window.showView === "function") setTimeout(() => window.showView(launch.view), 300);
 }

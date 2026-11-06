@@ -100,3 +100,13 @@ export function setupNativeDictation() {
     catch (e) { window.toast?.(e.message); end(); }
   });
 }
+
+// 「软件版本」：iOS 版通过 App Store 更新，不显示桌面版的在线更新按钮
+export function setupIosVersion() {
+  const sec = document.querySelector('[data-sec="version"].set-sec');
+  if (!sec) return;
+  const p = sec.querySelector("p.muted");
+  if (p) p.textContent = "iOS 版通过 App Store 更新（在 App Store 打开「自动更新」即可）。法规数据按「法规更新」里的设置从官方网站自动更新。";
+  document.getElementById("au-check")?.closest(".row")?.remove();
+  document.getElementById("app-update-btn")?.remove();
+}
