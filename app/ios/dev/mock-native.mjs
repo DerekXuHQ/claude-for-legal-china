@@ -67,6 +67,8 @@ async function asyncOp(id, op, a) {
       }
       case "net.cancel": nets.get(a.id)?.abort(); return resolve(id, true);
       case "notify": console.log("[通知]", a.title, a.body); return resolve(id, true);
+      case "debug.snapshot": return resolve(id, true); // 浏览器里截不了网页视图，跳过
+      case "speech.start": case "speech.stop": case "speech.cancel": return resolve(id, null, "开发模式没有语音识别");
       case "ocr.image": return resolve(id, ""); // 模拟器里没有 Vision：返回空，服务端会直接用模型识别
       case "setup.prepare": return resolve(id, null, "开发模式：请先把 legal.db 放进数据目录");
       default: return resolve(id, null, "开发模式不支持：" + op);

@@ -100,6 +100,39 @@ export async function autotest() {
       return `${events} 个事件，回答 ${text.length} 字：${text.slice(0, 80)}`;
     });
   }
+  await uiTour();
   save(true);
   return results;
+}
+
+// 界面巡检：像用户一样点一遍主要页面，每一步截一张图（data/shots/），GitHub 构建把它们收进 Artifacts
+import { call } from "./native.mjs";
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const $ = (s) => document.querySelector(s);
+const click = (s) => { const e = typeof s === "string" ? $(s) : s; if (!e) throw new Error("找不到：" + s); e.click(); };
+async function shot(name) { await wait(700); await call("debug.snapshot", { name }); }
+async function uiTour() {
+  const W = window;
+  for (let i = 0; i < 60 && typeof W.showView !== "function"; i++) await wait(500);
+  const tour = [
+    ["01-新事项", async () => { click('.tab[data-view="ask"]'); click("#new-matter"); }],
+    ["02-事项抽屉", async () => { click('[data-toggle="ask-left"]'); }],
+    ["03-选择劳动用工", async () => { document.body.click(); W.setCollapsed?.("ask-left", true); await wait(200); click('.pk-groups li[data-g="A"]'); }],
+    ["04-选中Agent", async () => { click(".pk-card[data-agent]"); }],
+    ["05-定时Agent", async () => { click('.tab[data-view="agents"]'); }],
+    ["06-台账", async () => { click('#ag-areas li[data-k="_registers"]'); }],
+    ["07-实务画像", async () => { click('#ag-areas li[data-k="_profiles"]'); }],
+    ["08-商事合同Agent", async () => { click('#ag-areas li[data-k="commercial-legal"]'); }],
+    ["09-技能说明", async () => { click('.ag-card [data-act="skill"]'); await wait(800); }],
+    ["10-检索结果", async () => { $("#ag-dialog")?.close?.(); click('.tab[data-view="search"]'); $("#q").value = "劳动合同 解除"; $("#search-form").requestSubmit(); await wait(1200); }],
+    ["11-条文全屏", async () => { click("#view-search .results li"); await wait(1000); }],
+    ["12-返回", async () => { click(".ios-back"); }],
+    ["13-浏览", async () => { click('.tab[data-view="browse"]'); await wait(1200); }],
+    ["14-设置", async () => { click('.tab[data-view="settings"]'); await wait(600); }],
+    ["15-深色模式", async () => { document.documentElement.dataset.theme = "dark"; click('.tab[data-view="ask"]'); click("#new-matter"); }],
+  ];
+  for (const [name, fn] of tour) {
+    await step("界面：" + name, async () => { await fn(); await shot(name); return "已截图"; });
+  }
+  delete document.documentElement.dataset.theme;
 }

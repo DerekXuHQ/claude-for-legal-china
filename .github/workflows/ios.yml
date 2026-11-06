@@ -76,6 +76,7 @@ jobs:
             sleep 10
           done
           cp "$F" autotest.json || echo '{"done":false,"results":[]}' > autotest.json
+          cp -R "$C/Documents/data/shots" shots/ui || true
           cat autotest.json
           for v in ask agents browse search settings; do
             xcrun simctl terminate "$UDID" "$BUNDLE" || true

@@ -153,6 +153,18 @@ final class Bridge: NSObject, WKScriptMessageHandler {
         case "speech.start": speech.start { [weak self] err in if let err { self?.reject(id, err) } else { self?.resolve(id, true) } }
         case "speech.stop": speech.stop(final: true); resolve(id, true)
         case "speech.cancel": speech.stop(final: false); resolve(id, true)
+        case "debug.snapshot":
+            // 自检用：把网页视图当前的样子存成 PNG（data/shots/名字.png）
+            let name = (a["name"] as? String ?? "shot").replacingOccurrences(of: "/", with: "-")
+            DispatchQueue.main.async {
+                guard let wv = self.webView else { return self.reject(id, "没有网页视图") }
+                wv.takeSnapshot(with: nil) { img, err in
+                    guard let png = img?.pngData() else { return self.reject(id, err?.localizedDescription ?? "截图失败") }
+                    let dir = Paths.data.appendingPathComponent("shots", isDirectory: true)
+                    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                    do { try png.write(to: dir.appendingPathComponent(name + ".png")); self.resolve(id, true) } catch { self.reject(id, error.localizedDescription) }
+                }
+            }
         case "notify":
             Notifier.post(title: a["title"] as? String ?? "", body: a["body"] as? String ?? "", runId: a["runId"] as? String ?? "")
             resolve(id, true)
