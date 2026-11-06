@@ -99,6 +99,21 @@ export async function autotest() {
       must(text.length > 50, "回答太短：" + text);
       return `${events} 个事件，回答 ${text.length} 字：${text.slice(0, 80)}`;
     });
+    await step("命名 Agent（保密协议分流）", async () => {
+      const r = await fetch("/api/ask", { method: "POST", headers: H(), body: JSON.stringify({ matter_id: matterId, agent: "commercial-legal:nda-triage", question: "对方发来一份保密协议，我方是接收方，保密期限永久，违约金 500 万。按现有信息直接分流。", depth: "low", skip_intake: true }) });
+      const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = "", text = "", route = "";
+      for (;;) { const { value, done } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let i; while ((i = buf.indexOf("\n\n")) >= 0) { const line = buf.slice(0, i); buf = buf.slice(i + 2); if (!line.startsWith("data: ")) continue; const ev = JSON.parse(line.slice(6)); if (ev.type === "route") route = ev.name; if (ev.type === "text") text += ev.delta; if (ev.type === "text_reset") text = ""; if (ev.type === "error") throw new Error(ev.message); } }
+      must(route === "保密协议分流", "没有交给保密协议分流：" + route);
+      must(text.length > 50, "回答太短");
+      return `交给「${route}」，回答 ${text.length} 字`;
+    });
+    await step("定时 Agent（合同续约监控，立即运行）", async () => {
+      const r = await api("/api/watchers/" + encodeURIComponent("watch:commercial-legal:renewal-watcher") + "/run", { method: "POST", body: "{}" });
+      must(r.runId, "没有运行：" + JSON.stringify(r));
+      const run = await api("/api/runs/" + r.runId);
+      must(run.status === "done" && run.text.length > 20, "报告不完整：" + run.status);
+      return `报告 ${run.text.length} 字；摘要：${run.summary}`;
+    });
   }
   await uiTour();
   save(true);

@@ -66,6 +66,11 @@ jobs:
           APP=ios/build/Build/Products/Debug-iphonesimulator/ChinaLawSearch.app
           xcrun simctl install "$UDID" "$APP"
           mkdir -p shots
+          # 测试用的模型服务：不用真 key 也能把问答链路（分流 → Agent → 工具调用 → 流式回答 → 核对引用）走一遍
+          nohup node ios/dev/mock-model.mjs 8791 > shots/mock-model.log 2>&1 &
+          C0=$(xcrun simctl get_app_container "$UDID" "$BUNDLE" data)
+          mkdir -p "$C0/Documents/data"
+          printf '{"base_url":"http://127.0.0.1:8791/v1","api_key":"test","model":"mock-model","depth":"low"}\n' > "$C0/Documents/data/settings.json"
           xcrun simctl launch "$UDID" "$BUNDLE" -autotest YES
           sleep 20; xcrun simctl io "$UDID" screenshot shots/0-first-launch.png
           C=$(xcrun simctl get_app_container "$UDID" "$BUNDLE" data)
