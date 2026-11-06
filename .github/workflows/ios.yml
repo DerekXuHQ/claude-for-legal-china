@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   simulator:
-    runs-on: macos-15
+    runs-on: macos-15-intel  # Apple 芯片的 Mac 经常排不上队
     timeout-minutes: 90
     defaults:
       run:
@@ -112,7 +112,7 @@ jobs:
   testflight:
     needs: simulator
     if: github.ref == 'refs/heads/main'
-    runs-on: macos-15
+    runs-on: macos-15-intel  # Apple 芯片的 Mac 经常排不上队
     timeout-minutes: 60
     defaults:
       run:
