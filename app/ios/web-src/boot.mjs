@@ -163,6 +163,7 @@ async function main() {
   setupNativeDictation();
   setupIosVersion();
   setupIosAttach();
+  call("app.ready").catch(() => {}); // 原生层：页面准备好了（冷启动时点通知要打开的报告在这之后打开）
   // 启动参数 -view agents 等：直接打开某个页面（截图测试用）
   if (launch.view && typeof window.showView === "function") setTimeout(() => window.showView(launch.view), 300);
 }

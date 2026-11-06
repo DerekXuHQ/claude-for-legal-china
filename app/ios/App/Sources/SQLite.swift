@@ -37,6 +37,7 @@ enum Paths {
 final class SQLiteDB {
     let handle: OpaquePointer
     private var cache: [String: OpaquePointer] = [:]
+    private var closed = false
 
     init(path: String, readOnly: Bool) throws {
         var db: OpaquePointer?
@@ -54,6 +55,8 @@ final class SQLiteDB {
     deinit { close() }
 
     func close() {
+        guard !closed else { return } // close() 之后 deinit 不能再关一次
+        closed = true
         for (_, s) in cache { sqlite3_finalize(s) }
         cache.removeAll()
         sqlite3_close_v2(handle)
@@ -111,7 +114,7 @@ final class SQLiteDB {
             let name = String(cString: sqlite3_column_name(s, c))
             switch sqlite3_column_type(s, c) {
             case SQLITE_INTEGER: r[name] = sqlite3_column_int64(s, c)
-            case SQLITE_FLOAT: r[name] = sqlite3_column_double(s, c)
+            case SQLITE_FLOAT: let d = sqlite3_column_double(s, c); r[name] = d.isFinite ? d : NSNull() // JSON 不能表示 Inf/NaN
             case SQLITE_TEXT: r[name] = String(cString: sqlite3_column_text(s, c))
             case SQLITE_BLOB:
                 let n = Int(sqlite3_column_bytes(s, c))

@@ -58,15 +58,32 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         wv.scrollView.bounces = false
         wv.isOpaque = false
         wv.backgroundColor = .systemBackground
-        if #available(iOS 16.4, *) { wv.isInspectable = true } // Mac 上的 Safari「开发」菜单可以调试
+        #if DEBUG
+        if #available(iOS 16.4, *) { wv.isInspectable = true } // 调试版：Mac 上的 Safari「开发」菜单可以调试（正式版不开，免得别人读到 API key）
+        #endif
         bridge.webView = wv
         webView = wv
         view = wv
     }
 
+    private var pageReady = false
+    private var pendingRun: String?
+
+    /// 弹出框要从最上层的界面弹，否则（例如分享面板还开着）弹不出来
+    private func top() -> UIViewController {
+        var vc: UIViewController = self
+        while let p = vc.presentedViewController, !p.isBeingDismissed { vc = p }
+        return vc
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         UNUserNotificationCenter.current().delegate = self
+        bridge.onReady = { [weak self] in
+            guard let self else { return }
+            self.pageReady = true
+            if let id = self.pendingRun { self.pendingRun = nil; self.openRun(id) }
+        }
         webView.load(URLRequest(url: URL(string: "app://local/index.html")!))
     }
 
@@ -84,20 +101,27 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         a.addTextField { $0.text = defaultText }
         a.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in completionHandler(nil) })
         a.addAction(UIAlertAction(title: "好", style: .default) { _ in completionHandler(a.textFields?.first?.text) })
-        present(a, animated: true)
+        presentAlert(a) { completionHandler(nil) }
     }
 
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
         let a = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         a.addAction(UIAlertAction(title: "好", style: .default) { _ in completionHandler() })
-        present(a, animated: true)
+        presentAlert(a) { completionHandler() }
     }
 
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
         let a = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         a.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in completionHandler(false) })
         a.addAction(UIAlertAction(title: "确定", style: .default) { _ in completionHandler(true) })
-        present(a, animated: true)
+        presentAlert(a) { completionHandler(false) }
+    }
+
+    /// 弹不出来时（界面正在切换）立即回调，WebKit 要求回调一定会被调用
+    private func presentAlert(_ a: UIAlertController, fallback: @escaping () -> Void) {
+        let vc = top()
+        guard vc.viewIfLoaded?.window != nil, !(vc is UIAlertController) else { return fallback() }
+        vc.present(a, animated: true)
     }
 
     // MARK: 链接：外部网址用 Safari 打开；导出的 Word 等文件走系统分享
@@ -137,7 +161,7 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         let vc = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         vc.popoverPresentationController?.sourceView = view
         vc.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
-        present(vc, animated: true)
+        top().present(vc, animated: true)
     }
 
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
@@ -145,7 +169,11 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
     }
 
     // 网页进程被系统回收（内存紧张）时重新加载
-    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        pageReady = false
+        bridge.reset()
+        webView.reload()
+    }
 
     // MARK: 通知：点一下打开对应的定时报告
 
@@ -156,8 +184,12 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
 
     func userNotificationCenter(_ c: UNUserNotificationCenter, didReceive r: UNNotificationResponse, withCompletionHandler done: @escaping () -> Void) {
         if let id = r.notification.request.content.userInfo["runId"] as? String, !id.isEmpty {
-            webView.evaluateJavaScript("window.openAgentRun && window.openAgentRun(\(Bridge.json(id)))", completionHandler: nil)
+            if pageReady { openRun(id) } else { pendingRun = id } // 冷启动：等页面准备好再打开
         }
         done()
+    }
+
+    private func openRun(_ id: String) {
+        webView.evaluateJavaScript("window.openAgentRun && window.openAgentRun(\(Bridge.json(id)))", completionHandler: nil)
     }
 }

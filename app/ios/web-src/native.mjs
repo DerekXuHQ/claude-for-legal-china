@@ -14,6 +14,9 @@ export function callSync(op, args = {}) {
   return r.value;
 }
 
+// 每次页面加载一个前缀：网页进程被回收后重新加载，旧页面遗留的回调不会对上新页面的 id
+const PAGE = "p" + Math.random().toString(36).slice(2, 8) + "-";
+export const pageId = PAGE;
 let seq = 0;
 const pending = new Map();
 const listeners = new Map(); // 事件名 -> Set<fn>
@@ -21,7 +24,7 @@ const listeners = new Map(); // 事件名 -> Set<fn>
 /** 异步调用原生，返回 Promise。 */
 export function call(op, args = {}) {
   if (!hasNative) return Promise.reject(new Error(`原生接口不可用：${op}`));
-  const id = ++seq;
+  const id = PAGE + (++seq);
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
     window.webkit.messageHandlers.native.postMessage({ id, op, args });

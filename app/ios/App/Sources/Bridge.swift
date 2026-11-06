@@ -15,6 +15,17 @@ final class Bridge: NSObject, WKScriptMessageHandler {
     lazy var ws = WebSocketBridge(bridge: self)
     lazy var setup = DataSetup(bridge: self)
     lazy var speech = SpeechBridge(bridge: self)
+    /// 页面准备好之后要做的事（例如冷启动时点通知要打开的报告）
+    var onReady: (() -> Void)?
+
+    /// 网页重新加载（内存紧张时系统回收了网页进程）：旧页面的请求、连接、数据库全部清掉，免得事件推给新页面
+    func reset() {
+        net.cancelAll()
+        ws.closeAll()
+        speech.stop(final: false)
+        for (_, d) in dbs { d.close() }
+        dbs.removeAll()
+    }
 
     // MARK: 推送给网页
 
@@ -65,7 +76,7 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             let i = Bundle.main.infoDictionary ?? [:]
             return ["version": i["CFBundleShortVersionString"] ?? "", "build": i["CFBundleVersion"] ?? ""]
         case "setup.status":
-            return ["ready": setup.isReady()]
+            return ["ready": setup.isReady(version: a["version"] as? String ?? "")]
         case "fs.exists":
             return fm.fileExists(atPath: try Paths.real(str(a, "path")).path)
         case "fs.read":
@@ -153,6 +164,9 @@ final class Bridge: NSObject, WKScriptMessageHandler {
         case "speech.start": speech.start { [weak self] err in if let err { self?.reject(id, err) } else { self?.resolve(id, true) } }
         case "speech.stop": speech.stop(final: true); resolve(id, true)
         case "speech.cancel": speech.stop(final: false); resolve(id, true)
+        case "app.ready":
+            resolve(id, true)
+            DispatchQueue.main.async { self.onReady?() }
         case "debug.snapshot":
             // 自检用：把网页视图当前的样子存成 PNG（data/shots/名字.png）
             let name = (a["name"] as? String ?? "shot").replacingOccurrences(of: "/", with: "-")

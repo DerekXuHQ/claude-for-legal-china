@@ -38,7 +38,7 @@ final class SpeechBridge {
         let input = engine.inputNode
         let fmt = input.outputFormat(forBus: 0)
         input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 1024, format: fmt) { [weak self] buf, _ in self?.request?.append(buf) }
+        input.installTap(onBus: 0, bufferSize: 1024, format: fmt) { buf, _ in req.append(buf) } // 用局部变量，不在音频线程读 self.request
         engine.prepare()
         try engine.start()
         task = recognizer.recognitionTask(with: req) { [weak self] result, error in

@@ -17,12 +17,21 @@ final class DataSetup: NSObject, URLSessionDownloadDelegate {
 
     init(bridge: Bridge) { self.bridge = bridge }
 
-    func isReady() -> Bool { FileManager.default.fileExists(atPath: legal.path) && FileManager.default.fileExists(atPath: versionFile.path) }
+    /// 数据库在、而且是这个 App 版本要求的数据版本（App 更新换了数据包时重新下载）
+    func isReady(version: String) -> Bool {
+        guard FileManager.default.fileExists(atPath: legal.path), let v = try? String(contentsOf: versionFile, encoding: .utf8) else { return false }
+        return version.isEmpty || v.trimmingCharacters(in: .whitespacesAndNewlines) == version
+    }
 
     private func progress(_ phase: String, _ p: Double) { bridge?.emit("setup", ["phase": phase, "progress": p]) }
 
     func prepare(_ a: [String: Any], done: @escaping (String?) -> Void) {
-        guard !running else { return done("正在准备中") }
+        // 已经在准备（网页重新加载后又调了一次）：接上新的回调，不重复下载
+        if running { self.done = done; return }
+        // 空间不够：解压后约 1 GB，建索引时还要临时空间
+        if let free = try? Paths.data.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage, free < 3_000_000_000 {
+            return done("手机剩余空间不足：法规资料库需要约 3 GB 空间（目前剩余 \(free / 1_000_000_000) GB）。清理一些空间后重新打开 App。")
+        }
         guard let s = a["url"] as? String, let url = URL(string: s) else { return done("数据包地址不对") }
         running = true
         self.done = done
@@ -38,10 +47,11 @@ final class DataSetup: NSObject, URLSessionDownloadDelegate {
         session.downloadTask(with: url).resume()
     }
 
+    /// running / done 只在主线程读写（prepare 由网页消息在主线程调用）
     private func finish(_ err: String?) {
-        running = false
-        let cb = done; done = nil
         DispatchQueue.main.async {
+            self.running = false
+            let cb = self.done; self.done = nil
             if self.bgTask != .invalid { UIApplication.shared.endBackgroundTask(self.bgTask); self.bgTask = .invalid }
             cb?(err)
         }
@@ -154,9 +164,11 @@ final class DataSetup: NSObject, URLSessionDownloadDelegate {
                     strm.next_out = outBuf
                     strm.avail_out = uInt(outSize)
                     let rc = inflate(&strm, Z_NO_FLUSH)
+                    // Z_BUF_ERROR：输出缓冲刚好写满、输入也刚好用完，不是错误，读下一块输入即可
+                    if rc == Z_BUF_ERROR { break }
                     if rc != Z_OK && rc != Z_STREAM_END { throw BridgeError("解压失败（\(rc)）") }
                     let n = outSize - Int(strm.avail_out)
-                    if n > 0 { output.write(Data(bytes: outBuf, count: n)) }
+                    if n > 0 { try output.write(contentsOf: Data(bytes: outBuf, count: n)) } // 空间满时抛错而不是崩溃
                     if rc == Z_STREAM_END { finished = true; break }
                 } while strm.avail_out == 0
             }

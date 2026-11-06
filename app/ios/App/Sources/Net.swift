@@ -32,6 +32,12 @@ final class NetBridge: NSObject, URLSessionDataDelegate {
         t.resume()
     }
 
+    /// 网页重新加载时：取消所有进行中的请求（旧页面的事件不能推给新页面）
+    func cancelAll() {
+        lock.lock(); let all = Array(byId.values); tasks.removeAll(); byId.removeAll(); lock.unlock()
+        all.forEach { $0.cancel() }
+    }
+
     func cancel(_ id: String) {
         lock.lock(); let t = byId[id]; lock.unlock()
         t?.cancel()
@@ -45,7 +51,7 @@ final class NetBridge: NSObject, URLSessionDataDelegate {
             for (k, v) in r.allHeaderFields { if let k = k as? String { h[k.lowercased()] = "\(v)" } }
             // 网页按原始字节自己解码；URLSession 已经解压过，去掉压缩相关的头
             h.removeValue(forKey: "content-encoding"); h.removeValue(forKey: "content-length")
-            bridge?.emit("net:\(id)", ["type": "head", "status": r.statusCode, "statusText": HTTPURLResponse.localizedString(forStatusCode: r.statusCode), "headers": h])
+            bridge?.emit("net:\(id)", ["type": "head", "status": r.statusCode, "statusText": "", "headers": h]) // 本地化的状态文字可能是中文，fetch 的 Response 不接受
         }
         completionHandler(.allow)
     }
@@ -69,7 +75,12 @@ final class NetBridge: NSObject, URLSessionDataDelegate {
 /// 实时转写用的 WebSocket（需要带 Authorization 请求头，网页里的 WebSocket 做不到）
 final class WebSocketBridge: NSObject, URLSessionWebSocketDelegate {
     private weak var bridge: Bridge?
-    private lazy var session = URLSession(configuration: .default, delegate: self, delegateQueue: OperationQueue())
+    private lazy var session: URLSession = {
+        let q = OperationQueue()
+        q.maxConcurrentOperationCount = 1 // 「打开 → 消息 → 关闭」按顺序推送
+        return URLSession(configuration: .default, delegate: self, delegateQueue: q)
+    }()
+    private var closedIds = Set<String>()
     private var sockets: [String: URLSessionWebSocketTask] = [:]
     private var ids: [Int: String] = [:]
     private let lock = NSLock()
@@ -94,10 +105,18 @@ final class WebSocketBridge: NSObject, URLSessionWebSocketDelegate {
             case .success(.data(let d)): self.bridge?.emit("ws:\(id)", ["type": "message", "data": String(data: d, encoding: .utf8) ?? ""]); self.receive(id, t)
             case .success: self.receive(id, t)
             case .failure(let e):
+                // 服务器正常关闭时 receive 也会失败：那种情况交给 didCloseWith 报真实的关闭码
+                self.lock.lock(); let closing = self.closedIds.contains(id) || t.closeCode != .invalid; self.lock.unlock()
+                if closing { self.finish(id, code: t.closeCode == .invalid ? 1000 : t.closeCode.rawValue); return }
                 self.bridge?.emit("ws:\(id)", ["type": "error", "message": e.localizedDescription])
                 self.finish(id, code: 1006)
             }
         }
+    }
+
+    func closeAll() {
+        lock.lock(); let all = Array(sockets.values); sockets.removeAll(); ids.removeAll(); lock.unlock()
+        all.forEach { $0.cancel(with: .goingAway, reason: nil) }
     }
 
     func send(_ a: [String: Any]) {
@@ -107,7 +126,7 @@ final class WebSocketBridge: NSObject, URLSessionWebSocketDelegate {
     }
 
     func close(_ id: String) {
-        lock.lock(); let t = sockets[id]; lock.unlock()
+        lock.lock(); let t = sockets[id]; closedIds.insert(id); lock.unlock()
         t?.cancel(with: .normalClosure, reason: nil)
         finish(id, code: 1000)
     }
