@@ -25,5 +25,7 @@ app 访问官方网站时：只读取公开栏目，同一网站两次请求至�
 | openai（Node SDK） | Apache-2.0 |
 | SQLite（随 Electron / Node.js 提供） | Public Domain |
 | Lucide 图标（界面图标，内嵌在 renderer/index.html，https://lucide.dev） | ISC |
+| SQLite 3.54.1（iOS 版自带，app/ios/App/Vendor/sqlite） | Public Domain |
+| fflate、buffer、path-browserify、events、stream-browserify、util（iOS 版打包进网页部分） | MIT |
 
 完整许可文本随各组件分发，位于安装包内的 node_modules 目录。

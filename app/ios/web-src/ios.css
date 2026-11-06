@@ -1,1 +1,76 @@
-/* iOS 手机布局（后面补全） */
+/* iOS 版：安全区、触控和手机布局。iPad（宽度超过 760）沿用桌面布局。 */
+html { -webkit-text-size-adjust: 100%; }
+body[data-platform="ios"] { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); height: 100dvh; box-sizing: border-box; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+/* iOS 输入框字号小于 16px 时一聚焦就放大页面 */
+body[data-platform="ios"] input, body[data-platform="ios"] textarea, body[data-platform="ios"] select { font-size: 16px; }
+body[data-platform="ios"] .composer-wrap { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+/* 没有鼠标：键盘快捷键提示、拖动分隔条都用不上 */
+body[data-platform="ios"] .gutter { display: none !important; }
+
+@media (max-width: 760px) {
+  /* 底部标签栏 */
+  body[data-platform="ios"] { --bar: calc(56px + env(safe-area-inset-bottom)); }
+  body[data-platform="ios"] .top { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 4px 4px env(safe-area-inset-bottom); gap: 0; border-bottom: 0; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 92%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+  body[data-platform="ios"] .brand, body[data-platform="ios"] #theme { display: none; }
+  body[data-platform="ios"] .tabs { flex: 1; justify-content: space-around; gap: 0; }
+  body[data-platform="ios"] .tab { flex: 1; flex-direction: column; gap: 2px; padding: 6px 0 4px; font-size: 10.5px; border-radius: 10px; position: relative; min-width: 0; background: none !important; }
+  body[data-platform="ios"] .tab .i { width: 22px; height: 22px; }
+  body[data-platform="ios"] .tab.active { color: var(--accent) !important; }
+  @media (hover: none) { body[data-platform="ios"] .tab:hover { color: inherit; } }
+  body[data-platform="ios"] .tab .count, body[data-platform="ios"] .tab .dot { position: absolute; top: 2px; left: calc(50% + 8px); }
+  body[data-platform="ios"] .view { padding-bottom: var(--bar); box-sizing: border-box; }
+  body[data-platform="ios"] main { padding-bottom: 0; }
+  body[data-platform="ios"] .tab > span:not(.count):not(.dot) { display: inline !important; }
+  body[data-platform="ios"] .upd-pill { position: fixed; top: calc(env(safe-area-inset-top) + 6px); right: 8px; z-index: 45; }
+
+  /* 法律助理：事项列表做成抽屉，原文面板全屏 */
+  body[data-platform="ios"] .assist > .chat { min-width: 0; }
+  body[data-platform="ios"] .assist > .matters:not(.collapsed) { position: fixed; z-index: 60; top: 0; bottom: 0; left: 0; width: min(84vw, 340px); padding-top: calc(env(safe-area-inset-top) + 10px); box-shadow: 0 0 40px rgba(0,0,0,.35); }
+  body[data-platform="ios"] .assist:has(> .matters:not(.collapsed))::after { content: ""; position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,.3); }
+  body[data-platform="ios"] .assist > .pane-right:not(.collapsed), body[data-platform="ios"] .split > .pane-right.reading { position: fixed; z-index: 60; inset: 0; width: auto !important; padding-top: calc(env(safe-area-inset-top) + 48px); padding-bottom: calc(env(safe-area-inset-bottom) + 16px); }
+  body[data-platform="ios"] .chat-top { min-height: 46px; padding: 4px 6px; }
+  body[data-platform="ios"] .chat-log { padding: 12px 12px 8px; }
+  body[data-platform="ios"] .composer-wrap { padding: 4px 8px 8px; }
+  /* 底部免责声明：手机上放在输入框下方（法律助理），全局页脚不占空间 */
+  body[data-platform="ios"] .foot { display: none; }
+  body[data-platform="ios"] .composer-note { margin-top: 4px; font-size: 11px; }
+  body[data-platform="ios"] .msg.user { margin-left: 12%; }
+
+  /* 关闭全屏面板的按钮（ios/web-src/phone.mjs 插入） */
+  .ios-back { position: fixed; z-index: 70; top: calc(env(safe-area-inset-top) + 6px); left: 8px; display: none; align-items: center; gap: 4px; border: 0; border-radius: 18px; padding: 7px 14px 7px 10px; background: var(--chip); color: var(--text); font-size: 15px; }
+  body.ios-reading .ios-back { display: inline-flex; }
+
+  /* 新事项的选择器：领域横向滑动，事项一列 */
+  body[data-platform="ios"] .picker { grid-template-columns: 1fr; }
+  body[data-platform="ios"] .pk-groups { display: flex; overflow-x: auto; gap: 4px; border-right: 0; border-bottom: 1px solid var(--line); padding: 6px; scrollbar-width: none; }
+  body[data-platform="ios"] .pk-groups::-webkit-scrollbar { display: none; }
+  body[data-platform="ios"] .pk-groups li { flex: none; white-space: nowrap; padding: 5px 10px; }
+  body[data-platform="ios"] .pk-groups li.pk-sep { display: none; }
+  body[data-platform="ios"] .pk-items { grid-template-columns: 1fr; max-height: none; }
+
+  /* 浏览、检索、收藏：列表全宽，点开的条文全屏 */
+  body[data-platform="ios"] .split { flex-direction: column; }
+  body[data-platform="ios"] .split > .pane-left { width: auto !important; flex: 1 1 auto; padding: 12px; }
+  body[data-platform="ios"] .split > .pane-right:not(.reading) { display: none; }
+
+  /* 设置：分类改成顶部横排 */
+  body[data-platform="ios"] .settings { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  body[data-platform="ios"] .set-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px; }
+  body[data-platform="ios"] .set-nav button { flex: none; white-space: nowrap; }
+  body[data-platform="ios"] .set-body { padding: 14px 12px; overflow: auto; }
+
+  /* Agent 页：领域横向滑动 */
+  body[data-platform="ios"] .ag { display: flex; flex-direction: column; }
+  body[data-platform="ios"] .ag-side { display: block; border-right: 0; border-bottom: 1px solid var(--line); flex: none; }
+  body[data-platform="ios"] #ag-areas { display: flex; overflow-x: auto; padding: 4px 6px 8px; scrollbar-width: none; }
+  body[data-platform="ios"] #ag-areas::-webkit-scrollbar { display: none; }
+  body[data-platform="ios"] #ag-areas li { flex: none; white-space: nowrap; }
+  body[data-platform="ios"] #ag-areas li.sep { display: none; }
+  body[data-platform="ios"] .ag-main { padding: 12px 12px 24px; }
+  body[data-platform="ios"] .ag-grid { grid-template-columns: 1fr; }
+  body[data-platform="ios"] .ag-profile { flex-wrap: wrap; }
+
+  /* 对话框占满宽度 */
+  body[data-platform="ios"] dialog { width: calc(100vw - 16px); max-width: none; margin-bottom: calc(env(safe-area-inset-bottom) + 8px); }
+  body[data-platform="ios"] dialog.wide form { max-height: calc(100dvh - env(safe-area-inset-top) - 40px); }
+}

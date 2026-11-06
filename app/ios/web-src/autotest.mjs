@@ -86,6 +86,7 @@ export async function autotest() {
     must(/劳动合同/.test(t) && /经济补偿/.test(t), "识别结果：" + t);
     return t.replace(/\n/g, " / ");
   });
+  await step("网页环境（麦克风能否直接用）", async () => `isSecureContext=${window.isSecureContext}，mediaDevices=${!!navigator.mediaDevices?.getUserMedia}，AudioContext=${!!window.AudioContext}，Worker=${typeof Worker}`);
   await step("联网（原生网络通道）", async () => { const r = await fetch("https://www.gov.cn/"); return `HTTP ${r.status}，${(await r.text()).length} 字节`; });
   // 配置了 API key（本机测试）：真问一个问题
   let settings = {};

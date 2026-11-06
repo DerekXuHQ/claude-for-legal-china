@@ -83,6 +83,7 @@ jobs:
             sleep 8
             xcrun simctl io "$UDID" screenshot "shots/view-$v.png"
           done
+          (cd ios/build/Build/Products/Debug-iphonesimulator && ditto -c -k --keepParent ChinaLawSearch.app "$GITHUB_WORKSPACE/app/shots/ChinaLawSearch.app.zip")
           xcrun simctl spawn "$UDID" log show --last 15m --predicate 'process == "ChinaLawSearch"' --style compact > shots/app.log 2>&1 || true
       - uses: actions/upload-artifact@v4
         if: always()

@@ -14,6 +14,7 @@ final class Bridge: NSObject, WKScriptMessageHandler {
     lazy var net = NetBridge(bridge: self)
     lazy var ws = WebSocketBridge(bridge: self)
     lazy var setup = DataSetup(bridge: self)
+    lazy var speech = SpeechBridge(bridge: self)
 
     // MARK: 推送给网页
 
@@ -149,6 +150,9 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             Media.toWav(base64: a["data"] as? String ?? "", ext: a["ext"] as? String ?? "m4a", rate: (a["rate"] as? NSNumber)?.doubleValue ?? 24000) { [weak self] r in
                 switch r { case .success(let t): self?.resolve(id, t); case .failure(let e): self?.reject(id, String(describing: e)) }
             }
+        case "speech.start": speech.start { [weak self] err in if let err { self?.reject(id, err) } else { self?.resolve(id, true) } }
+        case "speech.stop": speech.stop(final: true); resolve(id, true)
+        case "speech.cancel": speech.stop(final: false); resolve(id, true)
         case "notify":
             Notifier.post(title: a["title"] as? String ?? "", body: a["body"] as? String ?? "", runId: a["runId"] as? String ?? "")
             resolve(id, true)
