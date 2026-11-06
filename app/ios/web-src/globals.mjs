@@ -15,6 +15,18 @@ if (typeof AbortSignal !== "undefined" && !AbortSignal.any) {
     return c.signal;
   };
 }
+// iOS 的 WebKit（至少到 26.2）不支持 for await 遍历 ReadableStream（pdf.js 读文字层要用）
+if (typeof ReadableStream !== "undefined" && !ReadableStream.prototype[Symbol.asyncIterator]) {
+  ReadableStream.prototype.values = function ({ preventCancel = false } = {}) {
+    const reader = this.getReader();
+    return {
+      async next() { try { const r = await reader.read(); if (r.done) reader.releaseLock(); return r; } catch (e) { reader.releaseLock(); throw e; } },
+      async return(value) { if (!preventCancel) { const p = reader.cancel(value); reader.releaseLock(); await p; } else reader.releaseLock(); return { done: true, value }; },
+      [Symbol.asyncIterator]() { return this; },
+    };
+  };
+  ReadableStream.prototype[Symbol.asyncIterator] = ReadableStream.prototype.values;
+}
 if (typeof AbortSignal !== "undefined" && !AbortSignal.timeout) {
   AbortSignal.timeout = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(new DOMException("超时", "TimeoutError")), ms); return c.signal; };
 }
