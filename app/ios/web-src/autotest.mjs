@@ -5,7 +5,7 @@ import { writeFileSync, readFileSync, existsSync } from "node:fs";
 const results = [];
 const save = (done = false) => { try { writeFileSync("/data/autotest.json", JSON.stringify({ done, at: new Date().toISOString(), results }, null, 1)); } catch { /* 写不了就算了 */ } };
 const H = () => ({ "Content-Type": "application/json", "X-App-Token": new URLSearchParams(location.hash.slice(1)).get("t") || "" });
-const api = async (p, opts = {}) => { const r = await fetch(p, { headers: H(), ...opts }); const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = t; } if (!r.ok) throw new Error(`${r.status} ${t.slice(0, 200)}`); return j; };
+const api = async (p, opts = {}) => { const r = await fetch(p, { headers: H(), ...opts }); const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = t; } if (!r.ok) throw new Error(`${r.status} ${t.slice(0, 1500)}`); return j; };
 const b64 = (s) => { const u = new TextEncoder().encode(s); let x = ""; for (const c of u) x += String.fromCharCode(c); return btoa(x); };
 
 async function step(name, fn) {
@@ -167,8 +167,9 @@ async function uiTour() {
       click('.tab[data-view="ask"]'); await W.openMatter(m.id); await wait(800);
       const btn = document.querySelector(".msg.ai [data-word]");
       if (!btn) return; // 没配置模型时事项里没有回答，跳过
-      btn.click(); await wait(2500);
-      const shown = await call("debug.presented");
+      btn.click();
+      let shown = "";
+      for (let i = 0; i < 16 && !/Activity/.test(shown); i++) { await wait(500); shown = await call("debug.presented"); }
       if (!/Activity/.test(shown)) throw new Error("没有弹出分享面板：" + shown);
     }],
     ["15-深色模式", async () => { document.documentElement.dataset.theme = "dark"; click('.tab[data-view="ask"]'); click("#new-matter"); }],

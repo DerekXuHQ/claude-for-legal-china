@@ -423,7 +423,8 @@ export function createServer(ctx) {
       matters.saveMatter(udb(), matterId, {});
       return send(res, 200, { ...f, preview: text.slice(0, 200), ocr_pages: ocred, warn });
     } catch (err) {
-      return send(res, 400, { error: String(err?.message || err).slice(0, 400) });
+      // 调试模式（CLS_DEBUG，iOS 自检时打开）附上调用栈，便于定位
+      return send(res, 400, { error: String(err?.message || err).slice(0, 400), ...(process.env.CLS_DEBUG ? { stack: String(err?.stack || "").slice(0, 1500) } : {}) });
     }
   }
 

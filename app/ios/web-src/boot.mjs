@@ -164,6 +164,7 @@ async function main() {
   prepareData().then(() => { setTimeout(maybeAutoUpdate, 30000); setInterval(maybeAutoUpdate, 6 * 3600 * 1000); });
   // 服务端准备好之后再加载界面脚本（界面一启动就会调 /api/status）
   const launch = window.__launch || {};
+  if (launch.autotest || /[?&]autotest\b/.test(location.search)) process.env.CLS_DEBUG = "1";
   if (launch.autotest || /[?&]autotest\b/.test(location.search)) import("./autotest.mjs").then((m) => m.autotest()).then((r) => { window.__autotestDone = r; });
   if (/[?&]noui\b/.test(location.search)) { window.__bootDone = true; return; } // 调试：只启动服务端
   for (const src of ["shortcuts.js", "app.js"]) {
