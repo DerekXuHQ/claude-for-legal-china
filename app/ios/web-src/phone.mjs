@@ -110,3 +110,22 @@ export function setupIosVersion() {
   document.getElementById("au-check")?.closest(".row")?.remove();
   document.getElementById("app-update-btn")?.remove();
 }
+
+// 上传菜单：iOS 没有「选择文件夹」，换成「拍照识别」（直接打开相机，拍下合同、通知书后识别文字）
+export function setupIosAttach() {
+  const folder = document.getElementById("attach-folder");
+  if (!folder) return;
+  const cam = document.createElement("input");
+  cam.type = "file"; cam.accept = "image/*"; cam.setAttribute("capture", "environment"); cam.hidden = true; cam.id = "camera-input";
+  folder.after(cam);
+  const btn = folder.cloneNode(false);
+  btn.id = "attach-camera";
+  btn.innerHTML = '<svg class="i" aria-hidden="true"><use href="#i-image"/></svg><span>拍照识别<small>拍合同、通知书、判决书，自动识别文字</small></span>';
+  folder.replaceWith(btn);
+  btn.addEventListener("click", () => { document.getElementById("attach-pop").hidden = true; cam.click(); });
+  cam.addEventListener("change", (e) => { const files = [...e.target.files]; e.target.value = ""; if (files.length && typeof window.addFiles === "function") window.addFiles(files); });
+  const files = document.querySelector("#attach-files small");
+  if (files) files.textContent = "照片、扫描件、PDF、Word、录音……可多选";
+  const note = document.querySelector("#attach-pop .attach-note");
+  if (note) note.textContent = "也可以粘贴截图、文字或网页链接";
+}

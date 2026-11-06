@@ -10,7 +10,7 @@ import * as search from "../../server/search.mjs";
 import { ensureUserTables, runSync } from "../../server/official/sync.mjs";
 import { ensureOfficialColumns, promotePending } from "../../server/official/apply.mjs";
 import DATA_VERSION from "../../resources/data-version.json";
-import { setupPhone, setupNativeDictation, setupIosVersion } from "./phone.mjs";
+import { setupPhone, setupNativeDictation, setupIosVersion, setupIosAttach } from "./phone.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/build/pdf.worker.min.mjs";
 
@@ -162,6 +162,7 @@ async function main() {
   setupPhone();
   setupNativeDictation();
   setupIosVersion();
+  setupIosAttach();
   // 启动参数 -view agents 等：直接打开某个页面（截图测试用）
   if (launch.view && typeof window.showView === "function") setTimeout(() => window.showView(launch.view), 300);
 }
