@@ -78,7 +78,8 @@ html = html
   .replace(/script-src 'self'/, "script-src 'self' 'unsafe-eval'; connect-src 'self' blob: data:")
   .replace('<link rel="stylesheet" href="style.css">', '<link rel="stylesheet" href="style.css">\n<link rel="stylesheet" href="ios.css">')
   .replace(/<script src="shortcuts\.js"><\/script>\s*<script src="app\.js"><\/script>/, '<script type="module" src="boot.js"></script>')
-  .replace("<body ", '<body data-platform="ios" ');
+  .replace("<body ", '<body data-platform="ios" ')
+  .replace(/第一次打开需要解压法规数据并建立全文索引，大约一两分钟。/, "第一次打开要下载约 110 MB 的法规数据并在手机上建立全文索引，大约 2–5 分钟，请保持 App 在前台。");
 if (!html.includes('src="boot.js"')) throw new Error("index.html 里没找到脚本入口");
 writeFileSync(path.join(OUT, "index.html"), html);
 

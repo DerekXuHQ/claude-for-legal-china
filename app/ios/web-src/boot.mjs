@@ -74,19 +74,29 @@ function openLegalDb() {
 }
 
 async function prepareData() {
-  try {
-    const st = callSync("setup.status", { version: DATA_VERSION.version });
-    if (!st.ready) {
-      // 原生层在后台线程下载、解压、建全文索引，进度通过事件推回来
-      const off = on("setup", (ev) => { setup.phase = ev.phase || setup.phase; setup.progress = ev.progress ?? setup.progress; });
-      await call("setup.prepare", { url: DB_URL, sha256: DATA_VERSION.sha256, version: DATA_VERSION.version });
-      off();
+  // 下载失败（没网、网断了、中途切到后台）就自动重试；只有空间不足这类重试也没用的才报错
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const st = callSync("setup.status", { version: DATA_VERSION.version });
+      if (!st.ready) {
+        // 原生层在后台线程下载、解压、建全文索引，进度通过事件推回来
+        const off = on("setup", (ev) => { setup.phase = ev.phase || setup.phase; setup.progress = ev.progress ?? setup.progress; });
+        try { await call("setup.prepare", { url: DB_URL, sha256: DATA_VERSION.sha256, version: DATA_VERSION.version }); } finally { off(); }
+      }
+      setup.phase = "打开资料库"; setup.progress = 0.99;
+      openLegalDb();
+      setup.ready = true; setup.phase = "完成"; setup.progress = 1;
+      return;
+    } catch (e) {
+      const msg = String(e.message || e);
+      if (/空间不足/.test(msg)) { setup.error = msg; return; }
+      const wait = Math.min(60, 15 * attempt);
+      for (let t = wait; t > 0; t--) {
+        setup.phase = `准备失败（${msg.slice(0, 60)}），${t} 秒后自动重试（第 ${attempt} 次）。请确认网络正常，并保持 App 在前台`;
+        setup.progress = 0;
+        await new Promise((r) => setTimeout(r, 1000));
+      }
     }
-    setup.phase = "打开资料库"; setup.progress = 0.99;
-    openLegalDb();
-    setup.ready = true; setup.phase = "完成"; setup.progress = 1;
-  } catch (e) {
-    setup.error = `资料库准备失败：${e.message}。请检查网络后重新打开 App。`;
   }
 }
 
