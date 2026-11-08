@@ -187,7 +187,7 @@ cd app && npm run ios:sim -- -autotest
   2. 启动 `node ios/dev/mock-model.mjs 8791`；
   3. 把 `{"base_url":"http://127.0.0.1:8791/v1","api_key":"test","model":"mock-model","depth":"low"}` 写进 `$(xcrun simctl get_app_container <UDID> com.derekxuhq.chinalawsearch data)/Documents/data/settings.json`；
   4. `xcrun simctl launch <UDID> com.derekxuhq.chinalawsearch -autotest YES`，结果在同一目录的 `autotest.json`。
-- **最近一次本机结果（2026-11-08）**：iPhone 17 模拟器，iOS 27.2，mock 模型，**33/33 全过**（包括原生 Vision OCR、原生网络、AI 问答、命名 Agent、定时 Agent）。
+- **最近一次本机结果（2026-11-08）**：iPhone 17 模拟器，iOS 27.2，mock 模型，**33/33 全过**（包括原生 Vision OCR、原生网络、AI 问答、命名 Agent、定时 Agent）。同一天又用真实 API key 跑了一遍，也是 33/33（见第 6 节）。
 - 注意：首次准备数据时，如果 App 被切到后台（比如模拟器回到主屏幕），解压和建索引会暂停，回到前台后才继续。自检卡在「资料库准备」时先看 App 是不是在前台。
 - 可以用 iOS Simulator 工具（`mcp__Claude_Code_iOS_Simulator__control`）看界面、点按。
 
@@ -211,7 +211,7 @@ cd app && npm run ios:sim -- -autotest
 ### AI 可以接着做
 
 - [x] 本机模拟器跑通（2026-11-08，iOS 27.2，mock 模型，33/33）。Xcode 许可早已接受，这一步不再需要用户操作。
-- [ ] 本机模拟器用**真实 API key** 走一遍问答和 Agent。没做：真实 key 只在用户桌面版的 `settings.json` 里，那是用户自己用的，没有说可以拿来测试。需要用户同意后，把 key 写进模拟器 App 的 `settings.json`（只留在本机）再跑。原生层的网络通道已由 mock 模型走通，换成真实 key 只差模型服务这一段。
+- [x] 本机模拟器用**真实 API key** 走通（2026-11-08，用户同意后做）：把桌面版本机 `settings.json` 复制进模拟器 App 容器，模型 `gpt-6-luna`，iOS 27.2，自检 **33/33 全过**。AI 问答（流式）19 秒，回答 766 字；命名 Agent「保密协议分流」14 秒，1288 字；定时 Agent「合同续约监控」17 秒，报告 879 字。测完已卸载模拟器里的 App（key 随容器一起删除），key 没有进 git，也没上传到任何地方。
 - [ ] App Store 截图：6.9 英寸 iPhone（1320×2868）和 13 英寸 iPad（2064×2752）。可以复用 autotest 的截图流程，改一下尺寸和内容。
 - [ ] 真机测试：需要用户的 Apple ID，或者等 TestFlight 上线。
 - [ ] 加了 secrets 以后：检查 `testflight` job（签名、版本号、上传）。
