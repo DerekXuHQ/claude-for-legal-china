@@ -18,7 +18,7 @@
 
 | 部分 | 状态 |
 |---|---|
-| 桌面版（Electron，Mac/Windows） | 已发布。v1.0.76 安装包由 GitHub 构建；在线更新已发到第 22 号 |
+| 桌面版（Electron，Mac/Windows） | 已发布。v1.0.76 安装包由 GitHub 构建；在线更新已发到第 23 号（2026-11-08） |
 | 法规检索、OCR、各种上传方式 | 完成。中文识别要求 100% 准确，包括生僻字和繁体 |
 | Agent 生态 | 完成：150 个命名 Agent（中文职位名）、11 个定时 Agent、台账、实务画像。覆盖情况见下 |
 | 新建对话引导 | 已并入统一选择器：8 个场景交给 Agent，「Agent」页改为管理页 |
@@ -66,7 +66,7 @@
   - `server/official/`：从官方网站同步法规（`sync.mjs`、`fetch.mjs`）。
 - 数据：SQLite 加 FTS5 trigram 全文索引。数据包是 `resources/base.db.gz`，不在 git 里，存放在 GitHub 的 `build-inputs` 预发布。
 - 在线更新：Ed25519 签名的补丁，发到 GitHub 的 `updates` 预发布（tag `updates`），manifest 最后上传。公钥在 `app/shell/release-public-key.pem`。
-- 在线更新序号：`package.json` 里的 `updateSequence` 比线上旧（例如 15 对 22）是正常的。`scripts/stamp.mjs` 会在打安装包时（`app-installers.yml`）读取线上 manifest，自动写入最新序号；`publish-update.mjs` 也取线上和本地两者中较大的那个。不要手动改。
+- 在线更新序号：`package.json` 里的 `updateSequence` 比线上旧（例如 15 对 23）是正常的（`package.json` 不跟着每次在线更新改）。`scripts/stamp.mjs` 会在打安装包时（`app-installers.yml`）读取线上 manifest，自动写入最新序号；`publish-update.mjs` 也取线上和本地两者中较大的那个。不要手动改。
 - 测试：`cd app && npm test` 只覆盖官方法规同步（`test/official.test.mjs`，9 个用例）。界面、Agent、上传、OCR、导出等功能靠 iOS 自检（第 5 节）检查，iOS 和桌面用的是同一份界面和服务端代码。
 
 ---
