@@ -1,10 +1,16 @@
 # 交接说明：中国法律检索（桌面版 + iOS 版）
 
-更新：2026-11-07。写给接手这个项目的人或 AI 会话：读完这一份就能接着做，不需要翻之前的聊天记录。
+更新：2026-11-08。写给接手这个项目的人或 AI 会话：读完这一份就能接着做，不需要翻之前的聊天记录。
 
 - 仓库：`DerekXuHQ/claude-for-legal-china`（git remote `origin`，分支 `main`）。其他 remote 是参考用的分支，不要往那里推。
 - App 代码在 `app/`；仓库其余部分是 Claude Code 法律插件 marketplace（16 个插件、202 个技能），规则见根目录 `CLAUDE.md`。
 - 版本号固定为 **1.0.76**，用户没说改就不改。
+- 本地其他分支（2026-11-08 用 `git branch --merged main` 核对）**全部已并入 main**，没有待合并的工作，不要删：
+  - `ui-redesign`（2ce71c5「Hide the empty scenario pill」，worktree 在 `~/Voyager/conversation-855f1902f12580a903cb74f8/.voyager/legal-ui`，干净）：已在 main 里；
+  - `feat/desktop-app`：桌面版最初的打包改造，已并入；
+  - `cleanup/zh-docs`：最初加入 app 的那次提交，已并入；
+  - `fix/mcp-filesystem`：去掉诉讼、劳动插件里占位的文件系统连接器，已并入；
+  - `merge/cslawyer-zh`、`merge/fork-fixes`、`merge/gcheng-criminal`、`merge/horizon-skills`：合入上游中文版、官方法源清单、刑事辩护技能、HoriZon 起草与计算技能，均已并入。
 
 ---
 
@@ -14,10 +20,17 @@
 |---|---|
 | 桌面版（Electron，Mac/Windows） | 已发布。v1.0.76 安装包由 GitHub 构建；在线更新已发到第 22 号 |
 | 法规检索、OCR、各种上传方式 | 完成。中文识别要求 100% 准确，包括生僻字和繁体 |
-| Agent 生态 | 完成：150 个命名 Agent（每个技能一个，中文职位名）、11 个定时 Agent、台账、实务画像 |
+| Agent 生态 | 完成：150 个命名 Agent（中文职位名）、11 个定时 Agent、台账、实务画像。覆盖情况见下 |
 | 新建对话引导 | 已并入统一选择器：8 个场景交给 Agent，「Agent」页改为管理页 |
-| **iOS 版** | **能跑通。** CI 在 iOS 26.2 模拟器上自检 **33/33 全过**（最近一次：run 42231995897，提交 8924dbe） |
+| **iOS 版** | **能跑通。** CI 在 iPhone 17 Pro 模拟器（iOS 26.2，23C54；Xcode 26.3）上自检 **33/33 全过**（run 42231995897，提交 8924dbe）。`ios.yml` 用 runner 上最新的 Xcode（`ls /Applications/Xcode_*.app \| sort -V \| tail -1`），没有固定版本，runner 升级后模拟器版本会跟着变 |
 | iOS 上架 App Store | 没做。卡在用户这边的账号和备案（见第 6 节） |
+
+**技能和 Agent 的对应关系**（`app/server/ai/roster/roster.json`，由 `npm run agents` 生成）：仓库共 202 个技能，roster 收录 192 个；150 个命名任务 Agent 覆盖其中 153 个（其中 6 个是共用参考框架，不单独成 Agent，挂在用到它的 12 个 Agent 上，例如 `nda-review` 挂在「保密协议分流」）。**没有命名 Agent 的 49 个技能**，都是有意不做的：
+- 37 个配置类：各插件的 `cold-start-interview`、`customize`、`matter-workspace`（app 里由「实务画像」和「事项」承担）；
+- 2 个已弃用：`legal-clinic:form-generation`、`legal-clinic:plain-language-letters`；
+- 10 个 `legal-builder-hub` 技能（管理 Claude Code 插件市场本身，和 app 无关，roster 不收录）。
+
+定时 Agent 11 个，另算，不计入上面的 150 个。
 
 ---
 
@@ -53,7 +66,8 @@
   - `server/official/`：从官方网站同步法规（`sync.mjs`、`fetch.mjs`）。
 - 数据：SQLite 加 FTS5 trigram 全文索引。数据包是 `resources/base.db.gz`，不在 git 里，存放在 GitHub 的 `build-inputs` 预发布。
 - 在线更新：Ed25519 签名的补丁，发到 GitHub 的 `updates` 预发布（tag `updates`），manifest 最后上传。公钥在 `app/shell/release-public-key.pem`。
-- 测试：`cd app && npm test`。
+- 在线更新序号：`package.json` 里的 `updateSequence` 比线上旧（例如 15 对 22）是正常的。`scripts/stamp.mjs` 会在打安装包时（`app-installers.yml`）读取线上 manifest，自动写入最新序号；`publish-update.mjs` 也取线上和本地两者中较大的那个。不要手动改。
+- 测试：`cd app && npm test` 只覆盖官方法规同步（`test/official.test.mjs`，9 个用例）。界面、Agent、上传、OCR、导出等功能靠 iOS 自检（第 5 节）检查，iOS 和桌面用的是同一份界面和服务端代码。
 
 ---
 
@@ -106,7 +120,7 @@ WKWebView  app://local/index.html   （SchemeHandler 提供 App 包里的 Web/ �
 - `app/ios/project.yml`：XcodeGen 配置，生成的 `.xcodeproj`、`App/Web`、`App/Info.plist` 都不进 git。
   - Bundle ID：`com.derekxuhq.chinalawsearch`；最低 iOS 16.0；版本 1.0.76。
   - `PrivacyInfo.xcprivacy` 已写好。
-- `app/ios/dev/mock-native.mjs`：在 Node 里实现同一套原生桥，可以用浏览器（包括 Safari）测试网页部分。
+- `app/ios/dev/mock-native.mjs`：在 Node 里实现同一套原生桥，可以用浏览器（包括 Safari）测试网页部分。`ws.*` 的事件格式和 `Net.swift` 一样；在 macOS 上 `image.toJpeg` 用 `sips`、`audio.toWav` 用 `afconvert`。只做了桩的有：`speech.*`、`ocr.image`（返回空串，所以浏览器自检里「本机文字识别（Vision）」这一项必定失败，其余 32 项应全过）、`setup.prepare`、`share.file`、`debug.*`。
 - `app/ios/dev/mock-model.mjs`：模拟 OpenAI 兼容接口的测试模型服务，不用真实 API key 就能走通问答和 Agent。
 - 文档：
   - `app/ios/README.md`：怎么编译、怎么测试；
@@ -166,14 +180,16 @@ cd app && npm run ios:web && node ios/dev/mock-native.mjs <数据目录>
 cd app && npm run ios:sim -- -autotest
 ```
 
-- 本机已装 Xcode 27.2，但**用户还没接受许可**（需要用户输入密码，AI 做不了）：
-
-```bash
-sudo xcodebuild -license accept
-```
-
-- 之后脚本会自动下载 iOS 模拟器运行环境，约 8 GB。**本机磁盘只剩约 15 GB**，下载前先确认空间。
-- 有了模拟器以后，可以用 iOS Simulator 工具（`mcp__Claude_Code_iOS_Simulator__control`）看界面、点按。
+- 本机环境已就绪（2026-11-08 核对）：Xcode 27.2 许可已接受（`xcodebuild -checkFirstLaunchStatus` 返回 0），iOS 27.2 模拟器运行环境已装好（`xcrun simctl list runtimes`）。不用再下载。
+- **本机磁盘只剩十几 GB**：`ios/build`（DerivedData）约 1 GB，模拟器里的 App 数据约 1.2 GB，用完可以删掉 App。
+- `run-sim.sh` 不会写 `settings.json`，直接用它跑自检时 AI 相关几项会失败。要走通 AI 链路，按下面的顺序手动跑（和 CI 一样）：
+  1. 编译（同 `run-sim.sh`），`xcrun simctl install` 装上；
+  2. 启动 `node ios/dev/mock-model.mjs 8791`；
+  3. 把 `{"base_url":"http://127.0.0.1:8791/v1","api_key":"test","model":"mock-model","depth":"low"}` 写进 `$(xcrun simctl get_app_container <UDID> com.derekxuhq.chinalawsearch data)/Documents/data/settings.json`；
+  4. `xcrun simctl launch <UDID> com.derekxuhq.chinalawsearch -autotest YES`，结果在同一目录的 `autotest.json`。
+- **最近一次本机结果（2026-11-08）**：iPhone 17 模拟器，iOS 27.2，mock 模型，**33/33 全过**（包括原生 Vision OCR、原生网络、AI 问答、命名 Agent、定时 Agent）。
+- 注意：首次准备数据时，如果 App 被切到后台（比如模拟器回到主屏幕），解压和建索引会暂停，回到前台后才继续。自检卡在「资料库准备」时先看 App 是不是在前台。
+- 可以用 iOS Simulator 工具（`mcp__Claude_Code_iOS_Simulator__control`）看界面、点按。
 
 ---
 
@@ -181,21 +197,21 @@ sudo xcodebuild -license accept
 
 ### 需要用户本人做
 
-1. 运行 `sudo xcodebuild -license accept`（可能还要运行 `xcodebuild -runFirstLaunch`）。
-2. 加入 Apple Developer Program（每年 99 美元）。
-3. 在 App Store Connect 创建 App；生成 API key；在 GitHub 仓库里加 4 个 secrets：
+1. 加入 Apple Developer Program（每年 99 美元）。
+2. 在 App Store Connect 创建 App；生成 API key；在 GitHub 仓库里加 4 个 secrets：
    - `APPLE_TEAM_ID`
    - `ASC_KEY_ID`
    - `ASC_ISSUER_ID`
    - `ASC_KEY_P8`
 
    加好以后，`ios.yml` 里的 `testflight` job 会自动打包并上传 TestFlight。
-4. 中国区上架需要的 ICP 备案，以及生成式 AI 相关的备案或登记：见 `app/docs/ios-app-store.md`，其中标了〔待核实〕的条目要先核实。
-5. 隐私政策需要放到一个公开网页上（文字在 `ios-listing.md`），审核用的测试 API key 也由用户提供。
+3. 中国区上架需要的 ICP 备案，以及生成式 AI 相关的备案或登记：见 `app/docs/ios-app-store.md`，其中标了〔待核实〕的条目要先核实。
+4. 隐私政策需要放到一个公开网页上（文字在 `ios-listing.md`），审核用的测试 API key 也由用户提供。
 
 ### AI 可以接着做
 
-- [ ] 许可接受后：在本机模拟器里跑一遍，用真实 API key 走通问答和 Agent。目前真实 key 只在浏览器 mock 里测过，原生层还没用真实 key 测过。
+- [x] 本机模拟器跑通（2026-11-08，iOS 27.2，mock 模型，33/33）。Xcode 许可早已接受，这一步不再需要用户操作。
+- [ ] 本机模拟器用**真实 API key** 走一遍问答和 Agent。没做：真实 key 只在用户桌面版的 `settings.json` 里，那是用户自己用的，没有说可以拿来测试。需要用户同意后，把 key 写进模拟器 App 的 `settings.json`（只留在本机）再跑。原生层的网络通道已由 mock 模型走通，换成真实 key 只差模型服务这一段。
 - [ ] App Store 截图：6.9 英寸 iPhone（1320×2868）和 13 英寸 iPad（2064×2752）。可以复用 autotest 的截图流程，改一下尺寸和内容。
 - [ ] 真机测试：需要用户的 Apple ID，或者等 TestFlight 上线。
 - [ ] 加了 secrets 以后：检查 `testflight` job（签名、版本号、上传）。
