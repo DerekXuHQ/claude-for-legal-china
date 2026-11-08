@@ -1,9 +1,16 @@
 // 开发用：在浏览器里模拟 iOS 原生层，不用 Xcode 就能测 iOS 版的网页部分。
-// 实现的接口和 ios/App/Sources/Bridge.swift 一一对应（这里也是原生接口的说明书）。
+// 实现的接口和 ios/App/Sources/Bridge.swift 一一对应（这里也是原生接口的说明书），事件格式与 Net.swift / Media.swift 相同。
+// 有意只做桩的：speech.*（没有语音识别，返回错误）、ocr.image（没有 Vision，返回空串，服务端改用模型识别）、
+// setup.prepare（不下载数据包，要先把 legal.db 放进数据目录）、share.file / debug.*（浏览器里没有分享面板和网页截图）。
+// image.toJpeg / audio.toWav 在 macOS 上用 sips / afconvert 实现，其他系统返回「开发模式不支持」。
 // 用法：node ios/dev/mock-native.mjs <数据目录>   然后浏览器打开打印出来的地址
 import http from "node:http";
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync, rmSync, renameSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { tmpdir } from "node:os";
+import { mkdtempSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
@@ -49,6 +56,32 @@ const push = (m) => { for (const c of clients) c.write(`data: ${JSON.stringify(m
 const resolve = (id, value, error) => push({ kind: "resolve", id, value, error });
 const emit = (event, data) => push({ kind: "emit", event, data });
 const nets = new Map();
+const sockets = new Map(); // id → WebSocket，和 Net.swift 的 WebSocketBridge 一样：关闭事件只发一次
+const run = promisify(execFile);
+
+// 和 Net.swift 相同：先发 open / message / error，最后发一次 close（带关闭码）
+function wsFinish(id, code) { if (sockets.delete(id)) emit("ws:" + id, { type: "close", code }); }
+function wsOpen(a) {
+  const ws = new WebSocket(a.url, { headers: a.headers || {} });
+  ws.binaryType = "arraybuffer";
+  sockets.set(a.id, ws);
+  ws.onopen = () => emit("ws:" + a.id, { type: "open" });
+  ws.onmessage = (e) => emit("ws:" + a.id, { type: "message", data: typeof e.data === "string" ? e.data : Buffer.from(e.data).toString("utf-8") });
+  ws.onerror = (e) => { if (sockets.get(a.id) === ws) emit("ws:" + a.id, { type: "error", message: String(e.message || e.error?.message || "WebSocket 连接失败") }); };
+  ws.onclose = (e) => { if (sockets.get(a.id) === ws) wsFinish(a.id, e.code || 1006); };
+}
+
+// 和 Media.swift 相同：输入输出都是 base64
+async function convert(a, ext, outExt, args) {
+  if (process.platform !== "darwin") throw new Error("开发模式不支持：只有 macOS 能转换");
+  const dir = mkdtempSync(path.join(tmpdir(), "mock-native-"));
+  try {
+    const inp = path.join(dir, "in." + ext), out = path.join(dir, "out." + outExt);
+    writeFileSync(inp, Buffer.from(a.data || "", "base64"));
+    await run(args[0], args[1](inp, out));
+    return readFileSync(out).toString("base64");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+}
 
 async function asyncOp(id, op, a) {
   try {
@@ -66,6 +99,16 @@ async function asyncOp(id, op, a) {
         return;
       }
       case "net.cancel": nets.get(a.id)?.abort(); return resolve(id, true);
+      case "ws.open": wsOpen(a); return resolve(id, true);
+      case "ws.send": sockets.get(a.id)?.send(String(a.data)); return resolve(id, true);
+      case "ws.close": { const ws = sockets.get(a.id); if (ws) { wsFinish(a.id, 1000); try { ws.close(1000); } catch {} } return resolve(id, true); }
+      case "image.toJpeg":
+        try { return resolve(id, await convert(a, "img", "jpg", ["sips", (i, o) => ["-s", "format", "jpeg", "-s", "formatOptions", "90", i, "--out", o]])); }
+        catch (e) { return resolve(id, null, /开发模式/.test(e.message) ? e.message : "读不出这张照片"); }
+      case "audio.toWav": {
+        const rate = Math.round(Number(a.rate) || 24000);
+        return resolve(id, await convert(a, String(a.ext || "m4a").replace(/[^a-z0-9]/gi, ""), "wav", ["afconvert", (i, o) => ["-f", "WAVE", "-d", "LEI16@" + rate, "-c", "1", i, o]]));
+      }
       case "notify": console.log("[通知]", a.title, a.body); return resolve(id, true);
       case "app.ready": return resolve(id, true);
       case "share.file": console.log("[分享]", a.name, Math.round((a.data || "").length * 0.75), "字节"); return resolve(id, true);
