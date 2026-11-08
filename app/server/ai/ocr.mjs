@@ -183,7 +183,7 @@ export async function tiffToPngs(buffer) {
 /** HEIC（苹果手机照片）：Mac 上用系统自带的 sips 转成 JPEG；其他系统提示转换 */
 export async function heicToJpeg(buffer) {
   if (IOS()) return IOS().heicToJpeg(buffer);
-  if (process.platform !== "darwin") throw new Error("这台电脑不能直接读取 HEIC 照片，请在手机或相册里导出为 JPG 后再上传");
+  if (process.platform !== "darwin") throw new Error("本机不能直接读取 HEIC 照片，请在手机或相册里导出为 JPG 后再上传");
   const { mkdtempSync, writeFileSync, readFileSync, rmSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const path = await import("node:path");
