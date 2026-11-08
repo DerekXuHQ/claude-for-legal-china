@@ -180,6 +180,8 @@ cd app && npm run ios:web && node ios/dev/mock-native.mjs <数据目录>
 cd app && npm run ios:sim -- -autotest
 ```
 
+- **本机测试设备：iPhone 18 Pro 模拟器**（用户在 Device Hub 里开好的那台，UDID `5926FAE6-64BE-42D7-95E6-2841C8569AA7`，iOS 27.2）。以后本机测试都用它，不要新建模拟器。`run-sim.sh` 默认就选它：已开着的 iPhone 18 Pro → 已开着的其他 iPhone → 最新系统里的 iPhone；也可以用 `UDID=<设备 ID> npm run ios:sim` 指定。
+- **Xcode 27 没有 Simulator.app 了**，模拟器窗口在 `Device Hub` 里（`/Applications/Xcode.app/Contents/Applications/DeviceHub.app`）。`run-sim.sh` 会先找 Device Hub，再找旧的 Simulator，都打不开也会照常安装、启动 App。
 - 本机环境已就绪（2026-11-08 核对）：Xcode 27.2 许可已接受（`xcodebuild -checkFirstLaunchStatus` 返回 0），iOS 27.2 模拟器运行环境已装好（`xcrun simctl list runtimes`）。不用再下载。
 - **本机磁盘只剩十几 GB**：`ios/build`（DerivedData）约 1 GB，模拟器里的 App 数据约 1.2 GB，用完可以删掉 App。
 - `run-sim.sh` 不会写 `settings.json`，直接用它跑自检时 AI 相关几项会失败。要走通 AI 链路，按下面的顺序手动跑（和 CI 一样）：
