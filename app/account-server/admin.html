@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>账号后台 · 中国法律检索</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --text:#1d1d1b; --muted:#6b6b66; --line:#e3e2dc; --accent:#8a1c1c; --ok:#2f6b3a; --warn:#9a6a00; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161615; --card:#20201e; --text:#ecebe6; --muted:#9a9993; --line:#33332f; --accent:#e07a6e; --ok:#7cc48a; --warn:#e0b04f; } }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin:0; font:14px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background:var(--bg); color:var(--text); }
+  header { display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card); position:sticky; top:0; }
+  header h1 { font-size:16px; margin:0; flex:1; }
+  main { max-width:1200px; margin:0 auto; padding:16px; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  button { border:1px solid var(--line); background:var(--card); border-radius:6px; padding:5px 12px; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.danger { color:var(--accent); }
+  input, select, textarea { border:1px solid var(--line); background:var(--bg); border-radius:6px; padding:6px 8px; width:100%; }
+  .tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .tabs button.on { background:var(--text); color:var(--bg); border-color:var(--text); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-weight:600; color:var(--muted); font-size:12px; }
+  .muted { color:var(--muted); } .small { font-size:12px; }
+  .st { font-size:12px; padding:1px 8px; border-radius:10px; border:1px solid currentColor; white-space:nowrap; }
+  .st.registered { color:var(--warn); } .st.active { color:var(--ok); } .st.suspended { color:var(--muted); }
+  .acts { display:flex; gap:6px; flex-wrap:wrap; }
+  #login { max-width:320px; margin:80px auto; display:grid; gap:10px; }
+  dialog { border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text); width:min(480px, 92vw); }
+  dialog form { display:grid; gap:10px; }
+  .row { display:flex; gap:8px; } .row > * { flex:1; }
+  .err { color:var(--accent); }
+  @media (max-width:760px) { td:nth-child(3), th:nth-child(3), td:nth-child(5), th:nth-child(5) { display:none; } }
+</style>
+</head>
+<body>
+<header><h1>账号后台</h1><span class="muted small" id="who"></span><button id="logout" hidden>退出</button></header>
+<main>
+  <form id="login" hidden>
+    <h2>管理员登录</h2>
+    <input type="password" name="password" placeholder="管理员密码" autocomplete="current-password" required>
+    <button class="primary">登录</button>
+    <p class="err small" id="login-err"></p>
+  </form>
+  <div id="app" hidden>
+    <div class="tabs" id="tabs">
+      <button data-f="registered" class="on">待开通</button>
+      <button data-f="active">已开通</button>
+      <button data-f="suspended">已停用</button>
+      <button data-f="all">全部</button>
+      <button data-f="events">操作记录</button>
+    </div>
+    <div id="list"></div>
+  </div>
+</main>
+
+<dialog id="assign">
+  <form method="dialog" id="assign-form">
+    <h3 id="assign-title">开通在线模型</h3>
+    <label><select name="mode">
+      <option value="litellm">自动生成 key（LiteLLM）</option>
+      <option value="manual">手动填写接口和 key</option>
+    </select></label>
+    <div data-mode="litellm" class="row">
+      <label>每期额度（美元，空=不限）<input name="budget" type="number" min="0" step="1" placeholder="例如 20"></label>
+      <label>周期<select name="budget_duration"><option value="30d">每 30 天</option><option value="7d">每 7 天</option><option value="1d">每天</option></select></label>
+    </div>
+    <label data-mode="litellm">限定模型（逗号分隔，空=全部）<input name="models" placeholder="gpt-6-luna, claude-sonnet-5-5"></label>
+    <label data-mode="manual">接口地址<input name="base_url" placeholder="https://api.portkey.bond/v1"></label>
+    <label data-mode="manual">API key<input name="api_key" type="password" autocomplete="off"></label>
+    <label>默认模型（可空，App 里用户可自己选）<input name="model"></label>
+    <p class="err small" id="assign-err"></p>
+    <div class="row"><button value="cancel" formnovalidate>取消</button><button class="primary" id="assign-ok" value="ok">开通</button></div>
+  </form>
+</dialog>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const fmt = (t) => t ? new Date(t).toLocaleString("zh-CN", { hour12:false, year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
+let token = sessionStorage.getItem("adminToken") || "", filter = "registered", data = { users: [] };
+
+async function api(path, body) {
+  const r = await fetch(path, { method: body ? "POST" : "GET", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && path !== "/v1/admin/login") { token = ""; sessionStorage.removeItem("adminToken"); show(); }
+  if (!r.ok) throw new Error(j.error || `出错了（${r.status}）`);
+  return j;
+}
+function show() {
+  $("#login").hidden = !!token; $("#app").hidden = !token; $("#logout").hidden = !token;
+  if (token) load();
+}
+$("#login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try { token = (await api("/v1/admin/login", { password: e.target.password.value })).token; sessionStorage.setItem("adminToken", token); show(); }
+  catch (err) { $("#login-err").textContent = err.message; }
+});
+$("#logout").onclick = () => { token = ""; sessionStorage.removeItem("adminToken"); show(); };
+$("#tabs").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  filter = b.dataset.f; document.querySelectorAll("#tabs button").forEach((x) => x.classList.toggle("on", x === b)); render();
+});
+
+async function load() {
+  data = await api("/v1/admin/users");
+  const n = data.users.filter((u) => u.status === "registered").length;
+  $("#tabs [data-f=registered]").textContent = `待开通${n ? ` (${n})` : ""}`;
+  $("#who").textContent = `共 ${data.users.length} 个账号`;
+  render();
+}
+const STATUS = { registered: "待开通", active: "已开通", suspended: "已停用" };
+async function render() {
+  if (filter === "events") {
+    const { events } = await api("/v1/admin/events");
+    $("#list").innerHTML = `<table><tr><th>时间</th><th>账号</th><th>操作</th><th>说明</th></tr>${events.map((e) => `<tr><td class="small">${fmt(e.at)}</td><td>${esc(e.user_email)}</td><td>${esc(e.action)}</td><td class="small muted">${esc(e.detail)}</td></tr>`).join("")}</table>`;
+    return;
+  }
+  const users = data.users.filter((u) => filter === "all" || u.status === filter);
+  if (!users.length) { $("#list").innerHTML = `<p class="muted">没有${filter === "all" ? "" : STATUS[filter]}的账号。</p>`; return; }
+  $("#list").innerHTML = `<table><tr><th>账号</th><th>状态</th><th>申请说明</th><th>在线模型</th><th>时间</th><th></th></tr>${users.map((u) => `<tr data-id="${u.id}">
+    <td><b>${esc(u.email)}</b><div class="small muted">${esc([u.name, u.org].filter(Boolean).join(" · "))}</div></td>
+    <td><span class="st ${u.status}">${STATUS[u.status] || u.status}</span>${u.note ? `<div class="small muted">${esc(u.note)}</div>` : ""}</td>
+    <td class="small">${esc(u.purpose) || '<span class="muted">（未填）</span>'}</td>
+    <td class="small">${u.status === "active" ? `${u.key_source === "litellm" ? "自动生成" : "手动"} · …${esc(u.key_tail)}<div class="muted">${esc(u.base_url)}${u.model ? ` · ${esc(u.model)}` : ""}${u.budget ? ` · $${u.budget}` : ""}</div>` : '<span class="muted">—</span>'}</td>
+    <td class="small muted">注册 ${fmt(u.created_at)}${u.activated_at ? `<br>开通 ${fmt(u.activated_at)}` : ""}${u.last_seen ? `<br>最近 ${fmt(u.last_seen)}` : ""}${u.platform ? `<br>${esc(u.platform)}` : ""}</td>
+    <td><div class="acts">
+      ${u.status !== "suspended" ? `<button class="primary" data-a="assign">${u.status === "active" ? "更换 key" : "开通"}</button>` : ""}
+      ${u.status === "active" ? `<button data-a="revoke">收回</button>` : ""}
+      ${u.status !== "suspended" ? `<button data-a="suspend">停用</button>` : `<button data-a="resume">恢复</button>`}
+      <button data-a="reset-password">重置密码</button>
+      <button class="danger" data-a="delete">删除</button>
+    </div></td></tr>`).join("")}</table>`;
+}
+
+$("#list").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-a]"); if (!b) return;
+  const id = b.closest("tr").dataset.id, u = data.users.find((x) => String(x.id) === id), a = b.dataset.a;
+  try {
+    if (a === "assign") return openAssign(u);
+    if (a === "revoke" && !confirm(`收回 ${u.email} 的在线模型？${u.key_source === "litellm" ? "自动生成的 key 会被作废。" : ""}`)) return;
+    if (a === "delete" && !confirm(`删除账号 ${u.email}？不能恢复。`)) return;
+    let body = {};
+    if (a === "suspend") { const note = prompt(`停用 ${u.email}。给用户看的原因（可空）：`); if (note === null) return; body = { note }; }
+    const r = await api(`/v1/admin/users/${id}/${a}`, body);
+    if (a === "reset-password") alert(`${u.email} 的新密码：${r.password}\n请通过可靠渠道告诉对方，登录后让对方自己改。`);
+    load();
+  } catch (err) { alert(err.message); }
+});
+
+function openAssign(u) {
+  const f = $("#assign-form"); f.reset(); $("#assign-err").textContent = "";
+  $("#assign-title").textContent = `开通在线模型 · ${u.email}`;
+  f.mode.value = data.litellm ? "litellm" : "manual";
+  f.mode.querySelector("[value=litellm]").disabled = !data.litellm;
+  if (!data.litellm) f.mode.querySelector("[value=litellm]").textContent = "自动生成 key（服务端没配置 LiteLLM）";
+  if (u.status === "active") { f.model.value = u.model || ""; if (u.key_source === "manual") f.base_url.value = u.base_url; }
+  syncMode(); $("#assign").dataset.id = u.id; $("#assign").showModal();
+}
+function syncMode() { const m = $("#assign-form").mode.value; document.querySelectorAll("#assign [data-mode]").forEach((x) => x.hidden = x.dataset.mode !== m); }
+$("#assign-form").mode.addEventListener("change", syncMode);
+$("#assign-ok").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const f = $("#assign-form");
+  const body = { mode: f.mode.value, model: f.model.value.trim() };
+  if (body.mode === "litellm") Object.assign(body, { budget: f.budget.value, budget_duration: f.budget_duration.value, models: f.models.value.split(/[,，\s]+/).filter(Boolean) });
+  else Object.assign(body, { base_url: f.base_url.value.trim(), api_key: f.api_key.value.trim() });
+  try { await api(`/v1/admin/users/${$("#assign").dataset.id}/assign`, body); $("#assign").close(); load(); }
+  catch (err) { $("#assign-err").textContent = err.message; }
+});
+show();
+</script>
+</body>
+</html>

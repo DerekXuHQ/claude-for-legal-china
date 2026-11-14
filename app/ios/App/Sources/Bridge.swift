@@ -25,6 +25,7 @@ final class Bridge: NSObject, WKScriptMessageHandler {
         net.cancelAll()
         ws.closeAll()
         speech.stop(final: false)
+        MainActor.assumeIsolated { LocalLLM.shared.unload() }
         for (_, d) in dbs { d.close() }
         dbs.removeAll()
     }
@@ -134,6 +135,7 @@ final class Bridge: NSObject, WKScriptMessageHandler {
         case "sqlite.close":
             if let h = (a["db"] as? NSNumber)?.intValue { dbs[h]?.close(); dbs[h] = nil }
             return true
+        case "llm.ready": return MainActor.assumeIsolated { LocalLLM.supported && LocalLLM.shared.ready }
         default:
             throw BridgeError("未知的同步接口：\(op)")
         }
@@ -200,6 +202,19 @@ final class Bridge: NSObject, WKScriptMessageHandler {
                     let dir = Paths.data.appendingPathComponent("shots", isDirectory: true)
                     try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
                     do { try png.write(to: dir.appendingPathComponent(name + ".png")); self.resolve(id, true) } catch { self.reject(id, error.localizedDescription) }
+                }
+            }
+        case "llm.status": resolve(id, MainActor.assumeIsolated { LocalLLM.shared.status() })
+        case "llm.start": MainActor.assumeIsolated { LocalLLM.shared.bridge = self; LocalLLM.shared.start(server: a["server"] as? String ?? "") }; resolve(id, true)
+        case "llm.pause": MainActor.assumeIsolated { LocalLLM.shared.pause() }; resolve(id, true)
+        case "llm.delete": MainActor.assumeIsolated { LocalLLM.shared.delete() }; resolve(id, true)
+        case "llm.cancel": MainActor.assumeIsolated { LocalLLM.shared.cancel(id: a["id"] as? String ?? "") }; resolve(id, true)
+        case "llm.generate":
+            MainActor.assumeIsolated {
+                LocalLLM.shared.bridge = self
+                LocalLLM.shared.generate(id: a["id"] as? String ?? "", messages: a["messages"] as? [[String: String]] ?? [],
+                                         maxTokens: (a["maxTokens"] as? NSNumber)?.intValue ?? 400) { [weak self] text, err in
+                    DispatchQueue.main.async { if let err { self?.reject(id, err) } else { self?.resolve(id, text ?? "") } }
                 }
             }
         case "notify":

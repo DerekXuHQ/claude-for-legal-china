@@ -720,3 +720,20 @@ dialog.wide form { max-height: 88vh; overflow: auto; }
 .pk-groups li.pk-sep { height: 1px; padding: 0; margin: 6px 4px; background: var(--line); cursor: default; }
 .pk-groups li.pk-sep:hover { background: var(--line); }
 .pk-note + .pk-card ~ .pk-note, .pk-card + .pk-note { margin-top: 10px; }
+
+/* 账号、本机小模型（设置页） */
+.acct-form, #acct-box { display: flex; flex-direction: column; gap: 12px; }
+.acct-mode { align-self: flex-start; }
+.acct-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.acct-st { font-size: 12px; padding: 2px 10px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; }
+.acct-st.ok { color: var(--ok); } .acct-st.warn { color: var(--warn); } .acct-st.muted { color: var(--muted); }
+.acct-more, .custom-api { border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; }
+.acct-more[open], .custom-api[open] { display: flex; flex-direction: column; gap: 10px; padding-bottom: 14px; }
+.acct-more summary, .custom-api summary { cursor: pointer; font-size: 13px; }
+button.danger { color: var(--accent); }
+#acct-box textarea { width: 100%; resize: vertical; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+#acct-box a, #ai-source-note a { color: var(--accent); }
+.local-model { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.local-model h3 { margin: 0; font-size: 14px; }
+.lm-bar { height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; }
+.lm-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }

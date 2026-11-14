@@ -73,8 +73,9 @@ async function init() {
   initBrowse();
   loadModels();
   pollUpdates();
-  // 打开就是法律助理；没配好接口时直接到设置
-  showView(m.configured ? "ask" : "settings");
+  // 打开就是法律助理；没有任何可用模型时打开检索（检索不需要账号和模型）
+  showView(m.configured ? "ask" : "search");
+  api("/api/account?refresh=1").then((a) => { state.account = a; if (a.online !== state.wasOnline) { state.wasOnline = a.online; loadModels(); } }).catch(() => {});
 }
 
 /* ---------- 检索 ---------- */
@@ -1284,11 +1285,12 @@ async function loadSettingsForm() {
   fillModelSelects(state.modelList || []);
   $("#models-status").textContent = "";
   $("#model-list").hidden = true;
+  renderAccount(true); renderLocalModel();
   renderAppUpdate(state.appUpdate || await api("/api/app-update").catch(() => ({ status: "unavailable" })));
 }
 let saveTimer = null;
 $("#settings-form").addEventListener("change", (e) => {
-  if (e.target.closest(".keys-opts, .keys-list")) return; // 快捷键自己存
+  if (e.target.closest(".keys-opts, .keys-list, #acct-box, #local-model")) return; // 快捷键、账号自己存
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     await saveSettings();
@@ -1318,6 +1320,121 @@ $("#test-models").addEventListener("click", async () => {
 
 
 
+/* ---------- 账号 ---------- */
+// 账号不是必需的：不登录也能检索、浏览、用事项和本机小模型；账号用来申请开通在线模型。
+const ACCT_STATUS = { registered: ["待开通", "warn"], active: ["已开通在线模型", "ok"], suspended: ["已停用", "muted"] };
+async function renderAccount(refresh = false) {
+  const box = $("#acct-box");
+  let a;
+  try { a = await api("/api/account" + (refresh ? "?refresh=1" : "")); }
+  catch (err) { box.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
+  state.account = a;
+  renderAiSourceNote();
+  if (!a.signed_in) {
+    const mode = box.dataset.mode || "register";
+    box.innerHTML = `
+      <p class="muted small">不登录也能检索、浏览法规，使用事项、台账和本机小模型。注册账号后，可以申请开通在线模型（更完整的问答、Agent 和文书）；开通后打开 App 就会自动连上，不用自己填 API key。</p>
+      <div class="seg acct-mode"><button type="button" data-m="register" class="${mode === "register" ? "on" : ""}">注册</button><button type="button" data-m="login" class="${mode === "login" ? "on" : ""}">登录</button></div>
+      <div class="acct-form">
+        <label>邮箱<input id="acct-email" type="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></label>
+        <label>密码<input id="acct-pw" type="password" autocomplete="${mode === "register" ? "new-password" : "current-password"}" placeholder="${mode === "register" ? "至少 8 位" : ""}"></label>
+        ${mode === "register" ? `
+        <label>称呼<input id="acct-name" autocomplete="name" placeholder="选填"></label>
+        <label>单位<input id="acct-org" autocomplete="organization" placeholder="选填"></label>
+        <label>用途说明<textarea id="acct-purpose" rows="2" placeholder="选填，方便开通在线模型。例如：律所日常检索和合同审查"></textarea></label>
+        <label class="check"><input type="checkbox" id="acct-agree"> 我已阅读并同意 <a href="${esc(a.server)}/privacy" target="_blank" rel="noopener">隐私政策</a></label>` : ""}
+        <div class="row"><button type="button" class="primary" id="acct-go">${mode === "register" ? "注册" : "登录"}</button><span class="small err" id="acct-err"></span></div>
+        ${mode === "login" ? `<p class="muted small">忘记密码？请到 <a href="${esc(a.server)}/support" target="_blank" rel="noopener">帮助页</a> 联系我们重置。</p>` : ""}
+      </div>`;
+    $$(".acct-mode button", box).forEach((b) => b.addEventListener("click", () => { box.dataset.mode = b.dataset.m; renderAccount(); }));
+    $("#acct-go").addEventListener("click", async () => {
+      const err = $("#acct-err"); err.textContent = "";
+      const body = { email: $("#acct-email").value.trim(), password: $("#acct-pw").value };
+      if (mode === "register") {
+        if (!$("#acct-agree").checked) { err.textContent = "请先阅读并同意隐私政策"; return; }
+        Object.assign(body, { name: $("#acct-name").value.trim(), org: $("#acct-org").value.trim(), purpose: $("#acct-purpose").value.trim() });
+      }
+      $("#acct-go").disabled = true;
+      try {
+        await api(`/api/account/${mode}`, { method: "POST", body: JSON.stringify(body) });
+        toast(mode === "register" ? "注册成功" : "已登录", 2000);
+        await renderAccount(); loadModels();
+      } catch (e) { err.textContent = e.message; $("#acct-go").disabled = false; }
+    });
+    return;
+  }
+  const [label, tone] = ACCT_STATUS[a.status] || [a.status, "muted"];
+  box.innerHTML = `
+    <div class="acct-card">
+      <div><b>${esc(a.email)}</b>${a.name || a.org ? `<div class="muted small">${esc([a.name, a.org].filter(Boolean).join(" · "))}</div>` : ""}</div>
+      <span class="acct-st ${tone}">${esc(label)}</span>
+    </div>
+    <p class="small">${esc(a.message)}${a.notice ? `<br><span class="muted">${esc(a.notice)}</span>` : ""}</p>
+    ${a.online && a.has_custom_key ? `<label>在线模型用哪个<select id="acct-source">
+      <option value="auto">账号开通的（默认）</option><option value="custom">我自己填的接口</option></select></label>` : ""}
+    <div class="row"><button type="button" class="ghost" id="acct-refresh">${ic("refresh")}刷新状态</button><button type="button" class="ghost" id="acct-logout">退出登录</button></div>
+    <details class="acct-more"><summary>修改密码</summary>
+      <label>原密码<input id="acct-old" type="password" autocomplete="current-password"></label>
+      <label>新密码<input id="acct-new" type="password" autocomplete="new-password" placeholder="至少 8 位"></label>
+      <div class="row"><button type="button" class="ghost" id="acct-pw-go">修改</button><span class="small err" id="acct-pw-err"></span></div>
+    </details>
+    <details class="acct-more"><summary>删除账号</summary>
+      <p class="small">删除后，服务端会立即删除你的邮箱、密码和申请信息，为你开通的在线模型 key 同时作废，不能恢复。本机的法规库、事项和台账不受影响。</p>
+      <label>输入密码确认<input id="acct-del-pw" type="password" autocomplete="current-password"></label>
+      <div class="row"><button type="button" class="danger" id="acct-del">永久删除账号</button><span class="small err" id="acct-del-err"></span></div>
+    </details>
+    <p class="muted small"><a href="${esc(a.server)}/privacy" target="_blank" rel="noopener">隐私政策</a> · <a href="${esc(a.server)}/support" target="_blank" rel="noopener">帮助</a></p>`;
+  if ($("#acct-source")) {
+    $("#acct-source").value = a.model_source === "custom" ? "custom" : "auto";
+    $("#acct-source").addEventListener("change", async (e) => { await api("/api/account/source", { method: "POST", body: JSON.stringify({ model_source: e.target.value }) }); toast("已切换", 1500); loadModels(); renderAiSourceNote(); });
+  }
+  $("#acct-refresh").addEventListener("click", async () => { await renderAccount(true); loadModels(); toast("已刷新", 1500); });
+  $("#acct-logout").addEventListener("click", async () => {
+    if (!confirm("退出登录？在线模型会停用，本机资料不受影响。")) return;
+    await api("/api/account/logout", { method: "POST", body: "{}" }); box.dataset.mode = "login"; renderAccount(); loadModels();
+  });
+  $("#acct-pw-go").addEventListener("click", async () => {
+    try { await api("/api/account/password", { method: "POST", body: JSON.stringify({ old_password: $("#acct-old").value, new_password: $("#acct-new").value }) }); toast("密码已修改，其他设备需要重新登录", 3000); $("#acct-old").value = $("#acct-new").value = ""; $("#acct-pw-err").textContent = ""; }
+    catch (e) { $("#acct-pw-err").textContent = e.message; }
+  });
+  $("#acct-del").addEventListener("click", async () => {
+    if (!confirm(`永久删除账号 ${a.email}？不能恢复。`)) return;
+    try { await api("/api/account/delete", { method: "POST", body: JSON.stringify({ password: $("#acct-del-pw").value }) }); toast("账号已删除", 3000); box.dataset.mode = "register"; renderAccount(); loadModels(); }
+    catch (e) { $("#acct-del-err").textContent = e.message; }
+  });
+}
+function renderAiSourceNote() {
+  const a = state.account || {}, el = $("#ai-source-note");
+  if (!el) return;
+  el.textContent = a.online ? `账号 ${a.email} 已开通在线模型，不需要在这里填写。`
+    : a.signed_in ? (a.status === "suspended" ? "账号已停用。" : "账号已注册，在线模型等待开通；开通后自动生效。")
+    : "在「账号」里注册并申请开通后自动连上；也可以在下面填写自己的接口。";
+  if (!a.online && $("#settings-form").elements.api_key.value) $("#custom-api").open = true;
+}
+
+/* ---------- 本机小模型（iOS） ---------- */
+async function renderLocalModel() {
+  const box = $("#local-model");
+  let st;
+  try { st = await api("/api/local-model"); } catch { box.hidden = true; return; }
+  box.hidden = !st.supported;
+  if (!st.supported) return;
+  const pct = Math.round((st.progress || 0) * 100);
+  $("#lm-status").textContent = st.error ? `出错：${st.error}` : st.ready ? `已就绪（${st.size_text || "约 350 MB"}）。在输入框下方的模型里选「本机小模型」即可离线问答。` : st.downloading ? `下载中 ${pct}%` : pct ? `已暂停 ${pct}%` : "未下载";
+  $("#lm-bar").hidden = !(st.downloading || (pct && !st.ready));
+  $("#lm-bar i").style.width = pct + "%";
+  $("#lm-start").hidden = st.ready || st.downloading;
+  $("#lm-start").textContent = pct ? "继续下载" : "下载";
+  $("#lm-pause").hidden = !st.downloading;
+  $("#lm-delete").hidden = !(st.ready || pct);
+  clearTimeout(state.lmTimer);
+  if (st.downloading) state.lmTimer = setTimeout(renderLocalModel, 1000);
+  if (st.ready && !state.lmWasReady) { state.lmWasReady = true; loadModels(); }
+}
+$("#lm-start").addEventListener("click", async () => { await api("/api/local-model/start", { method: "POST", body: "{}" }).catch((e) => toast(e.message)); renderLocalModel(); });
+$("#lm-pause").addEventListener("click", async () => { await api("/api/local-model/pause", { method: "POST", body: "{}" }); renderLocalModel(); });
+$("#lm-delete").addEventListener("click", async () => { if (!confirm("删除本机小模型？需要时可以重新下载。")) return; await api("/api/local-model/delete", { method: "POST", body: "{}" }); state.lmWasReady = false; renderLocalModel(); loadModels(); });
+
 /* ---------- 模型清单（AI 问答输入框下方） ---------- */
 function fillModelSelects(models) {
   const f = $("#settings-form");
@@ -1334,7 +1451,7 @@ function fillModels(r) {
   state.modelList = r.models || [];
   const sel = $("#ask-model");
   if (!r.models?.length) {
-    sel.innerHTML = `<option value="">${r.error ? "未连接" : "请先在设置里填 key"}</option>`;
+    sel.innerHTML = `<option value="">${r.error && r.error !== "还没有开通在线模型" ? "未连接" : "未开通模型"}</option>`;
     renderModelPicker();
     return;
   }
@@ -1844,8 +1961,8 @@ function renderAppUpdate(u) {
     staged: ["refresh", "新版本已就绪 · 点击重启更新", "点一下重启，几秒钟后生效"],
     shell: ["download", "有新安装包 · 点击下载", "这次更新需要重新安装"],
   }[u.status];
-  btn.hidden = !pill;
-  if (pill) {
+  if (btn) btn.hidden = !pill; // iOS 没有这个按钮（通过 App Store 更新）
+  if (btn && pill) {
     btn.innerHTML = `${ic(pill[0], u.status === "downloading" || u.status === "installing" ? "spin" : "")}<span>${esc(pill[1])}</span>`;
     btn.title = (u.notes ? `更新内容：${u.notes}\n\n` : "") + pill[2];
     btn.dataset.state = u.status;

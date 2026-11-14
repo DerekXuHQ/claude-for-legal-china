@@ -20,12 +20,16 @@ import { PIPELINES } from "./ai/pipelines.mjs";
 import * as reg from "./registers.mjs";
 import { rosterForUi, getAgent, skillText, profileTemplate } from "./ai/roster.mjs";
 import { watcherList, runWatcher, tick as watcherTick, isRunning as watcherRunning } from "./ai/watchers.mjs";
+import { ACCOUNT_DEFAULTS, effectiveSettings, handleAccount, LOCAL_MODEL_ID } from "./account.mjs";
+import { localAnswer } from "./ai/local.mjs";
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png" };
 export const DEFAULT_SETTINGS = {
   base_url: DEFAULT_BASE_URL, api_key: "", model: "", depth: "medium", review_model: "auto", transcribe_model: DEFAULT_SPEECH_MODEL,
   auto_update: true, update_interval_days: 7,
   watchers_off: false, watchers_disabled: {}, // 定时 Agent：全部关闭 / 单个关闭
+  ...ACCOUNT_DEFAULTS, // 账号（见 account.mjs）
+  prefer_local: false, // 法律助理上次选的是本机小模型
 };
 
 /**
@@ -63,7 +67,10 @@ export function createServer(ctx) {
   const dictations = new Map(); // 听写 id -> { session, at }
   const modelCache = { key: "", at: 0, models: [] };
 
-  const loadSettings = () => {
+  // loadRaw：保存在本机的原始设置；loadSettings：按账号/自己填的接口/本机小模型换算后、实际调用模型用的设置
+  const localReady = () => Boolean(ctx.localModel?.ready?.());
+  const loadSettings = () => effectiveSettings(loadRaw(), { localAvailable: localReady() });
+  const loadRaw = () => {
     const s = { ...DEFAULT_SETTINGS };
     if (existsSync(ctx.settingsPath)) {
       const saved = JSON.parse(readFileSync(ctx.settingsPath, "utf-8"));
@@ -74,7 +81,7 @@ export function createServer(ctx) {
     return s;
   };
   const saveSettings = (patch) => {
-    const s = loadSettings();
+    const s = loadRaw();
     for (const k of Object.keys(DEFAULT_SETTINGS)) {
       if (!(k in patch)) continue;
       if (k === "api_key" && patch[k] === "********") continue;
@@ -125,11 +132,29 @@ export function createServer(ctx) {
     const q = Object.fromEntries(url.searchParams);
     const ready = ctx.status().ready;
 
+    if (p.startsWith("/api/account")) {
+      const done = await handleAccount(req, res, p, {
+        loadRaw, send, readBody, platform: ctx.platform || process.platform,
+        saveRaw: (patch) => { saveSettings(patch); return loadRaw(); },
+        onChange: () => { modelCache.key = ""; },
+      });
+      if (done !== false) return;
+    }
+
+    // 本机小模型（只有 iOS 提供 ctx.localModel）
+    if (p === "/api/local-model" && req.method === "GET") return send(res, 200, ctx.localModel ? { supported: true, ...(await ctx.localModel.status()) } : { supported: false });
+    if (/^\/api\/local-model\/(start|pause|delete)$/.test(p) && req.method === "POST") {
+      if (!ctx.localModel) return send(res, 400, { error: "这台设备不支持本机小模型" });
+      try { await ctx.localModel[p.split("/").pop()](); modelCache.key = ""; return send(res, 200, { ok: true }); }
+      catch (err) { return send(res, 400, { error: String(err?.message || err) }); }
+    }
+
     if (req.method === "GET") {
       if (p === "/api/status") return send(res, 200, { ...ctx.status(), app: ctx.appInfo() });
       if (p === "/api/settings") {
-        const s = loadSettings();
-        return send(res, 200, { ...s, api_key: s.api_key ? "********" : "" });
+        const s = loadRaw();
+        const eff = loadSettings();
+        return send(res, 200, { ...s, api_key: s.api_key ? "********" : "", account_token: undefined, account: undefined, source: eff.source, local_ready: localReady() });
       }
       if (p === "/api/updates") {
         const db = ctx.userDb();
@@ -148,7 +173,7 @@ export function createServer(ctx) {
       if (!ready) return send(res, 503, { error: "资料库还在准备中" });
       if (p === "/api/meta") {
         const s = loadSettings();
-        return send(res, 200, { ...search.meta(), configured: !!s.api_key });
+        return send(res, 200, { ...search.meta(), configured: !!s.api_key || localReady() });
       }
       if (p === "/api/browse/laws") {
         return send(res, 200, search.browseLaws({ level: q.level || "", province: q.province || "", topic: q.topic || "", sort: q.sort || "name",
@@ -188,15 +213,18 @@ export function createServer(ctx) {
       }
       if (p === "/api/models") {
         const s = loadSettings();
-        if (!s.api_key) return send(res, 200, { models: [], error: "还没有填写 API key" });
+        const local = localReady() ? [LOCAL_MODEL_ID] : [];
+        const pick = (models) => (models.includes(s.model) ? s.model : models[0] || "");
+        if (s.prefer_local && local.length) s.model = LOCAL_MODEL_ID;
+        if (!s.api_key) return send(res, 200, { models: local, model: pick(local), depth: s.depth, source: s.source, ...(local.length ? {} : { error: "还没有开通在线模型" }) });
         const key = s.base_url + "|" + s.api_key;
-        if (q.refresh !== "1" && modelCache.key === key && Date.now() - modelCache.at < 600000) return send(res, 200, { models: modelCache.models, model: s.model, depth: s.depth });
+        if (q.refresh !== "1" && modelCache.key === key && Date.now() - modelCache.at < 600000) return send(res, 200, { models: [...modelCache.models, ...local], model: s.model, depth: s.depth, source: s.source });
         try {
           const models = await listModels(s);
           Object.assign(modelCache, { key, at: Date.now(), models });
-          return send(res, 200, { models, model: s.model, depth: s.depth });
+          return send(res, 200, { models: [...models, ...local], model: s.model, depth: s.depth, source: s.source });
         } catch (err) {
-          return send(res, 200, { models: [], error: `读取模型清单失败${err?.status ? "（HTTP " + err.status + "）" : ""}：${String(err?.message || err).slice(0, 200)}` });
+          return send(res, 200, { models: local, model: pick(local), source: s.source, error: `读取模型清单失败${err?.status ? "（HTTP " + err.status + "）" : ""}：${String(err?.message || err).slice(0, 200)}` });
         }
       }
       if (p === "/api/bookmarks") return send(res, 200, ctx.userDb()?.prepare("SELECT * FROM bookmarks ORDER BY created DESC").all() || []);
@@ -517,7 +545,9 @@ export function createServer(ctx) {
     const region = String(body.region || "").trim();
     const model = typeof body.model === "string" && body.model ? body.model : settings.model;
     const depth = ["low", "medium", "high"].includes(body.depth) ? body.depth : settings.depth;
-    if (model !== settings.model || depth !== settings.depth) saveSettings({ model, depth });
+    // 记住上次选的模型；选本机小模型时只记一个标记，不覆盖在线模型（定时 Agent 等后台任务用在线模型）
+    if (model === LOCAL_MODEL_ID) { if (!settings.prefer_local) saveSettings({ prefer_local: true }); }
+    else if (model !== settings.model || depth !== settings.depth || settings.prefer_local) saveSettings({ model, depth, prefer_local: false });
     res.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache" });
     const ctrl = new AbortController();
     let answer = "";
@@ -540,7 +570,7 @@ export function createServer(ctx) {
       if (!ctx.status().ready) emit({ type: "error", message: "资料库还在准备中，请稍候。" });
       else if (!m) emit({ type: "error", message: "事项不存在" });
       else if (!question && !intakeAnswers && !skipIntake && !fileIds.length) emit({ type: "error", message: "问题不能为空" });
-      else if (!settings.api_key) emit({ type: "error", message: "还没有配置 API key，请点右上角「设置」。" });
+      else if (model !== LOCAL_MODEL_ID && !settings.api_key) emit({ type: "error", message: localReady() ? "在线模型还没开通。可以在输入框下方改用「本机小模型」，或到「设置 → 账号」申请开通。" : "在线模型还没开通。请到「设置 → 账号」注册申请，或在「设置 → AI 设置」下载本机小模型。" });
       else if (!model) emit({ type: "error", message: "请先在输入框下方选择一个模型。" });
       else if (running.has(matterId)) emit({ type: "error", message: "这个事项正在处理上一条消息，请稍候。" });
       else {
@@ -559,7 +589,9 @@ export function createServer(ctx) {
         conv.attachments = all.filter((f) => !fileIds.includes(f.id)).map((f) => ({ name: f.name, text: f.text }));
         const attachments = all.filter((f) => fileIds.includes(f.id)).map((f) => ({ name: f.name, text: f.text }));
         const qText = question || (files.length ? `请处理我上传的文件：${files.map((f) => f.name).join("、")}` : "");
-        const r = await ask(settings, {
+        const r = model === LOCAL_MODEL_ID
+          ? await localAnswer({ question: qText, region, emit, signal: ctrl.signal, generate: localReady() ? ctx.localModel.generate : null })
+          : await ask(settings, {
           conv, question: qText, region, attachments, model, depth, db: search.getDb(), emit, signal: ctrl.signal,
           intakeAnswers, skipIntake, available: modelCache.models, scenario: typeof body.scenario === "string" ? body.scenario : "",
           udb: udb(), matterId, agent: typeof body.agent === "string" ? body.agent : "", clearAgent: body.clear_agent === true,

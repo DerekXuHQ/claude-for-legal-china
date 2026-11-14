@@ -11,6 +11,7 @@ import * as search from "../../server/search.mjs";
 import { ensureUserTables, runSync } from "../../server/official/sync.mjs";
 import { ensureOfficialColumns, promotePending } from "../../server/official/apply.mjs";
 import DATA_VERSION from "../../resources/data-version.json";
+import { ACCOUNT_SERVER } from "../../server/account.mjs";
 import { setupPhone, setupNativeDictation, setupIosVersion, setupIosAttach, setupIosUploadLimits, setupIosDownloads } from "./phone.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/build/pdf.worker.min.mjs";
@@ -50,8 +51,7 @@ function startUpdate(mode = "incremental") {
   return { ok: true };
 }
 function maybeAutoUpdate() {
-  let s = {};
-  try { s = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(callSync("fs.read", { path: DATA + "/settings.json" })), (c) => c.charCodeAt(0)))); } catch { /* 用默认 */ }
+  const s = readSettings();
   if (s.auto_update === false || !setup.ready || sync.running || !userDb) return;
   const last = userDb.prepare("SELECT value FROM sync_state WHERE key = 'last_check'").get()?.value;
   const days = Math.max(1, Number(s.update_interval_days) || 7);
@@ -145,6 +145,26 @@ function makeLocalApi(handle) {
   };
 }
 
+// 本机小模型：原生 MLX（ios/App/Sources/LocalLLM.swift），服务端 api.mjs 通过 ctx.localModel 调用
+function readSettings() {
+  try { return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(callSync("fs.read", { path: DATA + "/settings.json" })), (c) => c.charCodeAt(0)))); } catch { return {}; }
+}
+const localModel = isNative ? {
+  ready: () => { try { return callSync("llm.ready") === true; } catch { return false; } },
+  status: () => call("llm.status"),
+  start: () => call("llm.start", { server: readSettings().account_server || ACCOUNT_SERVER }),
+  pause: () => call("llm.pause"),
+  delete: () => call("llm.delete"),
+  generate: async ({ messages, onText, signal }) => {
+    const id = "g" + Math.random().toString(36).slice(2, 10);
+    const off = on("llm", (ev) => { if (ev.id === id) onText?.(ev.text || ""); });
+    const stop = () => call("llm.cancel", { id }).catch(() => {});
+    signal?.addEventListener("abort", stop);
+    try { return await call("llm.generate", { id, messages, maxTokens: 300 }); }
+    finally { off(); signal?.removeEventListener("abort", stop); }
+  },
+} : null;
+
 async function main() {
   try { callSync("fs.mkdir", { path: DATA }); callSync("fs.mkdir", { path: DATA + "/tmp" }); } catch { /* 原生层会建好 */ }
   openUserDb();
@@ -157,6 +177,8 @@ async function main() {
     startUpdate,
     stopUpdate: () => syncCtrl?.abort(),
     appInfo,
+    platform: "ios",
+    localModel,
     notify: ({ title, body, runId }) => call("notify", { title: `${title}`, body, runId }).catch(() => {}),
   });
   setLocalApi(makeLocalApi(server.handle));

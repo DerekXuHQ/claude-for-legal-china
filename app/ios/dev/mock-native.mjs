@@ -22,6 +22,7 @@ const real = (p) => { const r = path.join(DATA, String(p).replace(/^\/data\/?/, 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".bcmap": "application/octet-stream" };
 
 const dbs = new Map(); let dbSeq = 0;
+const llm = { ready: false }; // 本机小模型（模拟）
 const enc = (r) => { if (r) for (const k in r) if (r[k] instanceof Uint8Array) r[k] = { $b64: Buffer.from(r[k]).toString("base64") }; return r; };
 const bind = (a) => { const dec = (v) => (v && typeof v === "object" && "$b64" in v ? Buffer.from(v.$b64, "base64") : v); if (a.named) return [Object.fromEntries(Object.entries(a.named).map(([k, v]) => [k, dec(v)]))]; return (a.positional || []).map(dec); };
 const stmtCache = new Map();
@@ -46,6 +47,7 @@ function sync(op, a) {
     case "sqlite.run": { const r = stmt(a).run(...bind(a)); return { changes: Number(r.changes), lastInsertRowid: Number(r.lastInsertRowid) }; }
     case "sqlite.exec": dbs.get(a.db).exec(a.sql); return true;
     case "sqlite.close": dbs.get(a.db)?.close(); dbs.delete(a.db); return true;
+    case "llm.ready": return llm.ready;
     default: throw new Error("未知的同步接口：" + op);
   }
 }
@@ -108,6 +110,20 @@ async function asyncOp(id, op, a) {
       case "audio.toWav": {
         const rate = Math.round(Number(a.rate) || 24000);
         return resolve(id, await convert(a, String(a.ext || "m4a").replace(/[^a-z0-9]/gi, ""), "wav", ["afconvert", (i, o) => ["-f", "WAVE", "-d", "LEI16@" + rate, "-c", "1", i, o]]));
+      }
+      // 本机小模型：开发模式下「下载」立即完成，生成时复述检索到的第一条条文（只用来走通流程）
+      case "llm.status": return resolve(id, { supported: true, ready: llm.ready, downloading: false, progress: llm.ready ? 1 : 0, size: 278e6, size_text: "278 MB（模拟）" });
+      case "llm.start": llm.ready = true; return resolve(id, true);
+      case "llm.pause": return resolve(id, true);
+      case "llm.delete": llm.ready = false; return resolve(id, true);
+      case "llm.cancel": return resolve(id, true);
+      case "llm.generate": {
+        if (!llm.ready) return resolve(id, null, "请先下载本机小模型");
+        const first = String(a.messages?.at(-1)?.content || "").match(/\[1\](《[^》]+》[^：]*)：(.{0,60})/);
+        const text = first ? `根据${first[1]}的规定：${first[2]}……（开发模式模拟回答）` : "检索到的条文里没有规定。（开发模式模拟回答）";
+        let i = 0;
+        const t = setInterval(() => { i = Math.min(text.length, i + 8); emit("llm", { id: a.id, text: text.slice(0, i) }); if (i >= text.length) { clearInterval(t); resolve(id, text); } }, 30);
+        return;
       }
       case "notify": console.log("[通知]", a.title, a.body); return resolve(id, true);
       case "app.ready": return resolve(id, true);

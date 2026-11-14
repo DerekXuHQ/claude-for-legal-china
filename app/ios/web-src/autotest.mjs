@@ -47,6 +47,23 @@ export async function autotest() {
     must(t >= 150 && w >= 11, `命名 ${t}，定时 ${w}`);
     return `命名 Agent ${t} 个，定时 Agent ${w} 个`;
   });
+  await step("账号状态（不登录也能用）", async () => {
+    const a = await api("/api/account");
+    must(typeof a.signed_in === "boolean" && a.server, "账号接口返回不对：" + JSON.stringify(a).slice(0, 200));
+    return a.signed_in ? `已登录 ${a.email}，${a.online ? "在线模型已开通" : "在线模型未开通"}` : `未登录（账号服务 ${a.server}）`;
+  });
+  await step("本机小模型（离线检索答疑）", async () => {
+    const st = await api("/api/local-model");
+    if (!st.supported) return "这台设备不支持（模拟器没有 Metal GPU），跳过";
+    if (!st.ready) return `未下载（${st.size_text || ""}），跳过`;
+    const { id } = await api("/api/matters", { method: "POST", body: "{}" });
+    const r = await fetch("/api/ask", { method: "POST", headers: H(), body: JSON.stringify({ matter_id: id, question: "试用期最长可以约定多久？", model: "本机小模型" }) });
+    const evs = (await r.text()).split("\n").filter((l) => l.startsWith("data: ")).map((l) => JSON.parse(l.slice(6)));
+    const err = evs.find((e) => e.type === "error"); must(!err, err?.message);
+    const text = evs.filter((e) => e.type === "text").map((e) => e.delta).join("");
+    must(/试用期/.test(text) && /《/.test(text), "回答里没有引用条文：" + text.slice(0, 200));
+    return `回答 ${text.length} 字：${text.slice(0, 60)}`;
+  });
   await step("台账写入和读取（生僻字）", async () => {
     await api("/api/registers/contracts", { method: "POST", body: JSON.stringify({ data: { 对方: "上海龑辰科技有限公司", 合同名称: "自检合同", 到期日: "2027-01-15" } }) });
     const r = await api("/api/registers/contracts");
@@ -104,9 +121,9 @@ export async function autotest() {
   await step("网页环境（麦克风能否直接用）", async () => `isSecureContext=${window.isSecureContext}，mediaDevices=${!!navigator.mediaDevices?.getUserMedia}，AudioContext=${!!window.AudioContext}，Worker=${typeof Worker}`);
   await step("联网（原生网络通道）", async () => { const r = await fetch("https://www.gov.cn/"); return `HTTP ${r.status}，${(await r.text()).length} 字节`; });
   // 配置了 API key（本机测试）：真问一个问题
-  let settings = {};
-  try { if (existsSync("/data/settings.json")) settings = JSON.parse(readFileSync("/data/settings.json", "utf-8")); } catch { /* 没有 */ }
-  if (settings.api_key && settings.model) {
+  // 在线模型（自己填的 key 或账号开通的）可用时才测；model 用在线模型，不用本机小模型
+  const online = await api("/api/models").catch(() => ({}));
+  if (["account", "custom"].includes(online.source) && online.models?.some((m) => m !== "本机小模型")) {
     await step("AI 问答（流式）", async () => {
       const r = await fetch("/api/ask", { method: "POST", headers: H(), body: JSON.stringify({ matter_id: matterId, question: "上海员工工作 3 年，公司违法解除，月薪 1 万，赔偿金多少？简要回答。", depth: "low", skip_intake: true }) });
       const reader = r.body.getReader(); const dec = new TextDecoder(); let text = "", events = 0, buf = "";

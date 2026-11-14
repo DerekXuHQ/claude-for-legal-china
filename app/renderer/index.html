@@ -258,17 +258,37 @@
   <section id="view-settings" class="view">
     <form id="settings-form" class="settings" autocomplete="off" onsubmit="return false">
       <nav class="set-nav">
-        <button type="button" data-sec="ai" class="on"><svg class="i" aria-hidden="true"><use href="#i-sparkles"/></svg>AI 设置</button>
+        <button type="button" data-sec="account" class="on"><svg class="i" aria-hidden="true"><use href="#i-id-card"/></svg>账号</button>
+        <button type="button" data-sec="ai"><svg class="i" aria-hidden="true"><use href="#i-sparkles"/></svg>AI 设置</button>
         <button type="button" data-sec="keys"><svg class="i" aria-hidden="true"><use href="#i-list"/></svg>快捷键</button>
         <button type="button" data-sec="version"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>软件版本</button>
         <button type="button" data-sec="laws"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>法规更新</button>
       </nav>
       <div class="set-body">
-        <section class="set-sec on" data-sec="ai">
+        <section class="set-sec on" data-sec="account">
+          <h2>账号</h2>
+          <div id="acct-box"><p class="muted small">读取中…</p></div>
+        </section>
+        <section class="set-sec" data-sec="ai">
           <h2>AI 设置</h2>
-    <p class="muted small">接口使用 OpenAI 兼容格式。默认是 Portkey；也可以改成 OpenAI、DeepSeek 等任何兼容服务的地址。</p>
+    <div class="local-model" id="local-model" hidden>
+      <h3>本机小模型 <span class="muted small">（离线可用）</span></h3>
+      <p class="muted small">下载一次约 350 MB，之后不联网也能做法规检索和简短答疑。问题只在手机上处理，不上传。Agent、文书起草、合同审查等需要在线模型。</p>
+      <div class="row"><span id="lm-status" class="small"></span></div>
+      <div class="lm-bar" id="lm-bar" hidden><i></i></div>
+      <div class="row">
+        <button type="button" class="primary" id="lm-start">下载</button>
+        <button type="button" class="ghost" id="lm-pause" hidden>暂停</button>
+        <button type="button" class="ghost danger" id="lm-delete" hidden>删除</button>
+      </div>
+    </div>
+    <h3>在线模型</h3>
+    <p class="muted small" id="ai-source-note"></p>
+    <details class="custom-api" id="custom-api">
+    <summary>使用自己的接口</summary>
+    <p class="muted small">接口使用 OpenAI 兼容格式，例如 OpenAI、DeepSeek 等任何兼容服务。账号已开通在线模型时，默认用账号的；这里填了 key 且在「账号」里选了「用自己的接口」才会用这里的。</p>
     <label>接口地址
-      <input name="base_url" placeholder="https://api.portkey.bond/v1">
+      <input name="base_url" placeholder="https://api.example.com/v1">
     </label>
     <label>API key
       <input name="api_key" type="password" autocomplete="off" placeholder="粘贴你的 API key">
@@ -278,6 +298,7 @@
       <span class="small muted" id="models-status"></span>
     </div>
     <ul class="model-list" id="model-list" hidden></ul>
+    </details>
     <label>复核模型 <span class="muted">（合同、方案审查时用另一家的模型交叉复核）</span>
       <select name="review_model"><option value="auto">自动选择另一家族的强模型</option></select>
     </label>

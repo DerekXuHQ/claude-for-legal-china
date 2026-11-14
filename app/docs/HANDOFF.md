@@ -1,6 +1,6 @@
 # 交接说明：中国法律检索（桌面版 + iOS 版）
 
-更新：2026-11-08。写给接手这个项目的人或 AI 会话：读完这一份就能接着做，不需要翻之前的聊天记录。
+更新：2026-11-14。写给接手这个项目的人或 AI 会话：读完这一份就能接着做，不需要翻之前的聊天记录。
 
 - 仓库：`DerekXuHQ/claude-for-legal-china`（git remote `origin`，分支 `main`）。其他 remote 是参考用的分支，不要往那里推。
 - App 代码在 `app/`；仓库其余部分是 Claude Code 法律插件 marketplace（16 个插件、202 个技能），规则见根目录 `CLAUDE.md`。
@@ -31,6 +31,20 @@
 - 10 个 `legal-builder-hub` 技能（管理 Claude Code 插件市场本身，和 app 无关，roster 不收录）。
 
 定时 Agent 11 个，另算，不计入上面的 150 个。
+
+### 账号和本机小模型（2026-11-14，分支 `feat/accounts`，还没并入 main）
+
+用户要求：为了上架时不带默认的云端大模型，App 改成「账号 + 后台开通」；不登录也能用离线功能；内嵌一个小模型做离线检索答疑。
+
+| 部分 | 位置 | 状态 |
+|---|---|---|
+| 账号服务 + 管理后台 + 隐私/帮助页 | `app/account-server/`（README 有接口和配置） | 本机测通；**还没部署**，域名待定（代码里先写 `https://legal.portkey.bond`，见 `server/account.mjs` 的 `ACCOUNT_SERVER`） |
+| App 端账号 | `server/account.mjs`（本地接口 `/api/account/*`）、设置页「账号」 | 注册即生效；开通后自动拿接口和 key；改密码、退出、删除账号 |
+| 模型来源换算 | `account.mjs` 的 `effectiveSettings`：账号开通的 > 自己填的接口 > 本机小模型 | `loadSettings()` 返回换算后的设置，`loadRaw()` 是保存的原始设置 |
+| 本机小模型 | `server/ai/local.mjs`（检索 + 提示词）、`ios/App/Sources/LocalLLM.swift`（MLX，`llm.*` 桥接）、设置页「AI 设置」 | Qwen3-0.6B 4bit，约 350 MB，从账号服务下载；**只能真机跑**，模拟器报「不支持」 |
+| 自检 | `autotest.mjs` 新增「账号状态」「本机小模型」两项 | 浏览器 mock 34/35（只差浏览器里没有的 Vision） |
+
+本机小模型质量（2026-11-14 在 Mac 上用真实模型跑 8 个常见问题）：Qwen2.5-0.5B 经常答非所问；Qwen3-0.6B 大约一半答对、偶尔编；Qwen3-1.7B（约 940 MB）基本不错但笼统。所以回答下面一律附前三条条文原文，并标明「本机小模型，可能不准确」。换模型只换服务端文件。
 
 ---
 
